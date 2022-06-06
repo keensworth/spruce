@@ -2,32 +2,61 @@
 
 namespace spr {
     Registry::Registry(){
-        m_indices = std::vector<int>(512);
+        Registry(512, SPR_REG_SPARSE);
     }
 
     Registry::Registry(int size){
-        m_indices = std::vector<int>(size);
+        Registry(size, SPR_REG_SPARSE);
+    }
+
+    Registry::Registry(SprRegType registryType){
+        Registry(512, registryType);
+    }
+
+    Registry::Registry(int size, SprRegType registryType){
+        m_regType = registryType;
+        if (registryType == SPR_REG_DENSE){
+            m_indicesDense = IndexNode(8);
+        } else {
+            m_indicesSparse = std::vector<int>(size);
+        }
     }
 
     int Registry::getIndex(Entity entity){
-        return m_indices.at(entity.id);
+        if (m_regType == SPR_REG_DENSE){
+            return m_indicesDense.get(entity.id);
+        } else {
+            return m_indicesSparse.at(entity.id);
+        }
     }
 
     int Registry::getIndex(int id){
-        return m_indices.at(id);
+        if (m_regType == SPR_REG_DENSE){
+            return m_indicesDense.get(id);
+        } else {
+            return m_indicesSparse.at(id);
+        }
     }
 
     void Registry::addItem(Entity entity, int index){
-        while (entity.id > m_indices.size()){
-            m_indices.resize(m_indices.size()*2);
+        if (m_regType == SPR_REG_DENSE){
+            m_indicesDense.add(entity.id, index);
+        } else {
+            while (entity.id > m_indicesSparse.size()){
+                m_indicesSparse.resize(m_indicesSparse.size()*2);
+            }
+            m_indicesSparse.at(entity.id) = index;
         }
-        m_indices.at(entity.id) = index;
     }
 
     void Registry::addItem(int id, int index){
-        while (id > m_indices.size()){
-            m_indices.resize(m_indices.size()*2);
+        if (m_regType == SPR_REG_DENSE){
+            m_indicesDense.add(id, index);
+        } else {
+            while (id > m_indicesSparse.size()){
+                m_indicesSparse.resize(m_indicesSparse.size()*2);
+            }
+            m_indicesSparse.at(id) = index;
         }
-        m_indices.at(id) = index;
     }
 }
