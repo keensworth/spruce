@@ -43,11 +43,41 @@ void Container<T>::remove(int index){
         return;
     }
 
-    if (std::count(m_writeIndices.begin(), m_writeIndices.end(), index)) {
+    if (std::count(m_writeIndices.begin(), m_writeIndices.end(), index) == 0) {
         return;
     }
 
     m_writeIndices.push_back(index);
+}
+
+template<typename T>
+void Container<T>::remove(T data){
+    auto itr = std::find(m_data.begin(), m_data.end(), data);
+    if(itr == m_data.end())
+        return;
+    auto index = std::distance(m_data.begin(), itr);
+
+    if (index >= m_data.size()){
+        return;
+    }
+
+    if (std::count(m_writeIndices.begin(), m_writeIndices.end(), index) == 0) {
+        return;
+    }
+
+    m_writeIndices.push_back(index);
+}
+
+// append container to end of current
+template<typename T>
+void Container<T>::append(Container<T>& c2){
+    m_data.insert(std::end(m_data), std::begin(c2.m_data), std::end(c2.m_data));
+
+    for (int i = 0; i < c2.m_writeIndices.size(); i++){
+        c2.m_writeIndices.at(i) += m_data.size();
+    }
+
+    m_writeIndices.insert(std::end(m_writeIndices), std::begin(c2.m_writeIndices), std::end(c2.m_writeIndices));
 }
 
 template<typename T>

@@ -26,6 +26,12 @@ public:
     // clear data at given index
     void remove(int index);
 
+    // clear first instance of an object
+    void remove(T data);
+
+    // append container to end of current
+    void append(Container<T>& container);
+
     // clear container
     void clear();
 
