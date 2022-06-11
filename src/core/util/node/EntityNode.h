@@ -17,9 +17,9 @@ public:
     }
 
     //add
-    void add(long key, Entity entity);
+    void add(Entity entity);
     //remove
-    void remove(long key, Entity entity);
+    void remove(Entity entity);
     //get
     Container<Entity> get(long key);
     //get_accum

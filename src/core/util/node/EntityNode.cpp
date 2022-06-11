@@ -18,12 +18,12 @@ EntityNode::EntityNode(int height){
 
 
 //add
-void EntityNode::add(long key, Entity entity){
+void EntityNode::add(Entity entity){
     long currIndex;
     EntityNode* currNode = this;
 
     for (int height = m_height; height > 0; height--){
-        currIndex = subIndex(key, height);
+        currIndex = subIndex(entity.components, height);
 
         if (!currNode->getBranch(currIndex)->m_initialized){
             currNode->buildBranch(currIndex, height);
@@ -33,17 +33,17 @@ void EntityNode::add(long key, Entity entity){
         currNode = currNode->getBranch(currIndex);
     }
 
-    currIndex = subIndex(key, currNode->getHeight());
+    currIndex = subIndex(entity.components, currNode->getHeight());
     currNode->addLeafData(currIndex, entity);
 }
 
 //remove
-void EntityNode::remove(long key, Entity entity){
+void EntityNode::remove(Entity entity){
     int currIndex;
     EntityNode* currNode = this;
 
     for (int height = m_height; height > 0; height--){
-        currIndex = subIndex(key, height);
+        currIndex = subIndex(entity.components, height);
 
         if (!currNode->getBranch(currIndex)->m_initialized){
             return;
@@ -52,7 +52,7 @@ void EntityNode::remove(long key, Entity entity){
         currNode = currNode->getBranch(currIndex);
     }
 
-    currIndex = subIndex(key, currNode->getHeight());
+    currIndex = subIndex(entity.components, currNode->getHeight());
     currNode->removeLeafData(currIndex, entity);
 }
 
