@@ -1,11 +1,11 @@
 #pragma once
 
-#include "EntityManager.h"
-#include "SystemManager.h"
-#include "ComponentManager.h"
 #include "System.h"
 #include "Component.h"
 #include "Entity.h"
+#include "EntityManager.h"
+#include "SystemManager.h"
+#include "ComponentManager.h"
 
 namespace spr {
 class SprECS {

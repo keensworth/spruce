@@ -1,9 +1,7 @@
 #pragma once
 
 #include <vector>
-#include "Entity.h"
 #include "SprECS.h"
-#include "../core/util/node/IndexNode.h"
 
 namespace spr {
 
