@@ -4,11 +4,14 @@
 #include <Registry.h>
 
 namespace spr {
+
+class Component {};
+
 template <typename T>
-class Component {
+class TypedComponent : public Component{
 public:
-    Component();
-    ~Component() {}
+    TypedComponent();
+    ~TypedComponent() {}
 
     // get entity's component data
     T get(Entity entity);
