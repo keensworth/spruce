@@ -46,11 +46,11 @@ public:
 
     // get entity's component
     template <typename T>
-    void get(Entity entity);
+    auto get(Entity entity);
 
 
     // ---------------- system ------------------
-    void createSystem(System & system);
+    void createSystem(System& system);
     void setRenderSystem(System& system);
     void setAudioSystem(System& system);
 
