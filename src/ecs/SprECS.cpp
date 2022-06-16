@@ -20,7 +20,7 @@ void SprECS::update(float dt){
 
 
 // -------------------- entity ----------------------
-void SprECS::createEntity(std::vector<Component&> components){
+void SprECS::createEntity(std::vector<Component*> components){
     // get mask from components
     long mask = componentManager.getMask(components);
     

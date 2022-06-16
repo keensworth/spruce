@@ -71,18 +71,18 @@ void ComponentManager::removeComponentEntity(Entity entity){
 template <typename Arg, typename ...Args>
 long ComponentManager::getMask(){
     long mask = 0L;
-    auto val = std::find_if(m_components.begin(), m_components.end(), typeMatch<T>());
+    auto val = std::find_if(m_components.begin(), m_components.end(), typeMatch<Arg>());
     int index = -1;
     if (val != m_components.end()){
         index = std::distance(m_components.begin(), val);
         mask |= 0b1 << index;
-        return (mask | getMask<Args>());
+        return (mask | getMask<Args...>());
     } else {
-        return getMask<Args>();
+        return getMask<Args...>();
     }
 }
 
-long ComponentManager::getMask(std::vector<Component&> components){
+long ComponentManager::getMask(std::vector<Component*> components){
     long mask = 0L;
     // for each component arg
     for (int i = 0; i < components.size(); i++){
@@ -99,5 +99,22 @@ long ComponentManager::getMask(std::vector<Component&> components){
             mask |= (0b1 << j);
     }
     return mask;
+}
+
+// register entity with set of components
+void ComponentManager::registerEntity(Entity entity, std::vector<Component*> components){
+    for (Component* component : components){
+        component->addEntity(entity);
+    }
+}
+
+// register entity with set of components
+void ComponentManager::unregisterEntity(Entity entity){
+    long mask = entity.components;
+    for (int i = 0; i < 64; i++){
+        if ((mask>>i)&0b1 == 1){
+            m_components.at(i)->removeEntity(entity);
+        }
+    }
 }
 }

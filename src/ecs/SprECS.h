@@ -1,11 +1,11 @@
 #pragma once
 
-#include <EntityManager.h>
-#include <SystemManager.h>
-#include <ComponentManager.h>
-#include <System.h>
-#include <Component.h>
-#include <Entity.h>
+#include "EntityManager.h"
+#include "SystemManager.h"
+#include "ComponentManager.h"
+#include "System.h"
+#include "Component.h"
+#include "Entity.h"
 
 namespace spr {
 class SprECS {
@@ -18,7 +18,7 @@ public:
     
 
     // ---------------- entity ------------------
-    void createEntity(std::vector<Component&> components);
+    void createEntity(std::vector<Component*> components);
     void destroyEntity(Entity& entity);
     template <typename Arg, typename ...Args>
     Container<Entity> getEntities();

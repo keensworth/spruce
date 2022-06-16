@@ -40,10 +40,10 @@ public:
     long getMask();
 
     // get bit mask for components vector
-    long getMask(std::vector<Component&> components);
+    long getMask(std::vector<Component*> components);
 
     // register entity with set of components
-    void registerEntity(Entity entity, std::vector<Component&> components);
+    void registerEntity(Entity entity, std::vector<Component*> components);
 
     // register entity with set of components
     void unregisterEntity(Entity entity);
