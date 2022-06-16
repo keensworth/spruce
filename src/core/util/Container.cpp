@@ -23,13 +23,13 @@ template<typename T>
 int Container<T>::add(T data){
     if (m_writeIndices.size() == 0){
         m_data.push_back(data);
-        m_lastWriteIndex = m_data.size()-1;
+        lastWriteIndex = m_data.size()-1;
     } else {
         int index = m_writeIndices.pop_back();
         m_data.at(index) = data;
-        m_lastWriteIndex = index;
+        lastWriteIndex = index;
     }
-    return m_lastWriteIndex;
+    return lastWriteIndex;
 }
 
 template<typename T>

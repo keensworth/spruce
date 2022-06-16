@@ -1,6 +1,11 @@
 #include "Entity.h"
 
 namespace spr {
+Entity::Entity(){
+    id = 0;
+    components = 0;
+}
+
 Entity::Entity(int id, long components){
     this->id = id;
     this->components = components;

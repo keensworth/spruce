@@ -1,8 +1,8 @@
 #pragma once
 
 #include <vector>
-#include <Entity.h>
-#include <Container.h>
+#include "../../../ecs/Entity.h"
+#include "../Container.h"
 
 namespace spr {
 

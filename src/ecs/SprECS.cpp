@@ -97,4 +97,5 @@ void SprECS::setRenderSystem(System& system){
 void SprECS::setAudioSystem(System& system){
     systemManager.setAudioSystem(system);
 }
+
 }

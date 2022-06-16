@@ -1,9 +1,9 @@
 #pragma once
 
 #include <vector>
-#include <Component.h>
-#include <Entity.h>
-#include <System.h>
+#include "Component.h"
+#include "Entity.h"
+#include "System.h"
 
 
 namespace spr {

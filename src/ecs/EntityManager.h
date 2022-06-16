@@ -1,10 +1,10 @@
 #pragma once
 
-#include <Entity.h>
 #include <vector>
-#include <IndexNode.h>
-#include <Container.h>
-#include <EntityNode.h>
+#include "Entity.h"
+#include "../core/util/Container.h"
+#include "../core/util/node/IndexNode.h"
+#include "../core/util/node/EntityNode.h"
 
 namespace spr {
 

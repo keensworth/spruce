@@ -3,6 +3,7 @@
 namespace spr {
 class Entity {
 public:
+    Entity();
     Entity(int id, long components);
     ~Entity() {}
     

@@ -20,12 +20,38 @@ add_library(src)
 #include(cmake/configure_tbb.cmake)
 
 target_sources(src PRIVATE
-  #file_names_here.cpp oh fuck
+  core/util/Container.h
+  core/util/Container.cpp
+  core/util/node/EntityNode.h
+  core/util/node/EntityNode.cpp
+  core/util/node/IndexNode.h
+  core/util/node/IndexNode.cpp
+
+  ecs/Registry.h
+  ecs/Registry.cpp
+  ecs/Entity.h
+  ecs/Entity.cpp
+  ecs/Component.h
+  ecs/Component.cpp
+  ecs/System.h
+  ecs/EntityManager.h
+  ecs/EntityManager.cpp
+  ecs/ComponentManager.h
+  ecs/ComponentManager.cpp
+  ecs/SystemManager.h
+  ecs/SystemManager.cpp
+  ecs/SprECS.h
+  ecs/SprECS.cpp
+
+
+
 )
 
-add_executable(src hostCode.cpp)
+add_executable(spruce main.cpp)
 
-target_link_libraries(src PUBLIC external)
+#target_link_libraries(src PUBLIC external)
+target_link_libraries(spruce PUBLIC src)
+
 
 target_include_directories(src
   PUBLIC

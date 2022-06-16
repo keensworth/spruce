@@ -21,7 +21,7 @@ auto ComponentManager::getEntityComponent(Entity entity){
     int index = -1;
     if (val != m_components.end()){
         index = std::distance(m_components.begin(), val);
-        return m_components.at(index).get(entity);
+        return m_components.at(index)->get(entity);
     } else {
         return nullptr;
     }
@@ -33,7 +33,7 @@ void ComponentManager::setEntityComponent(Entity entity, auto data){
     int index = -1;
     if (val != m_components.end()){
         index = std::distance(m_components.begin(), val);
-        m_components.at(index).set(entity, data);
+        m_components.at(index)->set(entity, data);
     }
 }
 
@@ -43,7 +43,7 @@ void ComponentManager::addComponentData(auto data){
     int index = -1;
     if (val != m_components.end()){
         index = std::distance(m_components.begin(), val);
-        m_components.at(index).add(data);
+        m_components.at(index)->add(data);
     }
 }
 
@@ -53,8 +53,8 @@ void ComponentManager::addComponentEntityData(Entity entity, auto data){
     int index = -1;
     if (val != m_components.end()){
         index = std::distance(m_components.begin(), val);
-        m_components.at(index).add(data);
-        m_components.at(index).addEntity(entity);
+        m_components.at(index)->add(data);
+        m_components.at(index)->addEntity(entity);
     }
 }
 
@@ -64,7 +64,7 @@ void ComponentManager::removeComponentEntity(Entity entity){
     int index = -1;
     if (val != m_components.end()){
         index = std::distance(m_components.begin(), val);
-        m_components.at(index).removeEntity(entity);
+        m_components.at(index)->removeEntity(entity);
     }
 }
 
