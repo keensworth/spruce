@@ -23,6 +23,8 @@ public:
     int getIndex(int id);
     void addItem(Entity entity, int index);
     void addItem(int id, int index);
+
+    int getSize();
 private:
     int m_regType;
     IndexNode m_indicesDense;
