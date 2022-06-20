@@ -65,7 +65,7 @@ int IndexNode::get(int key){
         currIndex = subIndex(key, height);
 
         if (!currNode->getBranch(currIndex)->m_initialized){
-            return NULL;
+            return -1;
         }
 
         currNode = currNode->getBranch(currIndex);
