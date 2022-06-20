@@ -15,13 +15,12 @@
 # ======================================================================== #
 
 
-add_library(src)
+add_library(srcFiles)
 
 #include(cmake/configure_tbb.cmake)
 
-target_sources(src PRIVATE
+target_sources(srcFiles PRIVATE
   core/util/Container.h
-  core/util/Container.cpp
   core/util/node/EntityNode.h
   core/util/node/EntityNode.cpp
   core/util/node/IndexNode.h
@@ -32,7 +31,6 @@ target_sources(src PRIVATE
   ecs/Entity.h
   ecs/Entity.cpp
   ecs/Component.h
-  ecs/Component.cpp
   ecs/System.h
   ecs/EntityManager.h
   ecs/EntityManager.cpp
@@ -41,19 +39,16 @@ target_sources(src PRIVATE
   ecs/SystemManager.h
   ecs/SystemManager.cpp
   ecs/SprECS.h
-  ecs/SprECS.cpp
-
-
-
 )
-
-add_executable(spruce main.cpp)
 
 #target_link_libraries(src PUBLIC external)
-target_link_libraries(spruce PUBLIC src)
 
 
-target_include_directories(src
-  PUBLIC
-    ${CMAKE_CURRENT_SOURCE_DIR}
+
+target_include_directories(srcFiles 
+  PUBLIC ecs
+  PUBLIC core
 )
+
+target_compile_options(srcFiles PUBLIC -fconcepts)
+

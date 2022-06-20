@@ -16,6 +16,11 @@
 
 cmake_minimum_required(VERSION 3.12)
 
+if(${CMAKE_VERSION} VERSION_GREATER_EQUAL 3.18)
+  cmake_policy(SET CMP0104 NEW)
+endif()
+cmake_policy(SET CMP0076 NEW)
+
 if (NOT (${CMAKE_CURRENT_SOURCE_DIR} STREQUAL ${CMAKE_SOURCE_DIR}))
   set(SPRUCE_IS_SUBPROJECT ON)
 else()
@@ -35,7 +40,7 @@ if(NOT CMAKE_BUILD_TYPE AND NOT CMAKE_CONFIGURATION_TYPES)
   set_property(CACHE CMAKE_BUILD_TYPE PROPERTY STRINGS "Debug" "Release"
     "MinSizeRel" "RelWithDebInfo")
 endif()
-if (NOT OWL_IS_SUBPROJECT)
+if (NOT SPRUCE_IS_SUBPROJECT)
   set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${PROJECT_BINARY_DIR})
   set(CMAKE_LIBRARY_OUTPUT_DIRECTORY ${PROJECT_BINARY_DIR})
   set(CMAKE_ARCHIVE_OUTPUT_DIRECTORY ${PROJECT_BINARY_DIR})
@@ -51,7 +56,7 @@ if (SPRUCE_IS_SUBPROJECT)
 endif()
 #include(configure_tbb)
 
-set(CMAKE_CXX_STANDARD 11)
+set(CMAKE_CXX_STANDARD 20)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
 # ------------------------------------------------------------------
@@ -59,14 +64,24 @@ set(CMAKE_CXX_STANDARD_REQUIRED ON)
 # ------------------------------------------------------------------
 option(SPRUCE_BUILD_SHARED "Build SPRUCE as a shared library? (otherwise static)" OFF)
 set(BUILD_SHARED_LIBS ${SPRUCE_BUILD_SHARED}) # use 'SPRUCE_' naming convention
+
+#include_directories(${CMAKE_CURRENT_LIST_DIR}) 
 add_subdirectory(src)
+add_executable(spruce main.cpp)
+#target_include_directories(spruce PRIVATE
+#  ${CMAKE_SOURCE_DIR}/src
+#)
+target_link_libraries(spruce PUBLIC srcFiles)
+target_compile_options(spruce PUBLIC -fconcepts)
+
+
 
 option(SPRUCE_BUILD_ADVANCED_TESTS "Build the *advanced* test-cases?" OFF)
 
 # ------------------------------------------------------------------
 # third party
 # ------------------------------------------------------------------
-add_subdirectory(external)
+#add_subdirectory(external)
 
 
 if (SPRUCE_IS_SUBPROJECT)
