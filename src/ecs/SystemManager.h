@@ -26,7 +26,5 @@ private:
     std::vector<System*> m_systems;
     System* m_renderSystem;
     System* m_audioSystem;
-
-    static System m_defaultSys;
 };
 }
