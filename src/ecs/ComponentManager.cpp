@@ -3,83 +3,10 @@
 namespace spr{
 
 ComponentManager::ComponentManager(){
-    m_components = std::vector<Component*>(64);
-}
-
-void ComponentManager::addComponent(Component& component){
-    m_components.push_back(&component);
-}
-
-template <typename T>
-bool typeMatch(auto data){
-    return typeid(data)==typeid(T);
-}
-
-template <typename T>
-auto ComponentManager::getEntityComponent(Entity entity){
-    auto val = std::find_if(m_components.begin(), m_components.end(), typeMatch<T>());
-    int index = -1;
-    if (val != m_components.end()){
-        index = std::distance(m_components.begin(), val);
-        return m_components.at(index)->get(entity);
-    } else {
-        return nullptr;
-    }
-}
-
-template <typename T>
-void ComponentManager::setEntityComponent(Entity entity, auto data){
-    auto val = std::find_if(m_components.begin(), m_components.end(), typeMatch<T>());
-    int index = -1;
-    if (val != m_components.end()){
-        index = std::distance(m_components.begin(), val);
-        m_components.at(index)->set(entity, data);
-    }
-}
-
-template <typename T>
-void ComponentManager::addComponentData(auto data){
-    auto val = std::find_if(m_components.begin(), m_components.end(), typeMatch<T>());
-    int index = -1;
-    if (val != m_components.end()){
-        index = std::distance(m_components.begin(), val);
-        m_components.at(index)->add(data);
-    }
-}
-
-template <typename T>
-void ComponentManager::addComponentEntityData(Entity entity, auto data){
-    auto val = std::find_if(m_components.begin(), m_components.end(), typeMatch<T>());
-    int index = -1;
-    if (val != m_components.end()){
-        index = std::distance(m_components.begin(), val);
-        m_components.at(index)->add(data);
-        m_components.at(index)->addEntity(entity);
-    }
-}
-
-template <typename T>
-void ComponentManager::removeComponentEntity(Entity entity){
-    auto val = std::find_if(m_components.begin(), m_components.end(), typeMatch<T>());
-    int index = -1;
-    if (val != m_components.end()){
-        index = std::distance(m_components.begin(), val);
-        m_components.at(index)->removeEntity(entity);
-    }
-}
-
-template <typename Arg, typename ...Args>
-long ComponentManager::getMask(){
-    long mask = 0L;
-    auto val = std::find_if(m_components.begin(), m_components.end(), typeMatch<Arg>());
-    int index = -1;
-    if (val != m_components.end()){
-        index = std::distance(m_components.begin(), val);
-        mask |= 0b1 << index;
-        return (mask | getMask<Args...>());
-    } else {
-        return getMask<Args...>();
-    }
+    m_components = std::vector<Component*>();
+    m_typeMap = tmap();
+    m_typeMapP = tmap();
+    m_componentIndex = 0;
 }
 
 long ComponentManager::getMask(std::vector<Component*> components){
@@ -99,22 +26,5 @@ long ComponentManager::getMask(std::vector<Component*> components){
             mask |= (0b1 << j);
     }
     return mask;
-}
-
-// register entity with set of components
-void ComponentManager::registerEntity(Entity entity, std::vector<Component*> components){
-    for (Component* component : components){
-        component->addEntity(entity);
-    }
-}
-
-// register entity with set of components
-void ComponentManager::unregisterEntity(Entity entity){
-    long mask = entity.components;
-    for (int i = 0; i < 64; i++){
-        if ((mask>>i)&0b1 == 1){
-            m_components.at(i)->removeEntity(entity);
-        }
-    }
 }
 }
