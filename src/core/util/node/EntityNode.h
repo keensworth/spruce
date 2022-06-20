@@ -1,8 +1,8 @@
 #pragma once
 
 #include <vector>
-#include "../../../ecs/Entity.h"
 #include "../Container.h"
+#include "../../../ecs/Entity.h"
 
 namespace spr {
 
@@ -44,6 +44,7 @@ private:
     void buildBranch(int branchIndex, int height);
     EntityNode* getBranch(int branchIndex);
     void setBranch(int branchIndex, EntityNode* branchData);
+    bool branchInitialized(int branch);
 
     int subIndex(long num, int height);
     void setBit(int bitIndex, int bitValue);

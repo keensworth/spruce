@@ -6,6 +6,7 @@ EntityNode::EntityNode(){
     m_height = 16;
     m_nodeData = std::vector<EntityNode*>(16);
     m_initialized = true;
+    m_mask = 0;
 }
 EntityNode::EntityNode(int height){
     m_height = height;
@@ -14,6 +15,8 @@ EntityNode::EntityNode(int height){
     } else {
         m_leafData = std::vector<Container<Entity>>(16);
     }
+    m_initialized = true;
+    m_mask = 0;
 }
 
 
@@ -24,15 +27,15 @@ void EntityNode::add(Entity entity){
 
     for (int height = m_height; height > 0; height--){
         currIndex = subIndex(entity.components, height);
-
-        if (!currNode->getBranch(currIndex)->m_initialized){
+        
+        if (!currNode->branchInitialized(currIndex)){
             currNode->buildBranch(currIndex, height);
             currNode->setBit(currIndex,1);
         }
-
+        
         currNode = currNode->getBranch(currIndex);
+        currIndex = 0;
     }
-
     currIndex = subIndex(entity.components, currNode->getHeight());
     currNode->addLeafData(currIndex, entity);
 }
@@ -45,11 +48,9 @@ void EntityNode::remove(Entity entity){
     for (int height = m_height; height > 0; height--){
         currIndex = subIndex(entity.components, height);
 
-        if (!currNode->getBranch(currIndex)->m_initialized){
-            return;
+        if (currNode->branchInitialized(currIndex)){
+            currNode = currNode->getBranch(currIndex);
         }
-
-        currNode = currNode->getBranch(currIndex);
     }
 
     currIndex = subIndex(entity.components, currNode->getHeight());
@@ -64,8 +65,8 @@ Container<Entity> EntityNode::get(long key){
     for (int height = m_height; height > 0; height--){
         currIndex = subIndex(key, height);
 
-        if (!currNode->getBranch(currIndex)->m_initialized){
-            return NULL;
+        if (!currNode->branchInitialized(currIndex)){
+            return Container<Entity>(0);
         }
 
         currNode = currNode->getBranch(currIndex);
@@ -78,10 +79,9 @@ Container<Entity> EntityNode::get(long key){
 Container<Entity> EntityNode::getAccum(long key){
     int currIndex = subIndex(key, m_height);
     Container<Entity> accum;
-
     for (int i = 0; i < 16; i++){
         if (m_height > 0){
-            if (!((currIndex & i) == currIndex && m_nodeData.at(i)->m_initialized)){
+            if (!((currIndex & i) == currIndex && branchInitialized(i))){
                 continue;
             }
             EntityNode* node = getBranch(i);
@@ -103,7 +103,7 @@ void EntityNode::addLeafData(int key, Entity entity){
     m_leafData.at(key).add(entity);
 }
 void EntityNode::removeLeafData(int key, Entity entity){
-    m_leafData.at(key).remove(entity);
+    m_leafData.at(key).erase(entity);
 }
 Container<Entity> EntityNode::getLeafData(int key){
     return m_leafData.at(key);
@@ -119,6 +119,10 @@ void EntityNode::buildBranch(int branchIndex, int height){
 
 EntityNode* EntityNode::getBranch(int branchIndex){
     return m_nodeData.at(branchIndex);
+}
+
+bool EntityNode::branchInitialized(int branch){
+    return (m_mask >> branch)&0b1;
 }
 
 void EntityNode::setBranch(int branchIndex, EntityNode* branchData){
