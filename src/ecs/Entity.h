@@ -15,6 +15,10 @@ public:
     bool contains(long components);
     bool containsAny(long components);
 
+    bool operator==(const Entity &rhs) const {
+        return (rhs.id == id)&(rhs.components == components);
+    }
+
 private:
 
 };
