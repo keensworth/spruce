@@ -1,18 +1,15 @@
 #pragma once
 
 #include <vector>
-#include "SprECS.h"
 
 namespace spr {
-
 class System {
 public:
-    System(SprECS& ecs) : ecs(ecs) {}
+    System() {}
     ~System() {}
 
-    virtual void update(float dt);
+    virtual void update(float dt) = 0;
 private:
-    SprECS& ecs;
 };
 
 }
