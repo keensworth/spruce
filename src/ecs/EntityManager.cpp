@@ -4,8 +4,8 @@ namespace spr {
 
 EntityManager::EntityManager(){
     m_entities = EntityNode();
-    m_entitiesAdd = std::vector<Entity>(128);
-    m_entitiesRemove = std::vector<Entity>(64);
+    m_entitiesAdd = std::vector<Entity>();
+    m_entitiesRemove = std::vector<Entity>();
 }
 
 void EntityManager::update(){
@@ -16,8 +16,10 @@ void EntityManager::update(){
         for (Entity entity : m_entitiesRemove){
             m_entities.remove(entity);
         }
-        m_entitiesAdd.clear();
-        m_entitiesRemove.clear();
+        if (m_entitiesAdd.size() > 0)
+            m_entitiesAdd.clear();
+        if (m_entitiesRemove.size() > 0)
+            m_entitiesRemove.clear();
     }
 }
 
@@ -30,7 +32,8 @@ void EntityManager::removeEntity(Entity entity){
 }
 
 Container<Entity> EntityManager::getEntities(long components){
-    return m_entities.getAccum(components);
+    Container<Entity> cont = m_entities.getAccum(components);
+    return cont;
 }
 
 }
