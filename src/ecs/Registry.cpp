@@ -1,25 +1,23 @@
 #include "Registry.h"
 
 namespace spr {
-    Registry::Registry(){
-        Registry(512, SPR_REG_SPARSE);
-    }
+    Registry::Registry() : Registry(512, SPR_REG_SPARSE){}
 
-    Registry::Registry(int size){
-        Registry(size, SPR_REG_SPARSE);
-    }
+    Registry::Registry(int size) : Registry(size, SPR_REG_SPARSE) {}
 
-    Registry::Registry(SprRegType registryType){
-        Registry(512, registryType);
-    }
+    Registry::Registry(SprRegType registryType) : Registry(512, registryType) {}
 
     Registry::Registry(int size, SprRegType registryType){
         m_regType = registryType;
         if (registryType == SPR_REG_DENSE){
             m_indicesDense = IndexNode(8);
         } else {
-            m_indicesSparse = std::vector<int>(size);
+            m_indicesSparse = std::vector<int>(size,-1);
         }
+    }
+
+    int Registry::getSize(){
+        return m_indicesSparse.size();
     }
 
     int Registry::getIndex(Entity entity){
