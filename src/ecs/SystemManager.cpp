@@ -22,11 +22,12 @@ void SystemManager::update(float dt){
         system->update(dt);
     }
 
-    // update render system
-    m_renderSystem->update(dt);
+    // // update render system
+    // m_renderSystem->update(dt);
 
-    // uppdate audio system
-    m_audioSystem->update(dt);
+    // // uppdate audio system
+    // m_audioSystem->update(dt);
+    
 }
 
 } // namespace spr
