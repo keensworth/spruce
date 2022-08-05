@@ -81,7 +81,7 @@ option(SPRUCE_BUILD_ADVANCED_TESTS "Build the *advanced* test-cases?" OFF)
 # ------------------------------------------------------------------
 # third party
 # ------------------------------------------------------------------
-#add_subdirectory(external)
+add_subdirectory(external)
 
 
 if (SPRUCE_IS_SUBPROJECT)
