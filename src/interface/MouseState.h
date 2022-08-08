@@ -8,7 +8,6 @@ using namespace glm;
 namespace spr {
 class MouseState {
 public:
-    MouseState() {}
     MouseState() {
         mousePos = ivec2(0,0);
         mouseMovement = ivec2(0,0);
