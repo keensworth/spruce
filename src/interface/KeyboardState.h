@@ -5,14 +5,17 @@
 namespace spr {
 class KeyboardState {
 public:
-    void setKeyDown(SprKey key);
-    void setKeyUp(SprKey key);
-
-    bool isKeyDown(SprKey key);
+    KeyboardState() {
+        for (int i = 0; i < KEY_COUNT; i++){
+            timeSinceKeyDown[i] = 0;
+            timeSinceKeyUp[i] = 0;
+            keyDown[i] = false;
+        }
+    }
+    ~KeyboardState() {}
 
     int timeSinceKeyDown[KEY_COUNT];
     int timeSinceKeyUp[KEY_COUNT];
-private:
     bool keyDown[KEY_COUNT];
 };
 }
