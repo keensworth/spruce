@@ -8,36 +8,36 @@ using namespace glm;
 namespace spr {
 class MouseState {
 public:
-    MouseState();
-    ~MouseState();
+    MouseState() {}
+    MouseState() {
+        mousePos = ivec2(0,0);
+        mouseMovement = ivec2(0,0);
+        scrollWheelMovement = ivec2(0,0);
 
-    void setMousePos(ivec2 pos);
-    void setMouseMovement(ivec2 delta);
-    void setScrollWheelMovement(ivec2 delta);
+        buttonDownTicks = 0;
+        buttonUpTicks = 0;
+        mouseMoveTicks = 0;
+        scrollUpTicks = 0;
+        scrollDownTicks = 0;
 
-    void setButtonDown(SprButton key);
-    void setButtonUp(SprButton key);
+        for (int i = 0; i < BUTTON_COUNT; i++){
+            buttonDown[i] = false;
+        }
+    }
 
-    bool isButtonDown(SprButton key);
-    ivec2 getMousePos();
-    ivec2 getMouseMovement();
-    ivec2 getScrollWheelMovement();
+    ~MouseState() {}
 
-
-    // mouse timing
-    int timeSinceButtonDown[BUTTON_COUNT];
-    int timeSinceButtonUp[BUTTON_COUNT];
-
-    int timeSinceMouseMove;
-
-    int timeSinceScrollUp;
-    int timeSinceScrollDown;
-
-private:
     // mouse state
     ivec2 mousePos;
     ivec2 mouseMovement;
     ivec2 scrollWheelMovement;
     bool buttonDown[BUTTON_COUNT];
+
+    // mouse timing
+    int buttonDownTicks;
+    int buttonUpTicks;
+    int mouseMoveTicks;
+    int scrollUpTicks;
+    int scrollDownTicks;
 };
 }
