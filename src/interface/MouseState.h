@@ -1,8 +1,7 @@
 #pragma once
 
 #include <glm/glm.hpp>
-#include <SDL2/SDL.h>
-#include <SDL2/SDL_vulkan.h>
+#include "MouseConfig.h"
 
 using namespace glm;
 
@@ -15,20 +14,19 @@ public:
     void setMousePos(ivec2 pos);
     void setMouseMovement(ivec2 delta);
     void setScrollWheelMovement(ivec2 delta);
-    void setLClk(bool state);
-    void setRClk(bool state);
 
+    void setButtonDown(SprButton key);
+    void setButtonUp(SprButton key);
+
+    bool isButtonDown(SprButton key);
     ivec2 getMousePos();
     ivec2 getMouseMovement();
     ivec2 getScrollWheelMovement();
-    bool getLClk();
-    bool getRClk();
+
 
     // mouse timing
-    int timeSinceLClkUp;
-    int timeSinceLClkDown;
-    int timeSinceRClkUp;
-    int timeSinceRClkDown;
+    int timeSinceButtonDown[BUTTON_COUNT];
+    int timeSinceButtonUp[BUTTON_COUNT];
 
     int timeSinceMouseMove;
 
@@ -40,8 +38,6 @@ private:
     ivec2 mousePos;
     ivec2 mouseMovement;
     ivec2 scrollWheelMovement;
-    bool lClkDown;
-    bool rClkDown;
-
+    bool buttonDown[BUTTON_COUNT];
 };
 }
