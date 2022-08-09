@@ -4,7 +4,7 @@
 
 #define KEY_COUNT 240
 
-
+namespace spr {
 static const SDL_Keycode keys[KEY_COUNT] = {
     SDLK_UNKNOWN,
     SDLK_RETURN,
@@ -738,4 +738,12 @@ SprKeyBind sprKeys[KEY_COUNT] = {
     {SPR_AUDIOREWIND, SPR_AUDIOREWIND},
     {SPR_AUDIOFASTFORWARD, SPR_AUDIOFASTFORWARD}
 };
+
+SprKey getSprKeyFromSDLKeycode(SDL_Keycode keycode){
+    for (int i = 0; i < KEY_COUNT; i++){
+        if (keys[i] == keycode)
+            return sprKeys[i].effectiveKey;
+    }
+}
+}
 
