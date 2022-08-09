@@ -7,15 +7,15 @@ class KeyboardState {
 public:
     KeyboardState() {
         for (int i = 0; i < KEY_COUNT; i++){
-            timeSinceKeyDown[i] = 0;
-            timeSinceKeyUp[i] = 0;
+            keyUpTicks[i] = 0;
+            keyDownTicks[i] = 0;
             keyDown[i] = false;
         }
     }
     ~KeyboardState() {}
 
-    int timeSinceKeyDown[KEY_COUNT];
-    int timeSinceKeyUp[KEY_COUNT];
+    int keyDownTicks[KEY_COUNT];
+    int keyUpTicks[KEY_COUNT];
     bool keyDown[KEY_COUNT];
 };
 }
