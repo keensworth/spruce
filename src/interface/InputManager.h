@@ -7,26 +7,25 @@
 namespace spr {
 class InputManager {
 public:
-    InputManager();
+    InputManager() {}
     InputManager(KeyboardState* keyboard, MouseState* mouse);
     ~InputManager(){}
 
     bool isKeyDown(SprKey key);
     bool isButtonDown(SprButton key);
     ivec2 getMousePos();
-    ivec2 getMouseMovement();
-    ivec2 getScrollWheelMovement();
+    ivec2 getMouseMotion();
+    ivec2 getScrollWheelMotion();
 
     int timeSinceKeyDown(SprKey key);
     int timeSinceKeyUp(SprKey key);
     int timeSinceButtonDown(SprButton button);
     int timeSinceButtonUp(SprButton button);
-    int timeSinceMouseMove();
-    int timeSinceScrollUp();
-    int timeSinceScrollDown();
+    int timeSinceMouseMotion();
+    int timeSinceScroll();
     
 private:
-    KeyboardState* keyboard;
-    MouseState* mouse;
+    KeyboardState* m_keyboard;
+    MouseState* m_mouse;
 };
 }
