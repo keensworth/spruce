@@ -10,7 +10,7 @@ class Window {
 public:
     Window();
     Window(std::string title);
-    Window(std::string title, int width, int width);
+    Window(std::string title, int width, int height);
     ~Window() {
         SDL_DestroyWindow(m_window);
         SDL_Quit();
@@ -20,7 +20,7 @@ public:
     void init(uint32_t flags);
 
     SDL_Window* getHandle();
-    SDL_WindowFlags getFlags();
+    uint32_t getFlags();
 
     int setFullscreen();
     int setWindowed();

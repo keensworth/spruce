@@ -34,7 +34,7 @@ void Window::init(){
 	SDL_WindowFlags flags = (SDL_WindowFlags)(SDL_WINDOW_VULKAN);
 	
 	m_window = SDL_CreateWindow(
-		m_title,
+		m_title.c_str(),
 		SDL_WINDOWPOS_UNDEFINED,
 		SDL_WINDOWPOS_UNDEFINED,
 		m_width,
@@ -49,7 +49,7 @@ void Window::init(uint32_t flags){
 	SDL_WindowFlags flags = (SDL_WindowFlags)(SDL_WINDOW_VULKAN | flags);
 	
 	m_window = SDL_CreateWindow(
-		m_title,
+		m_title.c_str(),
 		SDL_WINDOWPOS_UNDEFINED,
 		SDL_WINDOWPOS_UNDEFINED,
 		m_width,
@@ -59,11 +59,11 @@ void Window::init(uint32_t flags){
 }
 
 
-SDL_WindowFlags Window::getHandle(){
+SDL_Window* Window::getHandle(){
     return m_window;
 }
 
-SDL_WindowFlags Window::getFlags(){
+uint32_t Window::getFlags(){
     return SDL_GetWindowFlags( m_window );
 }
 
@@ -102,7 +102,7 @@ int Window::setWindowed(){
 
     updateResolution();
 
-    return full
+    return full;
 }
 
 void Window::updateResolution(){
@@ -110,7 +110,7 @@ void Window::updateResolution(){
     SDL_DisplayMode DM;
     if (SDL_GetCurrentDisplayMode(0, &DM) != 0) {
         SDL_Log("SDL_GetCurrentDisplayMode failed: %s", SDL_GetError());
-        return 1;
+        return;
     };
     m_width = DM.w;
     m_height = DM.h;
@@ -140,7 +140,7 @@ void Window::setBordered(){
 
 void Window::setTitle(std::string title){
     m_title = title;
-    SDL_SetWindowTitle(m_window, title);
+    SDL_SetWindowTitle(m_window, title.c_str());
 }
 
 void Window::setResolution(int width, int height){
