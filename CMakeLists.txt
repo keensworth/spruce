@@ -72,7 +72,7 @@ add_executable(spruce main.cpp)
 #  ${CMAKE_SOURCE_DIR}/src
 #)
 target_link_libraries(spruce PUBLIC srcFiles)
-target_compile_options(spruce PUBLIC -fconcepts)
+target_compile_options(spruce PUBLIC -fconcepts -lSDL2 -lSDL)
 
 
 
@@ -82,6 +82,7 @@ option(SPRUCE_BUILD_ADVANCED_TESTS "Build the *advanced* test-cases?" OFF)
 # third party
 # ------------------------------------------------------------------
 add_subdirectory(external)
+
 
 
 if (SPRUCE_IS_SUBPROJECT)

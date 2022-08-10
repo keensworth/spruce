@@ -40,6 +40,7 @@ target_link_directories(sdl2 INTERFACE ${sdl2_DIR}/lib ${sdl2_image_DIR}/lib)
 endif()
 
 target_link_libraries(sdl2 INTERFACE SDL2 SDL2main)
+target_compile_options(sdl2 INTERFACE -lSDL2)
 
 add_library(imgui STATIC)
 

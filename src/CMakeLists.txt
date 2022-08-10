@@ -14,7 +14,7 @@
 # limitations under the License.                                           #
 # ======================================================================== #
 
-
+find_package(Vulkan REQUIRED)
 add_library(srcFiles)
 
 #include(cmake/configure_tbb.cmake)
@@ -39,6 +39,20 @@ target_sources(srcFiles PRIVATE
   ecs/SystemManager.h
   ecs/SystemManager.cpp
   ecs/SprECS.h
+
+  interface/includes.h
+  interface/InputHandler.h
+  interface/InputHandler.cpp
+  interface/InputManager.h
+  interface/InputManager.cpp
+  interface/KeyboardConfig.h
+  interface/KeyboardConfig.cpp
+  interface/MouseConfig.h
+  interface/MouseConfig.cpp
+  interface/KeyboardState.h
+  interface/MouseState.h
+  interface/Window.h
+  interface/Window.cpp
 )
 
 #target_link_libraries(src PUBLIC external)
@@ -48,7 +62,13 @@ target_sources(srcFiles PRIVATE
 target_include_directories(srcFiles 
   PUBLIC ecs
   PUBLIC core
+  PUBLIC interface
 )
 
+
+target_link_libraries(srcFiles vkbootstrap vma glm tinyobjloader imgui stb_image)
+target_link_libraries(srcFiles Vulkan::Vulkan sdl2)
 target_compile_options(srcFiles PUBLIC -fconcepts)
+
+
 
