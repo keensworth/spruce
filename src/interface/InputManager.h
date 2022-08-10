@@ -1,6 +1,5 @@
 #pragma once
 
-#include <SDL2/SDL.h>
 #include "KeyboardState.h"
 #include "MouseState.h"
 
@@ -12,7 +11,7 @@ public:
     ~InputManager(){}
 
     bool isKeyDown(SprKey key);
-    bool isButtonDown(SprButton key);
+    bool isButtonDown(SprButton button);
     ivec2 getMousePos();
     ivec2 getMouseMotion();
     ivec2 getScrollWheelMotion();
