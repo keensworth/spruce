@@ -21,6 +21,8 @@ public:
             buttonDownTicks[i] = 0;
             buttonUpTicks[i] = 0;
         }
+
+        config = MouseConfig();
     }
 
     ~MouseState() {}
@@ -36,5 +38,8 @@ public:
     int buttonUpTicks[BUTTON_COUNT];
     int mouseMotionTicks;
     int scrollTicks;
+
+    // mouse config
+    MouseConfig config;
 };
 }
