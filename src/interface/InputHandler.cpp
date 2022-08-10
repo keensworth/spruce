@@ -1,17 +1,30 @@
 #include "InputHandler.h"
+#include <iostream>
 
 namespace spr {
 InputHandler::InputHandler(){
     keyboard = new KeyboardState();
     mouse = new MouseState();
     inputManager = InputManager(keyboard, mouse);
+    quit = false;
 }
 
-InputManager* InputHandler::getInputManager(){
-    return &inputManager;
+InputManager& InputHandler::getInputManager(){
+    return inputManager;
+}
+
+SprKey InputHandler::getSprKeyFromSDLKeycode(SDL_Keycode keycode){
+    return keyboard->config.getSprKeyFromSDLKeycode(keycode);
+}
+
+SprButton InputHandler::getSprButtonFromSDLButton(int button){
+    return mouse->config.getSprButtonFromSDLButton(button);
 }
 
 void InputHandler::handleKeyPress(bool keyDown){
+    if (event.key.repeat == 1)
+        return;
+
     SDL_Keycode keycode = event.key.keysym.sym;
     SprKey key = getSprKeyFromSDLKeycode(keycode);
     keyboard->keyDown[key] = keyDown;
@@ -19,6 +32,7 @@ void InputHandler::handleKeyPress(bool keyDown){
         keyboard->keyDownTicks[key] = SDL_GetTicks();
     else 
         keyboard->keyUpTicks[key] = SDL_GetTicks();
+    std::cout << SDL_GetKeyName(keys[key]) << ": " << (keyDown?"Down":"Up") << std::endl;
 }
 
 void InputHandler::handleButtonPress(bool buttonDown){
@@ -29,6 +43,7 @@ void InputHandler::handleButtonPress(bool buttonDown){
         mouse->buttonDownTicks[sprButton] = SDL_GetTicks();
     else 
         mouse->buttonUpTicks[sprButton] = SDL_GetTicks();
+    std::cout << (buttons[sprButton]) << ": " << (buttonDown?"Down":"Up") << std::endl;
 }
 
 void InputHandler::handleMouseMotion(){
@@ -43,6 +58,7 @@ void InputHandler::handleMouseMotion(){
     mouse->mousePos = mousePos;
     mouse->mouseMotion = mouseMotion;
     mouse->mouseMotionTicks = SDL_GetTicks();
+    //std::cout << "MPos: " << mousePos.x << "," << mousePos.y << "\nMMov: " << mouseMotion.x << "," << mouseMotion.y << std::endl;
 }
 
 void InputHandler::handleMouseWheel(){
@@ -52,6 +68,7 @@ void InputHandler::handleMouseWheel(){
 
     mouse->scrollWheelMotion = scrollMotion;
     mouse->scrollTicks = SDL_GetTicks();
+    std::cout << "MWhl: " << scrollMotion.x << "," << scrollMotion.y << std::endl;
 }
 
 void InputHandler::update(){
@@ -81,6 +98,11 @@ void InputHandler::update(){
             // handle mouse motion
             case SDL_MOUSEMOTION:
                 handleMouseMotion();
+                break;
+
+            // handle quit
+            case SDL_QUIT:
+                quit = true;
                 break;
 
             default:

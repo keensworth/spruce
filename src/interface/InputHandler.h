@@ -1,6 +1,5 @@
 #pragma once
 
-#include <SDL2/SDL.h>
 #include "InputManager.h"
 
 namespace spr {
@@ -13,7 +12,8 @@ public:
     }
     
     void update();
-    InputManager* getInputManager();
+    InputManager& getInputManager();
+    bool quit;
 
 private:
     InputManager inputManager;
@@ -25,5 +25,8 @@ private:
     void handleButtonPress(bool buttonDown);
     void handleMouseMotion();
     void handleMouseWheel();
+
+    SprKey getSprKeyFromSDLKeycode(SDL_Keycode keycode);
+    SprButton getSprButtonFromSDLButton(int button);
 };
 }
