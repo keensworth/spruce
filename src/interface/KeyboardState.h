@@ -11,11 +11,20 @@ public:
             keyDownTicks[i] = 0;
             keyDown[i] = false;
         }
+        
+        config = KeyboardConfig();
     }
+
     ~KeyboardState() {}
 
+    // keyboard state
+    bool keyDown[KEY_COUNT];
+
+    // keyboard timing
     int keyDownTicks[KEY_COUNT];
     int keyUpTicks[KEY_COUNT];
-    bool keyDown[KEY_COUNT];
+
+    // keyboard config
+    KeyboardConfig config;
 };
 }
