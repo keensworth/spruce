@@ -40,7 +40,6 @@ target_sources(srcFiles PRIVATE
   ecs/SystemManager.cpp
   ecs/SprECS.h
 
-  interface/includes.h
   interface/InputHandler.h
   interface/InputHandler.cpp
   interface/InputManager.h
