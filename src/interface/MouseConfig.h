@@ -1,11 +1,13 @@
 #pragma once
+#define SDL_MAIN_HANDLED
 
 #include <SDL2/SDL.h>
 
-#define BUTTON_COUNT 5
+#define BUTTON_COUNT 6
 
 namespace spr {
 static const int buttons[BUTTON_COUNT] = {
+    -1,
     SDL_BUTTON_LEFT,
     SDL_BUTTON_MIDDLE,
     SDL_BUTTON_RIGHT,
@@ -14,6 +16,7 @@ static const int buttons[BUTTON_COUNT] = {
 };
 
 typedef enum {
+    SPR_BUTTON_UNKNOWN,
     SPR_BUTTON_LEFT,
     SPR_BUTTON_MIDDLE,
     SPR_BUTTON_RIGHT,
@@ -26,18 +29,19 @@ typedef struct {
     SprButton effectiveButton;
 } SprButtonBind;
 
+class MouseConfig{
+public:
+    MouseConfig(){}
+    ~MouseConfig(){}
+    SprButton getSprButtonFromSDLButton(int button);
+public:
 SprButtonBind sprButtons[BUTTON_COUNT] = {
+    {SPR_BUTTON_UNKNOWN, SPR_BUTTON_UNKNOWN},
     {SPR_BUTTON_LEFT, SPR_BUTTON_LEFT},
     {SPR_BUTTON_MIDDLE, SPR_BUTTON_MIDDLE},
     {SPR_BUTTON_RIGHT, SPR_BUTTON_RIGHT},
     {SPR_BUTTON_X1, SPR_BUTTON_X1},
     {SPR_BUTTON_X2, SPR_BUTTON_X2}
 };
-
-SprButton getSprButtonFromSDLButton(int button){
-    for (int i = 0; i < BUTTON_COUNT; i++){
-        if (buttons[i] == button)
-            return sprButtons[i].effectiveButton;
-    }
-}
+};
 }
