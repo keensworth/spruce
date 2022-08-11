@@ -1,6 +1,7 @@
 #pragma once
 #include <string>
 #include <stdint.h>
+#include <SDL2/SDL_vulkan.h>
 
 #include "InputHandler.h"
 
@@ -24,7 +25,7 @@ public:
     uint32_t getFlags();
 
     int setFullscreen();
-    int setWindowed();
+    void setWindowed();
     bool isFullscreen();
     bool isWindowed();
 

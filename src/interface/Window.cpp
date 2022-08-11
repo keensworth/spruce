@@ -83,6 +83,13 @@ int Window::height(){
     return m_height;
 }
 
+
+void delay(int ms){
+    int currTime = SDL_GetTicks();
+    while (SDL_GetTicks() - currTime < ms){}
+}
+
+
 int Window::setFullscreen(){
     m_fullscreen = true;
     int full;
@@ -104,32 +111,25 @@ int Window::setFullscreen(){
     return full;
 }
 
-int Window::setWindowed(){
+
+void Window::setWindowed(){
     if (!m_fullscreen)
-        return 0;
+        return;
 
     m_fullscreen = false;
 
-    // fake fullscreen
-    int full = SDL_SetWindowFullscreen(
-            m_window, 
-            SDL_WINDOW_FULLSCREEN_DESKTOP
-    );
-
+    SDL_SetWindowFullscreen(m_window, 0);
+    delay(50);
     updateResolution();
-
-    return full;
 }
 
 void Window::updateResolution(){
+    SDL_PumpEvents();
     // get fullscreen resolution
-    SDL_DisplayMode DM;
-    if (SDL_GetCurrentDisplayMode(0, &DM) != 0) {
-        SDL_Log("SDL_GetCurrentDisplayMode failed: %s", SDL_GetError());
-        return;
-    };
-    m_width = DM.w;
-    m_height = DM.h;
+    int h,w;
+    SDL_Vulkan_GetDrawableSize(m_window, &w, &h);
+    m_width = w;
+    m_height = h;
 }
 
 void Window::setBorderless(){
@@ -182,7 +182,7 @@ bool Window::isAlive(){
 }
 
 bool Window::isFullscreen(){
-    return SDL_GetWindowFlags(m_window) & SDL_WINDOW_FULLSCREEN;;
+    return m_fullscreen;
 }
 
 bool Window::isWindowed(){
@@ -190,7 +190,7 @@ bool Window::isWindowed(){
 }
 
 bool Window::isBorderless(){
-    return SDL_GetWindowFlags(m_window) & SDL_WINDOW_BORDERLESS;
+    return m_borderless;
 }
 
 void Window::showCursor(){
