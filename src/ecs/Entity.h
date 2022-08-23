@@ -1,19 +1,21 @@
 #pragma once
 
+#include <Core.h>
+
 namespace spr {
 class Entity {
 public:
     Entity();
-    Entity(int id, long components);
+    Entity(uint32 id, uint64 components);
     ~Entity() {}
     
-    int id;
-    long components;
+    uint32 id;
+    uint64 components;
 
-    long addComponents(long components);
-    long removeComponents(long components);
-    bool contains(long components);
-    bool containsAny(long components);
+    uint64 addComponents(uint64 components);
+    uint64 removeComponents(uint64 components);
+    bool contains(uint64 components);
+    bool containsAny(uint64 components);
 
     bool operator==(const Entity &rhs) const {
         return (rhs.id == id)&(rhs.components == components);

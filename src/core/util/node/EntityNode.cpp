@@ -8,7 +8,7 @@ EntityNode::EntityNode(){
     m_initialized = true;
     m_mask = 0;
 }
-EntityNode::EntityNode(int height){
+EntityNode::EntityNode(uint32 height){
     m_height = height;
     if (m_height > 0){
         m_nodeData = std::vector<EntityNode*>(16);
@@ -22,10 +22,10 @@ EntityNode::EntityNode(int height){
 
 //add
 void EntityNode::add(Entity entity){
-    long currIndex;
+    uint64 currIndex;
     EntityNode* currNode = this;
 
-    for (int height = m_height; height > 0; height--){
+    for (uint32 height = m_height; height > 0; height--){
         currIndex = subIndex(entity.components, height);
         
         if (!currNode->branchInitialized(currIndex)){
@@ -42,10 +42,10 @@ void EntityNode::add(Entity entity){
 
 //remove
 void EntityNode::remove(Entity entity){
-    int currIndex;
+    uint32 currIndex;
     EntityNode* currNode = this;
 
-    for (int height = m_height; height > 0; height--){
+    for (uint32 height = m_height; height > 0; height--){
         currIndex = subIndex(entity.components, height);
 
         if (currNode->branchInitialized(currIndex)){
@@ -58,11 +58,11 @@ void EntityNode::remove(Entity entity){
 }
 
 //get
-Container<Entity> EntityNode::get(long key){
-    int currIndex;
+Container<Entity> EntityNode::get(uint64 key){
+    uint32 currIndex;
     EntityNode* currNode = this;
 
-    for (int height = m_height; height > 0; height--){
+    for (uint32 height = m_height; height > 0; height--){
         currIndex = subIndex(key, height);
 
         if (!currNode->branchInitialized(currIndex)){
@@ -76,10 +76,10 @@ Container<Entity> EntityNode::get(long key){
     return currNode->getLeafData(currIndex);
 }
 
-Container<Entity> EntityNode::getAccum(long key){
-    int currIndex = subIndex(key, m_height);
+Container<Entity> EntityNode::getAccum(uint64 key){
+    uint32 currIndex = subIndex(key, m_height);
     Container<Entity> accum;
-    for (int i = 0; i < 16; i++){
+    for (uint32 i = 0; i < 16; i++){
         if (m_height > 0){
             if (!((currIndex & i) == currIndex && branchInitialized(i))){
                 continue;
@@ -99,42 +99,42 @@ Container<Entity> EntityNode::getAccum(long key){
     return accum;
 }
 
-void EntityNode::addLeafData(int key, Entity entity){
+void EntityNode::addLeafData(uint32 key, Entity entity){
     m_leafData.at(key).add(entity);
 }
-void EntityNode::removeLeafData(int key, Entity entity){
+void EntityNode::removeLeafData(uint32 key, Entity entity){
     m_leafData.at(key).erase(entity);
 }
-Container<Entity> EntityNode::getLeafData(int key){
+Container<Entity> EntityNode::getLeafData(uint32 key){
     return m_leafData.at(key);
 }
-Container<Entity> EntityNode::getAccumLeafData(int key){
+Container<Entity> EntityNode::getAccumLeafData(uint32 key){
     return m_leafData.at(key);
 }
 
 
-void EntityNode::buildBranch(int branchIndex, int height){
+void EntityNode::buildBranch(uint32 branchIndex, uint32 height){
     m_nodeData.at(branchIndex) = new EntityNode(height-1);
 }
 
-EntityNode* EntityNode::getBranch(int branchIndex){
+EntityNode* EntityNode::getBranch(uint32 branchIndex){
     return m_nodeData.at(branchIndex);
 }
 
-bool EntityNode::branchInitialized(int branch){
+bool EntityNode::branchInitialized(uint32 branch){
     return (m_mask >> branch)&0b1;
 }
 
-void EntityNode::setBranch(int branchIndex, EntityNode* branchData){
+void EntityNode::setBranch(uint32 branchIndex, EntityNode* branchData){
     m_nodeData.at(branchIndex) = branchData;
 }
 
-int EntityNode::subIndex(long num, int height){
+uint32 EntityNode::subIndex(uint64 num, uint32 height){
     return ((num>>(height*4))&0b1111);
 }
 
-void EntityNode::setBit(int bitIndex, int bitValue){
-    int setterMask = ((0b00000001)<<bitIndex);
+void EntityNode::setBit(uint32 bitIndex, uint32 bitValue){
+    uint32 setterMask = ((0b00000001)<<bitIndex);
     if (bitValue==0){
         m_mask &= (setterMask^0xffffffff);
     } else {
@@ -142,7 +142,7 @@ void EntityNode::setBit(int bitIndex, int bitValue){
     }
 }
 
-int EntityNode::getBit(int bitIndex){
+uint32 EntityNode::getBit(uint32 bitIndex){
     return (m_mask>>bitIndex)&0b1;
 }
 }

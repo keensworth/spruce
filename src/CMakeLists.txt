@@ -20,6 +20,7 @@ add_library(srcFiles)
 #include(cmake/configure_tbb.cmake)
 
 target_sources(srcFiles PRIVATE
+  core/Core.h
   core/util/Container.h
   core/util/node/EntityNode.h
   core/util/node/EntityNode.cpp

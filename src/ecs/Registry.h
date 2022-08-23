@@ -20,15 +20,15 @@ public:
     ~Registry() {}
 
     int getIndex(Entity entity);
-    int getIndex(int id);
-    void addItem(Entity entity, int index);
-    void addItem(int id, int index);
+    int getIndex(uint32 id);
+    void addItem(Entity entity, int32 index);
+    void addItem(uint32 id, int32 index);
 
     int getSize();
 private:
     int m_regType;
     IndexNode m_indicesDense;
-    std::vector<int> m_indicesSparse;
+    std::vector<int32> m_indicesSparse;
 };
 
 }

@@ -4,6 +4,8 @@
 #include <vector>
 #include <iostream>
 
+#include "../Core.h"
+
 
 namespace spr {
 
@@ -13,27 +15,27 @@ public:
 
     Container(){
         m_data = std::vector<T>();
-        m_writeIndices = std::vector<int>();
+        m_writeIndices = std::vector<int32>();
     }
 
-    Container(int size){
+    Container(int32 size){
         m_data = std::vector<T>();
-        m_writeIndices = std::vector<int>();
+        m_writeIndices = std::vector<int32>();
     }
 
     ~Container(){}
 
-    int getSize(){
+    int32 getSize(){
         return m_data.size();
     }
 
     // add data to container
-    int add(T data){
+    int32 add(T data){
         if (m_writeIndices.size() == 0){
             m_data.push_back(data);
             lastWriteIndex = m_data.size()-1;
         } else {
-            int index = m_writeIndices.back();
+            int32 index = m_writeIndices.back();
             m_writeIndices.pop_back();
             m_data.at(index) = data;
             lastWriteIndex = index;
@@ -42,18 +44,18 @@ public:
     }
 
     // set data at index
-    int set(int index, T data){
+    int32 set(int32 index, T data){
         m_data.at(index) = data;
         return index;
     }
 
     // get data at index
-    T get(int index){
+    T get(int32 index){
         return m_data.at(index);
     }
 
     // remove data and allow overwrite
-    void remove(int index, bool eraseData){
+    void remove(int32 index, bool eraseData){
         if (index >= m_data.size()){
             return;
         }
@@ -92,8 +94,8 @@ public:
 
         m_data.erase(m_data.begin() + index);
 
-        int toErase = -1;
-        for (int& i : m_writeIndices){
+        int32 toErase = -1;
+        for (int32& i : m_writeIndices){
             if (i == index){
                 toErase = index;
             }
@@ -114,9 +116,9 @@ public:
 
     // append container to end of current
     void append(Container<T>& c2){
-        int dataSize = m_data.size();
+        int32 dataSize = m_data.size();
         m_data.insert(std::end(m_data), std::begin(c2.m_data), std::end(c2.m_data));
-        for (int i = 0; i < c2.m_writeIndices.size(); i++){
+        for (int32 i = 0; i < c2.m_writeIndices.size(); i++){
             c2.m_writeIndices.at(i) += dataSize;
         }
         m_writeIndices.insert(std::end(m_writeIndices), std::begin(c2.m_writeIndices), std::end(c2.m_writeIndices));
@@ -127,11 +129,11 @@ public:
     }
     
     // last write index
-    int lastWriteIndex;
+    int32 lastWriteIndex;
 
 private:
     std::vector<T> m_data;
-    std::vector<int> m_writeIndices;
+    std::vector<int32> m_writeIndices;
 };
 
 }

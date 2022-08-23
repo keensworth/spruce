@@ -12,15 +12,15 @@ namespace spr {
         if (registryType == SPR_REG_DENSE){
             m_indicesDense = IndexNode(8);
         } else {
-            m_indicesSparse = std::vector<int>(size, -1);
+            m_indicesSparse = std::vector<int32>(size, -1);
         }
     }
 
-    int Registry::getSize(){
+    int32 Registry::getSize(){
         return m_indicesSparse.size();
     }
 
-    int Registry::getIndex(Entity entity){
+    int32 Registry::getIndex(Entity entity){
         if (m_regType == SPR_REG_DENSE){
             return m_indicesDense.get(entity.id);
         } else {
@@ -28,7 +28,7 @@ namespace spr {
         }
     }
 
-    int Registry::getIndex(int id){
+    int32 Registry::getIndex(uint32 id){
         if (m_regType == SPR_REG_DENSE){
             return m_indicesDense.get(id);
         } else {
@@ -36,7 +36,7 @@ namespace spr {
         }
     }
 
-    void Registry::addItem(Entity entity, int index){ 
+    void Registry::addItem(Entity entity, int32 index){ 
         if (m_regType == SPR_REG_DENSE){
             m_indicesDense.add(entity.id, index);
         } else {
@@ -47,7 +47,7 @@ namespace spr {
         }
     }
 
-    void Registry::addItem(int id, int index){
+    void Registry::addItem(uint32 id, int32 index){
         if (m_regType == SPR_REG_DENSE){
             m_indicesDense.add(id, index);
         } else {

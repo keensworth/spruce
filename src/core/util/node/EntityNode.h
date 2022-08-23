@@ -9,9 +9,9 @@ namespace spr {
 class EntityNode {
 public:
     EntityNode();
-    EntityNode(int height);
+    EntityNode(uint32 height);
     ~EntityNode() {
-        for (int i = 0; i < m_nodeData.size(); i++){
+        for (uint32 i = 0; i < m_nodeData.size(); i++){
             delete m_nodeData.at(i);
         }
     }
@@ -21,34 +21,34 @@ public:
     //remove
     void remove(Entity entity);
     //get
-    Container<Entity> get(long key);
+    Container<Entity> get(uint64 key);
     //get_accum
-    Container<Entity> getAccum(long key);
+    Container<Entity> getAccum(uint64 key);
 
-    int getHeight(){
+    uint32 getHeight(){
         return m_height;
     }
 
 private:
-    int m_height;
-    int m_mask;
+    uint32 m_height;
+    uint32 m_mask;
     std::vector<EntityNode*> m_nodeData;
     std::vector<Container<Entity>> m_leafData;
     bool m_initialized;
 
-    void addLeafData(int key, Entity entity);
-    void removeLeafData(int key, Entity entity);
-    Container<Entity> getLeafData(int key);
-    Container<Entity> getAccumLeafData(int key);
+    void addLeafData(uint32 key, Entity entity);
+    void removeLeafData(uint32 key, Entity entity);
+    Container<Entity> getLeafData(uint32 key);
+    Container<Entity> getAccumLeafData(uint32 key);
 
-    void buildBranch(int branchIndex, int height);
-    EntityNode* getBranch(int branchIndex);
-    void setBranch(int branchIndex, EntityNode* branchData);
-    bool branchInitialized(int branch);
+    void buildBranch(uint32 branchIndex, uint32 height);
+    EntityNode* getBranch(uint32 branchIndex);
+    void setBranch(uint32 branchIndex, EntityNode* branchData);
+    bool branchInitialized(uint32 branch);
 
-    int subIndex(long num, int height);
-    void setBit(int bitIndex, int bitValue);
-    int getBit(int bitIndex);
+    uint32 subIndex(uint64 num, uint32 height);
+    void setBit(uint32 bitIndex, uint32 bitValue);
+    uint32 getBit(uint32 bitIndex);
 };
 
 }

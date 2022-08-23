@@ -8,7 +8,7 @@
 #include "Component.h"
 
 
-typedef std::unordered_map<std::type_index, int> tmap;
+typedef std::unordered_map<std::type_index, uint32> tmap;
 
 namespace spr {
 class ComponentManager{
@@ -26,15 +26,15 @@ public:
     }
 
     template <typename T>
-    int getComponentIndex(){
-        int index = m_typeMap[typeid(T)];
+    uint32 getComponentIndex(){
+        uint32 index = m_typeMap[typeid(T)];
         return index;
     }
 
     // get entity data for component T
     template <typename T>
     auto getEntityComponent(Entity entity){
-        int index = m_typeMap[typeid(T)];
+        uint32 index = m_typeMap[typeid(T)];
         T* comp = ((T*) dynamic_cast<T*>(m_components.at(index)));
         return comp->get(entity);
     }
@@ -42,7 +42,7 @@ public:
     // set data for component T, associated with entity
     template <typename T>
     void setEntityComponent(Entity entity, auto data){
-        int index = getComponentIndex<T>();
+        uint32 index = getComponentIndex<T>();
         T* comp = ((T*) dynamic_cast<T*>(m_components.at(index)));
         comp->set(entity, data);
         
@@ -51,7 +51,7 @@ public:
     // add data for component T
     template <typename T>
     T* addComponentData(auto data){
-        int index = getComponentIndex<T>();
+        uint32 index = getComponentIndex<T>();
         T* comp = ((T*) dynamic_cast<T*>(m_components.at(index)));
         comp->add(data);
         return comp;
@@ -60,7 +60,7 @@ public:
     // add data for component T, associated with entity
     template <typename T>
     void addComponentEntityData(Entity entity, auto data){
-        int index = getComponentIndex<T>();
+        uint32 index = getComponentIndex<T>();
         // update components
         T* comp = ((T*) dynamic_cast<T*>(m_components.at(index)));
         comp->add(data);
@@ -70,7 +70,7 @@ public:
     // remove component T associated with entity
     template <typename T>
     void removeComponentEntity(Entity entity){
-        int index = getComponentIndex<T>();
+        uint32 index = getComponentIndex<T>();
         T* comp = ((T*) dynamic_cast<T*>(m_components.at(index)));
         comp->removeEntity(entity);
     }
@@ -78,9 +78,9 @@ public:
 
     // get bit mask for arg components
     template <typename Arg, typename ...Args>
-    long getMask(){
-        long mask = 0L;
-        int index = getComponentIndex<Arg>();
+    uint64 getMask(){
+        uint64 mask = 0L;
+        uint32 index = getComponentIndex<Arg>();
         
         mask |= 0b1 << index;
         
@@ -92,12 +92,12 @@ public:
     }
 
      // get bit mask for arg components
-    long getMask(){
+    uint64 getMask(){
         return 0L;
     }
 
     // get bit mask for components vector
-    long getMask(std::vector<Component*> components);
+    uint64 getMask(std::vector<Component*> components);
 
     // register entity with set of components
     template<typename T, typename... Args>
@@ -107,8 +107,8 @@ public:
 
     // register entity with set of components
     void unregisterEntity(Entity entity){
-        long mask = entity.components;
-        for (int i = 0; i < 64; i++){
+        uint64 mask = entity.components;
+        for (uint32 i = 0; i < 64; i++){
             if ((mask>>i)&0b1 == 1){
                 m_components.at(i)->removeEntity(entity);
             }
@@ -120,7 +120,7 @@ private:
     std::vector<Component*> m_components;
     tmap m_typeMap;
     tmap m_typeMapP;
-    int m_componentIndex;
+    uint32 m_componentIndex;
 
     template<typename T, typename... Args>
     void registerEntityRecursive(Entity entity, T* component, Args... args){

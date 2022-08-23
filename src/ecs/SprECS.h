@@ -32,7 +32,7 @@ public:
     template<typename T, typename... Args>
     Entity createEntity(T t, Args... args){
         // get mask from components
-        long mask = componentManager.getMask<T,Args...>();
+        uint64 mask = componentManager.getMask<T,Args...>();
         
         // create entity
         Entity entity = Entity(m_entityId, mask);
@@ -62,7 +62,7 @@ public:
     template <typename Arg, typename ...Args>
     Container<Entity> getEntities(){
         // get mask from components
-        long mask = componentManager.getMask<Arg, Args...>();
+        uint64 mask = componentManager.getMask<Arg, Args...>();
 
         // get entities that have all components in mask
         Container<Entity> entities = entityManager.getEntities(mask);
@@ -82,7 +82,7 @@ public:
     template <typename T>
     void add(Entity& entity, auto data){
         entityManager.removeEntity(entity);
-        long mask = componentManager.getMask<T>();
+        uint64 mask = componentManager.getMask<T>();
         entity.addComponents(mask);
         entityManager.addEntity(entity);
         componentManager.addComponentEntityData<T>(entity, data);
@@ -92,7 +92,7 @@ public:
     template <typename T>
     void remove(Entity& entity){
         entityManager.removeEntity(entity);
-        long mask = componentManager.getMask<T>();
+        uint64 mask = componentManager.getMask<T>();
         entity.removeComponents(mask);
         entityManager.addEntity(entity);
         componentManager.removeComponentEntity<T>(entity);
@@ -138,6 +138,6 @@ private:
     ComponentManager componentManager;
     SystemManager systemManager;
 
-    int m_entityId;
+    uint32 m_entityId;
 };
 }

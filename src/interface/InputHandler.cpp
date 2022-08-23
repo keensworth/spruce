@@ -32,6 +32,7 @@ void InputHandler::handleKeyPress(bool keyDown){
         keyboard->keyDownTicks[key] = SDL_GetTicks();
     else 
         keyboard->keyUpTicks[key] = SDL_GetTicks();
+    std::cout << SDL_GetKeyName(keycode) << (keyDown?": Down":": Up") << std::endl;
 }
 
 void InputHandler::handleButtonPress(bool buttonDown){
@@ -56,6 +57,7 @@ void InputHandler::handleMouseMotion(){
     mouse->mousePos = mousePos;
     mouse->mouseMotion = mouseMotion;
     mouse->mouseMotionTicks = SDL_GetTicks();
+    //std::cout << "MPos: " << mousePos.x << ", " << mousePos.y << std::endl;
 }
 
 void InputHandler::handleMouseWheel(){

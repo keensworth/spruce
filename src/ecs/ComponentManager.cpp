@@ -9,12 +9,12 @@ ComponentManager::ComponentManager(){
     m_componentIndex = 0;
 }
 
-long ComponentManager::getMask(std::vector<Component*> components){
-    long mask = 0L;
+uint64 ComponentManager::getMask(std::vector<Component*> components){
+    uint64 mask = 0L;
     // for each component arg
-    for (int i = 0; i < components.size(); i++){
+    for (int32 i = 0; i < components.size(); i++){
         // for each registered component
-        int j = 0;
+        int32 j = 0;
         for (j = 0; j < m_components.size(); j++){
             // if components match, break
             if (typeid(components.at(i)) == typeid(m_components.at(j)))

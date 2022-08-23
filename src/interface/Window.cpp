@@ -19,7 +19,7 @@ Window::Window(std::string title){
     m_borderless = false;
 }
 
-Window::Window(std::string title, int width, int height){
+Window::Window(std::string title, uint32 width, uint32 height){
     m_title = title;
     m_width = width;
     m_height = height;
@@ -43,7 +43,7 @@ void Window::init(){
 	);
 }
 
-void Window::init(uint32_t flags){
+void Window::init(uint32 flags){
     SDL_Init(SDL_INIT_VIDEO);
 
 	SDL_WindowFlags windowFlags = (SDL_WindowFlags)(SDL_WINDOW_VULKAN | flags);
@@ -67,7 +67,7 @@ SDL_Window* Window::getHandle(){
     return m_window;
 }
 
-uint32_t Window::getFlags(){
+uint32 Window::getFlags(){
     return SDL_GetWindowFlags( m_window );
 }
 
@@ -75,11 +75,11 @@ std::string Window::title(){
     return m_title;
 }
 
-int Window::width(){
+uint32 Window::width(){
     return m_width;
 }
 
-int Window::height(){
+uint32 Window::height(){
     return m_height;
 }
 
@@ -159,7 +159,7 @@ void Window::setTitle(std::string title){
     SDL_SetWindowTitle(m_window, title.c_str());
 }
 
-void Window::setResolution(int width, int height){
+void Window::setResolution(uint32 width, uint32 height){
     if (m_fullscreen)
         return;
     
@@ -205,7 +205,7 @@ bool Window::isCursorVisible(){
     return SDL_ShowCursor(SDL_QUERY);
 }
 
-void Window::setCursorPos(int x, int y){
+void Window::setCursorPos(uint32 x, uint32 y){
     SDL_WarpMouseInWindow(m_window, x, y);
 }
 

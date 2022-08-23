@@ -60,7 +60,7 @@ public:
         m_container.erase(m_reg.getIndex(entity.id));
     }
 
-    int getSize(){
+    int32 getSize(){
         return m_reg.getSize();
     }
 
