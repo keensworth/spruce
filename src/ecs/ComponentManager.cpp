@@ -5,7 +5,6 @@ namespace spr{
 ComponentManager::ComponentManager(){
     m_components = std::vector<Component*>();
     m_typeMap = tmap();
-    m_typeMapP = tmap();
     m_componentIndex = 0;
 }
 

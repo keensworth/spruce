@@ -119,7 +119,6 @@ public:
 private:
     std::vector<Component*> m_components;
     tmap m_typeMap;
-    tmap m_typeMapP;
     uint32 m_componentIndex;
 
     template<typename T, typename... Args>
