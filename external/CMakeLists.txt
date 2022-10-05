@@ -8,17 +8,33 @@ add_library(stb_image INTERFACE)
 
 add_library(tinyobjloader STATIC)
 
+add_library(flathashmap INTERFACE)
+
+add_library(json INTERFACE)
+
+add_library(tinygltf STATIC)
+
 target_sources(vkbootstrap PRIVATE 
   vkbootstrap/VkBootstrap.h
   vkbootstrap/VkBootstrap.cpp
   )
 
+target_sources(tinygltf PRIVATE 
+  tinygltf/tiny_gltf.h
+  tinygltf/tiny_gltf.cpp
+  )
+
 target_include_directories(vkbootstrap PUBLIC vkbootstrap)
 target_link_libraries(vkbootstrap PUBLIC Vulkan::Vulkan $<$<BOOL:UNIX>:${CMAKE_DL_LIBS}>)
 
+target_include_directories(flathashmap INTERFACE flathashmap)
+target_include_directories(json INTERFACE json)
+
+target_include_directories(tinygltf PUBLIC tinygltf)
+target_link_libraries(tinygltf PUBLIC json stb_image)
+
 #both vma and glm and header only libs so we only need the include path
 target_include_directories(vma INTERFACE vma)
-
 target_include_directories(glm INTERFACE glm)
 
 target_sources(tinyobjloader PRIVATE 
