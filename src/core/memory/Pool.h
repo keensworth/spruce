@@ -115,9 +115,13 @@ public:
     }
 
     T* get(Handle<T> handle){
-        if (m_generations.at(handle.m_index) != handle.m_generation)
+        if (!isValidHandle(handle))
             return nullptr;
         return (m_data + handle.m_index);
+    }
+
+    bool isValidHandle(Handle<T> handle){
+        return (m_generations.at(handle.m_index) == handle.m_generation);
     }
 
 
