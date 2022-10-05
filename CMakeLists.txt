@@ -69,3 +69,8 @@ if (SPRUCE_BUILD_ADVANCED_TESTS)
   include(GoogleTest)
   add_subdirectory(tests)
 endif()
+
+# ------------------------------------------------------------------
+# tools
+# ------------------------------------------------------------------
+add_subdirectory(tools)
