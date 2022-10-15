@@ -8,7 +8,7 @@
 //      .smtl - material file
 //      .smsh - mesh file
 //
-// each file references the guids of associated components
+// each file references the ids of associated components
 // everything decomposes into buffers
 
 using namespace spr::tools;
@@ -30,11 +30,13 @@ int main(int argc, char **argv){
         return -1;
     }
 
+    std::string filename(argv[1]);
+
     // parse file
     GLTFParser parser = GLTFParser();
     if (ext == ".gltf"){
-        parser.parseJson(argv[1]);
+        parser.parseJson(filename);
     } else { // .glb
-        parser.parseBinary(argv[1]);
+        parser.parseBinary(filename);
     }
 }
