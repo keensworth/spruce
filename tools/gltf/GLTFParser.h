@@ -4,6 +4,8 @@
 #include <filesystem>
 #include "../../external/tinygltf/tiny_gltf.h"
 
+//typedef std::unordered_map<int, int> IdMap;
+
 namespace spr::tools{
 class GLTFParser {
 public:
@@ -21,6 +23,7 @@ private:
     std::string m_name;
     std::string m_extension;
     int m_id = 0;
+    //IdMap m_idMap; 
 
     void parse();
     void parseNode(const tinygltf::Node& node, std::vector<int> &meshIds);

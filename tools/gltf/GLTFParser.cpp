@@ -7,10 +7,6 @@ namespace spr::tools{
 GLTFParser::GLTFParser(){}
 
 void GLTFParser::writeBufferFile(const unsigned char* data, int byteLength, int elementType, int componentType, int bufferId){
-    // name.sbuf
-    // calculate name as ????
-    // write to data/buffer/modelname/????.sbuf
-
     // element type (4)
     // component type (4)
     // byte length (4)
@@ -21,8 +17,7 @@ void GLTFParser::writeBufferFile(const unsigned char* data, int byteLength, int 
     std::cout << "          componentType " << componentType << std::endl;
     std::cout << "          bufferId " << bufferId << std::endl;
     std::cout << "" << std::endl;
-
-    unsigned char writeData[byteLength + 4 + 4 + 8];
+    unsigned char* writeData = new unsigned char[byteLength + 4 + 4 + 8];
     // write element type
     writeData[0] = elementType & 0xff;
     writeData[1] = (elementType >> 8) & 0xff;
@@ -46,7 +41,8 @@ void GLTFParser::writeBufferFile(const unsigned char* data, int byteLength, int 
     }
     // write buffer to file
     FileWriter fw = FileWriter();
-    fw.writeFile("../data/buffers/", m_name+("_"+std::to_string(bufferId)), ".sbuf", writeData, byteLength+12);
+    fw.writeFile("../data/buffers/", (m_name+("_"+std::to_string(bufferId))), ".sbuf", writeData, byteLength+12);
+    delete writeData;
 }
 
 void GLTFParser::writeMeshFile(
@@ -126,7 +122,7 @@ void GLTFParser::writeMeshFile(
 
     // write to file
     FileWriter fw = FileWriter();
-    fw.writeFile("../data/meshes/", m_name+("_"+std::to_string(meshId)), ".smsh", writeData, byteLength);
+    fw.writeFile("../data/meshes/", (m_name+("_"+std::to_string(meshId))), ".smsh", writeData, byteLength);
 }
 
 void GLTFParser::writeMaterialFile(
@@ -142,7 +138,7 @@ void GLTFParser::writeMaterialFile(
     std::cout << "      Write Material File:" << std::endl;
     
     if (materialFlags & 0b1){
-        std::cout << "          base color " << std::endl;
+        std::cout << "          -base color " << std::endl;
         // base color sentinel
         writeData.push_back( 1 & 0b1);
         writeData.push_back((1 >> 8) & 0b1);
@@ -187,7 +183,7 @@ void GLTFParser::writeMaterialFile(
     //      tex id (4) (3 id, 1 min/mag filter)
     //      factor (8) (m(4)/r(4))
     if (materialFlags & (0b1<<1)){
-        std::cout << "          metrough " << std::endl;
+        std::cout << "          -metrough " << std::endl;
         // metalroughness sentinel
         writeData.push_back( 2 & 0b1);
         writeData.push_back((2 >> 8) & 0b1);
@@ -219,7 +215,7 @@ void GLTFParser::writeMaterialFile(
     //      tex id (4) (3 id, 1 min/mag filter)
     //      scale (4)
     if (materialFlags & (0b1<<2)){
-        std::cout << "          normal " << std::endl;
+        std::cout << "          -normal " << std::endl;
         // normal sentinel
         writeData.push_back( 3 & 0b1);
         writeData.push_back((3 >> 8) & 0b1);
@@ -244,7 +240,7 @@ void GLTFParser::writeMaterialFile(
     //      tex id (4) (3 id, 1 min/mag filter)
     //      strength (4)
     if (materialFlags & (0b1<<3)){
-        std::cout << "          occlusion " << std::endl;
+        std::cout << "          -occlusion " << std::endl;
         // occlusion sentinel
         writeData.push_back( 4 & 0b1);
         writeData.push_back((4 >> 8) & 0b1);
@@ -269,7 +265,7 @@ void GLTFParser::writeMaterialFile(
     //      tex id (4) (3 id, 1 min/mag filter)
     //      factor (12)
     if (materialFlags & (0b1<<4)){
-        std::cout << "          emissive" << std::endl;
+        std::cout << "          -emissive" << std::endl;
         // emissive sentinel
         writeData.push_back( 5 & 0b1);
         writeData.push_back((5 >> 8) & 0b1);
@@ -308,7 +304,7 @@ void GLTFParser::writeMaterialFile(
     //      type (4)
     //      cutoff (4)
     if (materialFlags & (0b1<<5)){
-        std::cout << "          alpha " << std::endl;
+        std::cout << "          -alpha " << std::endl;
         // alpha sentinel
         writeData.push_back( 6 & 0b1);
         writeData.push_back((6 >> 8) & 0b1);
@@ -334,7 +330,7 @@ void GLTFParser::writeMaterialFile(
 
     // doublesided (4)
     if (materialFlags & (0b1<<6)){
-        std::cout << "          double sided " << std::endl;
+        std::cout << "          -double sided " << std::endl;
         // doublesided sentinel
         writeData.push_back( 7 & 0b1);
         writeData.push_back((7 >> 8) & 0b1);
@@ -344,7 +340,7 @@ void GLTFParser::writeMaterialFile(
     std::cout << "" << std::endl;
     // write to file
     FileWriter fw = FileWriter();
-    fw.writeFile("../data/materials/", m_name+("_"+std::to_string(materialId)), ".smtl", writeData.data(), writeData.size());
+    fw.writeFile("../data/materials/", (m_name+("_"+std::to_string(materialId))), ".smtl", writeData.data(), writeData.size());
 }
 
 void GLTFParser::writeModelFile(int meshCount, std::vector<int> meshIds, int modelId){
@@ -357,6 +353,12 @@ void GLTFParser::writeModelFile(int meshCount, std::vector<int> meshIds, int mod
     int nameLength = m_name.size();
     int byteLength = nameLength + 4 + 4 + 4*meshIds.size();
     unsigned char writeData[byteLength];
+
+    std::cout << "      Write Model File:" << std::endl;
+    std::cout << "          nameLength " << nameLength << std::endl;
+    std::cout << "          name " << m_name << std::endl;
+    std::cout << "          byteLength " << byteLength << std::endl;
+    std::cout << "" << std::endl;
 
     // write name length
     writeData[0] = nameLength & 0xff;
@@ -387,7 +389,7 @@ void GLTFParser::writeModelFile(int meshCount, std::vector<int> meshIds, int mod
 
     // write to file
     FileWriter fw = FileWriter();
-    fw.writeFile("../data/models/", m_name+("_"+std::to_string(modelId)), ".smdl", writeData, byteLength);
+    fw.writeFile("../data/models/", (m_name+("_"+std::to_string(modelId))), ".smdl", writeData, byteLength);
 }
 
 void GLTFParser::writeTextureFile(int bufferId, int imageType, int texId){
@@ -395,6 +397,12 @@ void GLTFParser::writeTextureFile(int bufferId, int imageType, int texId){
     // raw/png/jpg/raw/bmp (4)
     int byteLength = 8;
     unsigned char writeData[byteLength];
+
+    std::cout << "      Write Texture File:" << std::endl;
+    std::cout << "          byteLength " << byteLength << std::endl;
+    std::cout << "          bufferId " << bufferId << std::endl;
+    std::cout << "          imageType " << imageType << std::endl;
+    std::cout << "" << std::endl;
 
     // write buffer id
     writeData[0] = bufferId & 0xff;
@@ -410,7 +418,7 @@ void GLTFParser::writeTextureFile(int bufferId, int imageType, int texId){
 
     // write to file
     FileWriter fw = FileWriter();
-    fw.writeFile("../data/textures/", m_name+("_"+std::to_string(texId)), ".stex", writeData, byteLength+1);
+    fw.writeFile("../data/textures/", (m_name+("_"+std::to_string(texId))), ".stex", writeData, byteLength+1);
 }
 
 void GLTFParser::handleBuffer(
@@ -430,6 +438,7 @@ void GLTFParser::handleBuffer(
     // write slice of buffer into new buffer
     const unsigned char* bufferData = buffer.data.data();
     unsigned char* data = new unsigned char[byteLength];
+    //unsigned char* data = (unsigned char*)malloc(byteLength);
     //std::copy(&bufferData+byteOffset, &bufferData+byteOffset+byteLength, &data);
     //memcpy(&data, &bufferData+byteOffset, byteLength);
     for (int i = 0; i < byteLength; i++){
@@ -438,6 +447,8 @@ void GLTFParser::handleBuffer(
     
     // write slice to file
     writeBufferFile(data, byteLength, elementType, componentType, bufferId);
+
+    delete data;
 }
 
 void GLTFParser::handleBufferInterleaved(
@@ -576,6 +587,7 @@ int GLTFParser::handleTexture(const tinygltf::Texture& tex){
     } else { // direct buffer
         tinygltf::Buffer buffer;
         int elementCount = image.image.size();
+        buffer.data = image.image;
         std::cout << "  [buffer uri] " << std::endl;
         std::cout << "  minFilter " << minFilter << std::endl;
         std::cout << "  elementType " << elementType << std::endl;
@@ -630,44 +642,44 @@ int GLTFParser::handleMaterial(const tinygltf::Material& material){
     const tinygltf::PbrMetallicRoughness& pbr = material.pbrMetallicRoughness;
     if (pbr.baseColorTexture.index >= 0){ // base color
         materialFlags |= 0b1;
-        std::cout << "  basecolor =========================" << std::endl;
+        std::cout << "  > basecolor" << std::endl;
         texIds.push_back(handleTexture(pbr.baseColorTexture));
     }
     if (pbr.metallicRoughnessTexture.index >= 0){ //metallicroughness
         materialFlags |= (0b1<<1);
-        std::cout << "  metrough =========================" << std::endl;
+        std::cout << "  > metrough" << std::endl;
         texIds.push_back(handleTexture(pbr.metallicRoughnessTexture));
     }
     // normal
     const tinygltf::NormalTextureInfo& normal = material.normalTexture;
     if (normal.index >= 0){
         materialFlags |= (0b1<<2);
-        std::cout << "  normal =========================" << std::endl;
+        std::cout << "  > normal" << std::endl;
         texIds.push_back(handleTexture(normal));
     }
     // occlusion
     const tinygltf::OcclusionTextureInfo& occlusion = material.occlusionTexture;
     if (occlusion.index >= 0){
         materialFlags |= (0b1<<3);
-        std::cout << "  occlusion =========================" << std::endl;
+        std::cout << "  > occlusion" << std::endl;
         texIds.push_back(handleTexture(occlusion));
     }
     // emissive
     const tinygltf::TextureInfo& emissive = material.emissiveTexture;
     if (emissive.index >= 0){
         materialFlags |= (0b1<<4);
-        std::cout << "  emissive =========================" << std::endl;
+        std::cout << "  > emissive" << std::endl;
         texIds.push_back(handleTexture(emissive));
     }
     // alphamode
     std::string alpha = material.alphaMode;
     if (alpha != "OPAQUE"){
-        std::cout << "  alpha =========================" << std::endl;
+        std::cout << "  > alpha" << std::endl;
         materialFlags |= (0b1<<5);
     }
     // doublesided 
     if (material.doubleSided){
-        std::cout << "  doublesided =========================" << std::endl;
+        std::cout << "  > doublesided" << std::endl;
         materialFlags |= (0b1<<6);
     }
     //TODO: check for specularglossiness + update flags
@@ -819,6 +831,10 @@ void GLTFParser::parseJson(std::string path){
         printf("Failed to parse .gltf\n");
         return;
     }
+
+    m_path = std::filesystem::path(path).parent_path().concat("/");
+    m_name = std::filesystem::path(path).stem();
+    m_extension = std::filesystem::path(path).extension();
 
     parse();
 }
