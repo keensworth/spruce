@@ -35,7 +35,6 @@ void GLTFParser::writeBufferFile(const unsigned char* data, int byteLength, int 
     writeData[11] = (byteLength >> 24) & 0xff;
     const unsigned char test = data[0];
     // write data 
-    //std::copy(data, data + byteLength, writeData + 12);
     for (int i = 0; i < byteLength; i++){
         writeData[i+12] = data[i];
     }
@@ -132,11 +131,12 @@ void GLTFParser::writeMaterialFile(
         int materialId){
     int currId = 0;
     std::vector<unsigned char> writeData;
-    // base color (4)
-    //      tex id (4) (3 id, 1 min/mag filter)
-    //      factor (16)
-    std::cout << "      Write Material File:" << std::endl;
     
+    std::cout << "      Write Material File:" << std::endl;
+
+    // base color (4)
+    //      tex id (4) (2 id, 2 min/mag filter)
+    //      factor (16)
     if (materialFlags & 0b1){
         std::cout << "          -base color " << std::endl;
         // base color sentinel
@@ -148,7 +148,7 @@ void GLTFParser::writeMaterialFile(
         int baseColorTexId = texIds[currId++];
         writeData.push_back(baseColorTexId & 0b1);
         writeData.push_back((baseColorTexId >> 8) & 0b1);
-        writeData.push_back((baseColorTexId >> 16) & 0b1);
+        writeData.push_back((baseColorTexId >> 16) & 0b1); //filter
         writeData.push_back((baseColorTexId >> 24) & 0b1); //filter
         // base color factor (x,y,z,w)
         std::vector<double> baseColorFactorDouble = material.pbrMetallicRoughness.baseColorFactor;
@@ -193,7 +193,7 @@ void GLTFParser::writeMaterialFile(
         int metalRoughnessTexId = texIds[currId++];
         writeData.push_back(metalRoughnessTexId & 0b1);
         writeData.push_back((metalRoughnessTexId >> 8) & 0b1);
-        writeData.push_back((metalRoughnessTexId >> 16) & 0b1);
+        writeData.push_back((metalRoughnessTexId >> 16) & 0b1); //filter
         writeData.push_back((metalRoughnessTexId >> 24) & 0b1); //filter
         // metalness factor
         float metalFactor = material.pbrMetallicRoughness.metallicFactor;
@@ -225,7 +225,7 @@ void GLTFParser::writeMaterialFile(
         int normalTexId = texIds[currId++];
         writeData.push_back(normalTexId & 0b1);
         writeData.push_back((normalTexId >> 8) & 0b1);
-        writeData.push_back((normalTexId >> 16) & 0b1);
+        writeData.push_back((normalTexId >> 16) & 0b1); //filter
         writeData.push_back((normalTexId >> 24) & 0b1); //filter
         // normal scale
         float normalScale = material.normalTexture.scale;
@@ -250,7 +250,7 @@ void GLTFParser::writeMaterialFile(
         int occlusionTexId = texIds[currId++];
         writeData.push_back(occlusionTexId & 0b1);
         writeData.push_back((occlusionTexId >> 8) & 0b1);
-        writeData.push_back((occlusionTexId >> 16) & 0b1);
+        writeData.push_back((occlusionTexId >> 16) & 0b1); //filter
         writeData.push_back((occlusionTexId >> 24) & 0b1); //filter
         // occlusion strength
         float occlusionStrength = material.occlusionTexture.strength;
@@ -275,7 +275,7 @@ void GLTFParser::writeMaterialFile(
         int emissiveTexId = texIds[currId++];
         writeData.push_back(emissiveTexId & 0b1);
         writeData.push_back((emissiveTexId >> 8) & 0b1);
-        writeData.push_back((emissiveTexId >> 16) & 0b1);
+        writeData.push_back((emissiveTexId >> 16) & 0b1); //filter
         writeData.push_back((emissiveTexId >> 24) & 0b1); //filter
         // emissive factor (x,y,z);
         std::vector<double> emissiveFactorDouble = material.emissiveFactor;
@@ -438,9 +438,6 @@ void GLTFParser::handleBuffer(
     // write slice of buffer into new buffer
     const unsigned char* bufferData = buffer.data.data();
     unsigned char* data = new unsigned char[byteLength];
-    //unsigned char* data = (unsigned char*)malloc(byteLength);
-    //std::copy(&bufferData+byteOffset, &bufferData+byteOffset+byteLength, &data);
-    //memcpy(&data, &bufferData+byteOffset, byteLength);
     for (int i = 0; i < byteLength; i++){
         data[i] = bufferData[i+byteOffset];
     }
@@ -596,10 +593,12 @@ int GLTFParser::handleTexture(const tinygltf::Texture& tex){
         handleBuffer(buffer, 0, elementCount, elementType, componentType, bufferId);
     }
     std::cout << "" << std::endl;
+
+    int maskedTexId = (texId & 0xFFFF) | (minFilter << 16);
+
     // write texture to file
     writeTextureFile(bufferId, 0, texId);
-
-    return texId;
+    return maskedTexId;
 }
 
 int GLTFParser::handleTexture(const tinygltf::TextureInfo& texInfo){
