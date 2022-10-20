@@ -18,45 +18,47 @@ public:
     ~ResourceManager(){}
 
     template <typename T>
-    void addResourceType(ResourceCache& resource){
-        m_resources.push_back(&resource);
+    void addResourceType(ResourceCache& resourceCache){
+        m_resourceCaches.push_back(&resourceCache);
         m_resourceMap[typeid(T)] = m_resourceIndex;
         m_resourceMap[typeid(T*)] = m_resourceIndex;
         m_resourceIndex++;
     }
 
+    // T := ResourceCache
     template <typename T>
-    uint32 getResourceIndex(){
+    uint32 getResourceCacheIndex(){
         uint32 index = m_resourceMap[typeid(T)];
         return index;
     }
 
-    // registerResource
+    // T := ResourceCache
     template <typename T>
     void registerResource(ResourceMetadata metadata){
-        uint32 index = getResourceIndex<T>();
-        T* resource = ((T*) dynamic_cast<T*>(m_resources.at(index)));
-        resource->registerResource(metadata);
+        uint32 index = getResourceCacheIndex<T>();
+        T* resourceCache = ((T*) dynamic_cast<T*>(m_resourceCaches.at(index)));
+        resourceCache->registerResource(metadata);
     }
 
-    // getHandle
+    // T := ResourceCache
     template <typename T>
     auto getHandle(uint32 id){
-        uint32 index = getResourceIndex<T>();
-        T* resource = ((T*) dynamic_cast<T*>(m_resources.at(index)));
-        return resource->getHandle(id);
+        uint32 index = getResourceCacheIndex<T>();
+        T* resourceCache = ((T*) dynamic_cast<T*>(m_resourceCaches.at(index)));
+        return resourceCache->getHandle(id);
     }
 
-    // getData
+    // T := ResourceCache
+    // U := ResourceInstance (not explicit, return only)
     template <typename T, typename U>
     U* getData(Handle<U> handle){
-        uint32 index = getResourceIndex<T>();
-        T* resource = ((T*) dynamic_cast<T*>(m_resources.at(index)));
-        return resource->getData(handle);
+        uint32 index = getResourceCacheIndex<T>();
+        T* resourceCache = ((T*) dynamic_cast<T*>(m_resourceCaches.at(index)));
+        return resourceCache->getData(handle);
     }
 
 private:
-    std::vector<ResourceCache*> m_resources;
+    std::vector<ResourceCache*> m_resourceCaches;
     rmap m_resourceMap;
     uint32 m_resourceIndex;
 };
