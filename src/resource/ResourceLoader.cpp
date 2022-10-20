@@ -30,7 +30,7 @@ T ResourceLoader::loadFromMetadata(ResourceMetadata metadata){
 template <>
 Model ResourceLoader::loadFromMetadata<Model>(ResourceMetadata metadata){
     // open file
-    std::ifstream f(metadata.path+metadata.name+metadata.extension, std::ios::binary);
+    std::ifstream f(ResourceTypes::getPath(metadata.resourceType)+metadata.name+ResourceTypes::getExtension(metadata.resourceType), std::ios::binary);
     if (!f.is_open()){
         // log error
         return Model();
@@ -70,7 +70,7 @@ Model ResourceLoader::loadFromMetadata<Model>(ResourceMetadata metadata){
 template <>
 Texture ResourceLoader::loadFromMetadata<Texture>(ResourceMetadata metadata){
     // open file
-    std::ifstream f(metadata.path+metadata.name+metadata.extension, std::ios::binary);
+    std::ifstream f(ResourceTypes::getPath(metadata.resourceType)+metadata.name+ResourceTypes::getExtension(metadata.resourceType), std::ios::binary);
     if (!f.is_open()){
         // log error
         return Texture();
@@ -112,7 +112,7 @@ Texture ResourceLoader::loadFromMetadata<Texture>(ResourceMetadata metadata){
 template <>
 Mesh ResourceLoader::loadFromMetadata<Mesh>(ResourceMetadata metadata){
     // open file
-    std::ifstream f(metadata.path+metadata.name+metadata.extension, std::ios::binary);
+    std::ifstream f(ResourceTypes::getPath(metadata.resourceType)+metadata.name+ResourceTypes::getExtension(metadata.resourceType), std::ios::binary);
     if (!f.is_open()){
         // log error
         return Mesh();
@@ -213,7 +213,7 @@ Mesh ResourceLoader::loadFromMetadata<Mesh>(ResourceMetadata metadata){
 template <>
 Material ResourceLoader::loadFromMetadata<Material>(ResourceMetadata metadata){
     // open file
-    std::ifstream f(metadata.path+metadata.name+metadata.extension, std::ios::binary);
+    std::ifstream f(ResourceTypes::getPath(metadata.resourceType)+metadata.name+ResourceTypes::getExtension(metadata.resourceType), std::ios::binary);
     if (!f.is_open()){
         // log error
         return Material();
@@ -303,7 +303,7 @@ Material ResourceLoader::loadFromMetadata<Material>(ResourceMetadata metadata){
 template <>
 Buffer ResourceLoader::loadFromMetadata<Buffer>(ResourceMetadata metadata){
     // open file
-    std::ifstream f(metadata.path+metadata.name+metadata.extension, std::ios::binary);
+    std::ifstream f(ResourceTypes::getPath(metadata.resourceType)+metadata.name+ResourceTypes::getExtension(metadata.resourceType), std::ios::binary);
     if (!f.is_open()){
         // log error
         return Buffer();
