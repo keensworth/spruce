@@ -1,1 +1,2 @@
 add_subdirectory(gltf)
+add_subdirectory(register_assets)
