@@ -12,8 +12,9 @@ T ResourceLoader::loadFromMetadata(ResourceMetadata metadata){
 }
 
 
-// ----------------------------------------------------------------------------
-//    Model - .smdl
+// ------------------------------------------------------------------------- //
+//    Model - .smdl                                                          // 
+// ------------------------------------------------------------------------- //
 // ╔═══════════════════════════════════╗
 // ║     name length (4)               ║ // # characters in name
 // ╠═══════════════════════════════════╣
@@ -21,8 +22,8 @@ T ResourceLoader::loadFromMetadata(ResourceMetadata metadata){
 // ╠     name (name-length)            ╣ // name characters
 // ║                 ...               ║
 // ╠═══════════════════════════════════╣
-// ║     mesh count (4)                ║ // # meshes that make up model (no anim)
-// ╠═══════════════════════════════════╣
+// ║     mesh count (4)                ║ // # meshes that make up model
+// ╠═══════════════════════════════════╣    (no anim)
 // ║                 ...               ║
 // ╠     mesh ids (mesh-count * 4)     ╣ // ids to mesh files
 // ║                 ...               ║
@@ -30,7 +31,11 @@ T ResourceLoader::loadFromMetadata(ResourceMetadata metadata){
 template <>
 Model ResourceLoader::loadFromMetadata<Model>(ResourceMetadata metadata){
     // open file
-    std::ifstream f(ResourceTypes::getPath(metadata.resourceType)+metadata.name+ResourceTypes::getExtension(metadata.resourceType), std::ios::binary);
+    std::ifstream f(
+        ResourceTypes::getPath(metadata.resourceType)+
+        metadata.name+
+        ResourceTypes::getExtension(metadata.resourceType), 
+        std::ios::binary);
     if (!f.is_open()){
         // log error
         return Model();
@@ -44,6 +49,7 @@ Model ResourceLoader::loadFromMetadata<Model>(ResourceMetadata metadata){
     f.read((char*)&nameLength, sizeof(uint32));
 
     // read name
+    name = (char*)malloc(nameLength*sizeof(char));
     f.read(name, nameLength);
 
     // read mesh count
@@ -57,41 +63,23 @@ Model ResourceLoader::loadFromMetadata<Model>(ResourceMetadata metadata){
 
     // close file
     f.close();
+
+    // ---- create Model ----
+    Model model;
+    // instance data
+    model.id = m_instanceId++;
+    model.resourceId = metadata.resourceId;
+    // resource data
+    model.meshCount = meshCount;
+    model.meshIds = meshIds;
+
+    return model;
 }
 
 
-// ----------------------------------------------------------------------------
-//    Texture - .stex
-// ╔═══════════════════════════════════╗
-// ║     buffer id (4)                 ║ // buffer holding tex data
-// ╠═══════════════════════════════════╣
-// ║     image type (4)                ║ // 0-raw/1-png/2-jpg (0 only)
-// ╚═══════════════════════════════════╝
-template <>
-Texture ResourceLoader::loadFromMetadata<Texture>(ResourceMetadata metadata){
-    // open file
-    std::ifstream f(ResourceTypes::getPath(metadata.resourceType)+metadata.name+ResourceTypes::getExtension(metadata.resourceType), std::ios::binary);
-    if (!f.is_open()){
-        // log error
-        return Texture();
-    }
-
-    uint32 bufferId;
-    uint32 imageType;
-
-    // read buffer id
-    f.read((char*)&bufferId, sizeof(uint32));
-
-    // read image type
-    f.read((char*)&imageType, sizeof(uint32));
-
-    // close file
-    f.close();
-}
-
-
-// ----------------------------------------------------------------------------
-//    Mesh - .smsh
+// ------------------------------------------------------------------------- //
+//    Mesh - .smsh                                                           // 
+// ------------------------------------------------------------------------- //
 // ╔═══════════════════════════════════╗
 // ║     material id (4)               ║ // material file of mesh
 // ╠═══════════════════════════════════╣ 
@@ -112,7 +100,11 @@ Texture ResourceLoader::loadFromMetadata<Texture>(ResourceMetadata metadata){
 template <>
 Mesh ResourceLoader::loadFromMetadata<Mesh>(ResourceMetadata metadata){
     // open file
-    std::ifstream f(ResourceTypes::getPath(metadata.resourceType)+metadata.name+ResourceTypes::getExtension(metadata.resourceType), std::ios::binary);
+    std::ifstream f(
+        ResourceTypes::getPath(metadata.resourceType)+
+        metadata.name+
+        ResourceTypes::getExtension(metadata.resourceType), 
+        std::ios::binary);
     if (!f.is_open()){
         // log error
         return Mesh();
@@ -154,11 +146,28 @@ Mesh ResourceLoader::loadFromMetadata<Mesh>(ResourceMetadata metadata){
 
     // close file
     f.close();
+
+    // ---- create Mesh ----
+    Mesh mesh;
+    // instance data
+    mesh.id = m_instanceId++;
+    mesh.resourceId = metadata.resourceId;
+    // resource data
+    mesh.materialId = materialId;
+    mesh.indexBufferId = indexBufferId;
+    mesh.positionBufferId = positionBufferId;
+    mesh.normalBufferId = normalBufferId;
+    mesh.colorBufferId = colorBufferId;
+    mesh.tangentBufferId = tangentBufferId;
+    mesh.texCoordBufferIds = texCoordBufferIds;
+
+    return mesh;
 }
 
 
-// ----------------------------------------------------------------------------
-// Material - .smtl
+// ------------------------------------------------------------------------- //
+//    Material - .smtl                                                       // 
+// ------------------------------------------------------------------------- //
 // ╔═══════════════════════════════════╗
 // ║     base color flag (4)           ║ // base color tex
 // ╠───────────────────────────────────╣ 
@@ -213,30 +222,38 @@ Mesh ResourceLoader::loadFromMetadata<Mesh>(ResourceMetadata metadata){
 template <>
 Material ResourceLoader::loadFromMetadata<Material>(ResourceMetadata metadata){
     // open file
-    std::ifstream f(ResourceTypes::getPath(metadata.resourceType)+metadata.name+ResourceTypes::getExtension(metadata.resourceType), std::ios::binary);
+    std::ifstream f(
+        ResourceTypes::getPath(metadata.resourceType)+
+        metadata.name+
+        ResourceTypes::getExtension(metadata.resourceType), 
+        std::ios::binary);
     if (!f.is_open()){
         // log error
         return Material();
     }
 
-    uint32 baseColorTexId;
+    uint32 materialFlags;
+
+    int32 baseColorTexId;
     glm::vec4 baseColorFactor;
 
-    uint32 metalRoughTexId;
+    int32 metalRoughTexId;
     float metalFactor;
     float roughnessFactor;
 
-    uint32 normalTexId;
+    int32 normalTexId;
     float normalScale;
 
-    uint32 occlusionTexId;
+    int32 occlusionTexId;
     float occlusionStrength;
 
-    uint32 emissiveTexId;
+    int32 emissiveTexId;
     glm::vec3 emissiveFactor;
 
-    uint32 alphaType;
-    uint32 alphaCutoff;
+    int32 alphaType;
+    float alphaCutoff;
+
+    bool doubleSided;
 
     while(!f.eof()){
         uint32 materialType;
@@ -244,37 +261,44 @@ Material ResourceLoader::loadFromMetadata<Material>(ResourceMetadata metadata){
 
         switch(materialType) {
             case 1 : // base color
-                f.read((char*)&baseColorTexId, sizeof(uint32));
+                materialFlags |= 0b1;
+                f.read((char*)&baseColorTexId, sizeof(int32));
                 f.read((char*)&baseColorFactor.x, sizeof(float));
                 f.read((char*)&baseColorFactor.y, sizeof(float));
                 f.read((char*)&baseColorFactor.z, sizeof(float));
                 f.read((char*)&baseColorFactor.w, sizeof(float));
                 break;
             case 2 : // metalroughness
-                f.read((char*)&metalRoughTexId, sizeof(uint32));
+                materialFlags |= (0b1<<1);
+                f.read((char*)&metalRoughTexId, sizeof(int32));
                 f.read((char*)&metalFactor, sizeof(float));
                 f.read((char*)&roughnessFactor, sizeof(float));
                 break;
             case 3 : // normal
-                f.read((char*)&normalTexId, sizeof(uint32));
+                materialFlags |= (0b1<<2);
+                f.read((char*)&normalTexId, sizeof(int32));
                 f.read((char*)&normalScale, sizeof(float));
                 break;
             case 4 : // occlusion
-                f.read((char*)&occlusionTexId, sizeof(uint32));
+                materialFlags |= (0b1<<3);
+                f.read((char*)&occlusionTexId, sizeof(int32));
                 f.read((char*)&occlusionStrength, sizeof(float));
                 break;
             case 5 : // emissive
-                f.read((char*)&emissiveTexId, sizeof(uint32));
+                materialFlags |= (0b1<<4);
+                f.read((char*)&emissiveTexId, sizeof(int32));
                 f.read((char*)&emissiveFactor.x, sizeof(float));
                 f.read((char*)&emissiveFactor.y, sizeof(float));
                 f.read((char*)&emissiveFactor.z, sizeof(float));
                 break;
             case 6 : // alpha
-                f.read((char*)&alphaType, sizeof(uint32));
-                f.read((char*)&alphaCutoff, sizeof(uint32));
+                materialFlags |= (0b1<<5);
+                f.read((char*)&alphaType, sizeof(int32));
+                f.read((char*)&alphaCutoff, sizeof(float));
                 break;
             case 7 : // double-sided
-                // do somth
+                materialFlags |= (0b1<<6);
+                doubleSided = true;
                 break;
             default: // unknown
                 // log error
@@ -284,11 +308,94 @@ Material ResourceLoader::loadFromMetadata<Material>(ResourceMetadata metadata){
 
     // close file
     f.close();
+
+    // ---- create Material ----
+    Material material;
+    // instance data
+    material.id = m_instanceId++;
+    material.resourceId = metadata.resourceId;
+    // resource data
+    material.materialFlags = materialFlags;
+    if (materialFlags & 0b1){ // base color
+        material.baseColorTexId = baseColorTexId;
+        material.baseColorFactor = baseColorFactor;
+    }
+    if (materialFlags & (0b1<<1)){ // metallicroughness
+        material.metalRoughTexId = metalRoughTexId;
+        material.metalFactor = metalFactor;
+    }
+    if (materialFlags & (0b1<<2)){ // normal
+        material.normalTexId = normalTexId;
+        material.normalScale = normalScale;
+    }
+    if (materialFlags & (0b1<<3)){ // occlusion
+        material.occlusionTexId = occlusionTexId;
+        material.occlusionStrength = occlusionStrength;
+    }
+    if (materialFlags & (0b1<<4)){ // emissive
+        material.emissiveTexId = emissiveTexId;
+        material.emissiveFactor = emissiveFactor;
+    }
+    if (materialFlags & (0b1<<5)){ // alpha
+        material.alphaType = alphaType;
+        material.alphaCutoff = alphaCutoff;
+    }
+    if (materialFlags & (0b1<<6)){ // double-sided
+        material.doubleSided = true;
+    }
+    return material;
 }
 
 
-// ----------------------------------------------------------------------------
-// Buffer - .sbuf
+// ------------------------------------------------------------------------- //
+//    Texture - .stex                                                        // 
+// ------------------------------------------------------------------------- //
+// ╔═══════════════════════════════════╗
+// ║     buffer id (4)                 ║ // buffer holding tex data
+// ╠═══════════════════════════════════╣
+// ║     image type (4)                ║ // 0-raw/1-png/2-jpg (0 only)
+// ╚═══════════════════════════════════╝
+template <>
+Texture ResourceLoader::loadFromMetadata<Texture>(ResourceMetadata metadata){
+    // open file
+    std::ifstream f(
+        ResourceTypes::getPath(metadata.resourceType)+
+        metadata.name+
+        ResourceTypes::getExtension(metadata.resourceType), 
+        std::ios::binary);
+    if (!f.is_open()){
+        // log error
+        return Texture();
+    }
+
+    uint32 bufferId;
+    uint32 imageType;
+
+    // read buffer id
+    f.read((char*)&bufferId, sizeof(uint32));
+
+    // read image type
+    f.read((char*)&imageType, sizeof(uint32));
+
+    // close file
+    f.close();
+
+    // ---- create Texture ----
+    Texture texture;
+    // instance data
+    texture.id = m_instanceId++;
+    texture.resourceId = metadata.resourceId;
+    // resource data
+    texture.bufferId = bufferId;
+    texture.imageType = imageType;
+
+    return texture;
+}
+
+
+// ------------------------------------------------------------------------- //
+//    Buffer - .sbuf                                                         // 
+// ------------------------------------------------------------------------- //
 // ╔═══════════════════════════════════╗
 // ║     element type (4)              ║ // element type (f,i,s,...)
 // ╠═══════════════════════════════════╣
@@ -303,7 +410,11 @@ Material ResourceLoader::loadFromMetadata<Material>(ResourceMetadata metadata){
 template <>
 Buffer ResourceLoader::loadFromMetadata<Buffer>(ResourceMetadata metadata){
     // open file
-    std::ifstream f(ResourceTypes::getPath(metadata.resourceType)+metadata.name+ResourceTypes::getExtension(metadata.resourceType), std::ios::binary);
+    std::ifstream f(
+        ResourceTypes::getPath(metadata.resourceType)+
+        metadata.name+
+        ResourceTypes::getExtension(metadata.resourceType), 
+        std::ios::binary);
     if (!f.is_open()){
         // log error
         return Buffer();
@@ -324,10 +435,24 @@ Buffer ResourceLoader::loadFromMetadata<Buffer>(ResourceMetadata metadata){
     f.read((char*)&byteLength, sizeof(uint32));
 
     // read data
+    data = (char*)malloc(byteLength*sizeof(char));
     f.read(data, byteLength);
 
     // close file
     f.close();
+
+    // ---- create Buffer ----
+    Buffer buffer;
+    // instance data
+    buffer.id = m_instanceId++;
+    buffer.resourceId = metadata.resourceId;
+    // resource data
+    buffer.elementType = elementType;
+    buffer.componentType = componentType;
+    buffer.byteLength = byteLength;
+    buffer.data = data;
+
+    return buffer;
 }
 
 
@@ -336,7 +461,7 @@ Buffer ResourceLoader::loadFromMetadata<Buffer>(ResourceMetadata metadata){
 //    iw
 template <>
 Audio ResourceLoader::loadFromMetadata<Audio>(ResourceMetadata metadata){
-
+    return Audio();
 }
 
 
@@ -345,7 +470,7 @@ Audio ResourceLoader::loadFromMetadata<Audio>(ResourceMetadata metadata){
 //    iw
 template <>
 Shader ResourceLoader::loadFromMetadata<Shader>(ResourceMetadata metadata){
-
+    return Shader();
 }
 
 }
