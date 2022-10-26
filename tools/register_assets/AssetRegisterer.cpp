@@ -391,7 +391,8 @@ int AssetRegisterer::loadMesh(std::string path){
     int totalBytes = 0;
     // material
     size_t found = name.find_last_of("_");
-    totalBytes += loadMaterial(ResourceTypes::getPath(SPR_MATERIAL) + name.substr(0,found) + "_" + std::to_string(materialId) + ResourceTypes::getExtension(SPR_MATERIAL));
+    if (materialId > 0)
+        totalBytes += loadMaterial(ResourceTypes::getPath(SPR_MATERIAL) + name.substr(0,found) + "_" + std::to_string(materialId) + ResourceTypes::getExtension(SPR_MATERIAL));
     // index
     if (indexBufferId > 0)
         totalBytes += loadBuffer(ResourceTypes::getPath(SPR_BUFFER) + name.substr(0,found) + "_" + std::to_string(indexBufferId) + ResourceTypes::getExtension(SPR_BUFFER));

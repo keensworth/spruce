@@ -660,8 +660,9 @@ uint32_t GLTFParser::handleMaterial(const tinygltf::Material& material){
 
 uint32_t GLTFParser::handlePrimitive(const tinygltf::Primitive& primitive){
     uint32_t meshId = m_id++;
+
     // material
-    uint32_t materialIndex = primitive.material;
+    int32_t materialIndex = primitive.material;
 
     // attributes (accessor indices)
     int32_t indicesAccessorIndex = primitive.indices;
@@ -736,7 +737,9 @@ uint32_t GLTFParser::handlePrimitive(const tinygltf::Primitive& primitive){
     std::cout << "" << std::endl;
 
     // handle material
-    uint32_t materialId = handleMaterial(model.materials[materialIndex]);
+    uint32_t materialId = 0;
+    if (materialIndex >= 0)
+        materialId = handleMaterial(model.materials[materialIndex]);
 
     // write prim (mesh) to file
     writeMeshFile(materialId, indicesId, positionId, normalId, colorId, tangentId, texCoordIds, meshId);
