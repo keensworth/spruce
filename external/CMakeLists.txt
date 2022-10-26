@@ -36,6 +36,7 @@ target_link_libraries(tinygltf PUBLIC json stb_image)
 #both vma and glm and header only libs so we only need the include path
 target_include_directories(vma INTERFACE vma)
 target_include_directories(glm INTERFACE glm)
+target_compile_options(glm INTERFACE)
 
 target_sources(tinyobjloader PRIVATE 
   tinyobjloader/tiny_obj_loader.h
@@ -45,7 +46,7 @@ target_sources(tinyobjloader PRIVATE
 target_include_directories(tinyobjloader PUBLIC tinyobjloader)
 
 add_library(sdl2 INTERFACE)
-set(sdl2_DIR "SDL_PATH" CACHE FILEPATH "Path to SDL2")
+set(sdl2_DIR "SDL_PATH" CACHE FILEPATH "/usr/include/SDL2/")
 
 if (WIN32)
 target_include_directories(sdl2 INTERFACE ${sdl2_DIR}/include ${sdl2_image_DIR}/include)
@@ -56,9 +57,9 @@ target_link_directories(sdl2 INTERFACE ${sdl2_DIR}/lib ${sdl2_image_DIR}/lib)
 endif()
 
 target_link_libraries(sdl2 INTERFACE SDL2 SDL2main)
-target_compile_options(sdl2 INTERFACE -lSDL2)
+target_compile_options(sdl2 INTERFACE -lSDL2 -I/usr/include/SDL2)
 
-add_library(imgui STATIC)
+add_library(imgui SHARED)
 
 target_include_directories(imgui PUBLIC imgui)
 
@@ -74,6 +75,6 @@ target_sources(imgui PRIVATE
   imgui/imgui_impl_sdl.cpp
   )
 
-target_link_libraries(imgui PUBLIC Vulkan::Vulkan sdl2)
+target_link_libraries(imgui PUBLIC Vulkan::Vulkan -lSDL2 sdl2)
 
 target_include_directories(stb_image INTERFACE stb_image)

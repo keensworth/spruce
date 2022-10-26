@@ -9,5 +9,5 @@ target_sources(gltfparser PRIVATE
 )
 
 target_link_libraries(gltfparser glm tinygltf imgui stb_image)
-target_compile_options(gltfparser PUBLIC -fconcepts)
+target_compile_options(gltfparser PUBLIC)
 

@@ -13,6 +13,8 @@ endif()
 
 set(CMAKE_BUILD_TYPE_INIT "Release")
 
+set(CMAKE_CXX_FLAGS  "${CMAKE_CXX_FLAGS} -Wno-deprecated-volatile -Wno-unused-command-line-argument")
+
 # project command is required to come after cmake_minimum_required command.
 project(Spruce VERSION 0.0.1 LANGUAGES C CXX)
 
@@ -51,7 +53,7 @@ set(BUILD_SHARED_LIBS ${SPRUCE_BUILD_SHARED}) # use 'SPRUCE_' naming convention
 add_subdirectory(src)
 add_executable(spruce main.cpp)
 target_link_libraries(spruce PUBLIC srcFiles)
-target_compile_options(spruce PUBLIC -fconcepts -lSDL2 -lSDL )
+target_compile_options(spruce PUBLIC -lSDL2 -lSDL -std=c++20 -I/usr/include/SDL2)
 
 
 # ------------------------------------------------------------------

@@ -52,7 +52,7 @@ target_include_directories(srcFiles
 
 target_link_libraries(srcFiles vkbootstrap vma glm tinyobjloader imgui stb_image)
 target_link_libraries(srcFiles Vulkan::Vulkan sdl2)
-target_compile_options(srcFiles PUBLIC -fconcepts)
+target_compile_options(srcFiles PUBLIC)
 
 
 
