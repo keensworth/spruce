@@ -7,7 +7,10 @@
 #include "../core/Core.h"
 
 namespace spr {
+    
 
+// ---------------- Types and mappings ----------------------------------------
+// ResourceType enum
 typedef enum : uint32 {
     SPR_NONE,
     SPR_MESH,
@@ -19,7 +22,8 @@ typedef enum : uint32 {
     SPR_MATERIAL
 } ResourceType;
 
-std::string extensions[] = {
+// ext associated with types (indexed by ResourceType)
+static std::vector<std::string> extensions{
     ".snon",
     ".smsh",
     ".smdl",
@@ -30,7 +34,8 @@ std::string extensions[] = {
     ".smtl"
 };
 
-std::string paths[] = {
+// path associated with types (indexed by ResourceType)
+static std::vector<std::string> paths{
     "../data/none/",
     "../data/meshes/",
     "../data/models/",
@@ -38,115 +43,116 @@ std::string paths[] = {
     "../data/shaders/",
     "../data/buffers/",
     "../data/textures/",
-    "../data/materials/",
+    "../data/materials/"
 };
 
+static std::vector<std::string> resourceTypeStrings{
+    "SPR_NONE",
+    "SPR_MESH",
+    "SPR_MODEL",
+    "SPR_AUDIO",
+    "SPR_SHADER",
+    "SPR_BUFFER",
+    "SPR_TEXTURE",
+    "SPR_MATERIAL",
+};
 
+// ---------------- Metadata --------------------------------------------------
 typedef struct {
     std::string name = "no-name";         // resource name (file name)
     ResourceType resourceType = SPR_NONE; // resource enum (links path/ext)
-    uint32 sizeBytes = 0;                 // TODO: self size, or umbrella?
+    uint32 sizeBytes = 0;                 // umbrella size in bytes
     uint32 resourceId = 0;                // resource-unique id (enum value)
 } ResourceMetadata;
 
-typedef struct : ResourceMetadata {
-    uint32 meshCount;
-    std::vector<uint32> meshIds;
-} ModelMetadata;
-
-typedef struct : ResourceMetadata {
-    uint32 materialId;
-    int32 indexBufferId;
-    int32 positionBufferId;
-    int32 normalBufferId;
-    int32 colorBufferId;
-    int32 tangentBufferId;
-    std::vector<int32> texCoordBufferIds;
-} MeshMetadata;
-
-typedef struct : ResourceMetadata {
-    uint32 materialFlags;
-
-    uint32 baseColorTexId;
-    glm::vec4 baseColorFactor;
-
-    uint32 metalRoughTexId;
-    float metalFactor;
-    float roughnessFactor;
-
-    uint32 normalTexId;
-    float normalScale;
-
-    uint32 occlusionTexId;
-    float occlusionStrength;
-
-    uint32 emissiveTexId;
-    glm::vec3 emissiveFactor;
-
-    uint32 alphaType;
-    uint32 alphaCutoff;
-
-    bool doubleSided;
-} MaterialMetadata;
-
-typedef struct : ResourceMetadata {
-    uint32 bufferId;
-    uint32 imageType;
-} TextureMetadata;
-
-typedef struct : ResourceMetadata {
-    uint32 elementType;
-    uint32 componentType;
-    uint32 byteLength;
-} BufferMetadata;
-
+// ---------------- Instance --------------------------------------------------
+// base instance data
 typedef struct { 
-    uint32 id;                  // instance id
+    uint32 id;             // instance id
+    uint32 resourceId = 0; // resource-unique id (enum value)
 } ResourceInstance;  
 
 
+// model
 typedef struct : ResourceInstance {
-
+    uint32 meshCount = 0;
+    std::vector<uint32> meshIds;
 } Model;
 
 
+// mesh
 typedef struct : ResourceInstance {
-
+    uint32 materialId = 0;
+    int32 indexBufferId = -1;
+    int32 positionBufferId = -1;
+    int32 normalBufferId = -1;
+    int32 colorBufferId = -1;
+    int32 tangentBufferId = -1;
+    std::vector<int32> texCoordBufferIds;
 } Mesh;
 
 
+// material
 typedef struct : ResourceInstance {
+    uint32 materialFlags = 0;
 
+    int32 baseColorTexId = -1;
+    glm::vec4 baseColorFactor = glm::vec4(1.f,1.f,1.f,1.f);
+
+    int32 metalRoughTexId = -1;
+    float metalFactor = 1;
+    float roughnessFactor = 1;
+
+    int32 normalTexId = -1;
+    float normalScale = 1;
+
+    int32 occlusionTexId = -1;
+    float occlusionStrength = 1;
+
+    int32 emissiveTexId = -1;
+    glm::vec3 emissiveFactor = glm::vec3(0.f,0.f,0.f);
+
+    int32 alphaType = -1;
+    float alphaCutoff = 0.5f;
+
+    bool doubleSided = false;
 } Material;
 
 
+// texture
 typedef struct : ResourceInstance {
-    
+    uint32 bufferId = -1;
+    uint32 imageType = 0;
 } Texture;
 
 
+// buffer
 typedef struct : ResourceInstance {
-
+    uint32 elementType = 0;
+    uint32 componentType = 0;
+    uint32 byteLength = 0;
+    char* data;
 } Buffer;
 
+// unused
+typedef struct : ResourceInstance {} Audio;
+typedef struct : ResourceInstance {} Shader;
 
-typedef struct : ResourceInstance {
 
-} Audio;
-
-
-typedef struct : ResourceInstance {
-
-} Shader;
-
+// ---------------- Utility ---------------------------------------------------
 class ResourceTypes {
 public:
+    
     static std::string getExtension(ResourceType resourceType){
         return extensions[resourceType];
     }
 
     static std::string getPath(ResourceType resourceType){
         return paths[resourceType];
+    }
+    
+    static std::string typeToString(ResourceType resourceType){
+        return resourceTypeStrings[resourceType];
     }
 };
 
