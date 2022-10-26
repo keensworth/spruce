@@ -109,7 +109,7 @@ public:
     void unregisterEntity(Entity entity){
         uint64 mask = entity.components;
         for (uint32 i = 0; i < 64; i++){
-            if ((mask>>i)&0b1 == 1){
+            if (((mask>>i)&0b1) == 1){
                 m_components.at(i)->removeEntity(entity);
             }
         }
