@@ -2,9 +2,10 @@
 
 #include <iostream>
 #include <filesystem>
+#include <unordered_map>
 #include "../../external/tinygltf/tiny_gltf.h"
 
-//typedef std::unordered_map<int, int> IdMap;
+typedef std::unordered_map<uint32_t, uint32_t> IdMap;
 
 namespace spr::tools{
 class GLTFParser {
@@ -22,58 +23,58 @@ private:
     std::string m_path;
     std::string m_name;
     std::string m_extension;
-    int m_id = 0;
-    //IdMap m_idMap; 
+    uint32_t m_id = 0;
+    IdMap m_sourceIdMap;
 
     void parse();
-    void parseNode(const tinygltf::Node& node, std::vector<int> &meshIds);
-    void handleMesh(const tinygltf::Mesh& mesh, std::vector<int> &meshIds);
-    int handlePrimitive(const tinygltf::Primitive& primitive);
-    int handleMaterial(const tinygltf::Material& material);
-    int handleTexture(const tinygltf::TextureInfo& texInfo);
-    int handleTexture(const tinygltf::NormalTextureInfo& texInfo);
-    int handleTexture(const tinygltf::OcclusionTextureInfo& texInfo);
-    int handleTexture(const tinygltf::Texture& tex);
-    int handleAccessor(const tinygltf::Accessor& accessor);
+    void parseNode(const tinygltf::Node& node, std::vector<uint32_t> &meshIds);
+    void handleMesh(const tinygltf::Mesh& mesh, std::vector<uint32_t> &meshIds);
+    uint32_t handlePrimitive(const tinygltf::Primitive& primitive);
+    uint32_t handleMaterial(const tinygltf::Material& material);
+    uint32_t handleTexture(const tinygltf::TextureInfo& texInfo);
+    uint32_t handleTexture(const tinygltf::NormalTextureInfo& texInfo);
+    uint32_t handleTexture(const tinygltf::OcclusionTextureInfo& texInfo);
+    uint32_t handleTexture(const tinygltf::Texture& tex);
+    uint32_t handleAccessor(const tinygltf::Accessor& accessor);
     void handleBufferView(const tinygltf::BufferView& bufferView, 
-        int byteOffset, 
-        int calcByteStride,
-        int elementCount, 
-        int elementType, 
-        int componentType,
-        int bufferId);
+        uint32_t byteOffset, 
+        uint32_t calcByteStride,
+        uint32_t elementCount, 
+        uint32_t elementType, 
+        uint32_t componentType,
+        uint32_t bufferId);
     void handleBuffer(
         const tinygltf::Buffer& buffer, 
-        int byteOffset, 
-        int byteLength, 
-        int elementType, 
-        int componentType,
-        int bufferId);
-    void handleBufferInterleaved(
+        uint32_t byteOffset, 
+        uint32_t byteLength, 
+        uint32_t elementType, 
+        uint32_t componentType,
+        uint32_t bufferId);
+    void handleBufferint32_terleaved(
         const tinygltf::Buffer& buffer, 
-        int byteOffset, 
-        int byteLength, 
-        int byteStride,
-        int bytesPerElement, 
-        int elementType, 
-        int componentType,
-        int bufferId);
-    void writeBufferFile(const unsigned char* data, int byteLength, int elementType, int componentType, int bufferId);
+        uint32_t byteOffset, 
+        uint32_t byteLength, 
+        uint32_t byteStride,
+        uint32_t bytesPerElement, 
+        uint32_t elementType, 
+        uint32_t componentType,
+        uint32_t bufferId);
+    void writeBufferFile(const unsigned char* data, uint32_t byteLength, uint32_t elementType, uint32_t componentType, uint32_t bufferId);
     void writeMeshFile(
-        int materialId, 
-        int indexBufferId, 
-        int posBufferId, 
-        int normalBufferId, 
-        int colorBufferId, 
-        int tangentBufferId, 
-        std::vector<int> texCoordBufferIds,
-        int meshId);
+        uint32_t materialId, 
+        int32_t indexBufferId, 
+        int32_t posBufferId, 
+        int32_t normalBufferId, 
+        int32_t colorBufferId, 
+        int32_t tangentBufferId, 
+        std::vector<uint32_t> texCoordBufferIds,
+        uint32_t meshId);
     void writeMaterialFile(
-        int materialFlags, 
+        uint32_t materialFlags, 
         const tinygltf::Material& material,
-        std::vector<int> texIds,
-        int materialId);
-    void writeModelFile(int meshCount, std::vector<int> meshIds, int modelId);
-    void writeTextureFile(int bufferId, int imageType, int texId);
+        std::vector<uint32_t> texIds,
+        uint32_t materialId);
+    void writeModelFile(uint32_t meshCount, std::vector<uint32_t> meshIds, uint32_t modelId);
+    void writeTextureFile(uint32_t bufferId, uint32_t imageType, uint32_t texId);
 };
 }

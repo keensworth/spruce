@@ -6,53 +6,54 @@ namespace spr::tools{
 
 GLTFParser::GLTFParser(){}
 
-void GLTFParser::writeBufferFile(const unsigned char* data, int byteLength, int elementType, int componentType, int bufferId){
+void GLTFParser::writeBufferFile(const unsigned char* data, uint32_t byteLength, uint32_t elementType, uint32_t componentType, uint32_t bufferId){
     // element type (4)
     // component type (4)
     // byte length (4)
     // data (byte length)
     std::cout << "      Write Buffer File:" << std::endl;
-    std::cout << "          byteLength " << byteLength << std::endl;
-    std::cout << "          elementType " << elementType << std::endl;
-    std::cout << "          componentType " << componentType << std::endl;
-    std::cout << "          bufferId " << bufferId << std::endl;
-    std::cout << "" << std::endl;
-    unsigned char* writeData = new unsigned char[byteLength + 4 + 4 + 8];
-    // write element type
-    writeData[0] = elementType & 0xff;
-    writeData[1] = (elementType >> 8) & 0xff;
-    writeData[2] = (elementType >> 16) & 0xff;
-    writeData[3] = (elementType >> 24) & 0xff;
-    // write component type
-    writeData[4] = componentType & 0xff;
-    writeData[5] = (componentType >> 8) & 0xff;
-    writeData[6] = (componentType >> 16) & 0xff;
-    writeData[7] = (componentType >> 24) & 0xff;
-    // write byte length
-    writeData[8] = byteLength & 0xff;
-    writeData[9] = (byteLength >> 8) & 0xff;
-    writeData[10] = (byteLength >> 16) & 0xff;
-    writeData[11] = (byteLength >> 24) & 0xff;
-    const unsigned char test = data[0];
-    // write data 
-    for (int i = 0; i < byteLength; i++){
-        writeData[i+12] = data[i];
+
+    // write to file
+    // open file
+    std::ofstream f("../data/buffers/"+(m_name+("_"+std::to_string(bufferId)))+".sbuf", std::ios::binary);
+    if (!f.is_open()){
+        // log error
+        std::cerr << "Failed to open/create file" << std::endl;
+        return ;
     }
-    // write buffer to file
-    FileWriter fw = FileWriter();
-    fw.writeFile("../data/buffers/", (m_name+("_"+std::to_string(bufferId))), ".sbuf", writeData, byteLength+12);
-    delete writeData;
+    std::cout << "          f: created" << std::endl;
+
+    // write element type
+    f.write((char*)&elementType, sizeof(uint32_t));
+    std::cout << "          w: elementType: " << elementType << std::endl;
+
+    // write component type
+    f.write((char*)&componentType, sizeof(uint32_t));
+    std::cout << "          w: componentType: " << componentType << std::endl;
+
+    // write byte length
+    f.write((char*)&byteLength, sizeof(uint32_t));
+    std::cout << "          w: byteLength: " << byteLength << std::endl;
+    
+    // write data 
+    f.write((char*)data, byteLength);
+    std::cout << "          w: data" << std::endl;
+
+    // close file
+    f.close();
+    std::cout << "          f: closed" << std::endl;
+    std::cout << "" << std::endl;
 }
 
 void GLTFParser::writeMeshFile(
-        int materialId, 
-        int indexBufferId, 
-        int posBufferId, 
-        int normalBufferId, 
-        int colorBufferId, 
-        int tangentBufferId, 
-        std::vector<int> texCoordBufferIds,
-        int meshId){
+        uint32_t materialId, 
+        int32_t indexBufferId, 
+        int32_t posBufferId, 
+        int32_t normalBufferId, 
+        int32_t colorBufferId, 
+        int32_t tangentBufferId, 
+        std::vector<uint32_t> texCoordBufferIds,
+        uint32_t meshId){
     // material id (4)
     // index buffer id (4)
     // position buffer id (4)
@@ -60,374 +61,328 @@ void GLTFParser::writeMeshFile(
     // color buffer id (4)
     // tangent buffer id (4)
     // texcoord buffer id(s) (4 * n)
-    int byteLength = 4+4+4+4+4+4+4*texCoordBufferIds.size();
-    unsigned char writeData[byteLength];
 
     std::cout << "      Write Mesh File:" << std::endl;
-    std::cout << "          byteLength " << byteLength << std::endl;
-    std::cout << "          materialId " << materialId << std::endl;
-    std::cout << "          indexBufferId " << indexBufferId << std::endl;
-    std::cout << "          posBufferId " << posBufferId << std::endl;
-    std::cout << "          normalBufferId " << normalBufferId << std::endl;
-    std::cout << "          colorBufferId " << colorBufferId << std::endl;
-    std::cout << "          tangentBufferId " << tangentBufferId << std::endl;
-    std::cout << "          meshId " << meshId << std::endl;
-    std::cout << "" << std::endl;
-
-    // write material id
-    writeData[0] = materialId & 0xff;
-    writeData[1] = (materialId >> 8) & 0xff;
-    writeData[2] = (materialId >> 16) & 0xff;
-    writeData[3] = (materialId >> 24) & 0xff;
-
-    // write index buffer id
-    writeData[4] = indexBufferId & 0xff;
-    writeData[5] = (indexBufferId >> 8) & 0xff;
-    writeData[6] = (indexBufferId >> 16) & 0xff;
-    writeData[7] = (indexBufferId >> 24) & 0xff;
-
-    // write position buffer id
-    writeData[8] = posBufferId & 0xff;
-    writeData[9] = (posBufferId >> 8) & 0xff;
-    writeData[10] = (posBufferId >> 16) & 0xff;
-    writeData[11] = (posBufferId >> 24) & 0xff;
-
-    // write normal buffer id
-    writeData[12] = normalBufferId & 0xff;
-    writeData[13] = (normalBufferId >> 8) & 0xff;
-    writeData[14] = (normalBufferId >> 16) & 0xff;
-    writeData[15] = (normalBufferId >> 24) & 0xff;
-
-    // write color buffer id
-    writeData[16] = colorBufferId & 0xff;
-    writeData[17] = (colorBufferId >> 8) & 0xff;
-    writeData[18] = (colorBufferId >> 16) & 0xff;
-    writeData[19] = (colorBufferId >> 24) & 0xff;
-
-    // write tangent buffer id
-    writeData[20] = tangentBufferId & 0xff;
-    writeData[21] = (tangentBufferId >> 8) & 0xff;
-    writeData[22] = (tangentBufferId >> 16) & 0xff;
-    writeData[23] = (tangentBufferId >> 24) & 0xff;
-
-    // write tex coord buffer ids
-    int count = 0;
-    for (auto & texCoordBufferId : texCoordBufferIds) {
-        writeData[24 + 4*count] = tangentBufferId & 0xff;
-        writeData[25 + 4*count + 1] = (tangentBufferId >> 8) & 0xff;
-        writeData[26 + 4*count + 2] = (tangentBufferId >> 16) & 0xff;
-        writeData[27 + 4*count + 3] = (tangentBufferId >> 24) & 0xff;
-    }
 
     // write to file
-    FileWriter fw = FileWriter();
-    fw.writeFile("../data/meshes/", (m_name+("_"+std::to_string(meshId))), ".smsh", writeData, byteLength);
+    // open file
+    std::ofstream f("../data/meshes/"+(m_name+("_"+std::to_string(meshId)))+".smsh", std::ios::binary);
+    if (!f.is_open()){
+        // log error
+        std::cerr << "Failed to open/create file" << std::endl;
+        return ;
+    }
+    std::cout << "          f: created" << std::endl;
+
+    // write material id
+    f.write((char*)&materialId, sizeof(uint32_t));
+    std::cout << "          w: materialId: " << materialId << std::endl;
+
+    // write index buffer id
+    f.write((char*)&indexBufferId, sizeof(int32_t));
+    std::cout << "          w: indexBufferId: " << indexBufferId << std::endl;
+
+    // write position buffer id
+    f.write((char*)&posBufferId, sizeof(int32_t));
+    std::cout << "          w: posBufferId: " << posBufferId << std::endl;
+
+    // write normal buffer id
+    f.write((char*)&normalBufferId, sizeof(int32_t));
+    std::cout << "          w: normalBufferId: " << normalBufferId << std::endl;
+
+    // write color buffer id
+    f.write((char*)&colorBufferId, sizeof(int32_t));
+    std::cout << "          w: colorBufferId: " << colorBufferId << std::endl;
+
+    // write tangent buffer id
+    f.write((char*)&tangentBufferId, sizeof(int32_t));
+    std::cout << "          w: tangentBufferId: " << tangentBufferId << std::endl;
+
+    // write tex coord buffer ids
+    for (uint32_t texCoordBufferId : texCoordBufferIds) {
+        f.write((char*)&texCoordBufferId, sizeof(uint32_t));
+        std::cout << "          w: texCoordBufferId: " << texCoordBufferId << std::endl;
+    }
+
+    // close file
+    f.close();
+    std::cout << "          f: closed" << std::endl;
+    std::cout << "" << std::endl;
 }
 
 void GLTFParser::writeMaterialFile(
-        int materialFlags, 
+        uint32_t materialFlags, 
         const tinygltf::Material& material,
-        std::vector<int> texIds,
-        int materialId){
-    int currId = 0;
-    std::vector<unsigned char> writeData;
-    
+        std::vector<uint32_t> texIds,
+        uint32_t materialId){
+    uint32_t currId = 0;
     std::cout << "      Write Material File:" << std::endl;
+    // write to file
+    // open file
+    std::ofstream f("../data/materials/"+(m_name+("_"+std::to_string(materialId)))+".smtl", std::ios::binary);
+    if (!f.is_open()){
+        // log error
+        std::cerr << "Failed to open/create file" << std::endl;
+        return ;
+    }
+    std::cout << "          f: created" << std::endl;
 
     // base color (4)
     //      tex id (4) (2 id, 2 min/mag filter)
     //      factor (16)
     if (materialFlags & 0b1){
-        std::cout << "          -base color " << std::endl;
+        std::cout << "          [base color] " << std::endl;
         // base color sentinel
-        writeData.push_back( 1 & 0b1);
-        writeData.push_back((1 >> 8) & 0b1);
-        writeData.push_back((1 >> 16) & 0b1);
-        writeData.push_back((1 >> 24) & 0b1);
+        uint32_t sentinel = 1;
+        f.write((char*)&sentinel, sizeof(uint32_t));
+        std::cout << "          w: sentinel: " << sentinel << std::endl;
+        
         // tex id
-        int baseColorTexId = texIds[currId++];
-        writeData.push_back(baseColorTexId & 0b1);
-        writeData.push_back((baseColorTexId >> 8) & 0b1);
-        writeData.push_back((baseColorTexId >> 16) & 0b1); //filter
-        writeData.push_back((baseColorTexId >> 24) & 0b1); //filter
+        uint32_t baseColorTexId = texIds[currId++];
+        f.write((char*)&baseColorTexId, sizeof(uint32_t));
+        std::cout << "          w: baseColorTexId: " << (baseColorTexId&0xffff) << std::endl;
+        std::cout << "          w: filter: " << ((baseColorTexId>>16)&0xffff) << std::endl;
+        
         // base color factor (x,y,z,w)
         std::vector<double> baseColorFactorDouble = material.pbrMetallicRoughness.baseColorFactor;
         std::vector<float> baseColorFactor(baseColorFactorDouble.begin(), baseColorFactorDouble.end());
         //      x
-        unsigned char const * x = reinterpret_cast<unsigned char const *>(&baseColorFactor[0]);
-        writeData.push_back(x[0]);
-        writeData.push_back(x[1]);
-        writeData.push_back(x[2]);
-        writeData.push_back(x[3]);
+        f.write((char*)&baseColorFactor[0], sizeof(float));
+        std::cout << "          w: baseColorFactor.x: " << baseColorFactor[0] << std::endl;
         //      y
-        unsigned char const * y = reinterpret_cast<unsigned char const *>(&baseColorFactor[1]);
-        writeData.push_back(y[0]);
-        writeData.push_back(y[1]);
-        writeData.push_back(y[2]);
-        writeData.push_back(y[3]);
+        f.write((char*)&baseColorFactor[1], sizeof(float));
+        std::cout << "          w: baseColorFactor.y: " << baseColorFactor[1] << std::endl;
         //      z
-        unsigned char const * z = reinterpret_cast<unsigned char const *>(&baseColorFactor[2]);
-        writeData.push_back(z[0]);
-        writeData.push_back(z[1]);
-        writeData.push_back(z[2]);
-        writeData.push_back(z[3]);
+        f.write((char*)&baseColorFactor[2], sizeof(float));
+        std::cout << "          w: baseColorFactor.z: " << baseColorFactor[2] << std::endl;
         //      w
-        unsigned char const * w = reinterpret_cast<unsigned char const *>(&baseColorFactor[3]);
-        writeData.push_back(w[0]);
-        writeData.push_back(w[1]);
-        writeData.push_back(w[2]);
-        writeData.push_back(w[3]);
+        f.write((char*)&baseColorFactor[3], sizeof(float));
+        std::cout << "          w: baseColorFactor.w: " << baseColorFactor[3] << std::endl;
     }
 
     // metalroughness (4)
     //      tex id (4) (3 id, 1 min/mag filter)
     //      factor (8) (m(4)/r(4))
     if (materialFlags & (0b1<<1)){
-        std::cout << "          -metrough " << std::endl;
+        std::cout << "          [metallic roughness] " << std::endl;
         // metalroughness sentinel
-        writeData.push_back( 2 & 0b1);
-        writeData.push_back((2 >> 8) & 0b1);
-        writeData.push_back((2 >> 16) & 0b1);
-        writeData.push_back((2 >> 24) & 0b1);
+        uint32_t sentinel = 2;
+        f.write((char*)&sentinel, sizeof(uint32_t));
+        std::cout << "          w: sentinel: " << sentinel << std::endl;
+        
         // tex id
-        int metalRoughnessTexId = texIds[currId++];
-        writeData.push_back(metalRoughnessTexId & 0b1);
-        writeData.push_back((metalRoughnessTexId >> 8) & 0b1);
-        writeData.push_back((metalRoughnessTexId >> 16) & 0b1); //filter
-        writeData.push_back((metalRoughnessTexId >> 24) & 0b1); //filter
+        uint32_t metalRoughnessTexId = texIds[currId++];
+        f.write((char*)&metalRoughnessTexId, sizeof(uint32_t));
+        std::cout << "          w: metalRoughnessTexId: " << (metalRoughnessTexId&0xffff) << std::endl;
+        std::cout << "          w: filter: " << ((metalRoughnessTexId>>16)&0xffff) << std::endl;
+        
         // metalness factor
         float metalFactor = material.pbrMetallicRoughness.metallicFactor;
-        unsigned char const * mF = reinterpret_cast<unsigned char const *>(&metalFactor);
-        writeData.push_back(mF[0]);
-        writeData.push_back(mF[1]);
-        writeData.push_back(mF[2]);
-        writeData.push_back(mF[3]);
+        f.write((char*)&metalFactor, sizeof(float));
+        std::cout << "          w: metalFactor: " << metalFactor << std::endl;
+        
         // roughness factor
         float roughnessFactor = material.pbrMetallicRoughness.roughnessFactor;
-        unsigned char const * rF = reinterpret_cast<unsigned char const *>(&roughnessFactor);
-        writeData.push_back(rF[0]);
-        writeData.push_back(rF[1]);
-        writeData.push_back(rF[2]);
-        writeData.push_back(rF[3]);
+        f.write((char*)&roughnessFactor, sizeof(float));
+        std::cout << "          w: roughnessFactor: " << roughnessFactor << std::endl;
     }
 
     // normal (4)
     //      tex id (4) (3 id, 1 min/mag filter)
     //      scale (4)
     if (materialFlags & (0b1<<2)){
-        std::cout << "          -normal " << std::endl;
+        std::cout << "          [normal] " << std::endl;
         // normal sentinel
-        writeData.push_back( 3 & 0b1);
-        writeData.push_back((3 >> 8) & 0b1);
-        writeData.push_back((3 >> 16) & 0b1);
-        writeData.push_back((3 >> 24) & 0b1);
+        uint32_t sentinel = 3;
+        f.write((char*)&sentinel, sizeof(uint32_t));
+        std::cout << "          w: sentinel: " << sentinel << std::endl;
+        
         // tex id
-        int normalTexId = texIds[currId++];
-        writeData.push_back(normalTexId & 0b1);
-        writeData.push_back((normalTexId >> 8) & 0b1);
-        writeData.push_back((normalTexId >> 16) & 0b1); //filter
-        writeData.push_back((normalTexId >> 24) & 0b1); //filter
+        uint32_t normalTexId = texIds[currId++];
+        f.write((char*)&normalTexId, sizeof(uint32_t));
+        std::cout << "          w: normalTexId: " << (normalTexId&0xffff) << std::endl;
+        std::cout << "          w: filter: " << ((normalTexId>>16)&0xffff) << std::endl;
+        
         // normal scale
         float normalScale = material.normalTexture.scale;
-        unsigned char const * nS = reinterpret_cast<unsigned char const *>(&normalScale);
-        writeData.push_back(nS[0]);
-        writeData.push_back(nS[1]);
-        writeData.push_back(nS[2]);
-        writeData.push_back(nS[3]);
+        f.write((char*)&normalScale, sizeof(float));
+        std::cout << "          w: normalScale: " << normalScale << std::endl;
     }
 
     // occlusion (4)
     //      tex id (4) (3 id, 1 min/mag filter)
     //      strength (4)
     if (materialFlags & (0b1<<3)){
-        std::cout << "          -occlusion " << std::endl;
+        std::cout << "          [occlusion] " << std::endl;
         // occlusion sentinel
-        writeData.push_back( 4 & 0b1);
-        writeData.push_back((4 >> 8) & 0b1);
-        writeData.push_back((4 >> 16) & 0b1);
-        writeData.push_back((4 >> 24) & 0b1);
+        uint32_t sentinel = 4;
+        f.write((char*)&sentinel, sizeof(uint32_t));
+        std::cout << "          w: sentinel: " << sentinel << std::endl;
+        
         // tex id
-        int occlusionTexId = texIds[currId++];
-        writeData.push_back(occlusionTexId & 0b1);
-        writeData.push_back((occlusionTexId >> 8) & 0b1);
-        writeData.push_back((occlusionTexId >> 16) & 0b1); //filter
-        writeData.push_back((occlusionTexId >> 24) & 0b1); //filter
+        uint32_t occlusionTexId = texIds[currId++];
+        f.write((char*)&occlusionTexId, sizeof(uint32_t));
+        std::cout << "          w: occlusionTexId: " << (occlusionTexId&0xffff) << std::endl;
+        std::cout << "          w: filter: " << ((occlusionTexId>>16)&0xffff) << std::endl;
+        
         // occlusion strength
         float occlusionStrength = material.occlusionTexture.strength;
-        unsigned char const * oS = reinterpret_cast<unsigned char const *>(&occlusionStrength);
-        writeData.push_back(oS[0]);
-        writeData.push_back(oS[1]);
-        writeData.push_back(oS[2]);
-        writeData.push_back(oS[3]);
+        f.write((char*)&occlusionStrength, sizeof(float));
+        std::cout << "          w: occlusionStrength: " << occlusionStrength << std::endl;
     }
 
     // emissive (4)
     //      tex id (4) (3 id, 1 min/mag filter)
     //      factor (12)
     if (materialFlags & (0b1<<4)){
-        std::cout << "          -emissive" << std::endl;
+        std::cout << "          [emissive]" << std::endl;
         // emissive sentinel
-        writeData.push_back( 5 & 0b1);
-        writeData.push_back((5 >> 8) & 0b1);
-        writeData.push_back((5 >> 16) & 0b1);
-        writeData.push_back((5 >> 24) & 0b1);
+        uint32_t sentinel = 5;
+        f.write((char*)&sentinel, sizeof(uint32_t));
+        std::cout << "          w: sentinel: " << sentinel << std::endl;
+
         // tex id
-        int emissiveTexId = texIds[currId++];
-        writeData.push_back(emissiveTexId & 0b1);
-        writeData.push_back((emissiveTexId >> 8) & 0b1);
-        writeData.push_back((emissiveTexId >> 16) & 0b1); //filter
-        writeData.push_back((emissiveTexId >> 24) & 0b1); //filter
+        uint32_t emissiveTexId = texIds[currId++];
+        f.write((char*)&emissiveTexId, sizeof(uint32_t));
+        std::cout << "          w: emissiveTexId: " << (emissiveTexId&0xffff) << std::endl;
+        std::cout << "          w: filter: " << ((emissiveTexId>>16)&0xffff) << std::endl;        
+
         // emissive factor (x,y,z);
         std::vector<double> emissiveFactorDouble = material.emissiveFactor;
         std::vector<float> emissiveFactor(emissiveFactorDouble.begin(), emissiveFactorDouble.end());
         //      x
-        unsigned char const * x = reinterpret_cast<unsigned char const *>(&emissiveFactor[0]);
-        writeData.push_back(x[0]);
-        writeData.push_back(x[1]);
-        writeData.push_back(x[2]);
-        writeData.push_back(x[3]);
+        f.write((char*)&emissiveFactor[0], sizeof(float));
+        std::cout << "          w: emissiveFactor.x: " << emissiveFactor[0] << std::endl;
         //      y
-        unsigned char const * y = reinterpret_cast<unsigned char const *>(&emissiveFactor[1]);
-        writeData.push_back(y[0]);
-        writeData.push_back(y[1]);
-        writeData.push_back(y[2]);
-        writeData.push_back(y[3]);
+        f.write((char*)&emissiveFactor[1], sizeof(float));
+        std::cout << "          w: emissiveFactor.y: " << emissiveFactor[1] << std::endl;
         //      z
-        unsigned char const * z = reinterpret_cast<unsigned char const *>(&emissiveFactor[2]);
-        writeData.push_back(z[0]);
-        writeData.push_back(z[1]);
-        writeData.push_back(z[2]);
-        writeData.push_back(z[3]);
+        f.write((char*)&emissiveFactor[2], sizeof(float));
+        std::cout << "          w: emissiveFactor.z: " << emissiveFactor[2] << std::endl;
     }
 
     // alpha (4)
     //      type (4)
     //      cutoff (4)
     if (materialFlags & (0b1<<5)){
-        std::cout << "          -alpha " << std::endl;
+        std::cout << "          [alpha] " << std::endl;
         // alpha sentinel
-        writeData.push_back( 6 & 0b1);
-        writeData.push_back((6 >> 8) & 0b1);
-        writeData.push_back((6 >> 16) & 0b1);
-        writeData.push_back((6 >> 24) & 0b1);
+        uint32_t sentinel = 6;
+        f.write((char*)&sentinel, sizeof(uint32_t));
+        std::cout << "          w: sentinel: " << sentinel << std::endl;
+
         // alpha type
-        int alphaType = 0; // blend by default
+        uint32_t alphaType = 0; // blend by default
         if (material.alphaMode == "MASK")
             alphaType = 1;
-        writeData.push_back(alphaType & 0b1);
-        writeData.push_back((alphaType >> 8) & 0b1);
-        writeData.push_back((alphaType >> 16) & 0b1);
-        writeData.push_back((alphaType >> 24) & 0b1);
+        f.write((char*)&alphaType, sizeof(uint32_t));
+        std::cout << "          w: alphaType: " << alphaType << std::endl;
+
         // alpha cutoff
         float alphaCutoff = material.alphaCutoff;
-        unsigned char const * aC = reinterpret_cast<unsigned char const *>(&alphaCutoff);
-        writeData.push_back(aC[0]);
-        writeData.push_back(aC[1]);
-        writeData.push_back(aC[2]);
-        writeData.push_back(aC[3]);
+        f.write((char*)&alphaCutoff, sizeof(float));
+        std::cout << "          w: alphaCutoff: " << alphaCutoff << std::endl;
 
     }
 
     // doublesided (4)
     if (materialFlags & (0b1<<6)){
-        std::cout << "          -double sided " << std::endl;
+        std::cout << "          [double sided] " << std::endl;
         // doublesided sentinel
-        writeData.push_back( 7 & 0b1);
-        writeData.push_back((7 >> 8) & 0b1);
-        writeData.push_back((7 >> 16) & 0b1);
-        writeData.push_back((7 >> 24) & 0b1);
+        uint32_t sentinel = 7;
+        f.write((char*)&sentinel, sizeof(uint32_t));
+        std::cout << "          w: sentinel: " << sentinel << std::endl;
+        
     }
+    
+    // close file
+    f.close();
+    std::cout << "          f: closed" << std::endl;
     std::cout << "" << std::endl;
-    // write to file
-    FileWriter fw = FileWriter();
-    fw.writeFile("../data/materials/", (m_name+("_"+std::to_string(materialId))), ".smtl", writeData.data(), writeData.size());
 }
 
-void GLTFParser::writeModelFile(int meshCount, std::vector<int> meshIds, int modelId){
+void GLTFParser::writeModelFile(uint32_t meshCount, std::vector<uint32_t> meshIds, uint32_t modelId){
     // assuming no animations
 
     // name length (4)
     // name (nameLength)
     // mesh count (4)
     // mesh ids (4*count) 
-    int nameLength = m_name.size();
-    int byteLength = nameLength + 4 + 4 + 4*meshIds.size();
-    unsigned char writeData[byteLength];
+    uint32_t nameLength = m_name.size();
 
     std::cout << "      Write Model File:" << std::endl;
-    std::cout << "          nameLength " << nameLength << std::endl;
-    std::cout << "          name " << m_name << std::endl;
-    std::cout << "          byteLength " << byteLength << std::endl;
-    std::cout << "" << std::endl;
 
+    // write to file
+    // open file
+    std::ofstream f("../data/models/"+m_name+".smdl", std::ios::binary);
+    if (!f.is_open()){
+        // log error
+        std::cerr << "Failed to open/create file" << std::endl;
+        return ;
+    }
+    std::cout << "          f: created" << std::endl;
+    
     // write name length
-    writeData[0] = nameLength & 0xff;
-    writeData[1] = (nameLength >> 8) & 0xff;
-    writeData[2] = (nameLength >> 16) & 0xff;
-    writeData[3] = (nameLength >> 24) & 0xff;
+    f.write((char*)&nameLength, sizeof(uint32_t));
+    std::cout << "          w: nameLength: " << nameLength << std::endl;
 
     // write name
-    int index = 4;
-    for (auto & ch : m_name) {
-        writeData[index++] = ch;
-    }
+    f.write(m_name.c_str(), nameLength);
+    std::cout << "          w: name: " << m_name << std::endl;
 
     // write mesh count
-    writeData[nameLength+4] = meshCount & 0xff;
-    writeData[nameLength+5] = (meshCount >> 8) & 0xff;
-    writeData[nameLength+6] = (meshCount >> 16) & 0xff;
-    writeData[nameLength+7] = (meshCount >> 24) & 0xff;
+    f.write((char*)&meshCount, sizeof(uint32_t));
+    std::cout << "          w: meshCount: " << meshCount << std::endl;
 
     // write mesh ids
-    int count = 0;
-    for (auto & meshId : meshIds) {
-        writeData[nameLength+8 + 4*count] = meshId & 0xff;
-        writeData[nameLength+9 + 4*count + 1] = (meshId >> 8) & 0xff;
-        writeData[nameLength+10 + 4*count + 2] = (meshId >> 16) & 0xff;
-        writeData[nameLength+11 + 4*count + 3] = (meshId >> 24) & 0xff;
+    for (int i = 0; i < meshCount; i++){
+        f.write((char*)&meshIds[i], sizeof(uint32_t));
+        std::cout << "          w: meshId: " << meshIds[i] << std::endl;
     }
 
-    // write to file
-    FileWriter fw = FileWriter();
-    fw.writeFile("../data/models/", (m_name+("_"+std::to_string(modelId))), ".smdl", writeData, byteLength);
+    // close file
+    f.close();
+    std::cout << "          f: closed" << std::endl;
+    std::cout << "" << std::endl;
 }
 
-void GLTFParser::writeTextureFile(int bufferId, int imageType, int texId){
+void GLTFParser::writeTextureFile(uint32_t bufferId, uint32_t imageType, uint32_t texId){
     // buffer id (4)
     // raw/png/jpg/raw/bmp (4)
-    int byteLength = 8;
-    unsigned char writeData[byteLength];
 
     std::cout << "      Write Texture File:" << std::endl;
-    std::cout << "          byteLength " << byteLength << std::endl;
-    std::cout << "          bufferId " << bufferId << std::endl;
-    std::cout << "          imageType " << imageType << std::endl;
-    std::cout << "" << std::endl;
-
-    // write buffer id
-    writeData[0] = bufferId & 0xff;
-    writeData[1] = (bufferId >> 8) & 0xff;
-    writeData[2] = (bufferId >> 16) & 0xff;
-    writeData[3] = (bufferId >> 24) & 0xff;
-
-    // write image type
-    writeData[4] = imageType & 0xff;
-    writeData[5] = (imageType >> 8) & 0xff;
-    writeData[6] = (imageType >> 16) & 0xff;
-    writeData[7] = (imageType >> 24) & 0xff;
 
     // write to file
-    FileWriter fw = FileWriter();
-    fw.writeFile("../data/textures/", (m_name+("_"+std::to_string(texId))), ".stex", writeData, byteLength+1);
+    // open file
+    std::ofstream f("../data/textures/"+(m_name+("_"+std::to_string(texId)))+".stex", std::ios::binary);
+    if (!f.is_open()){
+        // log error
+        std::cerr << "Failed to open/create file" << std::endl;
+        return ;
+    }
+    std::cout << "          f: created" << std::endl;
+    
+    // write buffer id
+    f.write((char*)&bufferId, sizeof(uint32_t));
+    std::cout << "          w: bufferId: " << bufferId << std::endl;
+
+    // write image type
+    f.write((char*)&imageType, sizeof(uint32_t));
+    std::cout << "          w: imageType: " << imageType << std::endl;
+
+    // close file
+    f.close();
+    std::cout << "          f: closed" << std::endl;
+    std::cout << "" << std::endl;
 }
 
 void GLTFParser::handleBuffer(
         const tinygltf::Buffer& buffer, 
-        int byteOffset, 
-        int byteLength, 
-        int elementType, 
-        int componentType,
-        int bufferId){
+        uint32_t byteOffset, 
+        uint32_t byteLength, 
+        uint32_t elementType, 
+        uint32_t componentType,
+        uint32_t bufferId){
     std::cout << "Buffer:" << std::endl;
     std::cout << "  byteOffset " << byteOffset << std::endl;
     std::cout << "  byteLength " << byteLength << std::endl;
@@ -435,31 +390,31 @@ void GLTFParser::handleBuffer(
     std::cout << "  componentType " << componentType << std::endl;
     std::cout << "  bufferId " << bufferId << std::endl;
     std::cout << "" << std::endl;
-    // write slice of buffer into new buffer
+    // write slice of buffer int32_to new buffer
     const unsigned char* bufferData = buffer.data.data();
     unsigned char* data = new unsigned char[byteLength];
-    for (int i = 0; i < byteLength; i++){
+    for (int32_t i = 0; i < byteLength; i++){
         data[i] = bufferData[i+byteOffset];
     }
     
     // write slice to file
     writeBufferFile(data, byteLength, elementType, componentType, bufferId);
 
-    delete data;
+    delete[] data;
 }
 
-void GLTFParser::handleBufferInterleaved(
+void GLTFParser::handleBufferint32_terleaved(
         const tinygltf::Buffer& buffer, 
-        int byteOffset, 
-        int byteLength, 
-        int byteStride,
-        int bytesPerElement, 
-        int elementType, 
-        int componentType,
-        int bufferId){
+        uint32_t byteOffset, 
+        uint32_t byteLength, 
+        uint32_t byteStride,
+        uint32_t bytesPerElement, 
+        uint32_t elementType, 
+        uint32_t componentType,
+        uint32_t bufferId){
     std::vector<unsigned char> bufferData = buffer.data;
     std::vector<unsigned char> data;
-    std::cout << "BufferInterleaved:" << std::endl;
+    std::cout << "Bufferint32_terleaved:" << std::endl;
     std::cout << "  byteOffset " << byteOffset << std::endl;
     std::cout << "  byteLength " << byteLength << std::endl;
     std::cout << "  byteStride " << byteStride << std::endl;
@@ -469,9 +424,9 @@ void GLTFParser::handleBufferInterleaved(
     std::cout << "  bufferId " << bufferId << std::endl;
     std::cout << "" << std::endl;
     // iterate over buffer, one stride at a time 
-    for (int i = byteOffset; i < byteOffset + byteLength; i+= byteStride){
+    for (uint32_t i = byteOffset; i < byteOffset + byteLength; i+= byteStride){
         // grab neccessary bytes from stride (byte-by byte, may be slow)
-        for (int b = 0; b < bytesPerElement; b++){
+        for (uint32_t b = 0; b < bytesPerElement; b++){
             data.push_back(bufferData[i+b]);
         }
     }
@@ -482,12 +437,12 @@ void GLTFParser::handleBufferInterleaved(
 
 void GLTFParser::handleBufferView(
         const tinygltf::BufferView& bufferView, 
-        int byteOffset,
-        int bytesPerElement, 
-        int elementCount, 
-        int elementType, 
-        int componentType,
-        int bufferId){
+        uint32_t byteOffset,
+        uint32_t bytesPerElement, 
+        uint32_t elementCount, 
+        uint32_t elementType, 
+        uint32_t componentType,
+        uint32_t bufferId){
     std::cout << "BufferView:" << std::endl;
     std::cout << "  byteOffset " << byteOffset << std::endl;
     std::cout << "  bytesPerElement " << bytesPerElement << std::endl;
@@ -496,9 +451,9 @@ void GLTFParser::handleBufferView(
     std::cout << "  componentType " << componentType << std::endl;
     std::cout << "  bufferId " << bufferId << std::endl;
     // properties
-    int adjustedByteOffset = bufferView.byteOffset + byteOffset;
-    int byteLength = bufferView.byteLength;
-    int byteStride = bufferView.byteStride;
+    uint32_t adjustedByteOffset = bufferView.byteOffset + byteOffset;
+    uint32_t byteLength = bufferView.byteLength;
+    uint32_t byteStride = bufferView.byteStride;
     if (byteStride == 0)
         byteStride = bytesPerElement;
     std::cout << "  [properties]" << std::endl;
@@ -515,19 +470,19 @@ void GLTFParser::handleBufferView(
     if (byteStride == bytesPerElement)
         handleBuffer(buffer, byteOffset, byteLength, elementType, componentType, bufferId);
     else
-        handleBufferInterleaved(buffer, byteOffset, byteStride*elementCount, byteStride, bytesPerElement, elementType, componentType, bufferId);
+        handleBufferint32_terleaved(buffer, byteOffset, byteStride*elementCount, byteStride, bytesPerElement, elementType, componentType, bufferId);
     
 }
 
-int GLTFParser::handleAccessor(const tinygltf::Accessor& accessor){
-    int accessorId = m_id++;
+uint32_t GLTFParser::handleAccessor(const tinygltf::Accessor& accessor){
+    uint32_t accessorId = m_id++;
 
     // properties
-    int byteOffset = accessor.byteOffset;
-    int elementCount = accessor.count;
-    int elementType = accessor.type;
-    int componentType = accessor.componentType;
-    int bytesPerElement = tinygltf::GetNumComponentsInType(elementType) * tinygltf::GetComponentSizeInBytes(componentType);
+    uint32_t byteOffset = accessor.byteOffset;
+    uint32_t elementCount = accessor.count;
+    uint32_t elementType = accessor.type;
+    uint32_t componentType = accessor.componentType;
+    uint32_t bytesPerElement = tinygltf::GetNumComponentsInType(elementType) * tinygltf::GetComponentSizeInBytes(componentType);
     std::cout << "Accessor:" << std::endl;
     std::cout << "  byteOffset " << byteOffset << std::endl;
     std::cout << "  elementCount " << elementCount << std::endl;
@@ -544,37 +499,53 @@ int GLTFParser::handleAccessor(const tinygltf::Accessor& accessor){
     return accessorId;
 }
 
-int GLTFParser::handleTexture(const tinygltf::Texture& tex){
-    int texId = m_id++;
+uint32_t GLTFParser::handleTexture(const tinygltf::Texture& tex){
+    int32_t texId = m_id++;
     
     // get image and sampler
-    int sourceIndex = tex.source;
-    int samplerIndex = tex.sampler;
-    int minFilter;
+    int32_t sourceIndex = tex.source;
+    int32_t samplerIndex = tex.sampler;
+    int32_t minFilter;
     tinygltf::Image image;
     tinygltf::Sampler sampler;
     std::cout << "Texture:" << std::endl;
     std::cout << "  sourceIndex " << sourceIndex << std::endl;
     std::cout << "  samplerIndex " << samplerIndex << std::endl;
     if (sourceIndex == -1)
-        return texId;
+        return 0;
     if (samplerIndex == -1)
         minFilter = TINYGLTF_TEXTURE_FILTER_LINEAR_MIPMAP_LINEAR;
     else {
         sampler = model.samplers[samplerIndex];
         minFilter = sampler.minFilter;
     }
+
+    // create masked id (id + filter)
+    uint32_t maskedTexId = (texId & 0xFFFF) | (minFilter << 16);
+    
+    // tex already written to buffer
+    // write tex file but not buffer
+    if (m_sourceIdMap.count(sourceIndex) > 0){
+        // write texture to file
+        std::cout << "  [exists, skipping]" << std::endl;
+        std::cout << "" << std::endl;
+        writeTextureFile(m_sourceIdMap[sourceIndex], 0, texId);
+        return maskedTexId;
+    }
+
+    // get image
     image = model.images[sourceIndex];
 
     // get min filter
     minFilter = sampler.minFilter;
 
-    // get data
-    int elementType = TINYGLTF_TYPE_SCALAR;
-    int componentType = TINYGLTF_COMPONENT_TYPE_UNSIGNED_BYTE;
-    int bufferId = m_id++;
+    // get data and write to buffer
+    int32_t elementType = TINYGLTF_TYPE_SCALAR;
+    int32_t componentType = TINYGLTF_COMPONENT_TYPE_UNSIGNED_BYTE;
+    int32_t bufferId = m_id++;
+    m_sourceIdMap[sourceIndex] = bufferId;
     if (image.bufferView >= 0){ // bufferview
-        int elementCount = image.width * image.height * image.component;
+        int32_t elementCount = image.width * image.height * image.component;
         std::cout << "  [bufferview] " << std::endl;
         std::cout << "  minFilter " << minFilter << std::endl;
         std::cout << "  elementType " << elementType << std::endl;
@@ -583,7 +554,7 @@ int GLTFParser::handleTexture(const tinygltf::Texture& tex){
         handleBufferView(model.bufferViews[image.bufferView], 0, 1, elementCount, elementType, componentType, bufferId);
     } else { // direct buffer
         tinygltf::Buffer buffer;
-        int elementCount = image.image.size();
+        int32_t elementCount = image.image.size();
         buffer.data = image.image;
         std::cout << "  [buffer uri] " << std::endl;
         std::cout << "  minFilter " << minFilter << std::endl;
@@ -594,48 +565,46 @@ int GLTFParser::handleTexture(const tinygltf::Texture& tex){
     }
     std::cout << "" << std::endl;
 
-    int maskedTexId = (texId & 0xFFFF) | (minFilter << 16);
-
     // write texture to file
     writeTextureFile(bufferId, 0, texId);
     return maskedTexId;
 }
 
-int GLTFParser::handleTexture(const tinygltf::TextureInfo& texInfo){
+uint32_t GLTFParser::handleTexture(const tinygltf::TextureInfo& texInfo){
     // get texture
-    int texIndex = texInfo.index;
+    int32_t texIndex = texInfo.index;
     const tinygltf::Texture& tex = model.textures[texIndex];
 
     // handle texture
     return handleTexture(tex);
 }
 
-int GLTFParser::handleTexture(const tinygltf::NormalTextureInfo& texInfo){
+uint32_t GLTFParser::handleTexture(const tinygltf::NormalTextureInfo& texInfo){
     // get texture
-    int texIndex = texInfo.index;
+    int32_t texIndex = texInfo.index;
     const tinygltf::Texture& tex = model.textures[texIndex];
 
     // handle texture
     return handleTexture(tex);
 }
 
-int GLTFParser::handleTexture(const tinygltf::OcclusionTextureInfo& texInfo){
+uint32_t GLTFParser::handleTexture(const tinygltf::OcclusionTextureInfo& texInfo){
     // get texture
-    int texIndex = texInfo.index;
+    int32_t texIndex = texInfo.index;
     const tinygltf::Texture& tex = model.textures[texIndex];
 
     // handle texture
     return handleTexture(tex);
 }
 
-int GLTFParser::handleMaterial(const tinygltf::Material& material){
-    int materialId = m_id++;
+uint32_t GLTFParser::handleMaterial(const tinygltf::Material& material){
+    uint32_t materialId = m_id++;
     std::cout << "Material:" << std::endl;
     // material flags
-    int materialFlags = 0;
+    uint32_t materialFlags = 0;
 
     // tex ids
-    std::vector<int> texIds;
+    std::vector<uint32_t> texIds;
 
     // pbrmetallicroughness
     const tinygltf::PbrMetallicRoughness& pbr = material.pbrMetallicRoughness;
@@ -689,18 +658,18 @@ int GLTFParser::handleMaterial(const tinygltf::Material& material){
     return materialId;
 }
 
-int GLTFParser::handlePrimitive(const tinygltf::Primitive& primitive){
-    int meshId = m_id++;
+uint32_t GLTFParser::handlePrimitive(const tinygltf::Primitive& primitive){
+    uint32_t meshId = m_id++;
     // material
-    int materialIndex = primitive.material;
+    uint32_t materialIndex = primitive.material;
 
     // attributes (accessor indices)
-    int indicesAccessorIndex = primitive.indices;
-    int positionAccessorIndex = -1;
-    int normalAccessorIndex = -1;
-    int tangentAccessorIndex = -1;
-    std::vector<int> texcoordAccessorIndices;
-    std::vector<int> colorAccessorIndices;
+    int32_t indicesAccessorIndex = primitive.indices;
+    int32_t positionAccessorIndex = -1;
+    int32_t normalAccessorIndex = -1;
+    int32_t tangentAccessorIndex = -1;
+    std::vector<uint32_t> texcoordAccessorIndices;
+    std::vector<uint32_t> colorAccessorIndices;
 
     // iterate over primitive's attributes
     for (auto const& [key, val] : primitive.attributes){
@@ -720,34 +689,34 @@ int GLTFParser::handlePrimitive(const tinygltf::Primitive& primitive){
 
     // handle accessors
     // indices
-    int indicesId = handleAccessor(model.accessors[indicesAccessorIndex]);
+    int32_t indicesId = handleAccessor(model.accessors[indicesAccessorIndex]);
 
     // position
-    int positionId = -1;
+    int32_t positionId = -1;
     if (positionAccessorIndex >= 0){
         positionId = handleAccessor(model.accessors[positionAccessorIndex]);
     }
 
     // normal
-    int normalId = -1;
+    int32_t normalId = -1;
     if (normalAccessorIndex >= 0){
         normalId = handleAccessor(model.accessors[normalAccessorIndex]);
     }
 
     // tangent
-    int tangentId = -1;
+    int32_t tangentId = -1;
     if (tangentAccessorIndex >= 0){
         tangentId = handleAccessor(model.accessors[tangentAccessorIndex]);
     }
 
     // texcoords
-    std::vector<int> texCoordIds;
+    std::vector<uint32_t> texCoordIds;
     for (auto & texcoordAccessorIndex : texcoordAccessorIndices) {
         texCoordIds.push_back(handleAccessor(model.accessors[texcoordAccessorIndex]));
     }
 
     // colors
-    int colorId = -1;
+    int32_t colorId = -1;
     for (auto & colorAccessorIndex : colorAccessorIndices) {
         colorId = handleAccessor(model.accessors[colorAccessorIndex]);
         break;
@@ -767,7 +736,7 @@ int GLTFParser::handlePrimitive(const tinygltf::Primitive& primitive){
     std::cout << "" << std::endl;
 
     // handle material
-    int materialId = handleMaterial(model.materials[materialIndex]);
+    uint32_t materialId = handleMaterial(model.materials[materialIndex]);
 
     // write prim (mesh) to file
     writeMeshFile(materialId, indicesId, positionId, normalId, colorId, tangentId, texCoordIds, meshId);
@@ -775,8 +744,8 @@ int GLTFParser::handlePrimitive(const tinygltf::Primitive& primitive){
     return meshId;
 }
 
-void GLTFParser::handleMesh(const tinygltf::Mesh& mesh, std::vector<int> &meshIds){
-    for (int i = 0; i < mesh.primitives.size(); i++){
+void GLTFParser::handleMesh(const tinygltf::Mesh& mesh, std::vector<uint32_t> &meshIds){
+    for (int32_t i = 0; i < mesh.primitives.size(); i++){
         const tinygltf::Primitive& primitive = mesh.primitives[i];
         if (primitive.mode == 4 || primitive.mode == -1){
             meshIds.push_back(handlePrimitive(primitive));
@@ -784,7 +753,7 @@ void GLTFParser::handleMesh(const tinygltf::Mesh& mesh, std::vector<int> &meshId
     }
 }
 
-void GLTFParser::parseNode(const tinygltf::Node& node, std::vector<int> &meshIds){
+void GLTFParser::parseNode(const tinygltf::Node& node, std::vector<uint32_t> &meshIds){
     // handle meshes
     if (node.mesh != -1){
         const tinygltf::Mesh& mesh = model.meshes[node.mesh];
@@ -792,7 +761,7 @@ void GLTFParser::parseNode(const tinygltf::Node& node, std::vector<int> &meshIds
     }
 
     // handle children
-    for (int i = 0; i < node.children.size(); i++){
+    for (int32_t i = 0; i < node.children.size(); i++){
         const tinygltf::Node& child = model.nodes[node.children[i]];
         parseNode(child, meshIds);
     }
@@ -801,12 +770,12 @@ void GLTFParser::parseNode(const tinygltf::Node& node, std::vector<int> &meshIds
 void GLTFParser::parse(){
     std::cout << "Sucessfully loaded, parsing..." << std::endl;
 
-    int modelId = m_id++;
+    int32_t modelId = m_id++;
     // assume one scene
     const tinygltf::Scene& scene = model.scenes[0];
-    std::vector<int> meshIds;
+    std::vector<uint32_t> meshIds;
     // process top level nodes
-    for (int i = 0; i < scene.nodes.size(); i++){
+    for (int32_t i = 0; i < scene.nodes.size(); i++){
         const tinygltf::Node& currNode = model.nodes[scene.nodes[i]];
         parseNode(currNode, meshIds);
     }
