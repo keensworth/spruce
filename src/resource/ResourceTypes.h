@@ -154,6 +154,21 @@ public:
     static std::string typeToString(ResourceType resourceType){
         return resourceTypeStrings[resourceType];
     }
+
+    static ResourceType stringToType(std::string type){
+        if (type == "SPR_BUFFER")
+            return SPR_BUFFER;
+        else if (type == "SPR_MESH")
+            return SPR_MESH;
+        else if (type == "SPR_MATERIAL")
+            return SPR_MATERIAL;
+        else if (type == "SPR_TEXTURE")
+            return SPR_TEXTURE;
+        else if (type == "SPR_MODEL")
+            return SPR_MODEL;
+        else
+            return SPR_NONE;
+    }
 };
 
 }
