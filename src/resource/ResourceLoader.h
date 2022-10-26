@@ -7,6 +7,7 @@
 #include <string>
 #include <vector>
 #include "ResourceTypes.h"
+#include "../../data/asset_ids.h"
 
 namespace spr {
 class ResourceLoader {
@@ -19,6 +20,8 @@ public:
     T loadFromMetadata(ResourceMetadata metadata);
 
 private:
+    // instance id
+    uint32 m_instanceId = 0;
     // Model loadModel(ResourceMetadata metadata);
     // Audio loadAudio(ResourceMetadata metadata);
     // Shader loadShader(ResourceMetadata metadata);

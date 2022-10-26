@@ -49,7 +49,7 @@ public:
     }
 
     // T := ResourceCache
-    // U := ResourceInstance (not explicit, return only)
+    // U := ResourceInstance (not explicit (only in param), return only)
     template <typename T, typename U>
     U* getData(Handle<U> handle){
         uint32 index = getResourceCacheIndex<T>();

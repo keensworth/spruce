@@ -28,14 +28,9 @@ public:
 
     ~TypedResourceCache(){
         // clear hashmaps
-        handles.clear();
-        metadata.clear();
+        m_handles.clear();
+        m_metadata.clear();
         // m_data destructor
-    }
-
-    // send metadata into hashmap with id
-    void registerResource(ResourceMetadata metadata){
-        m_metadata[metadata.resourceId] = metadata;
     }
 
     // get handle from hashmap with id
@@ -47,12 +42,13 @@ public:
             handle = m_handles[id];
         
         // valid handle, up-to-date in pool
-        if (handle.isValid() && m_pool.isValidHandle(handle))
+        if (handle.isValid() && m_data.isValidHandle(handle))
             return handle;
         
-        // handle isn't valid or isn't up-to-date in pool, load data
+        // handle isn't valid or isn't up-to-date in pool, load data and update
         T data = m_resourceLoader.loadFromMetadata<T>(m_metadata[id]);
         handle = m_data.insert(data);
+        m_handles[m_metadata[id]] = handle;
 
         return handle;
     }
@@ -61,6 +57,8 @@ public:
     T* getData(Handle<T> handle){
         return m_data.get(handle);    
     }
+
+    friend class ResourceManager;
 
 private:
     // Resource metadata
@@ -74,6 +72,11 @@ private:
 
     // Resource loader
     ResourceLoader m_resourceLoader;
+
+    // send metadata into hashmap with id
+    void registerResource(ResourceMetadata metadata){
+        m_metadata[metadata.resourceId] = metadata;
+    }
 };
 
 }
