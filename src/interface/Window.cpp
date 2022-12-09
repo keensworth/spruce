@@ -186,7 +186,7 @@ bool Window::isFullscreen(){
 }
 
 bool Window::isWindowed(){
-    return !isFullscreen();
+    return !m_fullscreen;
 }
 
 bool Window::isBorderless(){

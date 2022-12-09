@@ -1,6 +1,6 @@
 #pragma once
 
-#include "../core/Core.h"
+#include "../core/spruce_core.h"
 
 namespace spr {
 class Entity {

@@ -1,6 +1,8 @@
 #pragma once
 #include <string>
 #include <stdint.h>
+
+#define SDL_MAIN_HANDLED
 #include <SDL2/SDL_vulkan.h>
 
 #include "InputHandler.h"
