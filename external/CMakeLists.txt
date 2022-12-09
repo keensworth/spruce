@@ -14,6 +14,8 @@ add_library(json INTERFACE)
 
 add_library(tinygltf STATIC)
 
+add_library(oof INTERFACE)
+
 target_sources(vkbootstrap PRIVATE 
   vkbootstrap/VkBootstrap.h
   vkbootstrap/VkBootstrap.cpp
@@ -29,6 +31,7 @@ target_link_libraries(vkbootstrap PUBLIC Vulkan::Vulkan $<$<BOOL:UNIX>:${CMAKE_D
 
 target_include_directories(flathashmap INTERFACE flathashmap)
 target_include_directories(json INTERFACE json)
+target_include_directories(oof INTERFACE oof)
 
 target_include_directories(tinygltf PUBLIC tinygltf)
 target_link_libraries(tinygltf PUBLIC json stb_image)
