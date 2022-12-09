@@ -4,7 +4,7 @@ add_library(srcFiles)
 
 
 target_sources(srcFiles PRIVATE
-  core/Core.h
+  core/spruce_core.h
   core/memory/Handle.h
   core/memory/Pool.h
   core/util/Container.h
@@ -12,6 +12,9 @@ target_sources(srcFiles PRIVATE
   core/util/node/EntityNode.cpp
   core/util/node/IndexNode.h
   core/util/node/IndexNode.cpp
+
+  debug/SprLog.cpp
+  debug/SprLog.h
 
   ecs/Registry.h
   ecs/Registry.cpp
@@ -39,6 +42,15 @@ target_sources(srcFiles PRIVATE
   interface/MouseState.h
   interface/Window.h
   interface/Window.cpp
+
+  resource/ResourceTypes.h
+  resource/AssetLoader.h
+  resource/AssetLoader.cpp
+  resource/ResourceCache.h
+  resource/ResourceLoader.h
+  resource/ResourceLoader.cpp
+  resource/ResourceManager.h
+  resource/ResourceManager.cpp
 )
 
 
