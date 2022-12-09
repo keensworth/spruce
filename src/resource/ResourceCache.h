@@ -48,7 +48,7 @@ public:
         // handle isn't valid or isn't up-to-date in pool, load data and update
         T data = m_resourceLoader.loadFromMetadata<T>(m_metadata[id]);
         handle = m_data.insert(data);
-        m_handles[m_metadata[id]] = handle;
+        m_handles[id] = handle;
 
         return handle;
     }

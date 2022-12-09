@@ -4,14 +4,15 @@
 #include <typeindex>
 #include <typeinfo>
 #include <vector>
-#include "../core/Core.h"
+#include "../core/spruce_core.h"
 
 namespace spr {
     
 
 // ---------------- Types and mappings ----------------------------------------
+
 // ResourceType enum
-typedef enum : uint32 {
+typedef enum ResourceType : uint32 {
     SPR_NONE,
     SPR_MESH,
     SPR_MODEL,
@@ -58,7 +59,7 @@ static std::vector<std::string> resourceTypeStrings{
 };
 
 // ---------------- Metadata --------------------------------------------------
-typedef struct {
+typedef struct ResourceMetadata {
     std::string name = "no-name";         // resource name (file name)
     ResourceType resourceType = SPR_NONE; // resource enum (links path/ext)
     uint32 sizeBytes = 0;                 // umbrella size in bytes
@@ -67,21 +68,21 @@ typedef struct {
 
 // ---------------- Instance --------------------------------------------------
 // base instance data
-typedef struct { 
+typedef struct ResourceInstance { 
     uint32 id;             // instance id
     uint32 resourceId = 0; // resource-unique id (enum value)
 } ResourceInstance;  
 
 
 // model
-typedef struct : ResourceInstance {
+typedef struct Model : ResourceInstance {
     uint32 meshCount = 0;
     std::vector<uint32> meshIds;
 } Model;
 
 
 // mesh
-typedef struct : ResourceInstance {
+typedef struct Mesh : ResourceInstance {
     uint32 materialId = 0;
     int32 indexBufferId = -1;
     int32 positionBufferId = -1;
@@ -93,7 +94,7 @@ typedef struct : ResourceInstance {
 
 
 // material
-typedef struct : ResourceInstance {
+typedef struct Material : ResourceInstance {
     uint32 materialFlags = 0;
 
     int32 baseColorTexId = -1;
@@ -120,14 +121,14 @@ typedef struct : ResourceInstance {
 
 
 // texture
-typedef struct : ResourceInstance {
+typedef struct Texture : ResourceInstance {
     uint32 bufferId = -1;
     uint32 imageType = 0;
 } Texture;
 
 
 // buffer
-typedef struct : ResourceInstance {
+typedef struct Buffer : ResourceInstance {
     uint32 elementType = 0;
     uint32 componentType = 0;
     uint32 byteLength = 0;
@@ -135,8 +136,8 @@ typedef struct : ResourceInstance {
 } Buffer;
 
 // unused
-typedef struct : ResourceInstance {} Audio;
-typedef struct : ResourceInstance {} Shader;
+typedef struct Audio : ResourceInstance {} Audio;
+typedef struct Shader : ResourceInstance {} Shader;
 
 
 // ---------------- Utility ---------------------------------------------------

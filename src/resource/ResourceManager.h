@@ -1,16 +1,12 @@
-// Handle <---> Data (*)
-
-// Independantly load buffers/textures
-
-// data not there get shit on LOL (checks cache, ensures loaded)
-
 #pragma once
 
 #include "ResourceCache.h"
 #include "AssetLoader.h"
+#include "../../external/flat_hash_map/flat_hash_map.hpp"
 
 
-typedef std::unordered_map<std::type_index, uint32> rmap;
+
+typedef ska::flat_hash_map<std::type_index, spr::ResourceCache*> rmap;
 
 namespace spr {
 
@@ -25,52 +21,39 @@ public:
     ResourceManager();
     ~ResourceManager();
 
-    // T := ResourceCache
-    template <typename T>
-    uint32 getResourceCacheIndex(){
-        uint32 index = m_resourceMap[typeid(T)];
-        return index;
+    // U := ResourceType
+    template <typename U>
+    Handle<U> getHandle(uint32 id){
+        auto resourceCache = m_resourceMap[typeid(U)];
+        auto typedCache = dynamic_cast<TypedResourceCache<U>*>(resourceCache);
+        return typedCache->getHandle(id);
     }
 
-    // T := ResourceCache
-    template <typename T>
-    auto getHandle(uint32 id){
-        uint32 index = getResourceCacheIndex<T>();
-        T* resourceCache = ((T*) dynamic_cast<T*>(m_resourceCaches.at(index)));
-        return resourceCache->getHandle(id);
-    }
-
-    // T := ResourceCache
-    // U := ResourceInstance (not explicit (only in param), return only)
-    template <typename T, typename U>
+    // U := ResourceType
+    template <typename U>
     U* getData(Handle<U> handle){
-        uint32 index = getResourceCacheIndex<T>();
-        T* resourceCache = ((T*) dynamic_cast<T*>(m_resourceCaches.at(index)));
-        return resourceCache->getData(handle);
+        auto resourceCache = m_resourceMap[typeid(U)];
+        auto typedCache = dynamic_cast<TypedResourceCache<U>*>(resourceCache);
+        return typedCache->getData(handle);
     }
     
 private:
-    std::vector<ResourceCache*> m_resourceCaches;
-    rmap m_resourceMap;
-    uint32 m_resourceIndex;
+    rmap m_resourceMap{
+        {typeid(Model), new ModelCache},
+        {typeid(Mesh), new MeshCache},
+        {typeid(Material), new MaterialCache},
+        {typeid(Texture), new TextureCache},
+        {typeid(Buffer), new BufferCache},
+    };
 
     void init();
 
-    // T := ResourceCache
-    template <typename T>
-    void addResourceType(ResourceCache* resourceCache){
-        m_resourceCaches.push_back(resourceCache);
-        m_resourceMap[typeid(T)] = m_resourceIndex;
-        m_resourceMap[typeid(T*)] = m_resourceIndex;
-        m_resourceIndex++;
-    }
-
-    // T := ResourceCache
-    template <typename T>
+    // U := ResourceType
+    template <typename U>
     void registerResource(ResourceMetadata metadata){
-        uint32 index = getResourceCacheIndex<T>();
-        T* resourceCache = ((T*) dynamic_cast<T*>(m_resourceCaches.at(index)));
-        resourceCache->registerResource(metadata);
+        auto resourceCache = m_resourceMap[typeid(U)];
+        auto typedCache = dynamic_cast<TypedResourceCache<U>*>(resourceCache);
+        typedCache->registerResource(metadata);
     }
 };
 }

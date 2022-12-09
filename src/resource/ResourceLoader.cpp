@@ -1,4 +1,5 @@
 #include "ResourceLoader.h"
+#include "../debug/SprLog.h"
 
 namespace spr{
 
@@ -9,6 +10,7 @@ ResourceLoader::ResourceLoader(){
 template <typename T>
 T ResourceLoader::loadFromMetadata(ResourceMetadata metadata){
     // log unknown resource
+    SprLog::error("Unkown resource");
 }
 
 
@@ -37,7 +39,7 @@ Model ResourceLoader::loadFromMetadata<Model>(ResourceMetadata metadata){
         ResourceTypes::getExtension(metadata.resourceType), 
         std::ios::binary);
     if (!f.is_open()){
-        // log error
+        SprLog::warn("Model not found");
         return Model();
     }
 
@@ -106,7 +108,7 @@ Mesh ResourceLoader::loadFromMetadata<Mesh>(ResourceMetadata metadata){
         ResourceTypes::getExtension(metadata.resourceType), 
         std::ios::binary);
     if (!f.is_open()){
-        // log error
+        SprLog::warn("Mesh not found");
         return Mesh();
     }
 
@@ -228,7 +230,7 @@ Material ResourceLoader::loadFromMetadata<Material>(ResourceMetadata metadata){
         ResourceTypes::getExtension(metadata.resourceType), 
         std::ios::binary);
     if (!f.is_open()){
-        // log error
+        SprLog::warn("Material not found");
         return Material();
     }
 
@@ -301,7 +303,7 @@ Material ResourceLoader::loadFromMetadata<Material>(ResourceMetadata metadata){
                 doubleSided = true;
                 break;
             default: // unknown
-                // log error
+                SprLog::warn("Material type not recognized");
                 break;
         }
     }
@@ -364,7 +366,7 @@ Texture ResourceLoader::loadFromMetadata<Texture>(ResourceMetadata metadata){
         ResourceTypes::getExtension(metadata.resourceType), 
         std::ios::binary);
     if (!f.is_open()){
-        // log error
+        SprLog::warn("Texture not found");
         return Texture();
     }
 
@@ -416,7 +418,7 @@ Buffer ResourceLoader::loadFromMetadata<Buffer>(ResourceMetadata metadata){
         ResourceTypes::getExtension(metadata.resourceType), 
         std::ios::binary);
     if (!f.is_open()){
-        // log error
+        SprLog::warn("Buffer not found");
         return Buffer();
     }
 

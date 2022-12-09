@@ -3,42 +3,38 @@
 namespace spr{
 
 ResourceManager::ResourceManager(){
-    m_resourceCaches = std::vector<ResourceCache*>();
-    m_resourceMap = rmap();
-    m_resourceIndex = 0;
+    // m_resourceCaches = std::vector<ResourceCache*>();
+    // m_resourceMap = rmap();
+    // m_resourceIndex = 0;
 
-    // add resource types and store pointers to caches
-    addResourceType<ModelCache>(new ModelCache);
-    addResourceType<MeshCache>(new MeshCache);
-    addResourceType<MaterialCache>(new MaterialCache);
-    addResourceType<TextureCache>(new TextureCache);
-    addResourceType<BufferCache>(new BufferCache);
+    // // add resource types and store pointers to caches
+    // addResourceType<Model>(new ModelCache);
+    // addResourceType<Mesh>(new MeshCache);
+    // addResourceType<Material>(new MaterialCache);
+    // addResourceType<Texture>(new TextureCache);
+    // addResourceType<Buffer>(new BufferCache);
+    init();
 }
 
 ResourceManager::~ResourceManager(){
     // delete model cache
-    uint32 index = getResourceCacheIndex<ModelCache>();
-    ModelCache* modelCache = ((ModelCache*) dynamic_cast<ModelCache*>(m_resourceCaches.at(index)));
+    ModelCache* modelCache = ((ModelCache*) m_resourceMap[typeid(Model)]);
     delete modelCache;
 
     // delete mesh cache
-    index = getResourceCacheIndex<MeshCache>();
-    MeshCache* meshCache = ((MeshCache*) dynamic_cast<MeshCache*>(m_resourceCaches.at(index)));
+    MeshCache* meshCache = ((MeshCache*) m_resourceMap[typeid(Mesh)]);
     delete meshCache;
 
     // delete material cache
-    index = getResourceCacheIndex<MaterialCache>();
-    MaterialCache* materialCache = ((MaterialCache*) dynamic_cast<MaterialCache*>(m_resourceCaches.at(index)));
+    MaterialCache* materialCache = ((MaterialCache*) m_resourceMap[typeid(Material)]);
     delete materialCache;
 
     // delete texture cache
-    index = getResourceCacheIndex<TextureCache>();
-    TextureCache* textureCache = ((TextureCache*) dynamic_cast<TextureCache*>(m_resourceCaches.at(index)));
+    TextureCache* textureCache = ((TextureCache*) m_resourceMap[typeid(Texture)]);
     delete textureCache;
 
     // delete buffer cache
-    index = getResourceCacheIndex<BufferCache>();
-    BufferCache* bufferCache = ((BufferCache*) dynamic_cast<BufferCache*>(m_resourceCaches.at(index)));
+    BufferCache* bufferCache = ((BufferCache*) m_resourceMap[typeid(Buffer)]);
     delete bufferCache;
 }
 
@@ -51,10 +47,10 @@ void ResourceManager::init(){
     for (auto & metadata : resourceMetadata){
         switch(metadata.resourceType) {
             case SPR_MESH :
-                registerResource<MeshCache>(metadata);
+                registerResource<Mesh>(metadata);
                 break;
             case SPR_MODEL :
-                registerResource<ModelCache>(metadata);
+                registerResource<Model>(metadata);
                 break;
             case SPR_AUDIO :
                 //registerResource<AudioCache>(metadata);
@@ -63,16 +59,16 @@ void ResourceManager::init(){
                 //registerResource<ShaderCache>(metadata);
                 break;
             case SPR_BUFFER :
-                registerResource<BufferCache>(metadata);
+                registerResource<Buffer>(metadata);
                 break;
             case SPR_TEXTURE :
-                registerResource<TextureCache>(metadata);
+                registerResource<Texture>(metadata);
                 break;
             case SPR_MATERIAL :
-                registerResource<MaterialCache>(metadata);
+                registerResource<Material>(metadata);
                 break;
             default:
-                // log error
+                SprLog::warn("ResourceType not recognized");
                 break;
         }
     }
