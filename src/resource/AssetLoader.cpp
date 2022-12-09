@@ -1,4 +1,5 @@
 #include "AssetLoader.h"
+#include "../debug/SprLog.h"
 
 namespace spr{
 
@@ -9,7 +10,7 @@ std::vector<ResourceMetadata> AssetLoader::loadMetadata(){
     nlohmann::json manifest = nlohmann::json::parse(f);
 
     // load models
-    for (const nlohmann::json& model : manifest["models"].items()) {
+    for (const auto& model : manifest["models"]) {
         ResourceMetadata metadata;
         metadata.sizeBytes = model["sizeBytes"];
         metadata.resourceId = model["id"];
@@ -20,7 +21,7 @@ std::vector<ResourceMetadata> AssetLoader::loadMetadata(){
     }
 
     // load subresources
-    for (const nlohmann::json& subresource : manifest["subresources"].items()) {
+    for (const auto& subresource : manifest["subresources"]) {
         ResourceMetadata metadata;
         metadata.sizeBytes = subresource["sizeBytes"];
         metadata.resourceId = subresource["id"];
