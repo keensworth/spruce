@@ -3,9 +3,10 @@
 #include <utility>
 #include <vector>
 #include "Handle.h"
-#include "../Core.h"
+#include "../spruce_core.h"
 #include <stdio.h>
 #include <string>
+#include "../../debug/SprLog.h"
 
 namespace spr {
 
@@ -13,7 +14,8 @@ template <typename T>
 class Pool {
 public:
     Pool() {
-        m_size = 64;
+        m_capacity = 64;
+        m_size = 0;
         m_freeListIndex = 0;
         m_freeList = std::vector<uint32>();
         for (int i = 0; i < 64; i++){
@@ -21,24 +23,26 @@ public:
         }
         m_generations = std::vector<uint32>(64,1);
 
-        m_data = static_cast<T*>(malloc(m_size * sizeof(T)));
+        m_data = static_cast<T*>(malloc(m_capacity * sizeof(T)));
     }
 
-    Pool(uint32 size) {
-        m_size = size;
+    Pool(uint32 capacity) {
+        m_capacity = capacity;
+        m_size = 0;
         m_freeListIndex = 0;
         m_freeList = std::vector<uint32>();
-        for (int i = 0; i < m_size; i++){
+        for (int i = 0; i < m_capacity; i++){
             m_freeList.push_back(i);
         }
-        m_generations = std::vector<uint32>(m_size,1);
+        m_generations = std::vector<uint32>(m_capacity,1);
 
-        m_data = static_cast<T*>(malloc(m_size * sizeof(T)));
+        m_data = static_cast<T*>(malloc(m_capacity * sizeof(T)));
     }
 
     ~Pool() {
         for (int i = 0 ; i < m_size; i++){
-            (m_data + i)->~T();
+            if (m_data + i)
+                (m_data + i)->~T();
         }
         free(m_data);
     }
@@ -46,22 +50,19 @@ public:
 private:
     void resize(){
         // allocate new memory
-        uint32 newSize = m_size * 2;
-        T* newData = static_cast<T*>(malloc(newSize * sizeof(T)));
+        uint32 newCapacity = m_capacity * 2;
+        T* newData = static_cast<T*>(malloc(newCapacity * sizeof(T)));
 
         // copy current mem into 2nd half of new
-        memcpy(newData, m_data, m_size * sizeof(T));
+        memcpy(newData, m_data, m_capacity * sizeof(T));
 
         // resize freelist and generations
-        for (int i = m_size; i < newSize; i++){
+        for (int i = m_capacity; i < newCapacity; i++){
             m_freeList.push_back(i);
-        }
-        for (int i = m_size; i < newSize; i++){
             m_generations.push_back(1);
         }
 
         // delete old mem
-        m_size = newSize;
         for (int i = 0 ; i < m_size; i++){
             (m_data + i)->~T();
         }
@@ -74,7 +75,7 @@ private:
     template <typename... Args>
     Handle<T> emplace(Args&&... args){
         // out of room, resize
-        if (m_freeListIndex >= m_size){
+        if (m_freeListIndex >= m_capacity){
             resize();
         }
 
@@ -85,6 +86,7 @@ private:
 
         // place element in array
         new (m_data + handle.m_index) T(std::forward<Args>(args)...);
+        m_size++;
 
         return handle;
     }
@@ -110,6 +112,7 @@ public:
 
         // add index to freelist at freelistindex
         m_freeList[m_freeListIndex] = handle.m_index;
+        m_size--;
 
         return Handle<T>();
     }
@@ -127,7 +130,8 @@ public:
 
 private:
     T* m_data;
-    uint32 m_size;
+    uint32 m_capacity;
+    uint32 m_size = 0;
 
     uint32 m_freeListIndex;
     std::vector<uint32> m_freeList;

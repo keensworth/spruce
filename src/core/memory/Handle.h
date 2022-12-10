@@ -1,6 +1,6 @@
 #pragma once
 
-#include "../Core.h"
+#include "../spruce_core.h"
 
 
 namespace spr{
