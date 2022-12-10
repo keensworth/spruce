@@ -4,7 +4,7 @@
 #include <vector>
 #include <iostream>
 
-#include "../Core.h"
+#include "../spruce_core.h"
 
 
 namespace spr {
