@@ -30,6 +30,7 @@ public:
     void setWindowed();
     bool isFullscreen();
     bool isWindowed();
+    bool isMinimzed();
 
     void setBorderless();
     void setBordered();

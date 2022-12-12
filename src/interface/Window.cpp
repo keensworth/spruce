@@ -193,6 +193,10 @@ bool Window::isBorderless(){
     return m_borderless;
 }
 
+bool Window::isMinimzed(){
+    return SDL_GetWindowFlags(m_window) & SDL_WINDOW_MINIMIZED;
+}
+
 void Window::showCursor(){
     SDL_ShowCursor(SDL_ENABLE);
 }
