@@ -52,6 +52,7 @@ public:
         std::cout << oof::fg_color(m_textColor);
         std::cout << msg;
         std::cout << oof::reset_formatting() << std::endl;
+        std::terminate();
     }
 
     static void fatal(std::string msg){
@@ -61,6 +62,7 @@ public:
         std::cout << " [FATAL]: ";
         std::cout << msg;
         std::cout << oof::reset_formatting() << std::endl;
+        std::terminate();
     }
 
 private:
