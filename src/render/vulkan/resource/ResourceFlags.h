@@ -1,0 +1,364 @@
+#pragma once
+
+namespace spr::gfx {
+
+namespace Flags {
+    typedef enum DescriptorStage {
+        VERTEX = 0x00000001,
+        FRAGMENT = 0x00000010,
+        COMPUTE = 0x00000020
+    } DescriptorStage;
+
+    typedef enum DescriptorType {
+        SAMPLER = 0,
+        COMBINED_IMAGE_SAMPLER = 1,
+        SAMPLED_IMAGE = 2,
+        STORAGE_IMAGE = 3,
+        UNIFORM_TEXEL_BUFFER = 4,
+        STORAGE_TEXEL_BUFFER = 5,
+        UNIFORM_BUFFER = 6,
+        STORAGE_BUFFER = 7,
+        UNIFORM_BUFFER_DYNAMIC = 8,
+        STORAGE_BUFFER_DYNAMIC = 9,
+        INPUT_ATTACHMENT = 10
+    } DescriptorType;
+
+    typedef enum ImageUsage {
+        IMAGE_USAGE_TRANSFER_SRC = 0x00000001,
+        IMAGE_USAGE_TRANSFER_DST = 0x00000002,
+        IMAGE_USAGE_SAMPLED = 0x00000004,
+        IMAGE_USAGE_STORAGE = 0x00000008,
+        IMAGE_USAGE_COLOR_ATTACHMENT = 0x00000010,
+        IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT = 0x00000020,
+        IMAGE_USAGE_TRANSIENT_ATTACHMENT = 0x00000040,
+        IMAGE_USAGE_INPUT_ATTACHMENT = 0x00000080
+    } ImageUsage;
+
+    typedef enum BufferUsage {
+        BUFFER_USAGE_TRANSFER_SRC = 0x00000001,
+        BUFFER_USAGE_TRANSFER_DST = 0x00000002,
+        BUFFER_USAGE_UNIFORM_TEXEL_BUFFER = 0x00000004,
+        BUFFER_USAGE_STORAGE_TEXEL_BUFFER = 0x00000008,
+        BUFFER_USAGE_UNIFORM_BUFFER = 0x00000010,
+        BUFFER_USAGE_STORAGE_BUFFER = 0x00000020,
+        BUFFER_USAGE_INDEX_BUFFER = 0x00000040,
+        BUFFER_USAGE_VERTEX_BUFFER = 0x00000080,
+        BUFFER_USAGE_INDIRECT_BUFFER = 0x00000100
+    } BufferUsage;
+
+    typedef enum ImageLayout {
+        UNDEFINED = 0,
+        GENERAL = 1,
+        COLOR_ATTACHMENT = 2,
+        DEPTH_STENCIL_ATTACHMENT = 3,
+        DEPTH_STENCIL_READ_ONLY = 4,
+        SHADER_READ_ONLY = 5,
+        TRANSFER_SRC = 6,
+        TRANSFER_DST = 7,
+        PREINITIALIZED = 8,
+        // Provided by VK_VERSION_1_1
+        DEPTH_READ_ONLY_STENCIL_ATTACHMENT = 1000117000,
+        // Provided by VK_VERSION_1_1
+        DEPTH_ATTACHMENT_STENCIL_READ_ONLY = 1000117001,
+        // Provided by VK_VERSION_1_2
+        DEPTH_ATTACHMENT = 1000241000,
+        // Provided by VK_VERSION_1_2
+        DEPTH_READ_ONLY = 1000241001,
+        // Provided by VK_VERSION_1_2
+        STENCIL_ATTACHMENT = 1000241002,
+        // Provided by VK_VERSION_1_2
+        STENCIL_READ_ONLY = 1000241003,
+        // Provided by VK_KHR_swapchain
+        PRESENT = 1000001002,
+    } ImageLayout;
+
+    typedef enum Sample {
+        SAMPLE_1 = 0x00000001,
+        SAMPLE_2 = 0x00000002,
+        SAMPLE_4 = 0x00000004,
+        SAMPLE_8 = 0x00000008,
+        SAMPLE_16 = 0x00000010,
+        SAMPLE_32 = 0x00000020,
+        SAMPLE_64 = 0x00000040,
+    } Sample;
+
+    typedef enum LoadOp {
+        LOAD = 0,
+        LOAD_CLEAR = 1,
+        LOAD_DONT_CARE = 2,
+    } LoadOp;
+
+    typedef enum StoreOp {
+        STORE = 0,
+        STORE_DONT_CARE = 1,
+    } StoreOp;
+
+    typedef enum Compare {
+        NEVER = 0,
+        LESS = 1,
+        EQUAL = 2,
+        LESS_OR_EQUAL = 3,
+        GREATER = 4,
+        NOT_EQUAL = 5,
+        GREATER_OR_EQUAL = 6,
+        ALWAYS = 7,
+    } Compare;
+
+    typedef enum Format {
+        UNDEFINED_FORMAT = 0,
+        R4G4_UNORM_PACK8 = 1,
+        RGBA4_UNORM_PACK16 = 2,
+        BGRA4_UNORM_PACK16 = 3,
+        R5G6B5_UNORM_PACK16 = 4,
+        B5G6R5_UNORM_PACK16 = 5,
+        RGB5A1_UNORM_PACK16 = 6,
+        BGR5A1_UNORM_PACK16 = 7,
+        A1RGB5_UNORM_PACK16 = 8,
+        R8_UNORM = 9,
+        R8_SNORM = 10,
+        R8_USCALED = 11,
+        R8_SSCALED = 12,
+        R8_UINT = 13,
+        R8_SINT = 14,
+        R8_SRGB = 15,
+        RG8_UNORM = 16,
+        RG8_SNORM = 17,
+        RG8_USCALED = 18,
+        RG8_SSCALED = 19,
+        RG8_UINT = 20,
+        RG8_SINT = 21,
+        RG8_SRGB = 22,
+        RGB8_UNORM = 23,
+        RGB8_SNORM = 24,
+        RGB8_USCALED = 25,
+        RGB8_SSCALED = 26,
+        RGB8_UINT = 27,
+        RGB8_SINT = 28,
+        RGB8_SRGB = 29,
+        BGR8_UNORM = 30,
+        BGR8_SNORM = 31,
+        BGR8_USCALED = 32,
+        BGR8_SSCALED = 33,
+        BGR8_UINT = 34,
+        BGR8_SINT = 35,
+        BGR8_SRGB = 36,
+        RGBA8_UNORM = 37,
+        RGBA8_SNORM = 38,
+        RGBA8_USCALED = 39,
+        RGBA8_SSCALED = 40,
+        RGBA8_UINT = 41,
+        RGBA8_SINT = 42,
+        RGBA8_SRGB = 43,
+        BGRA8_UNORM = 44,
+        BGRA8_SNORM = 45,
+        BGRA8_USCALED = 46,
+        BGRA8_SSCALED = 47,
+        BGRA8_UINT = 48,
+        BGRA8_SINT = 49,
+        BGRA8_SRGB = 50,
+        ABGR8_UNORM_PACK32 = 51,
+        ABGR8_SNORM_PACK32 = 52,
+        ABGR8_USCALED_PACK32 = 53,
+        ABGR8_SSCALED_PACK32 = 54,
+        ABGR8_UINT_PACK32 = 55,
+        ABGR8_SINT_PACK32 = 56,
+        ABGR8_SRGB_PACK32 = 57,
+        A2RGB10_UNORM_PACK32 = 58,
+        A2RGB10_SNORM_PACK32 = 59,
+        A2RGB10_USCALED_PACK32 = 60,
+        A2RGB10_SSCALED_PACK32 = 61,
+        A2RGB10_UINT_PACK32 = 62,
+        A2RGB10_SINT_PACK32 = 63,
+        A2BGR10_UNORM_PACK32 = 64,
+        A2BGR10_SNORM_PACK32 = 65,
+        A2BGR10_USCALED_PACK32 = 66,
+        A2BGR10_SSCALED_PACK32 = 67,
+        A2BGR10_UINT_PACK32 = 68,
+        A2BGR10_SINT_PACK32 = 69,
+        R16_UNORM = 70,
+        R16_SNORM = 71,
+        R16_USCALED = 72,
+        R16_SSCALED = 73,
+        R16_UINT = 74,
+        R16_SINT = 75,
+        R16_SFLOAT = 76,
+        RG16_UNORM = 77,
+        RG16_SNORM = 78,
+        RG16_USCALED = 79,
+        RG16_SSCALED = 80,
+        RG16_UINT = 81,
+        RG16_SINT = 82,
+        RG16_SFLOAT = 83,
+        RGB16_UNORM = 84,
+        RGB16_SNORM = 85,
+        RGB16_USCALED = 86,
+        RGB16_SSCALED = 87,
+        RGB16_UINT = 88,
+        RGB16_SINT = 89,
+        RGB16_SFLOAT = 90,
+        RGBA16_UNORM = 91,
+        RGBA16_SNORM = 92,
+        RGBA16_USCALED = 93,
+        RGBA16_SSCALED = 94,
+        RGBA16_UINT = 95,
+        RGBA16_SINT = 96,
+        RGBA16_SFLOAT = 97,
+        R32_UINT = 98,
+        R32_SINT = 99,
+        R32_SFLOAT = 100,
+        RG32_UINT = 101,
+        RG32_SINT = 102,
+        RG32_SFLOAT = 103,
+        RGB32_UINT = 104,
+        RGB32_SINT = 105,
+        RGB32_SFLOAT = 106,
+        RGBA32_UINT = 107,
+        RGBA32_SINT = 108,
+        RGBA32_SFLOAT = 109,
+        R64_UINT = 110,
+        R64_SINT = 111,
+        R64_SFLOAT = 112,
+        RG64_UINT = 113,
+        RG64_SINT = 114,
+        RG64_SFLOAT = 115,
+        RGB64_UINT = 116,
+        RGB64_SINT = 117,
+        RGB64_SFLOAT = 118,
+        RGBA64_UINT = 119,
+        RGBA64_SINT = 120,
+        RGBA64_SFLOAT = 121,
+        B10G11R11_UFLOAT_PACK32 = 122,
+        E5B9G9R9_UFLOAT_PACK32 = 123,
+        D16_UNORM = 124,
+        X8_D24_UNORM_PACK32 = 125,
+        D32_SFLOAT = 126,
+        S8_UINT = 127,
+        D16_UNORM_S8_UINT = 128,
+        D24_UNORM_S8_UINT = 129,
+        D32_SFLOAT_S8_UINT = 130,
+        BC1_RGB_UNORM_BLOCK = 131,
+        BC1_RGB_SRGB_BLOCK = 132,
+        BC1_RGBA_UNORM_BLOCK = 133,
+        BC1_RGBA_SRGB_BLOCK = 134,
+        BC2_UNORM_BLOCK = 135,
+        BC2_SRGB_BLOCK = 136,
+        BC3_UNORM_BLOCK = 137,
+        BC3_SRGB_BLOCK = 138,
+        BC4_UNORM_BLOCK = 139,
+        BC4_SNORM_BLOCK = 140,
+        BC5_UNORM_BLOCK = 141,
+        BC5_SNORM_BLOCK = 142,
+        BC6H_UFLOAT_BLOCK = 143,
+        BC6H_SFLOAT_BLOCK = 144,
+        BC7_UNORM_BLOCK = 145,
+        BC7_SRGB_BLOCK = 146,
+        ETC2_RGB8_UNORM_BLOCK = 147,
+        ETC2_RGB8_SRGB_BLOCK = 148,
+        ETC2_RGB8A1_UNORM_BLOCK = 149,
+        ETC2_RGB8A1_SRGB_BLOCK = 150,
+        ETC2_RGBA8_UNORM_BLOCK = 151,
+        ETC2_RGBA8_SRGB_BLOCK = 152,
+        EAC_R11_UNORM_BLOCK = 153,
+        EAC_R11_SNORM_BLOCK = 154,
+        EAC_R11G11_UNORM_BLOCK = 155,
+        EAC_R11G11_SNORM_BLOCK = 156,
+        ASTC_4x4_UNORM_BLOCK = 157,
+        ASTC_4x4_SRGB_BLOCK = 158,
+        ASTC_5x4_UNORM_BLOCK = 159,
+        ASTC_5x4_SRGB_BLOCK = 160,
+        ASTC_5x5_UNORM_BLOCK = 161,
+        ASTC_5x5_SRGB_BLOCK = 162,
+        ASTC_6x5_UNORM_BLOCK = 163,
+        ASTC_6x5_SRGB_BLOCK = 164,
+        ASTC_6x6_UNORM_BLOCK = 165,
+        ASTC_6x6_SRGB_BLOCK = 166,
+        ASTC_8x5_UNORM_BLOCK = 167,
+        ASTC_8x5_SRGB_BLOCK = 168,
+        ASTC_8x6_UNORM_BLOCK = 169,
+        ASTC_8x6_SRGB_BLOCK = 170,
+        ASTC_8x8_UNORM_BLOCK = 171,
+        ASTC_8x8_SRGB_BLOCK = 172,
+        ASTC_10x5_UNORM_BLOCK = 173,
+        ASTC_10x5_SRGB_BLOCK = 174,
+        ASTC_10x6_UNORM_BLOCK = 175,
+        ASTC_10x6_SRGB_BLOCK = 176,
+        ASTC_10x8_UNORM_BLOCK = 177,
+        ASTC_10x8_SRGB_BLOCK = 178,
+        ASTC_10x10_UNORM_BLOCK = 179,
+        ASTC_10x10_SRGB_BLOCK = 180,
+        ASTC_12x10_UNORM_BLOCK = 181,
+        ASTC_12x10_SRGB_BLOCK = 182,
+        ASTC_12x12_UNORM_BLOCK = 183,
+        ASTC_12x12_SRGB_BLOCK = 184,
+        // Provided by VK_VERSION_1_1
+        G8B8G8R8_422_UNORM = 1000156000,
+        // Provided by VK_VERSION_1_1
+        B8G8R8G8_422_UNORM = 1000156001,
+        // Provided by VK_VERSION_1_1
+        G8_B8_R8_3PLANE_420_UNORM = 1000156002,
+        // Provided by VK_VERSION_1_1
+        G8_B8R8_2PLANE_420_UNORM = 1000156003,
+        // Provided by VK_VERSION_1_1
+        G8_B8_R8_3PLANE_422_UNORM = 1000156004,
+        // Provided by VK_VERSION_1_1
+        G8_B8R8_2PLANE_422_UNORM = 1000156005,
+        // Provided by VK_VERSION_1_1
+        G8_B8_R8_3PLANE_444_UNORM = 1000156006,
+        // Provided by VK_VERSION_1_1
+        R10X6_UNORM_PACK16 = 1000156007,
+        // Provided by VK_VERSION_1_1
+        R10X6G10X6_UNORM_2PACK16 = 1000156008,
+        // Provided by VK_VERSION_1_1
+        R10X6G10X6B10X6A10X6_UNORM_4PACK16 = 1000156009,
+        // Provided by VK_VERSION_1_1
+        G10X6B10X6G10X6R10X6_422_UNORM_4PACK16 = 1000156010,
+        // Provided by VK_VERSION_1_1
+        B10X6G10X6R10X6G10X6_422_UNORM_4PACK16 = 1000156011,
+        // Provided by VK_VERSION_1_1
+        G10X6_B10X6_R10X6_3PLANE_420_UNORM_3PACK16 = 1000156012,
+        // Provided by VK_VERSION_1_1
+        G10X6_B10X6R10X6_2PLANE_420_UNORM_3PACK16 = 1000156013,
+        // Provided by VK_VERSION_1_1
+        G10X6_B10X6_R10X6_3PLANE_422_UNORM_3PACK16 = 1000156014,
+        // Provided by VK_VERSION_1_1
+        G10X6_B10X6R10X6_2PLANE_422_UNORM_3PACK16 = 1000156015,
+        // Provided by VK_VERSION_1_1
+        G10X6_B10X6_R10X6_3PLANE_444_UNORM_3PACK16 = 1000156016,
+        // Provided by VK_VERSION_1_1
+        R12X4_UNORM_PACK16 = 1000156017,
+        // Provided by VK_VERSION_1_1
+        R12X4G12X4_UNORM_2PACK16 = 1000156018,
+        // Provided by VK_VERSION_1_1
+        R12X4G12X4B12X4A12X4_UNORM_4PACK16 = 1000156019,
+        // Provided by VK_VERSION_1_1
+        G12X4B12X4G12X4R12X4_422_UNORM_4PACK16 = 1000156020,
+        // Provided by VK_VERSION_1_1
+        B12X4G12X4R12X4G12X4_422_UNORM_4PACK16 = 1000156021,
+        // Provided by VK_VERSION_1_1
+        G12X4_B12X4_R12X4_3PLANE_420_UNORM_3PACK16 = 1000156022,
+        // Provided by VK_VERSION_1_1
+        G12X4_B12X4R12X4_2PLANE_420_UNORM_3PACK16 = 1000156023,
+        // Provided by VK_VERSION_1_1
+        G12X4_B12X4_R12X4_3PLANE_422_UNORM_3PACK16 = 1000156024,
+        // Provided by VK_VERSION_1_1
+        G12X4_B12X4R12X4_2PLANE_422_UNORM_3PACK16 = 1000156025,
+        // Provided by VK_VERSION_1_1
+        G12X4_B12X4_R12X4_3PLANE_444_UNORM_3PACK16 = 1000156026,
+        // Provided by VK_VERSION_1_1
+        G16B16G16R16_422_UNORM = 1000156027,
+        // Provided by VK_VERSION_1_1
+        B16G16R16G16_422_UNORM = 1000156028,
+        // Provided by VK_VERSION_1_1
+        G16_B16_R16_3PLANE_420_UNORM = 1000156029,
+        // Provided by VK_VERSION_1_1
+        G16_B16R16_2PLANE_420_UNORM = 1000156030,
+        // Provided by VK_VERSION_1_1
+        G16_B16_R16_3PLANE_422_UNORM = 1000156031,
+        // Provided by VK_VERSION_1_1
+        G16_B16R16_2PLANE_422_UNORM = 1000156032,
+        // Provided by VK_VERSION_1_1
+        G16_B16_R16_3PLANE_444_UNORM = 1000156033,
+    } Format;
+}
+
+}
