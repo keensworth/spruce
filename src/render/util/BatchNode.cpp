@@ -101,14 +101,20 @@ std::vector<Batch> BatchNode::getAny(uint32 materialFlags){
     return accum;
 }
 
-
 void BatchNode::uploadDrawData(VulkanResourceManager* rm){
+    if (!getBranch(i)->m_initialized)
+                continue;
+            
+            uploadDrawData(rm, getBranch(i)); // go down correct branch
+}
+
+void BatchNode::uploadDrawDataRec(VulkanResourceManager* rm){
     for (uint32 i = 0; i < 16; i++){
         if (m_height > 0){
             if (!getBranch(i)->m_initialized)
                 continue;
             
-            uploadDrawData(rm);
+            uploadDrawData(rm, getBranch(i)); // go down correct branch
             
         } else {
             if (!m_initialized)

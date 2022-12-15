@@ -2,7 +2,7 @@
 
 #include <vector>
 #include "spruce_core.h"
-#include "util/BatchNode.h"
+#include "BatchNode.h"
 
 namespace spr::gfx{
 
