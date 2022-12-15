@@ -2,13 +2,15 @@
 
 #include <vulkan/vulkan.h>
 #include <vulkan/vulkan_core.h>
+#include "VulkanDevice.h"
+#include "VulkanDisplay.h"
 #include "Window.h"
 
 namespace spr::gfx{
 class VulkanRenderer{
 public:
-    VulkanRenderer(){}
-    ~VulkanRenderer(){}
+    VulkanRenderer();
+    ~VulkanRenderer();
 
 
     void init();
@@ -22,10 +24,7 @@ public:
 
 
 private:
-    VkApplicationInfo m_appInfo;
-    VkInstance m_instance;
-    VkPhysicalDevice m_physicalDevice;
-    VkDevice m_device;
-    VkSurfaceKHR m_surface;
+    VulkanDevice m_device;
+    VulkanDisplay m_display;
 };
 }
