@@ -1,5 +1,6 @@
 #pragma once
 
+#include <vulkan/vulkan_core.h>
 namespace spr::gfx {
 
 namespace Flags {
@@ -24,26 +25,26 @@ namespace Flags {
     } DescriptorType;
 
     typedef enum ImageUsage {
-        IMAGE_USAGE_TRANSFER_SRC = 0x00000001,
-        IMAGE_USAGE_TRANSFER_DST = 0x00000002,
-        IMAGE_USAGE_SAMPLED = 0x00000004,
-        IMAGE_USAGE_STORAGE = 0x00000008,
-        IMAGE_USAGE_COLOR_ATTACHMENT = 0x00000010,
-        IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT = 0x00000020,
-        IMAGE_USAGE_TRANSIENT_ATTACHMENT = 0x00000040,
-        IMAGE_USAGE_INPUT_ATTACHMENT = 0x00000080
+        IU_TRANSFER_SRC = 0x00000001,
+        IU_TRANSFER_DST = 0x00000002,
+        IU_SAMPLED = 0x00000004,
+        IU_STORAGE = 0x00000008,
+        IU_COLOR_ATTACHMENT = 0x00000010,
+        IU_DEPTH_STENCIL_ATTACHMENT = 0x00000020,
+        IU_TRANSIENT_ATTACHMENT = 0x00000040,
+        IU_INPUT_ATTACHMENT = 0x00000080
     } ImageUsage;
 
     typedef enum BufferUsage {
-        BUFFER_USAGE_TRANSFER_SRC = 0x00000001,
-        BUFFER_USAGE_TRANSFER_DST = 0x00000002,
-        BUFFER_USAGE_UNIFORM_TEXEL_BUFFER = 0x00000004,
-        BUFFER_USAGE_STORAGE_TEXEL_BUFFER = 0x00000008,
-        BUFFER_USAGE_UNIFORM_BUFFER = 0x00000010,
-        BUFFER_USAGE_STORAGE_BUFFER = 0x00000020,
-        BUFFER_USAGE_INDEX_BUFFER = 0x00000040,
-        BUFFER_USAGE_VERTEX_BUFFER = 0x00000080,
-        BUFFER_USAGE_INDIRECT_BUFFER = 0x00000100
+        BU_TRANSFER_SRC = 0x00000001,
+        BU_TRANSFER_DST = 0x00000002,
+        BU_UNIFORM_TEXEL_BUFFER = 0x00000004,
+        BU_STORAGE_TEXEL_BUFFER = 0x00000008,
+        BU_UNIFORM_BUFFER = 0x00000010,
+        BU_STORAGE_BUFFER = 0x00000020,
+        BU_INDEX_BUFFER = 0x00000040,
+        BU_VERTEX_BUFFER = 0x00000080,
+        BU_INDIRECT_BUFFER = 0x00000100
     } BufferUsage;
 
     typedef enum ImageLayout {
@@ -56,19 +57,12 @@ namespace Flags {
         TRANSFER_SRC = 6,
         TRANSFER_DST = 7,
         PREINITIALIZED = 8,
-        // Provided by VK_VERSION_1_1
         DEPTH_READ_ONLY_STENCIL_ATTACHMENT = 1000117000,
-        // Provided by VK_VERSION_1_1
         DEPTH_ATTACHMENT_STENCIL_READ_ONLY = 1000117001,
-        // Provided by VK_VERSION_1_2
         DEPTH_ATTACHMENT = 1000241000,
-        // Provided by VK_VERSION_1_2
         DEPTH_READ_ONLY = 1000241001,
-        // Provided by VK_VERSION_1_2
         STENCIL_ATTACHMENT = 1000241002,
-        // Provided by VK_VERSION_1_2
         STENCIL_READ_ONLY = 1000241003,
-        // Provided by VK_KHR_swapchain
         PRESENT = 1000001002,
     } ImageLayout;
 
@@ -103,6 +97,29 @@ namespace Flags {
         GREATER_OR_EQUAL = 6,
         ALWAYS = 7,
     } Compare;
+
+    typedef enum Filter {
+        NEAREST = 0,
+        LINEAR = 1,
+    } Filter;
+
+    typedef enum Mipmap {
+        MODE_NEAREST = 0,
+        MODE_LINEAR = 1,
+    } Mipmap;
+
+    typedef enum Wrap {
+        REPEAT = 0,
+        MIRRORED_REPEAT = 1,
+        CLAMP_TO_EDGE = 2,
+        CLAMP_TO_BORDER = 3,
+        MIRROR_CLAMP_TO_EDGE = 4,
+    } Wrap;
+
+    typedef enum BindPoint {
+        BP_GRAPHICS = 0,
+        BP_COMPUTE = 1,
+    } BindPoint;
 
     typedef enum Format {
         UNDEFINED_FORMAT = 0,
@@ -290,73 +307,39 @@ namespace Flags {
         ASTC_12x10_SRGB_BLOCK = 182,
         ASTC_12x12_UNORM_BLOCK = 183,
         ASTC_12x12_SRGB_BLOCK = 184,
-        // Provided by VK_VERSION_1_1
         G8B8G8R8_422_UNORM = 1000156000,
-        // Provided by VK_VERSION_1_1
         B8G8R8G8_422_UNORM = 1000156001,
-        // Provided by VK_VERSION_1_1
         G8_B8_R8_3PLANE_420_UNORM = 1000156002,
-        // Provided by VK_VERSION_1_1
         G8_B8R8_2PLANE_420_UNORM = 1000156003,
-        // Provided by VK_VERSION_1_1
         G8_B8_R8_3PLANE_422_UNORM = 1000156004,
-        // Provided by VK_VERSION_1_1
         G8_B8R8_2PLANE_422_UNORM = 1000156005,
-        // Provided by VK_VERSION_1_1
         G8_B8_R8_3PLANE_444_UNORM = 1000156006,
-        // Provided by VK_VERSION_1_1
         R10X6_UNORM_PACK16 = 1000156007,
-        // Provided by VK_VERSION_1_1
         R10X6G10X6_UNORM_2PACK16 = 1000156008,
-        // Provided by VK_VERSION_1_1
         R10X6G10X6B10X6A10X6_UNORM_4PACK16 = 1000156009,
-        // Provided by VK_VERSION_1_1
         G10X6B10X6G10X6R10X6_422_UNORM_4PACK16 = 1000156010,
-        // Provided by VK_VERSION_1_1
         B10X6G10X6R10X6G10X6_422_UNORM_4PACK16 = 1000156011,
-        // Provided by VK_VERSION_1_1
         G10X6_B10X6_R10X6_3PLANE_420_UNORM_3PACK16 = 1000156012,
-        // Provided by VK_VERSION_1_1
         G10X6_B10X6R10X6_2PLANE_420_UNORM_3PACK16 = 1000156013,
-        // Provided by VK_VERSION_1_1
         G10X6_B10X6_R10X6_3PLANE_422_UNORM_3PACK16 = 1000156014,
-        // Provided by VK_VERSION_1_1
         G10X6_B10X6R10X6_2PLANE_422_UNORM_3PACK16 = 1000156015,
-        // Provided by VK_VERSION_1_1
         G10X6_B10X6_R10X6_3PLANE_444_UNORM_3PACK16 = 1000156016,
-        // Provided by VK_VERSION_1_1
         R12X4_UNORM_PACK16 = 1000156017,
-        // Provided by VK_VERSION_1_1
         R12X4G12X4_UNORM_2PACK16 = 1000156018,
-        // Provided by VK_VERSION_1_1
         R12X4G12X4B12X4A12X4_UNORM_4PACK16 = 1000156019,
-        // Provided by VK_VERSION_1_1
         G12X4B12X4G12X4R12X4_422_UNORM_4PACK16 = 1000156020,
-        // Provided by VK_VERSION_1_1
         B12X4G12X4R12X4G12X4_422_UNORM_4PACK16 = 1000156021,
-        // Provided by VK_VERSION_1_1
         G12X4_B12X4_R12X4_3PLANE_420_UNORM_3PACK16 = 1000156022,
-        // Provided by VK_VERSION_1_1
         G12X4_B12X4R12X4_2PLANE_420_UNORM_3PACK16 = 1000156023,
-        // Provided by VK_VERSION_1_1
         G12X4_B12X4_R12X4_3PLANE_422_UNORM_3PACK16 = 1000156024,
-        // Provided by VK_VERSION_1_1
         G12X4_B12X4R12X4_2PLANE_422_UNORM_3PACK16 = 1000156025,
-        // Provided by VK_VERSION_1_1
-        G12X4_B12X4_R12X4_3PLANE_444_UNORM_3PACK16 = 1000156026,
-        // Provided by VK_VERSION_1_1
-        G16B16G16R16_422_UNORM = 1000156027,
-        // Provided by VK_VERSION_1_1
-        B16G16R16G16_422_UNORM = 1000156028,
-        // Provided by VK_VERSION_1_1
-        G16_B16_R16_3PLANE_420_UNORM = 1000156029,
-        // Provided by VK_VERSION_1_1
-        G16_B16R16_2PLANE_420_UNORM = 1000156030,
-        // Provided by VK_VERSION_1_1
-        G16_B16_R16_3PLANE_422_UNORM = 1000156031,
-        // Provided by VK_VERSION_1_1
+        G12X4_B12X4_R12X4_3PLANE_444_UNORM_3PACK16 = 1000156026,       
+        G16B16G16R16_422_UNORM = 1000156027,     
+        B16G16R16G16_422_UNORM = 1000156028,        
+        G16_B16_R16_3PLANE_420_UNORM = 1000156029,        
+        G16_B16R16_2PLANE_420_UNORM = 1000156030,        
+        G16_B16_R16_3PLANE_422_UNORM = 1000156031,       
         G16_B16R16_2PLANE_422_UNORM = 1000156032,
-        // Provided by VK_VERSION_1_1
         G16_B16_R16_3PLANE_444_UNORM = 1000156033,
     } Format;
 }
