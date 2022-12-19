@@ -75,7 +75,10 @@ Handle<Buffer> VulkanResourceManager::create<Buffer>(BufferDesc desc){
     VkBuffer vulkankBuffer;
     VK_CHECK(vkCreateBuffer(m_device, &bufferInfo, NULL, &vulkankBuffer));
 
-    Buffer buffer;
+    // create buffer resource, return handle
+    Buffer buffer {
+        .buffer = vulkankBuffer
+    };
     return bufferCache->insert(buffer);
 }
 
@@ -155,7 +158,7 @@ Handle<Texture> VulkanResourceManager::create<Texture>(TextureDesc desc){
     VkImageView vulkanImageView;
     VK_CHECK(vkCreateImageView(m_device, &viewInfo, NULL, &vulkanImageView));
 
-    // crate texture resource, return handle
+    // create texture resource, return handle
     Texture texture {
         .image = vulkanImage,
         .view = vulkanImageView,
@@ -364,7 +367,7 @@ Handle<RenderPassLayout> VulkanResourceManager::create<RenderPassLayout>(RenderP
         .pPreserveAttachments    = NULL
     };
 
-    // build RenderPassLayout, return handle
+    // create render pass layout resource, return handle
     RenderPassLayout renderPassLayout {
         .depthReference         = depthReference,
         .colorReferences        = colorReferences,
@@ -437,7 +440,7 @@ Handle<RenderPass> VulkanResourceManager::create<RenderPass>(RenderPassDesc desc
     VkRenderPass vulkanRenderPass;
     VK_CHECK(vkCreateRenderPass(m_device, &createInfo, NULL, &vulkanRenderPass));
 
-    // build RenderPass, return handle
+    // create render pass resource, return handle
     RenderPass renderPass {
         .layout = desc.layout,
         .renderPass = vulkanRenderPass,
@@ -667,6 +670,7 @@ Handle<Shader> VulkanResourceManager::create<Shader>(ShaderDesc desc){
     VkPipeline vulkanPipeline;
     VK_CHECK(vkCreateGraphicsPipelines(m_device, NULL, 1, &pipelineInfo, NULL, &vulkanPipeline));
 
+    // create shader resource, return handle
     Shader shader {
         .pipeline = vulkanPipeline
     };
