@@ -35,6 +35,22 @@ typedef struct Texture {
 
 
 typedef struct DescriptorSetLayout {
+    typedef struct TextureBindingLayout {
+        uint32 slot   = 0;
+        uint32 stages = Flags::DescriptorStage::VERTEX  |
+                        Flags::DescriptorStage::FRAGMENT;
+        uint32 type   = Flags::DescriptorType::COMBINED_IMAGE_SAMPLER;
+    } TextureBindingLayout;
+
+    typedef struct BufferBindingLayout {
+        uint32 slot   = 0;
+        uint32 stages = Flags::DescriptorStage::VERTEX  |
+                        Flags::DescriptorStage::FRAGMENT;
+        uint32 type   = Flags::DescriptorType::UNIFORM_BUFFER;
+    } BufferBindingLayout;
+
+    std::vector<TextureBindingLayout> textureLayouts;
+    std::vector<BufferBindingLayout> bufferLayouts;
     VkDescriptorSetLayout descriptorSetLayout;
 } DescriptorSetLayout;
 
@@ -56,6 +72,7 @@ typedef struct RenderPassLayout {
 typedef struct RenderPass {
     Handle<RenderPassLayout> layout;
     VkRenderPass renderPass;
+    uint32 samples;
 } RenderPass;
 
 
@@ -70,10 +87,8 @@ typedef struct Shader {
 // ------------------------------------------------------------------------- //
 
 typedef struct BufferDesc {
-    static const uint32 ALL_BYTES = 0xFFFFFFFF;
-    Handle<Buffer> buffer;
     uint32 byteOffset = 0;
-    uint32 byteSize   = ALL_BYTES;
+    uint32 byteSize   = 0;
     uint32 usage      = Flags::BufferUsage::BU_UNIFORM_BUFFER;
 } BufferDesc;
 
@@ -124,7 +139,7 @@ typedef struct TextureDesc {
         uint32 layers     = ALL_LAYERS;
     } View;
 
-    glm::vec3 dimensions {0,0,0};
+    glm::uvec3 dimensions {0,0,0};
     uint32 format  = Flags::Format::UNDEFINED_FORMAT;
     uint32 usage   = Flags::ImageUsage::IU_SAMPLED;
     uint32 samples = Flags::Sample::SAMPLE_1;
@@ -142,22 +157,8 @@ typedef struct TextureDesc {
 
 
 typedef struct DescriptorSetLayoutDesc {
-    typedef struct TextureBindingLayout {
-        uint32 slot   = 0;
-        uint32 stages = Flags::DescriptorStage::VERTEX  |
-                        Flags::DescriptorStage::FRAGMENT;
-        uint32 type   = Flags::DescriptorType::COMBINED_IMAGE_SAMPLER;
-    } TextureBindingLayout;
-
-    typedef struct BufferBindingLayout {
-        uint32 slot   = 0;
-        uint32 stages = Flags::DescriptorStage::VERTEX  |
-                        Flags::DescriptorStage::FRAGMENT;
-        uint32 type   = Flags::DescriptorType::UNIFORM_BUFFER;
-    } BufferBindingLayout;
-
-    std::vector<TextureBindingLayout> textures;
-    std::vector<BufferBindingLayout> buffers;
+    std::vector<DescriptorSetLayout::TextureBindingLayout> textures;
+    std::vector<DescriptorSetLayout::BufferBindingLayout> buffers;
 } DescriptorSetLayoutDesc;
 
 
@@ -215,7 +216,7 @@ typedef struct RenderPassDesc {
 
 typedef struct ShaderDesc {
     typedef struct Shader{
-        std::vector<uint8> byteCode;
+        std::string shaderPath = "";
     } Shader;
 
     typedef struct GraphicsState {
@@ -225,8 +226,9 @@ typedef struct ShaderDesc {
 
     Shader vertexShader;
     Shader fragmentShader;
-    Shader computeShader;
+    // Shader computeShader;
     std::vector<Handle<DescriptorSetLayout>> descriptorSets;
+    GraphicsState graphicsState;
 
 } ShaderDesc;
 
