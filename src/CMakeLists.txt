@@ -52,25 +52,25 @@ target_sources(srcFiles PRIVATE
   resource/ResourceManager.h
   resource/ResourceManager.cpp
 
-  render/BatchManager.cpp
-  render/BatchManager.h
-  render/RenderCoordinator.h
-  render/SprRenderer.h
-  render/util/BatchNode.cpp
-  render/util/BatchNode.h
-  render/vulkan/CommandBuffer.h
-  render/vulkan/PipelineManager.h
-  render/vulkan/RenderPassRenderer.h
-  render/vulkan/SwapChain.h
-  render/vulkan/VulkanDevice.cpp
-  render/vulkan/VulkanDevice.h
-  render/vulkan/VulkanDisplay.h
-  render/vulkan/VulkanRenderer.h
-  render/vulkan/resource/ResourceTypes.h
-  render/vulkan/resource/VulkanResourceCache.h
-  render/vulkan/resource/VulkanResourceManager.cpp
-  render/vulkan/resource/VulkanResourceManager.h
-  render/vulkan/vulkan_core.h
+  # render/util/BatchManager.cpp
+  # render/util/BatchManager.h
+  # render/RenderCoordinator.h
+  # render/SprRenderer.h
+  # render/util/BatchNode.cpp
+  # render/util/BatchNode.h
+  # render/vulkan/CommandBuffer.h
+  # render/vulkan/PipelineManager.h
+  # render/vulkan/RenderPassRenderer.h
+  # render/vulkan/SwapChain.h
+  # render/vulkan/VulkanDevice.cpp
+  # render/vulkan/VulkanDevice.h
+  # render/vulkan/VulkanDisplay.h
+  # render/vulkan/VulkanRenderer.h
+  # render/vulkan/resource/ResourceTypes.h
+  # render/vulkan/resource/VulkanResourceCache.h
+  # render/vulkan/resource/VulkanResourceManager.cpp
+  # render/vulkan/resource/VulkanResourceManager.h
+  # render/vulkan/vulkan_core.h
 )
 
 
@@ -78,11 +78,13 @@ target_sources(srcFiles PRIVATE
 target_include_directories(srcFiles 
   PUBLIC ecs
   PUBLIC core
+  PUBLIC debug
   PUBLIC interface
+  PUBLIC resource
 )
 
 
-target_link_libraries(srcFiles vkbootstrap vma glm tinyobjloader imgui stb_image)
+target_link_libraries(srcFiles vkbootstrap vma glm tinyobjloader imgui stb_image oof)
 target_link_libraries(srcFiles Vulkan::Vulkan sdl2)
 target_compile_options(srcFiles PUBLIC)
 
