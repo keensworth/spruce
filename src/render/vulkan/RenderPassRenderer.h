@@ -3,7 +3,7 @@
 namespace spr::gfx{
 class RenderPassRenderer{
 public:
-    RenderPassRenderer(){}
+    RenderPassRenderer(){} 
     ~RenderPassRenderer(){}
 
     void beginRecording();

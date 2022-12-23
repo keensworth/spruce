@@ -58,6 +58,8 @@ private:
     std::vector<ska::flat_hash_map<uint32, BatchDraws>> m_leafData;
     bool m_initialized;
 
+    void uploadDrawDataRec(BatchNode* batchNode, VulkanResourceManager* rm);
+
     void addLeafData(uint32 materialFlags, uint32 meshId, DrawData draw);
     void removeLeafData(uint32 materialFlags);
     std::vector<Batch> getLeafData(uint32 materialFlags);

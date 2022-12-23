@@ -105,16 +105,16 @@ void BatchNode::uploadDrawData(VulkanResourceManager* rm){
     if (!getBranch(i)->m_initialized)
                 continue;
             
-            uploadDrawData(rm, getBranch(i)); // go down correct branch
+            uploadDrawDataRec(rm, getBranch(i)); // go down correct branch
 }
 
-void BatchNode::uploadDrawDataRec(VulkanResourceManager* rm){
+void BatchNode::uploadDrawDataRec(BatchNode* batchNode, VulkanResourceManager* rm){
     for (uint32 i = 0; i < 16; i++){
         if (m_height > 0){
             if (!getBranch(i)->m_initialized)
                 continue;
             
-            uploadDrawData(rm, getBranch(i)); // go down correct branch
+            uploadDrawDataRec(getBranch(i), rm); // go down correct branch
             
         } else {
             if (!m_initialized)
@@ -122,7 +122,7 @@ void BatchNode::uploadDrawDataRec(VulkanResourceManager* rm){
 
             for(auto item : m_leafData[i]){
                 BatchDraws& batchDraws = item.second;
-                uint32 drawDataOffset = rm->addDrawData(batchDraws.draws);
+                uint32 drawDataOffset = rm->addDrawData(batchDraws.draws); // TODO: bump allocator
                 batchDraws.batch.drawDataOffset = drawDataOffset;
                 batchDraws.batch.drawCount = batchDraws.draws.size();
             }

@@ -1,5 +1,5 @@
 #include "BatchManager.h"
-#include "util/BatchNode.h"
+#include "BatchNode.h"
 
 namespace spr::gfx {
 

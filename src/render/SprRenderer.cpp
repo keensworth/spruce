@@ -1,5 +1,6 @@
 #include "SprRenderer.h"
 #include "util/SceneManager.h"
+#include <vulkan/vulkan_core.h>
 
 namespace spr::gfx {
 
@@ -20,12 +21,7 @@ SprRenderer::~SprRenderer(){
 void SprRenderer::uploadMeshes() {}
 
 void SprRenderer::insertMesh(uint32 meshId, uint32 materialFlags, glm::mat4 model, glm::mat4 modelInvTranspose){
-    DrawData draw {
-        .vertexOffset = 0,   // rm->getOffset(meshId)
-        .materialIndex = 0,  // rm->getMaterial(meshId)
-        .transformIndex = 0  // rm->addTransform({model, modelInvTranspose})
-    };
-    m_batchManager.addDraw(draw, meshId, materialFlags);
+    m_sceneManager.insertMesh(meshId, materialFlags, model, modelInvTranspose);
 }
 
 void SprRenderer::insertLight(){
@@ -37,9 +33,8 @@ void SprRenderer::updateCamera(){
 }
 
 void SprRenderer::render(){
-    m_renderCoordinator.render(&m_batchManager);
+    m_renderCoordinator.render(&m_sceneManager);
     m_sceneManager.reset();
-    m_batchManager.reset(m_rm);
 }
 
 void SprRenderer::setWindow(Window* window){
