@@ -1,5 +1,6 @@
 #include "InputHandler.h"
 #include <iostream>
+#include "../debug/SprLog.h"
 
 namespace spr {
 InputHandler::InputHandler(){
@@ -32,7 +33,7 @@ void InputHandler::handleKeyPress(bool keyDown){
         keyboard->keyDownTicks[key] = SDL_GetTicks();
     else 
         keyboard->keyUpTicks[key] = SDL_GetTicks();
-    std::cout << SDL_GetKeyName(keycode) << (keyDown?": Down":": Up") << std::endl;
+    SprLog::debug(std::string(SDL_GetKeyName(keycode))+(keyDown?": Down":": Up"));
 }
 
 void InputHandler::handleButtonPress(bool buttonDown){
