@@ -11,17 +11,17 @@ std::vector<Batch> BatchManager::getBatches(uint32 materialFlags){
     return m_batches.getAny(materialFlags);
 }
 
-void BatchManager::prepareDraws(VulkanResourceManager* rm){
-    m_batches.uploadDrawData(rm);
+void BatchManager::prepareDraws(){
+    //m_batches.uploadDrawData(rm);
 }
 
-void BatchManager::reset(VulkanResourceManager* rm){
+void BatchManager::reset(){
     // rm->deleteDraws
     m_batches.~BatchNode();
     m_batches = BatchNode();
 }
 
-void BatchManager::destroy(VulkanResourceManager* rm){
+void BatchManager::destroy(){
     // rm->deleteDraws
     m_batches.~BatchNode();
 }

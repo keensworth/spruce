@@ -9,9 +9,9 @@ namespace spr::gfx {
 
 typedef struct {
     uint32 vertexOffset;
+    uint32 indexCount;
     uint32 materialIndex;
     uint32 transformIndex;
-    uint32 padding;
 } DrawData;
 
 typedef struct {
@@ -45,8 +45,6 @@ public:
     //get_accum
     std::vector<Batch> getAny(uint32 materialFlags);
 
-    void uploadDrawData(VulkanResourceManager* rm);
-
     uint32 getHeight(){
         return m_height;
     }
@@ -57,8 +55,6 @@ private:
     std::vector<BatchNode*> m_nodeData;
     std::vector<ska::flat_hash_map<uint32, BatchDraws>> m_leafData;
     bool m_initialized;
-
-    void uploadDrawDataRec(BatchNode* batchNode, VulkanResourceManager* rm);
 
     void addLeafData(uint32 materialFlags, uint32 meshId, DrawData draw);
     void removeLeafData(uint32 materialFlags);

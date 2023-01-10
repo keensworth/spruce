@@ -101,34 +101,34 @@ std::vector<Batch> BatchNode::getAny(uint32 materialFlags){
     return accum;
 }
 
-void BatchNode::uploadDrawData(VulkanResourceManager* rm){
-    if (!getBranch(i)->m_initialized)
-                continue;
+// void BatchNode::uploadDrawData(){
+//     if (!getBranch(i)->m_initialized)
+//                 continue;
             
-            uploadDrawDataRec(rm, getBranch(i)); // go down correct branch
-}
+//             uploadDrawDataRec(rm, getBranch(i)); // go down correct branch
+// }
 
-void BatchNode::uploadDrawDataRec(BatchNode* batchNode, VulkanResourceManager* rm){
-    for (uint32 i = 0; i < 16; i++){
-        if (m_height > 0){
-            if (!getBranch(i)->m_initialized)
-                continue;
+// void BatchNode::uploadDrawDataRec(BatchNode* batchNode){
+//     for (uint32 i = 0; i < 16; i++){
+//         if (m_height > 0){
+//             if (!getBranch(i)->m_initialized)
+//                 continue;
             
-            uploadDrawDataRec(getBranch(i), rm); // go down correct branch
+//             uploadDrawDataRec(getBranch(i), rm); // go down correct branch
             
-        } else {
-            if (!m_initialized)
-                continue;
+//         } else {
+//             if (!m_initialized)
+//                 continue;
 
-            for(auto item : m_leafData[i]){
-                BatchDraws& batchDraws = item.second;
-                uint32 drawDataOffset = rm->addDrawData(batchDraws.draws); // TODO: bump allocator
-                batchDraws.batch.drawDataOffset = drawDataOffset;
-                batchDraws.batch.drawCount = batchDraws.draws.size();
-            }
-        }
-    }
-}
+//             for(auto item : m_leafData[i]){
+//                 BatchDraws& batchDraws = item.second;
+//                 uint32 drawDataOffset = rm->addDrawData(batchDraws.draws); // TODO: bump allocator
+//                 batchDraws.batch.drawDataOffset = drawDataOffset;
+//                 batchDraws.batch.drawCount = batchDraws.draws.size();
+//             }
+//         }
+//     }
+// }
 
 
 
