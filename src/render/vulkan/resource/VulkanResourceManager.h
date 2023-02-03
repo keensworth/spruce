@@ -11,6 +11,7 @@ namespace spr::gfx {
 
 class BufferCache : public TypedResourceCache<Buffer>{};
 class TextureCache : public TypedResourceCache<Texture>{};
+class TextureAttachmentCache : public TypedResourceCache<TextureAttachment>{};
 class DescriptorSetLayoutCache : public TypedResourceCache<DescriptorSetLayout>{};
 class DescriptorSetCache : public TypedResourceCache<DescriptorSet>{};
 class RenderPassLayoutCache : public TypedResourceCache<RenderPassLayout>{};
@@ -34,6 +35,7 @@ public:
     // U := ResourceType
     template <typename U>
     void remove(Handle<U> handle){
+        SprLog::warn("VulkanResourceManager: [REMOVE] Resource may not be properly destroyed");
         auto resourceCache = m_resourceMap[typeid(U)];
         auto typedCache = dynamic_cast<TypedResourceCache<U>*>(resourceCache);
         return typedCache->remove(handle);
@@ -43,7 +45,15 @@ public:
     // V := ResourceDesc
     template <typename U, typename V>
     Handle<U> create(V desc){
-        SprLog::warn("VulkanResourceManager: Resource not recognized");
+        SprLog::warn("VulkanResourceManager: [CREATE] Resource not recognized");
+        return Handle<U>();
+    }
+
+    // U := ResourceType
+    // V := (unknown)
+    template <typename U, typename V>
+    Handle<U> recreate(Handle<U> handle, V arg){
+        SprLog::warn("VulkanResourceManager: [RECREATE] Resource recreation not available for this type, excplicit specialization required");
         return Handle<U>();
     }
     
@@ -51,6 +61,7 @@ private:
     rmap m_resourceMap{
         {typeid(Buffer), new BufferCache},
         {typeid(Texture), new TextureCache},
+        {typeid(TextureAttachment), new TextureAttachmentCache},
         {typeid(DescriptorSetLayout), new DescriptorSetLayoutCache},
         {typeid(DescriptorSet), new DescriptorSetCache},
         {typeid(RenderPassLayout), new RenderPassLayoutCache},
@@ -59,5 +70,8 @@ private:
     };
 
     VkDevice m_device;
+    glm::uvec3 m_screenDim;
+
+    friend class RenderCoordinator;
 };
 }

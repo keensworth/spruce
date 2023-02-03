@@ -1,6 +1,7 @@
 #include "VulkanResourceManager.h"
 #include "ResourceFlags.h"
 #include "ResourceTypes.h"
+#include <filesystem>
 #include <vulkan/vulkan_core.h>
 #include <fstream>
 
@@ -90,15 +91,20 @@ template<>
 Handle<Texture> VulkanResourceManager::create<Texture>(TextureDesc desc){
     TextureCache* textureCache = ((TextureCache*) m_resourceMap[typeid(Texture)]);
 
+    // check if default resolution
+    bool defaultRes = !desc.dimensions.x && !desc.dimensions.y && !desc.dimensions.z;
+    glm::uvec3 dimensions = defaultRes ? glm::uvec3(m_screenDim.x,m_screenDim.y,m_screenDim.z)
+                                       : glm::uvec3(desc.dimensions.x,desc.dimensions.y,desc.dimensions.z);
+    
     // build image create info
     VkImageCreateInfo imageInfo {
         .sType       = VK_STRUCTURE_TYPE_IMAGE_CREATE_INFO,
         .imageType   = VK_IMAGE_TYPE_2D,
         .format      = (VkFormat)desc.format,
         .extent      = {
-            desc.dimensions.x,
-            desc.dimensions.y,
-            desc.dimensions.z
+            dimensions.x,
+            dimensions.y,
+            dimensions.z
         },
         .mipLevels   = desc.view.mips,
         .arrayLayers = desc.view.layers,
@@ -135,6 +141,14 @@ Handle<Texture> VulkanResourceManager::create<Texture>(TextureDesc desc){
     VK_CHECK(vkCreateSampler(m_device, &samplerInfo, NULL, &vulkanSampler));
 
     // create image view (default)
+    VkImageSubresourceRange subresourceRange {
+        .aspectMask     = (desc.usage == Flags::ImageUsage::IU_DEPTH_STENCIL_ATTACHMENT)
+                            ? VK_IMAGE_ASPECT_DEPTH_BIT : VK_IMAGE_ASPECT_COLOR_BIT,
+        .baseMipLevel   = desc.view.baseMip,
+        .levelCount     = desc.view.mips,
+        .baseArrayLayer = desc.view.baseLayer,
+        .layerCount     = desc.view.layers
+    };
     VkImageViewCreateInfo viewInfo {
         .sType      = VK_STRUCTURE_TYPE_IMAGE_VIEW_CREATE_INFO,
         .image      = vulkanImage,
@@ -146,25 +160,46 @@ Handle<Texture> VulkanResourceManager::create<Texture>(TextureDesc desc){
             .b = VK_COMPONENT_SWIZZLE_B,
             .a = VK_COMPONENT_SWIZZLE_A
         },
-        .subresourceRange = {
-            .aspectMask = (desc.usage == Flags::ImageUsage::IU_DEPTH_STENCIL_ATTACHMENT)
-                           ? VK_IMAGE_ASPECT_DEPTH_BIT : VK_IMAGE_ASPECT_COLOR_BIT,
-            .baseMipLevel = desc.view.baseMip,
-            .levelCount = desc.view.mips,
-            .baseArrayLayer = desc.view.baseLayer,
-            .layerCount = desc.view.layers
-        }
+        .subresourceRange = subresourceRange
     };
     VkImageView vulkanImageView;
     VK_CHECK(vkCreateImageView(m_device, &viewInfo, NULL, &vulkanImageView));
 
     // create texture resource, return handle
     Texture texture {
-        .image = vulkanImage,
-        .view = vulkanImageView,
-        .sampler = vulkanSampler,
+        .image      = vulkanImage,
+        .view       = vulkanImageView,
+        .sampler    = vulkanSampler,
+        .format     = (VkFormat)desc.format,
+        .dimensions = dimensions,
+        .mips       = desc.view.mips,
+        .layers     = desc.view.layers,
+        .samples    = (VkSampleCountFlagBits)desc.samples,
+        .usage      = (VkImageUsageFlags)desc.usage,
+        .subresourceRange = subresourceRange,
+        .defaultRes = defaultRes
     };
     return textureCache->insert(texture);
+}
+
+
+// ------------------------------------------------------------------------- //
+//                 Texture Attachment                                        //
+// ------------------------------------------------------------------------- //
+template<>
+Handle<TextureAttachment> VulkanResourceManager::create<TextureAttachment>(TextureAttachmentDesc desc){
+    TextureAttachmentCache* textureAttachmentCache = ((TextureAttachmentCache*) m_resourceMap[typeid(TextureAttachment)]);
+
+    // empty Texture Attachment
+    TextureAttachment textureAttachment;
+
+    // create per-frame textures
+    for (uint32 frame = 0; frame < MAX_FRAME_COUNT; frame++){
+        textureAttachment.textures[frame] = create<Texture>(desc.textureLayout);
+    }
+
+    // return handle to attachment
+    return textureAttachmentCache->insert(textureAttachment);
 }
 
 
@@ -327,7 +362,7 @@ Handle<RenderPassLayout> VulkanResourceManager::create<RenderPassLayout>(RenderP
         // color 
         for (int i = 0; i < attachmentCount; i++)
             descriptions[i] = {
-                .format = (VkFormat)desc.colorAttatchmentFormats[i]
+                .format = (VkFormat)desc.colorAttatchmentFormats[i],
             };
         // depth 
         if (depthAttachment)
@@ -389,11 +424,11 @@ Handle<RenderPass> VulkanResourceManager::create<RenderPass>(RenderPassDesc desc
     // layout data from handle in desc
     RenderPassLayout* layout = get<RenderPassLayout>(desc.layout);
     
-    // insert new description info into descriptions
+    // insert new description info into attachment descriptions
     uint32 samples;
-    bool depthAttachment = (layout->colorReferences.size() + 1) == layout->attachmentCount;
+    bool hasDepthAttachment = (layout->colorReferences.size() + 1) == layout->attachmentCount;
     // depth
-    if (depthAttachment) {
+    if (hasDepthAttachment) {
         VkAttachmentDescription newAttachment = {
             .format         = layout->attachmentDescriptions[layout->attachmentCount-1].format,
             .samples        = (VkSampleCountFlagBits)desc.depthAttachment.samples,
@@ -440,11 +475,42 @@ Handle<RenderPass> VulkanResourceManager::create<RenderPass>(RenderPassDesc desc
     VkRenderPass vulkanRenderPass;
     VK_CHECK(vkCreateRenderPass(m_device, &createInfo, NULL, &vulkanRenderPass));
 
+    // get attachment image views
+    VkImageView attachments[layout->attachmentCount];
+    for (uint32 i = 0; i < layout->attachmentCount-(hasDepthAttachment); i++){
+        Texture* texture = get<Texture>(desc.colorAttachments[i].texture);
+        attachments[i] = texture->view;
+    }
+    if(hasDepthAttachment){
+        Texture* texture = get<Texture>(desc.depthAttachment.texture);
+        attachments[layout->attachmentCount-1] = texture->view;
+    }
+
+    // build framebuffer create info
+    VkFramebufferCreateInfo framebufferInfo {
+        .sType           = VK_STRUCTURE_TYPE_FRAMEBUFFER_CREATE_INFO,
+        .renderPass      = vulkanRenderPass,
+        .attachmentCount = layout->attachmentCount,
+        .pAttachments    = attachments,
+        .width           = desc.dimensions.x,
+        .height          = desc.dimensions.y,
+        .layers          = desc.dimensions.z
+    };
+
+    // create vulkan framebuffer
+    VkFramebuffer vulkanFramebuffer;
+    VK_CHECK(vkCreateFramebuffer(m_device, &framebufferInfo, NULL, &vulkanFramebuffer));
+
     // create render pass resource, return handle
     RenderPass renderPass {
         .layout = desc.layout,
         .renderPass = vulkanRenderPass,
-        .samples = samples
+        .framebuffer = vulkanFramebuffer,
+        .dimensions = desc.dimensions,
+        .samples = samples,
+        .hasDepthAttachment = hasDepthAttachment,
+        .depthAttachment = desc.depthAttachment,
+        .colorAttachments = desc.colorAttachments
     };
     return renderPassCache->insert(renderPass);
 }
@@ -675,6 +741,175 @@ Handle<Shader> VulkanResourceManager::create<Shader>(ShaderDesc desc){
         .pipeline = vulkanPipeline
     };
     return shaderCache->insert(shader);
+}
+
+
+//  ██████╗ ███████╗ █████╗ ██████╗ ███████╗ █████╗ ████████╗███████╗
+//  ██╔══██╗██╔════╝██╔══██╗██╔══██╗██╔════╝██╔══██╗╚══██╔══╝██╔════╝
+//  ██████╔╝█████╗  ██║  ╚═╝██████╔╝█████╗  ███████║   ██║   █████╗  
+//  ██╔══██╗██╔══╝  ██║  ██╗██╔══██╗██╔══╝  ██╔══██║   ██║   ██╔══╝  
+//  ██║  ██║███████╗╚█████╔╝██║  ██║███████╗██║  ██║   ██║   ███████╗
+//  ╚═╝  ╚═╝╚══════╝ ╚════╝ ╚═╝  ╚═╝╚══════╝╚═╝  ╚═╝   ╚═╝   ╚══════╝
+
+// ------------------------------------------------------------------------- //
+//                 RenderPass                                                //
+// ------------------------------------------------------------------------- //
+template<>
+Handle<RenderPass> VulkanResourceManager::recreate<RenderPass>(Handle<RenderPass> handle, glm::uvec2 newDimensions){
+    RenderPassCache* renderPassCache = ((RenderPassCache*) m_resourceMap[typeid(RenderPass)]);
+    RenderPass* renderPass = get<RenderPass>(handle);
+
+    // attachment info
+    bool hasDepthAttachment = renderPass->depthAttachment.texture.isValid();
+    uint32 attachmentCount = hasDepthAttachment + renderPass->colorAttachments.size();
+    std::vector<RenderPass::ColorAttachment> colorAttachments = renderPass->colorAttachments;
+    RenderPass::DepthAttachment depthAttachment = renderPass->depthAttachment;
+    
+    // destroy framebuffer
+    vkDestroyFramebuffer(m_device, renderPass->framebuffer, NULL);
+
+    // rebuild all textures that use default res
+    {   // color
+        for (RenderPass::ColorAttachment& attachment : colorAttachments){
+            Texture* texture = get<Texture>(attachment.texture);
+            if(texture->defaultRes){
+                // destroy image view
+                vkDestroyImageView(m_device, texture->view, NULL);
+
+                // destroy image
+                vkDestroyImage(m_device, texture->image, NULL);
+
+                // create image
+                VkImageCreateInfo imageInfo {
+                    .sType       = VK_STRUCTURE_TYPE_IMAGE_CREATE_INFO,
+                    .imageType   = VK_IMAGE_TYPE_2D,
+                    .format      = texture->format,
+                    .extent      = {
+                        newDimensions.x,
+                        newDimensions.y,
+                        1
+                    },
+                    .mipLevels   = texture->mips,
+                    .arrayLayers = texture->layers,
+                    .samples     = texture->samples,
+                    .tiling      = VK_IMAGE_TILING_OPTIMAL,
+                    .usage       = texture->usage,
+                    .sharingMode = VK_SHARING_MODE_EXCLUSIVE
+                };
+                VkImage vulkanImage;
+                VK_CHECK(vkCreateImage(m_device, &imageInfo, NULL, &vulkanImage));
+
+                // create image view
+                VkImageViewCreateInfo viewInfo {
+                    .sType      = VK_STRUCTURE_TYPE_IMAGE_VIEW_CREATE_INFO,
+                    .image      = vulkanImage,
+                    .viewType   = VK_IMAGE_VIEW_TYPE_2D,
+                    .format     = texture->format,
+                    .components = {
+                        .r = VK_COMPONENT_SWIZZLE_R,
+                        .g = VK_COMPONENT_SWIZZLE_G,
+                        .b = VK_COMPONENT_SWIZZLE_B,
+                        .a = VK_COMPONENT_SWIZZLE_A
+                    },
+                    .subresourceRange = texture->subresourceRange
+                };
+                VkImageView vulkanImageView;
+                VK_CHECK(vkCreateImageView(m_device, &viewInfo, NULL, &vulkanImageView));
+
+                // update texture object
+                texture->image = vulkanImage;
+                texture->view  = vulkanImageView;
+                texture->dimensions = glm::uvec3(newDimensions.x,newDimensions.y,1);
+            }
+        }
+    }
+    {   // depth
+        if (hasDepthAttachment){
+            Texture* texture = get<Texture>(depthAttachment.texture);
+            if(texture->defaultRes){
+                // destroy image view
+                vkDestroyImageView(m_device, texture->view, NULL);
+
+                // destroy image
+                vkDestroyImage(m_device, texture->image, NULL);
+
+                // create image
+                VkImageCreateInfo imageInfo {
+                    .sType       = VK_STRUCTURE_TYPE_IMAGE_CREATE_INFO,
+                    .imageType   = VK_IMAGE_TYPE_2D,
+                    .format      = texture->format,
+                    .extent      = {
+                        newDimensions.x,
+                        newDimensions.y,
+                        1
+                    },
+                    .mipLevels   = texture->mips,
+                    .arrayLayers = texture->layers,
+                    .samples     = texture->samples,
+                    .tiling      = VK_IMAGE_TILING_OPTIMAL,
+                    .usage       = texture->usage,
+                    .sharingMode = VK_SHARING_MODE_EXCLUSIVE
+                };
+                VkImage vulkanImage;
+                VK_CHECK(vkCreateImage(m_device, &imageInfo, NULL, &vulkanImage));
+
+                // create image view
+                VkImageViewCreateInfo viewInfo {
+                    .sType      = VK_STRUCTURE_TYPE_IMAGE_VIEW_CREATE_INFO,
+                    .image      = vulkanImage,
+                    .viewType   = VK_IMAGE_VIEW_TYPE_2D,
+                    .format     = texture->format,
+                    .components = {
+                        .r = VK_COMPONENT_SWIZZLE_R,
+                        .g = VK_COMPONENT_SWIZZLE_G,
+                        .b = VK_COMPONENT_SWIZZLE_B,
+                        .a = VK_COMPONENT_SWIZZLE_A
+                    },
+                    .subresourceRange = texture->subresourceRange
+                };
+                VkImageView vulkanImageView;
+                VK_CHECK(vkCreateImageView(m_device, &viewInfo, NULL, &vulkanImageView));
+
+                // update texture object
+                texture->image = vulkanImage;
+                texture->view  = vulkanImageView;
+                texture->dimensions = glm::uvec3(newDimensions.x,newDimensions.y,1);
+            }
+        }
+    }
+        
+
+    // rebuild framebuffer
+    // get attachment image views
+    VkImageView vulkanAttachments[attachmentCount];
+    for (uint32 i = 0; i < attachmentCount+hasDepthAttachment; i++){
+        Texture* texture = get<Texture>(colorAttachments[i].texture);
+        vulkanAttachments[i] = texture->view;
+    }
+    if (hasDepthAttachment){
+        Texture* texture = get<Texture>(depthAttachment.texture);
+        vulkanAttachments[attachmentCount-1] = texture->view;
+    }
+
+
+    // build framebuffer create info
+    VkFramebufferCreateInfo framebufferInfo {
+        .sType           = VK_STRUCTURE_TYPE_FRAMEBUFFER_CREATE_INFO,
+        .renderPass      = renderPass->renderPass,
+        .attachmentCount = attachmentCount,
+        .pAttachments    = vulkanAttachments,
+        .width           = newDimensions.x,
+        .height          = newDimensions.y,
+        .layers          = 1
+    };
+
+    // create vulkan framebuffer
+    VkFramebuffer vulkanFramebuffer;
+    VK_CHECK(vkCreateFramebuffer(m_device, &framebufferInfo, NULL, &vulkanFramebuffer));
+
+    // replace framebuffer in render pass object
+    renderPass->framebuffer = vulkanFramebuffer;
+    return handle;
 }
 
 
