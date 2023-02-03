@@ -9,6 +9,29 @@
 
 
 namespace spr {
+
+class SpruceErrorException : public std::exception {
+public:
+    char * what () {
+        return (char *)"spruce ERROR";
+    }
+private:
+    friend class SprLog;
+    SpruceErrorException(){}
+    ~SpruceErrorException(){}
+};
+
+class SpruceFatalException : public std::exception {
+public:
+    char * what () {
+        return (char *)"spruce FATAL";
+    }
+private:
+    friend class SprLog;
+    SpruceFatalException(){}
+    ~SpruceFatalException(){}
+};
+
 class SprLog{
 public:
     SprLog();
@@ -52,6 +75,7 @@ public:
         std::cout << oof::fg_color(m_textColor);
         std::cout << msg;
         std::cout << oof::reset_formatting() << std::endl;
+        throw SpruceErrorException();
         std::terminate();
     }
 
@@ -62,6 +86,7 @@ public:
         std::cout << " [FATAL]: ";
         std::cout << msg;
         std::cout << oof::reset_formatting() << std::endl;
+        throw new SpruceFatalException();
         std::terminate();
     }
 
