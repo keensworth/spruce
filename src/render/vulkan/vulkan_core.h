@@ -15,6 +15,8 @@
 
 namespace spr::gfx {
 
+static const uint32 MAX_FRAME_COUNT = 3;
+
 typedef struct QueueFamilies{
     std::optional<uint32> graphicsFamilyIndex;
     std::optional<uint32> graphicsQueueIndex;
