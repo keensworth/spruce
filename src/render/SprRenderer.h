@@ -1,7 +1,7 @@
 #pragma once
 
-#include "util/BatchManager.h"
-#include "util/SceneManager.h"
+#include "scene/BatchManager.h"
+#include "scene/SceneManager.h"
 #include "spruce_core.h"
 #include "RenderCoordinator.h"
 #include "vulkan/VulkanRenderer.h"
@@ -10,7 +10,7 @@
 namespace spr::gfx {
 class SprRenderer {
 public:
-    SprRenderer();
+    SprRenderer(Window* window);
     ~SprRenderer();
 
     void uploadMeshes();
@@ -22,15 +22,10 @@ public:
     void updateCamera();
 
     void render();
-
-    void setWindow(Window* window);
     
 private:
-    VulkanRenderer* m_renderer;
-    VulkanResourceManager* m_rm;
     Window* m_window;
 
-    BatchManager m_batchManager;
     SceneManager m_sceneManager;
     RenderCoordinator m_renderCoordinator;
 };

@@ -6,6 +6,7 @@
 #include <SDL2/SDL_vulkan.h>
 
 #include "InputHandler.h"
+#include "../debug/SprLog.h"
 
 namespace spr {
 class Window {
@@ -36,6 +37,9 @@ public:
     void setBordered();
     bool isBorderless();
 
+    bool resized();
+    void resizeHandled();
+
     void setTitle(std::string title);
     void setResolution(uint32 width, uint32 height);
 
@@ -59,6 +63,8 @@ private:
 
     bool m_fullscreen;
     bool m_borderless;
+
+    bool m_resized;
 
     struct SDL_Window* m_window{ nullptr };
 

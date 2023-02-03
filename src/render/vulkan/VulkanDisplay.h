@@ -6,27 +6,33 @@
 
 #include "../../debug/SprLog.h"
 
-namespace spr::gfx {
 
+
+namespace spr::gfx {
 class VulkanDisplay{
 public:
-    VulkanDisplay(Window& window);
+    VulkanDisplay(Window* window);
     ~VulkanDisplay();
 
     void createSurface(VkInstance instance);
-    void createSwapChain(VkPhysicalDevice physicalDevice, VkDevice device, QueueFamilies families);
-    void recreateSwapChain();
+    uint32 createSwapchain(VkPhysicalDevice physicalDevice, VkDevice device, QueueFamilies families);
     void createImageViews(VkDevice device);
+    void cleanup(VkDevice device);
 
+    VkSurfaceKHR getSurface();
+    std::vector<VkImageView> getImageViews();
+    VkFormat getSwapchainFormat();
+    
 
 private:
-    Window m_window;
+    Window* m_window;
     VkSurfaceKHR m_surface;
-    VkSwapchainKHR m_swapChain;
+    VkSwapchainKHR m_swapchain;
 
     uint32 m_imageCount;
     std::vector<VkImage> m_images;
     std::vector<VkImageView> m_imageViews;
+    std::vector<VkFramebuffer> m_frameBuffers;
 
     VkSurfaceFormatKHR m_surfaceFormat;
     VkPresentModeKHR m_presentMode;
@@ -37,7 +43,7 @@ private:
     std::vector<VkSurfaceFormatKHR> m_formats;
     std::vector<VkPresentModeKHR> m_presentModes;
 
-    void querySwapChainSupport(VkPhysicalDevice physicalDevice);
+    void querySwapchainSupport(VkPhysicalDevice physicalDevice);
     VkSurfaceFormatKHR chooseSwapSurfaceFormat();
     VkPresentModeKHR chooseSwapPresentMode();
     VkExtent2D chooseSwapExtent();

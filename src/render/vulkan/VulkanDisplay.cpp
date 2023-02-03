@@ -5,27 +5,27 @@
 namespace spr::gfx{
 
 
-//  ██╗███╗░░██╗██╗████████╗
-//  ██║████╗░██║██║╚══██╔══╝
-//  ██║██╔██╗██║██║░░░██║░░░
-//  ██║██║╚████║██║░░░██║░░░
-//  ██║██║░╚███║██║░░░██║░░░
-//  ╚═╝╚═╝░░╚══╝╚═╝░░░╚═╝░░░
+//  ██╗███╗  ██╗██╗████████╗
+//  ██║████╗ ██║██║╚══██╔══╝
+//  ██║██╔██╗██║██║   ██║   
+//  ██║██║╚████║██║   ██║   
+//  ██║██║ ╚███║██║   ██║   
+//  ╚═╝╚═╝  ╚══╝╚═╝   ╚═╝   
 
-VulkanDisplay::VulkanDisplay(Window& window){
+VulkanDisplay::VulkanDisplay(Window* window){
     m_window = window;
 }
 
 VulkanDisplay::~VulkanDisplay(){}
 
 void VulkanDisplay::createSurface(VkInstance instance){
-    if(!SDL_Vulkan_CreateSurface(m_window.getHandle(), instance, &m_surface))
+    if(!SDL_Vulkan_CreateSurface(m_window->getHandle(), instance, &m_surface))
         SprLog::fatal("VulkanDisplay: Failed to create surface");
 }
 
-void VulkanDisplay::createSwapChain(VkPhysicalDevice physicalDevice, VkDevice device, QueueFamilies families){
+uint32 VulkanDisplay::createSwapchain(VkPhysicalDevice physicalDevice, VkDevice device, QueueFamilies families){
     // get capabilities, surface formats, and present modes
-    querySwapChainSupport(physicalDevice);
+    querySwapchainSupport(physicalDevice);
 
     // choose appropriate from available
     m_surfaceFormat = chooseSwapSurfaceFormat();
@@ -62,12 +62,14 @@ void VulkanDisplay::createSwapChain(VkPhysicalDevice physicalDevice, VkDevice de
         .clipped = VK_TRUE,
         .oldSwapchain = VK_NULL_HANDLE,
     };
-    VK_CHECK(vkCreateSwapchainKHR(device, &createInfo, nullptr, &m_swapChain));
+    VK_CHECK(vkCreateSwapchainKHR(device, &createInfo, nullptr, &m_swapchain));
 
     // get images from swapchain
-    vkGetSwapchainImagesKHR(device, m_swapChain, &m_imageCount, nullptr);
+    vkGetSwapchainImagesKHR(device, m_swapchain, &m_imageCount, nullptr);
     m_images.resize(m_imageCount);
-    vkGetSwapchainImagesKHR(device, m_swapChain, &m_imageCount, m_images.data());
+    vkGetSwapchainImagesKHR(device, m_swapchain, &m_imageCount, m_images.data());
+
+    return m_imageCount;
 }
 
 void VulkanDisplay::createImageViews(VkDevice device){
@@ -100,12 +102,32 @@ void VulkanDisplay::createImageViews(VkDevice device){
 }
 
 
-//  ██╗░░██╗███████╗██╗░░░░░██████╗░███████╗██████╗░
-//  ██║░░██║██╔════╝██║░░░░░██╔══██╗██╔════╝██╔══██╗
-//  ███████║█████╗░░██║░░░░░██████╔╝█████╗░░██████╔╝
-//  ██╔══██║██╔══╝░░██║░░░░░██╔═══╝░██╔══╝░░██╔══██╗
-//  ██║░░██║███████╗███████╗██║░░░░░███████╗██║░░██║
-//  ╚═╝░░╚═╝╚══════╝╚══════╝╚═╝░░░░░╚══════╝╚═╝░░╚═╝
+//  ██╗  ██╗███████╗██╗     ██████╗ ███████╗██████╗ 
+//  ██║  ██║██╔════╝██║     ██╔══██╗██╔════╝██╔══██╗
+//  ███████║█████╗  ██║     ██████╔╝█████╗  ██████╔╝
+//  ██╔══██║██╔══╝  ██║     ██╔═══╝ ██╔══╝  ██╔══██╗
+//  ██║  ██║███████╗███████╗██║     ███████╗██║  ██║
+//  ╚═╝  ╚═╝╚══════╝╚══════╝╚═╝     ╚══════╝╚═╝  ╚═╝
+
+VkFormat VulkanDisplay::getSwapchainFormat(){
+    return m_format;
+}
+
+void VulkanDisplay::cleanup(VkDevice device){
+    for (auto imageView : m_imageViews) {
+        vkDestroyImageView(device, imageView, nullptr);
+    }
+
+    vkDestroySwapchainKHR(device, m_swapchain, nullptr);
+}
+
+std::vector<VkImageView> VulkanDisplay::getImageViews(){
+    return m_imageViews;
+}
+
+VkSurfaceKHR VulkanDisplay::getSurface(){
+    return m_surface;
+}
 
 VkSurfaceFormatKHR VulkanDisplay::chooseSwapSurfaceFormat() {
     // query swapchain surface formats for desired
@@ -137,15 +159,15 @@ VkExtent2D VulkanDisplay::chooseSwapExtent() {
 
     // get actual extent
     VkExtent2D actualExtent = {
-        m_window.width(),
-        m_window.height()
+        m_window->width(),
+        m_window->height()
     };
     actualExtent.width = std::clamp(actualExtent.width, m_capabilities.minImageExtent.width, m_capabilities.maxImageExtent.width);
     actualExtent.height = std::clamp(actualExtent.height, m_capabilities.minImageExtent.height, m_capabilities.maxImageExtent.height);
     return actualExtent;
 }
 
-void VulkanDisplay::querySwapChainSupport(VkPhysicalDevice physicalDevice) {
+void VulkanDisplay::querySwapchainSupport(VkPhysicalDevice physicalDevice) {
     // get the physical device capabilities
     vkGetPhysicalDeviceSurfaceCapabilitiesKHR(physicalDevice, m_surface, &m_capabilities);
 
@@ -168,10 +190,6 @@ void VulkanDisplay::querySwapChainSupport(VkPhysicalDevice physicalDevice) {
 
     m_presentModes.resize(presentModeCount);
     vkGetPhysicalDeviceSurfacePresentModesKHR(physicalDevice, m_surface, &presentModeCount, m_presentModes.data());
-}
-
-void VulkanDisplay::recreateSwapChain(){
-
 }
 
 }

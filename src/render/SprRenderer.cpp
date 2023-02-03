@@ -1,21 +1,15 @@
 #include "SprRenderer.h"
-#include "util/SceneManager.h"
+#include "scene/SceneManager.h"
 #include <vulkan/vulkan_core.h>
 
 namespace spr::gfx {
 
-SprRenderer::SprRenderer(){
-    m_renderer = new VulkanRenderer();
-    m_rm = new VulkanResourceManager();
-    m_renderCoordinator = RenderCoordinator();
-    m_batchManager = BatchManager();
-    m_sceneManager = SceneManager();
+SprRenderer::SprRenderer(Window* window) : m_renderCoordinator(window){
+
 }
+
 SprRenderer::~SprRenderer(){
     m_renderCoordinator.destroy();
-    m_batchManager.destroy(m_rm);
-    delete m_rm;
-    delete m_renderer;
 }
 
 void SprRenderer::uploadMeshes() {}
@@ -33,12 +27,19 @@ void SprRenderer::updateCamera(){
 }
 
 void SprRenderer::render(){
-    m_renderCoordinator.render(&m_sceneManager);
+    // check for valid presentation
+    if (m_window->isMinimzed())
+        return;
+    if (m_window->resized()){
+        m_renderCoordinator.onResize();
+        m_window->resizeHandled();
+        return;
+    }
+
+    // render the scene
+    m_renderCoordinator.render(m_sceneManager);
     m_sceneManager.reset();
 }
 
-void SprRenderer::setWindow(Window* window){
-    m_window = window;
-}
 
 }

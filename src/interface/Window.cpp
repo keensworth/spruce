@@ -1,4 +1,6 @@
 #include "Window.h"
+#include "SDL_stdinc.h"
+#include <string>
 
 namespace spr {
 Window::Window(){
@@ -8,6 +10,7 @@ Window::Window(){
 
     m_fullscreen = false;
     m_borderless = false;
+    m_resized = false;
 }
 
 Window::Window(std::string title){
@@ -17,6 +20,7 @@ Window::Window(std::string title){
 
     m_fullscreen = false;
     m_borderless = false;
+    m_resized = false;
 }
 
 Window::Window(std::string title, uint32 width, uint32 height){
@@ -26,6 +30,7 @@ Window::Window(std::string title, uint32 width, uint32 height){
 
     m_fullscreen = false;
     m_borderless = false;
+    m_resized = false;
 }
 
 void Window::init(){
@@ -41,6 +46,8 @@ void Window::init(){
 		m_height,
 		flags
 	);
+
+    SDL_SetWindowResizable(m_window, SDL_FALSE);
 }
 
 void Window::init(uint32 flags){
@@ -56,8 +63,9 @@ void Window::init(uint32 flags){
 		m_height,
 		windowFlags
 	);
-}
 
+    SDL_SetWindowResizable(m_window, SDL_FALSE);
+}
 
 void Window::update(){
     input.update();
@@ -111,7 +119,6 @@ int Window::setFullscreen(){
     return full;
 }
 
-
 void Window::setWindowed(){
     if (!m_fullscreen)
         return;
@@ -121,15 +128,6 @@ void Window::setWindowed(){
     SDL_SetWindowFullscreen(m_window, 0);
     delay(50);
     updateResolution();
-}
-
-void Window::updateResolution(){
-    SDL_PumpEvents();
-    // get fullscreen resolution
-    int h,w;
-    SDL_Vulkan_GetDrawableSize(m_window, &w, &h);
-    m_width = w;
-    m_height = h;
 }
 
 void Window::setBorderless(){
@@ -154,24 +152,42 @@ void Window::setBordered(){
     );
 }
 
+void Window::setResolution(uint32 width, uint32 height){
+    if (m_fullscreen)
+        return;
+
+    SDL_SetWindowSize(
+        m_window, 
+        width, 
+        height
+    );
+
+    updateResolution();
+}
+
+void Window::updateResolution(){
+    SDL_PumpEvents();
+
+    // get fullscreen resolution
+    int h,w;
+    SDL_Vulkan_GetDrawableSize(m_window, &w, &h);
+    if (h==m_height && w == m_width)
+        return;
+    
+    // update window size
+    m_width = w;
+    m_height = h;
+
+    // mark window as dirty
+    if (!m_resized)
+        m_resized = true;
+}
+
 void Window::setTitle(std::string title){
     m_title = title;
     SDL_SetWindowTitle(m_window, title.c_str());
 }
 
-void Window::setResolution(uint32 width, uint32 height){
-    if (m_fullscreen)
-        return;
-    
-    m_width = width;
-    m_height = height;
-
-    SDL_SetWindowSize(
-        m_window, 
-        m_width, 
-        m_height
-    );
-}
 
 InputManager& Window::getInputManager(){
     return input.getInputManager();
@@ -211,6 +227,14 @@ bool Window::isCursorVisible(){
 
 void Window::setCursorPos(uint32 x, uint32 y){
     SDL_WarpMouseInWindow(m_window, x, y);
+}
+
+bool Window::resized(){
+    return m_resized;
+}
+
+void Window::resizeHandled(){
+    m_resized = false;
 }
 
 }
