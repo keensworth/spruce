@@ -13,6 +13,8 @@
 
 namespace spr::gfx {
 
+
+
 // ------------------------------------------------------------------------- //
 //                 Resource Implementations                                  // 
 // ------------------------------------------------------------------------- //
@@ -21,17 +23,24 @@ typedef struct Buffer {
     VkBuffer buffer;
 } Buffer;
 
-
 typedef struct Texture {
     VkImage image;
     VkImageView view;
     VkSampler sampler;
+    VkFormat format;
+    glm::vec3 dimensions;
+    uint32 mips;
+    uint32 layers;
+    VkSampleCountFlagBits samples;
+    VkImageUsageFlags usage;
+    VkImageSubresourceRange subresourceRange;
+    bool defaultRes = true;
 } Texture;
 
 
-// typedef struct FrameBuffer {
-//     VkFramebuffer frameBuffer;
-// } FrameBuffer;
+typedef struct TextureAttachment {
+    std::vector<Handle<Texture>> textures;
+} TextureAttachment;
 
 
 typedef struct DescriptorSetLayout {
@@ -68,11 +77,42 @@ typedef struct RenderPassLayout {
     uint32 attachmentCount;
 } RenderPassLayout;
 
-
+// TODO: need to N-buffer framebuffer images
 typedef struct RenderPass {
     Handle<RenderPassLayout> layout;
     VkRenderPass renderPass;
+    VkFramebuffer framebuffer;
+    glm::uvec3 dimensions;
     uint32 samples;
+
+    // only required to set additional properties or texture handle
+    typedef struct ColorAttachment {
+        Handle<TextureAttachment> texture; // framebuffer 
+        uint32 format         = Flags::Format::UNDEFINED_FORMAT;
+        uint32 samples        = Flags::Sample::SAMPLE_1;
+        uint32 loadOp         = Flags::LoadOp::LOAD_CLEAR;
+        uint32 storeOp        = Flags::StoreOp::STORE;
+        uint32 stencilLoadOp  = Flags::LoadOp::LOAD_DONT_CARE;
+        uint32 stencilStoreOp = Flags::StoreOp::STORE_DONT_CARE;
+        uint32 layout         = Flags::ImageLayout::UNDEFINED;
+        uint32 finalLayout    = Flags::ImageLayout::COLOR_ATTACHMENT;
+    } ColorAttachment;
+
+    typedef struct DepthAttachment {
+        Handle<TextureAttachment> texture; // framebuffer 
+        uint32 format         = Flags::Format::UNDEFINED_FORMAT;
+        uint32 samples        = Flags::Sample::SAMPLE_1;
+        uint32 loadOp         = Flags::LoadOp::LOAD_DONT_CARE;
+        uint32 storeOp        = Flags::StoreOp::STORE_DONT_CARE;
+        uint32 stencilLoadOp  = Flags::LoadOp::LOAD_CLEAR;
+        uint32 stencilStoreOp = Flags::StoreOp::STORE;
+        uint32 layout         = Flags::ImageLayout::UNDEFINED;
+        uint32 finalLayout    = Flags::ImageLayout::DEPTH_STENCIL_ATTACHMENT;
+    } DepthAttachment;
+
+    bool hasDepthAttachment = false;
+    DepthAttachment depthAttachment;
+    std::vector<ColorAttachment> colorAttachments;
 } RenderPass;
 
 
@@ -91,32 +131,6 @@ typedef struct BufferDesc {
     uint32 byteSize   = 0;
     uint32 usage      = Flags::BufferUsage::BU_UNIFORM_BUFFER;
 } BufferDesc;
-
-
-typedef struct TextureViewDesc {
-    static const uint32 ALL_MIPS = 16;
-    static const uint32 ALL_LAYERS = 16;
-
-    typedef struct Sampler {
-        uint32 minFilter  = Flags::Filter::NEAREST;
-        uint32 magFilter  = Flags::Filter::NEAREST;
-        uint32 mipmapMode = Flags::Mipmap::MODE_NEAREST;
-        uint32 addressing = Flags::Wrap::REPEAT;
-        float anisotropy  = 8.f;
-        uint32 compare    = Flags::Compare::ALWAYS;
-    } Sampler;
-
-    typedef struct View {
-        uint32 baseMip    = 0;
-        uint32 mips       = ALL_MIPS;
-        uint32 baseLayer  = 0;
-        uint32 layers     = ALL_LAYERS;
-    } View;
-
-    Handle<Texture> texture;
-    Sampler sampler;
-    View view;
-} TextureViewDesc;
 
 
 typedef struct TextureDesc {
@@ -148,12 +162,9 @@ typedef struct TextureDesc {
 } TextureDesc;
 
 
-// typedef struct FrameBufferDesc { 
-//     Handle<Texture> depthAttachment;
-//     std::vector<Handle<Texture>> colorAttatchments;
-//     Handle<RenderPass> renderPass;
-//     glm::vec3 dimensions {0,0,0};
-// } FrameBufferDesc;
+typedef struct TextureAttachmentDesc {
+    TextureDesc textureLayout;
+} TextureAttachmentDesc;
 
 
 typedef struct DescriptorSetLayoutDesc {
@@ -168,7 +179,7 @@ typedef struct DescriptorSetDesc {
     typedef struct TextureBinding{
         Handle<Texture> texture;
         TextureDesc::Sampler sampler; // override
-        TextureDesc::View view;   // overried
+        TextureDesc::View view;   // override
     } TextureBinding;
 
     typedef struct BufferBinding {
@@ -196,21 +207,10 @@ typedef struct RenderPassLayoutDesc {
 
 
 typedef struct RenderPassDesc { 
-    typedef struct Attachment {
-        Handle<Texture> texture; // framebuffer dst only
-        uint32 format         = Flags::Format::UNDEFINED_FORMAT;
-        uint32 samples        = Flags::Sample::SAMPLE_1;
-        uint32 loadOp         = Flags::LoadOp::LOAD_DONT_CARE;
-        uint32 storeOp        = Flags::StoreOp::STORE_DONT_CARE;
-        uint32 stencilLoadOp  = Flags::LoadOp::LOAD_DONT_CARE;
-        uint32 stencilStoreOp = Flags::StoreOp::STORE_DONT_CARE;
-        uint32 layout         = Flags::ImageLayout::UNDEFINED;
-        uint32 finalLayout    = Flags::ImageLayout::UNDEFINED;
-    } Attachment;
-
-    Attachment depthAttachment;
-    std::vector<Attachment> colorAttachments;
+    glm::uvec3 dimensions = {0,0,0};
     Handle<RenderPassLayout> layout;
+    RenderPass::DepthAttachment depthAttachment;
+    std::vector<RenderPass::ColorAttachment> colorAttachments;
 } RenderPassDesc;
 
 
@@ -229,7 +229,6 @@ typedef struct ShaderDesc {
     // Shader computeShader;
     std::vector<Handle<DescriptorSetLayout>> descriptorSets;
     GraphicsState graphicsState;
-
 } ShaderDesc;
 
 
