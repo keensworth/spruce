@@ -10,7 +10,7 @@ SceneManager::~SceneManager(){
 }
 
 void SceneManager::insertMesh(uint32 meshId, uint32 materialFlags, glm::mat4 model, glm::mat4 modelInvTranspose){
-    // get mesh data and fill draw struct
+    // get mesh data and fill draw
     MeshData& meshData = m_meshData[meshId];
     DrawData draw {
         .vertexOffset = meshData.vertexOffset,  

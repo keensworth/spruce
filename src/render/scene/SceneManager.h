@@ -36,7 +36,7 @@ public:
     void updateCamera(Camera camera);
     void reset();
 
-    void uploadScene();
+    
 
 private:
     Camera m_camera;
