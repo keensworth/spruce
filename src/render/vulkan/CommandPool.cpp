@@ -3,10 +3,7 @@
 #include <vulkan/vulkan_core.h>
 
 namespace spr::gfx {
-CommandPool::CommandPool(VkDevice device, uint32 familyIndex, VulkanResourceManager* rm)
-                        : m_transferCommandBuffer(CommandType::TRANSFER, VK_NULL_HANDLE, rm),
-                          m_offscreenCommandBuffer(CommandType::OFFSCREEN, VK_NULL_HANDLE, rm),
-                          m_mainCommandBuffer(CommandType::MAIN, VK_NULL_HANDLE, rm){
+CommandPool::CommandPool(VulkanDevice device, uint32 familyIndex, VulkanResourceManager* rm){
     m_device = device;
     m_rm = rm;
     
@@ -18,7 +15,7 @@ CommandPool::CommandPool(VkDevice device, uint32 familyIndex, VulkanResourceMana
     };
 
     // create command pool
-    VK_CHECK(vkCreateCommandPool(device, &commandPoolInfo, NULL, &m_commandPool));
+    VK_CHECK(vkCreateCommandPool(m_device.getDevice(), &commandPoolInfo, NULL, &m_commandPool));
 
     // allocate command buffers
     m_commandBuffers = std::vector<VkCommandBuffer>(3);
@@ -28,16 +25,31 @@ CommandPool::CommandPool(VkDevice device, uint32 familyIndex, VulkanResourceMana
         .level = VK_COMMAND_BUFFER_LEVEL_PRIMARY,
         .commandBufferCount = (uint32)m_commandBuffers.size()
     };
-    VK_CHECK(vkAllocateCommandBuffers(m_device, &cbAllocInfo, m_commandBuffers.data()));
+    VK_CHECK(vkAllocateCommandBuffers(m_device.getDevice(), &cbAllocInfo, m_commandBuffers.data()));
 
     // distribute command buffers
-    m_transferCommandBuffer = CommandBuffer(CommandType::TRANSFER, m_commandBuffers[0], rm);
-    m_offscreenCommandBuffer = CommandBuffer(CommandType::OFFSCREEN, m_commandBuffers[1], rm);
-    m_mainCommandBuffer = CommandBuffer(CommandType::MAIN, m_commandBuffers[2], rm);
+    m_transferCommandBuffer  = CommandBuffer(
+                                            m_device, 
+                                            CommandType::TRANSFER, 
+                                            m_commandBuffers[0], 
+                                            rm, 
+                                            m_device.getQueue(VulkanDevice::QueueType::TRANSFER));
+    m_offscreenCommandBuffer = CommandBuffer(
+                                            m_device, 
+                                            CommandType::OFFSCREEN, 
+                                            m_commandBuffers[1], 
+                                            rm, 
+                                            m_device.getQueue(VulkanDevice::QueueType::GRAPHICS));
+    m_mainCommandBuffer      = CommandBuffer(
+                                            m_device, 
+                                            CommandType::MAIN, 
+                                            m_commandBuffers[2], 
+                                            rm, 
+                                            m_device.getQueue(VulkanDevice::QueueType::GRAPHICS));
 }
 
 CommandPool::~CommandPool(){
-    vkDestroyCommandPool(m_device, m_commandPool, NULL);
+    vkDestroyCommandPool(m_device.getDevice(), m_commandPool, NULL);
 }
 
 CommandBuffer& CommandPool::getCommandBuffer(CommandType commandType){
@@ -53,7 +65,7 @@ CommandBuffer& CommandPool::getCommandBuffer(CommandType commandType){
 }
 
 void CommandPool::reset(){
-    vkResetCommandPool(m_device, m_commandPool, 0);
+    vkResetCommandPool(m_device.getDevice(), m_commandPool, 0);
 }
 
 }
