@@ -1,5 +1,6 @@
 #pragma once
 
+#include "glm/detail/qualifier.hpp"
 #include "vulkan_core.h"
 #include "Window.h"
 #include <vulkan/vulkan_core.h>
@@ -7,8 +8,15 @@
 
 namespace spr::gfx {
 
-class VulkanDevice{
+class VulkanDevice {
 public:
+    typedef enum QueueType {
+        GRAPHICS,
+        PRESENT,
+        TRANSFER,
+        COMPUTE
+    } QueueType;
+
     VulkanDevice();
     ~VulkanDevice();
 
@@ -35,6 +43,25 @@ public:
 
     QueueFamilies getQueueFamilies(){
         return m_queueFamilyIndices;
+    }
+
+    VkQueue getQueue(QueueType queueType) {
+        switch (queueType) {
+            case GRAPHICS:
+                return m_graphicsQueue;
+                break;
+            case PRESENT:
+                return m_presentQueue;
+                break;
+            case TRANSFER:
+                return m_transferQueue;
+                break;
+            case COMPUTE:
+                return m_computeQueue;
+                break;
+            default:
+                return m_graphicsQueue;
+        }
     }
 
 
