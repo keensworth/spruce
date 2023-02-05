@@ -7,6 +7,7 @@
 #include "UploadHandler.h"
 #include "../../debug/SprLog.h"
 #include "resource/VulkanResourceManager.h"
+#include "VulkanDevice.h"
 
 namespace spr::gfx{
 
@@ -19,7 +20,8 @@ typedef enum CommandType : uint32 {
 
 class CommandBuffer{
 public:
-    CommandBuffer(CommandType commandType, VkCommandBuffer commandBuffer, VulkanResourceManager* rm);
+    CommandBuffer();
+    CommandBuffer(VulkanDevice device, CommandType commandType, VkCommandBuffer commandBuffer, VulkanResourceManager* rm, VkQueue queue);
     ~CommandBuffer();
 
     UploadHandler& beginTransfer();
@@ -29,11 +31,18 @@ public:
     void submit();
 
     VkCommandBuffer getCommandBuffer();
+    VkSemaphore getSemaphore();
+
+    void setSemaphoreDependencies(std::vector<VkSemaphore> waitSemaphores, std::vector<VkSemaphore> signalSemaphores);
 
 private:
     CommandType m_type;
     VkCommandBuffer m_commandBuffer;
     VulkanResourceManager* m_rm;
+    VkQueue m_queue;
+    VkSemaphore m_semaphore;
+    std::vector<VkSemaphore> m_waitSemaphores;
+    std::vector<VkSemaphore> m_signalSemaphores;
 
     RenderPassRenderer m_passRenderer;
     UploadHandler m_uploadHandler;

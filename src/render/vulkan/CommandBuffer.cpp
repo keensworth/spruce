@@ -3,10 +3,21 @@
 
 namespace spr::gfx {
 
-CommandBuffer::CommandBuffer(CommandType commandType, VkCommandBuffer commandBuffer, VulkanResourceManager* rm){
+CommandBuffer::CommandBuffer(){}
+
+CommandBuffer::CommandBuffer(VulkanDevice device, CommandType commandType, VkCommandBuffer commandBuffer, VulkanResourceManager* rm, VkQueue queue){
     m_type = commandType;
     m_commandBuffer = commandBuffer;
     m_rm = rm;
+    m_queue = queue;
+
+    // build semaphore info
+    VkSemaphoreCreateInfo semaphoreInfo {
+        .sType = VK_STRUCTURE_TYPE_SEMAPHORE_CREATE_INFO
+    };
+
+    // create semaphore
+    VK_CHECK(vkCreateSemaphore(device.getDevice(), &semaphoreInfo, NULL, &m_semaphore));
 }
 
 CommandBuffer::~CommandBuffer(){}
@@ -65,11 +76,33 @@ void CommandBuffer::endRenderPass(){
 void CommandBuffer::submit(){
     vkEndCommandBuffer(m_commandBuffer);
 
-    vkQueueSubmit(queue, uint32_t submitCount, const VkSubmitInfo *pSubmits, VkFence fence)
+    std::vector<VkPipelineStageFlags> stageFlags = {VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT};
+
+    VkSubmitInfo submitInfo {
+        .sType                = VK_STRUCTURE_TYPE_SUBMIT_INFO,
+        .waitSemaphoreCount   = (uint32)m_waitSemaphores.size(),
+        .pWaitSemaphores      = m_waitSemaphores.data(),
+        .pWaitDstStageMask    = stageFlags.data(),
+        .commandBufferCount   = 1,
+        .pCommandBuffers      = &m_commandBuffer,
+        .signalSemaphoreCount = (uint32)m_signalSemaphores.size(),
+        .pSignalSemaphores    = m_signalSemaphores.data(),
+    };
+
+    VK_CHECK(vkQueueSubmit(m_queue, 1, &submitInfo, VK_NULL_HANDLE));
 }
 
 VkCommandBuffer CommandBuffer::getCommandBuffer(){
     return m_commandBuffer;
+}
+
+VkSemaphore CommandBuffer::getSemaphore(){
+    return m_semaphore;
+}
+
+void CommandBuffer::setSemaphoreDependencies(std::vector<VkSemaphore> waitSemaphores, std::vector<VkSemaphore> signalSemaphores){
+    m_waitSemaphores = waitSemaphores;
+    m_signalSemaphores = signalSemaphores;
 }
 
 }
