@@ -475,37 +475,46 @@ Handle<RenderPass> VulkanResourceManager::create<RenderPass>(RenderPassDesc desc
     VkRenderPass vulkanRenderPass;
     VK_CHECK(vkCreateRenderPass(m_device, &createInfo, NULL, &vulkanRenderPass));
 
-    // get attachment image views
-    VkImageView attachments[layout->attachmentCount];
-    for (uint32 i = 0; i < layout->attachmentCount-(hasDepthAttachment); i++){
-        Texture* texture = get<Texture>(desc.colorAttachments[i].texture);
-        attachments[i] = texture->view;
-    }
-    if(hasDepthAttachment){
-        Texture* texture = get<Texture>(desc.depthAttachment.texture);
-        attachments[layout->attachmentCount-1] = texture->view;
-    }
+    // create framebuffers (one per frame)
+    std::vector<VkFramebuffer> vulkanFramebuffers(MAX_FRAME_COUNT);
+    for (int frame = 0; frame < MAX_FRAME_COUNT; frame++){
+        // get attachment image views
+        VkImageView attachments[layout->attachmentCount];
+        for (uint32 i = 0; i < layout->attachmentCount-(hasDepthAttachment); i++){
+            TextureAttachment* textureAttachment = get<TextureAttachment>(desc.colorAttachments[i].texture);
+            Texture* texture =  get<Texture>(textureAttachment->textures[frame]);
+            attachments[i] = texture->view;
+        }
+        if(hasDepthAttachment){
+            TextureAttachment* textureAttachment = get<TextureAttachment>(desc.depthAttachment.texture);
+            Texture* texture =  get<Texture>(textureAttachment->textures[frame]);
+            attachments[layout->attachmentCount-1] = texture->view;
+        }
 
-    // build framebuffer create info
-    VkFramebufferCreateInfo framebufferInfo {
-        .sType           = VK_STRUCTURE_TYPE_FRAMEBUFFER_CREATE_INFO,
-        .renderPass      = vulkanRenderPass,
-        .attachmentCount = layout->attachmentCount,
-        .pAttachments    = attachments,
-        .width           = desc.dimensions.x,
-        .height          = desc.dimensions.y,
-        .layers          = desc.dimensions.z
-    };
+        // build framebuffer create info
+        VkFramebufferCreateInfo framebufferInfo {
+            .sType           = VK_STRUCTURE_TYPE_FRAMEBUFFER_CREATE_INFO,
+            .renderPass      = vulkanRenderPass,
+            .attachmentCount = layout->attachmentCount,
+            .pAttachments    = attachments,
+            .width           = desc.dimensions.x,
+            .height          = desc.dimensions.y,
+            .layers          = desc.dimensions.z
+        };
 
-    // create vulkan framebuffer
-    VkFramebuffer vulkanFramebuffer;
-    VK_CHECK(vkCreateFramebuffer(m_device, &framebufferInfo, NULL, &vulkanFramebuffer));
+        // create vulkan framebuffer
+        VkFramebuffer vulkanFramebuffer;
+        VK_CHECK(vkCreateFramebuffer(m_device, &framebufferInfo, NULL, &vulkanFramebuffer));
+
+        vulkanFramebuffers[frame] = vulkanFramebuffer;
+    }
+    
 
     // create render pass resource, return handle
     RenderPass renderPass {
         .layout = desc.layout,
         .renderPass = vulkanRenderPass,
-        .framebuffer = vulkanFramebuffer,
+        .framebuffers = vulkanFramebuffers,
         .dimensions = desc.dimensions,
         .samples = samples,
         .hasDepthAttachment = hasDepthAttachment,
@@ -765,14 +774,27 @@ Handle<RenderPass> VulkanResourceManager::recreate<RenderPass>(Handle<RenderPass
     std::vector<RenderPass::ColorAttachment> colorAttachments = renderPass->colorAttachments;
     RenderPass::DepthAttachment depthAttachment = renderPass->depthAttachment;
     
-    // destroy framebuffer
-    vkDestroyFramebuffer(m_device, renderPass->framebuffer, NULL);
+    // destroy framebuffers
+    for (int i = 0; i < MAX_FRAME_COUNT; i++){
+        vkDestroyFramebuffer(m_device, renderPass->framebuffers[i], NULL);
+    }
 
     // rebuild all textures that use default res
     {   // color
         for (RenderPass::ColorAttachment& attachment : colorAttachments){
-            Texture* texture = get<Texture>(attachment.texture);
-            if(texture->defaultRes){
+            // get color attachment
+            TextureAttachment* textureAttachment = get<TextureAttachment>(attachment.texture);
+
+            // recreate attachment's images/views
+            for(int frame = 0; frame < MAX_FRAME_COUNT; frame++){
+                // get texture
+                Texture* texture = get<Texture>(textureAttachment->textures[frame]);
+
+                // only need to create those that match screen res
+                if(!texture->defaultRes)
+                    continue;
+                
+
                 // destroy image view
                 vkDestroyImageView(m_device, texture->view, NULL);
 
@@ -820,13 +842,24 @@ Handle<RenderPass> VulkanResourceManager::recreate<RenderPass>(Handle<RenderPass
                 texture->image = vulkanImage;
                 texture->view  = vulkanImageView;
                 texture->dimensions = glm::uvec3(newDimensions.x,newDimensions.y,1);
+                
             }
+            
         }
     }
     {   // depth
         if (hasDepthAttachment){
-            Texture* texture = get<Texture>(depthAttachment.texture);
-            if(texture->defaultRes){
+            // get color attachment
+            TextureAttachment* textureAttachment = get<TextureAttachment>(depthAttachment.texture);
+
+            // recreate attachment's images/views
+            for(int frame = 0; frame < MAX_FRAME_COUNT; frame++){
+                // get texture
+                Texture* texture = get<Texture>(textureAttachment->textures[frame]);
+
+                // only need to create those that match screen res
+                if(!texture->defaultRes)
+                    continue;
                 // destroy image view
                 vkDestroyImageView(m_device, texture->view, NULL);
 
@@ -878,37 +911,43 @@ Handle<RenderPass> VulkanResourceManager::recreate<RenderPass>(Handle<RenderPass
         }
     }
         
-
-    // rebuild framebuffer
+    // rebuild framebuffers
+    std::vector<VkFramebuffer>& vulkanFramebuffers = renderPass->framebuffers;
+    VkImageView vulkanAttachments[MAX_FRAME_COUNT][attachmentCount];
+    
     // get attachment image views
-    VkImageView vulkanAttachments[attachmentCount];
     for (uint32 i = 0; i < attachmentCount+hasDepthAttachment; i++){
-        Texture* texture = get<Texture>(colorAttachments[i].texture);
-        vulkanAttachments[i] = texture->view;
+        TextureAttachment* textureAttachment = get<TextureAttachment>(colorAttachments[i].texture);
+        for (int frame = 0;frame < MAX_FRAME_COUNT; frame++){
+            Texture* texture = get<Texture>(textureAttachment->textures[frame]);
+            vulkanAttachments[frame][i] = texture->view;
+        }
     }
     if (hasDepthAttachment){
-        Texture* texture = get<Texture>(depthAttachment.texture);
-        vulkanAttachments[attachmentCount-1] = texture->view;
+        TextureAttachment* textureAttachment = get<TextureAttachment>(depthAttachment.texture);
+        for (int frame = 0; frame < MAX_FRAME_COUNT; frame++){
+            Texture* texture = get<Texture>(textureAttachment->textures[frame]);
+            vulkanAttachments[frame][attachmentCount-1] = texture->view;
+        }
     }
 
+    for (int frame = 0; frame < MAX_FRAME_COUNT; frame++){
+        // build framebuffer create info
+        VkFramebufferCreateInfo framebufferInfo {
+            .sType           = VK_STRUCTURE_TYPE_FRAMEBUFFER_CREATE_INFO,
+            .renderPass      = renderPass->renderPass,
+            .attachmentCount = attachmentCount,
+            .pAttachments    = vulkanAttachments[frame],
+            .width           = newDimensions.x,
+            .height          = newDimensions.y,
+            .layers          = 1
+        };
 
-    // build framebuffer create info
-    VkFramebufferCreateInfo framebufferInfo {
-        .sType           = VK_STRUCTURE_TYPE_FRAMEBUFFER_CREATE_INFO,
-        .renderPass      = renderPass->renderPass,
-        .attachmentCount = attachmentCount,
-        .pAttachments    = vulkanAttachments,
-        .width           = newDimensions.x,
-        .height          = newDimensions.y,
-        .layers          = 1
-    };
-
-    // create vulkan framebuffer
-    VkFramebuffer vulkanFramebuffer;
-    VK_CHECK(vkCreateFramebuffer(m_device, &framebufferInfo, NULL, &vulkanFramebuffer));
-
-    // replace framebuffer in render pass object
-    renderPass->framebuffer = vulkanFramebuffer;
+        // create vulkan framebuffer
+        VkFramebuffer vulkanFramebuffer;
+        VK_CHECK(vkCreateFramebuffer(m_device, &framebufferInfo, NULL, &vulkanFramebuffers[frame]));
+    }
+    
     return handle;
 }
 
