@@ -14,7 +14,6 @@
 namespace spr::gfx {
 
 
-
 // ------------------------------------------------------------------------- //
 //                 Resource Implementations                                  // 
 // ------------------------------------------------------------------------- //
@@ -81,7 +80,7 @@ typedef struct RenderPassLayout {
 typedef struct RenderPass {
     Handle<RenderPassLayout> layout;
     VkRenderPass renderPass;
-    VkFramebuffer framebuffer;
+    std::vector<VkFramebuffer> framebuffers;
     glm::uvec3 dimensions;
     uint32 samples;
 
@@ -230,9 +229,5 @@ typedef struct ShaderDesc {
     std::vector<Handle<DescriptorSetLayout>> descriptorSets;
     GraphicsState graphicsState;
 } ShaderDesc;
-
-
-
-
 
 }
