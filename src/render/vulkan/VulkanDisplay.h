@@ -11,6 +11,7 @@
 namespace spr::gfx {
 class VulkanDisplay{
 public:
+    VulkanDisplay();
     VulkanDisplay(Window* window);
     ~VulkanDisplay();
 

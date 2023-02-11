@@ -1,4 +1,5 @@
 #include "VulkanDisplay.h"
+#include "VulkanDevice.h"
 #include "vulkan_core.h"
 #include <vulkan/vulkan_core.h>
 
@@ -11,6 +12,10 @@ namespace spr::gfx{
 //  ██║██║╚████║██║   ██║   
 //  ██║██║ ╚███║██║   ██║   
 //  ╚═╝╚═╝  ╚══╝╚═╝   ╚═╝   
+
+VulkanDisplay::VulkanDisplay(){
+    
+}
 
 VulkanDisplay::VulkanDisplay(Window* window){
     m_window = window;
