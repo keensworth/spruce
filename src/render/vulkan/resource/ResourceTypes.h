@@ -10,22 +10,42 @@
 #include "../vulkan_core.h"
 #include "glm/fwd.hpp"
 #include "memory/Handle.h"
+#include "vk_mem_alloc.h"
 
 namespace spr::gfx {
 
 
-// ------------------------------------------------------------------------- //
-//                 Resource Implementations                                  // 
-// ------------------------------------------------------------------------- //
+
+//  ██╗███╗   ███╗██████╗ ██╗     
+//  ██║████╗ ████║██╔══██╗██║     
+//  ██║██╔████╔██║██████╔╝██║     
+//  ██║██║╚██╔╝██║██╔═══╝ ██║     
+//  ██║██║ ╚═╝ ██║██║     ███████╗
+//  ╚═╝╚═╝     ╚═╝╚═╝     ╚══════╝
+
+// --------------------------------------------------------- //
+//                 Buffer                                    // 
+// --------------------------------------------------------- //
 
 typedef struct Buffer {
+    uint32 byteSize = 0;
     VkBuffer buffer;
+    VmaAllocation alloc;
+    VmaAllocationInfo allocInfo;
+    bool hostVisible = false;
 } Buffer;
+
+
+// --------------------------------------------------------- //
+//                 Texture                                   // 
+// --------------------------------------------------------- //
 
 typedef struct Texture {
     VkImage image;
     VkImageView view;
     VkSampler sampler;
+    VmaAllocation alloc;
+    VmaAllocationInfo allocInfo;
     VkFormat format;
     glm::vec3 dimensions;
     uint32 mips;
@@ -37,10 +57,18 @@ typedef struct Texture {
 } Texture;
 
 
+// --------------------------------------------------------- //
+//                 Texture Attachment                        // 
+// --------------------------------------------------------- //
+
 typedef struct TextureAttachment {
     std::vector<Handle<Texture>> textures;
 } TextureAttachment;
 
+
+// --------------------------------------------------------- //
+//                 Descriptor Set Layout                     // 
+// --------------------------------------------------------- //
 
 typedef struct DescriptorSetLayout {
     typedef struct TextureBindingLayout {
@@ -63,10 +91,19 @@ typedef struct DescriptorSetLayout {
 } DescriptorSetLayout;
 
 
+// --------------------------------------------------------- //
+//                 Descriptor Set                            // 
+// --------------------------------------------------------- //
+
 typedef struct DescriptorSet {
-    VkDescriptorSet descriptorSet;
+    bool dynamic = false;
+    std::vector<VkDescriptorSet> descriptorSets;
 } DescriptorSet;
 
+
+// --------------------------------------------------------- //
+//                 Render Pass Layout                        // 
+// --------------------------------------------------------- //
 
 typedef struct RenderPassLayout {
     VkAttachmentReference depthReference;
@@ -76,7 +113,11 @@ typedef struct RenderPassLayout {
     uint32 attachmentCount;
 } RenderPassLayout;
 
-// TODO: need to N-buffer framebuffer images
+
+// --------------------------------------------------------- //
+//                 Render Pass                               // 
+// --------------------------------------------------------- //
+
 typedef struct RenderPass {
     Handle<RenderPassLayout> layout;
     VkRenderPass renderPass;
@@ -115,22 +156,40 @@ typedef struct RenderPass {
 } RenderPass;
 
 
+// --------------------------------------------------------- //
+//                 Shader                                    // 
+// --------------------------------------------------------- //
+
 typedef struct Shader {
     VkPipeline pipeline;
 } Shader;
 
 
 
-// ------------------------------------------------------------------------- //
-//                 Resource Descriptions                                     // 
-// ------------------------------------------------------------------------- //
+
+//  ██████╗ ███████╗ ██████╗ █████╗ 
+//  ██╔══██╗██╔════╝██╔════╝██╔══██╗
+//  ██║  ██║█████╗  ╚█████╗ ██║  ╚═╝
+//  ██║  ██║██╔══╝   ╚═══██╗██║  ██╗
+//  ██████╔╝███████╗██████╔╝╚█████╔╝
+//  ╚═════╝ ╚══════╝╚═════╝  ╚════╝ 
+
+
+// --------------------------------------------------------- //
+//                 Buffer Desc                               // 
+// --------------------------------------------------------- //
 
 typedef struct BufferDesc {
     uint32 byteOffset = 0;
     uint32 byteSize   = 0;
     uint32 usage      = Flags::BufferUsage::BU_UNIFORM_BUFFER;
+    bool hostVisible  = false;
 } BufferDesc;
 
+
+// --------------------------------------------------------- //
+//                 Texture Desc                              // 
+// --------------------------------------------------------- //
 
 typedef struct TextureDesc {
     static const uint32 ALL_MIPS = 16;
@@ -161,16 +220,28 @@ typedef struct TextureDesc {
 } TextureDesc;
 
 
+// --------------------------------------------------------- //
+//                 Texture Attachment Desc                   // 
+// --------------------------------------------------------- //
+
 typedef struct TextureAttachmentDesc {
     TextureDesc textureLayout;
 } TextureAttachmentDesc;
 
+
+// --------------------------------------------------------- //
+//                 Descriptor Set Layout Desc                // 
+// --------------------------------------------------------- //
 
 typedef struct DescriptorSetLayoutDesc {
     std::vector<DescriptorSetLayout::TextureBindingLayout> textures;
     std::vector<DescriptorSetLayout::BufferBindingLayout> buffers;
 } DescriptorSetLayoutDesc;
 
+
+// --------------------------------------------------------- //
+//                 Descriptor Set Desc                       // 
+// --------------------------------------------------------- //
 
 typedef struct DescriptorSetDesc {
     static const uint32 ALL_BYTES = 0xFFFFFFFF;
@@ -187,11 +258,16 @@ typedef struct DescriptorSetDesc {
         uint32 byteSize   = ALL_BYTES;
     } BufferBinding;
 
+    bool dynamic = false;
     std::vector<TextureBinding> textures;
     std::vector<BufferBinding> buffers;
     Handle<DescriptorSetLayout> layout;
 } DescriptorSetDesc;
 
+
+// --------------------------------------------------------- //
+//                 Render Pass Layout Desc                   // 
+// --------------------------------------------------------- //
 
 typedef struct RenderPassLayoutDesc { 
     typedef struct SubpassLayout {
@@ -205,6 +281,10 @@ typedef struct RenderPassLayoutDesc {
 } RenderPassLayoutDesc;
 
 
+// --------------------------------------------------------- //
+//                 Render Pass Desc                          // 
+// --------------------------------------------------------- //
+
 typedef struct RenderPassDesc { 
     glm::uvec3 dimensions = {0,0,0};
     Handle<RenderPassLayout> layout;
@@ -212,6 +292,10 @@ typedef struct RenderPassDesc {
     std::vector<RenderPass::ColorAttachment> colorAttachments;
 } RenderPassDesc;
 
+
+// --------------------------------------------------------- //
+//                 Shader Desc                               // 
+// --------------------------------------------------------- //
 
 typedef struct ShaderDesc {
     typedef struct Shader{
