@@ -25,7 +25,7 @@ void SystemManager::update(float dt){
     // // update render system
     // m_renderSystem->update(dt);
 
-    // // uppdate audio system
+    // // update audio system
     // m_audioSystem->update(dt);
     
 }
