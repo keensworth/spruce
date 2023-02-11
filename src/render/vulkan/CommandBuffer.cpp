@@ -1,15 +1,18 @@
 #include "CommandBuffer.h"
+#include "UploadHandler.h"
+#include "vulkan_core.h"
 #include <vulkan/vulkan_core.h>
 
 namespace spr::gfx {
 
-CommandBuffer::CommandBuffer(){}
+CommandBuffer::CommandBuffer() {}
 
 CommandBuffer::CommandBuffer(VulkanDevice device, CommandType commandType, VkCommandBuffer commandBuffer, VulkanResourceManager* rm, VkQueue queue){
     m_type = commandType;
     m_commandBuffer = commandBuffer;
     m_rm = rm;
     m_queue = queue;
+    m_frame = 0;
 
     // build semaphore info
     VkSemaphoreCreateInfo semaphoreInfo {
@@ -30,16 +33,14 @@ UploadHandler& CommandBuffer::beginTransfer(){
     return m_uploadHandler;
 }
 
-void CommandBuffer::endTransfer(){}
-
-RenderPassRenderer& CommandBuffer::beginRenderPass(Handle<RenderPass> renderPassHandle){
+RenderPassRenderer& CommandBuffer::beginRenderPass(Handle<RenderPass> handle){
     // make sure user is accessing correct commandbuffer
     if (m_type != CommandType::OFFSCREEN && m_type != CommandType::MAIN){
         SprLog::warn("CommandBuffer: Not a render command buffer");
     }
 
     // begin the renderpass
-    RenderPass* renderPass = m_rm->get<RenderPass>(renderPassHandle);
+    RenderPass* renderPass = m_rm->get<RenderPass>(handle);
     std::vector<VkClearValue> clearValues(renderPass->hasDepthAttachment + renderPass->colorAttachments.size());
     for (uint32 i = 0; i < clearValues.size(); i++){
         if (i < clearValues.size() - 1){
@@ -55,7 +56,7 @@ RenderPassRenderer& CommandBuffer::beginRenderPass(Handle<RenderPass> renderPass
     VkRenderPassBeginInfo renderPassInfo {
         .sType = VK_STRUCTURE_TYPE_RENDER_PASS_BEGIN_INFO,
         .renderPass = renderPass->renderPass,
-        .framebuffer = renderPass->framebuffer,
+        .framebuffer = renderPass->framebuffers[m_frame % MAX_FRAME_COUNT],
         .renderArea = {
             .offset = {0,0},
             .extent = {renderPass->dimensions.x, renderPass->dimensions.y}
@@ -74,9 +75,16 @@ void CommandBuffer::endRenderPass(){
 }
 
 void CommandBuffer::submit(){
-    vkEndCommandBuffer(m_commandBuffer);
+    std::vector<VkPipelineStageFlags> stageFlags;
 
-    std::vector<VkPipelineStageFlags> stageFlags = {VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT};
+    if (m_type == CommandType::TRANSFER) {
+        m_uploadHandler.submit(m_frame);
+        stageFlags = {VK_PIPELINE_STAGE_TRANSFER_BIT};
+    } else {
+        stageFlags = {VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT};
+    }
+
+    vkEndCommandBuffer(m_commandBuffer);
 
     VkSubmitInfo submitInfo {
         .sType                = VK_STRUCTURE_TYPE_SUBMIT_INFO,
@@ -103,6 +111,10 @@ VkSemaphore CommandBuffer::getSemaphore(){
 void CommandBuffer::setSemaphoreDependencies(std::vector<VkSemaphore> waitSemaphores, std::vector<VkSemaphore> signalSemaphores){
     m_waitSemaphores = waitSemaphores;
     m_signalSemaphores = signalSemaphores;
+}
+
+void CommandBuffer::setFrame(uint32 frame) {
+    m_frame = frame;
 }
 
 }

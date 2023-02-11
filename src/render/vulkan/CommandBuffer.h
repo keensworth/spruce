@@ -24,10 +24,14 @@ public:
     CommandBuffer(VulkanDevice device, CommandType commandType, VkCommandBuffer commandBuffer, VulkanResourceManager* rm, VkQueue queue);
     ~CommandBuffer();
 
-    UploadHandler& beginTransfer();
-    void endTransfer();
+    // rendering commands
     RenderPassRenderer& beginRenderPass(Handle<RenderPass> renderPass);
     void endRenderPass();
+
+    // transfer commands
+    UploadHandler& beginTransfer();
+
+    // shared
     void submit();
 
     VkCommandBuffer getCommandBuffer();
@@ -46,5 +50,10 @@ private:
 
     RenderPassRenderer m_passRenderer;
     UploadHandler m_uploadHandler;
+
+    uint32 m_frame;
+    void setFrame(uint32 frame);
+
+    friend class CommandPool;
 };
 }
