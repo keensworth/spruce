@@ -11,6 +11,7 @@ namespace spr::gfx{
 
 class VulkanRenderer{
 public:
+    VulkanRenderer();
     VulkanRenderer(Window* window, VulkanResourceManager* rm);
     ~VulkanRenderer();
 
@@ -21,6 +22,8 @@ public:
     void wait();
     
     VkFormat getDisplayFormat();
+    VulkanDevice& getDevice();
+    VmaAllocator& getAllocator();
 
 private:
     
@@ -35,6 +38,8 @@ private:
 
     VulkanDevice m_device;
     VulkanDisplay m_display;
+
+    VmaAllocator m_allocator;
 
     void recreateSwapchain();
     void cleanup();

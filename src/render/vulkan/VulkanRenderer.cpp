@@ -1,9 +1,18 @@
 #include "VulkanRenderer.h"
+#include "CommandPool.h"
+#include "VulkanDevice.h"
 #include "vulkan_core.h"
 #include <vulkan/vulkan_core.h>
 
+#define VMA_IMPLEMENTATION
+#include "vk_mem_alloc.h"
+
 
 namespace spr::gfx {
+
+VulkanRenderer::VulkanRenderer() {
+
+}
 
 VulkanRenderer::VulkanRenderer(Window* window, VulkanResourceManager* rm) : m_device(VulkanDevice()), m_display(VulkanDisplay(window)){
     // create device info, instance, and physical device
@@ -21,7 +30,7 @@ VulkanRenderer::VulkanRenderer(Window* window, VulkanResourceManager* rm) : m_de
     m_imageCount = m_display.createSwapchain(m_device.getPhysicalDevice(), m_device.getDevice(), m_device.getQueueFamilies());
     m_display.createImageViews(m_device.getDevice());
 
-    // create frames
+    // create frames // TODO
     for (uint32 frame = 0; frame < MAX_FRAME_COUNT; frame++){
         m_frames[frame] = {
             .frameId = frame
@@ -32,54 +41,63 @@ VulkanRenderer::VulkanRenderer(Window* window, VulkanResourceManager* rm) : m_de
     QueueFamilies queueFamilies = m_device.getQueueFamilies();
     for (uint32 frame = 0; frame < MAX_FRAME_COUNT; frame++){
         // graphics queue command pools
-        m_commandPools[frame] = CommandPool(m_device.getDevice(), queueFamilies.graphicsFamilyIndex.value(), rm);
+        m_commandPools[frame] = CommandPool(m_device, queueFamilies.graphicsFamilyIndex.value(), rm);
 
         // additional transfer queue command pools (if applicable)
         if (!queueFamilies.familyUnique(queueFamilies.transferFamilyIndex.value()))
             continue;
-        m_transferCommandPools[frame] = CommandPool(m_device.getDevice(), queueFamilies.transferFamilyIndex.value(), rm);
+        m_transferCommandPools[frame] = CommandPool(m_device, queueFamilies.transferFamilyIndex.value(), rm);
     }
+
+    // create allocator
+    VmaAllocatorCreateInfo allocatorCreateInfo = {
+        .physicalDevice   = m_device.getPhysicalDevice(),
+        .device           = m_device.getDevice(),
+        .instance         = m_device.getInstance(),
+        .vulkanApiVersion = VK_API_VERSION_1_2
+    };
+    vmaCreateAllocator(&allocatorCreateInfo, &m_allocator);
+    
 }
 
 VulkanRenderer::~VulkanRenderer(){
 }
 
+VulkanDevice& VulkanRenderer::getDevice(){
+    return m_device;
+}
+
+VmaAllocator& VulkanRenderer::getAllocator() {
+    return m_allocator;
+}
+
 CommandBuffer& VulkanRenderer::beginCommandRecording(CommandType commandBufferType){
-    if (commandBufferType == CommandType::TRANSFER) {
-        // get command buffer from transfer pool
-        CommandBuffer& commandBuffer = m_transferCommandPools[m_currFrame].getCommandBuffer(CommandType::TRANSFER);
+    // get the appropriate command buffer
+    CommandBuffer& commandBuffer = (commandBufferType == CommandType::TRANSFER) ?
+                                   m_transferCommandPools[m_currFrame].getCommandBuffer(CommandType::TRANSFER) :
+                                   m_commandPools[m_currFrame].getCommandBuffer(commandBufferType);
+                    
+    // begin recording command buffer
+    VkCommandBuffer vulkanCommandBuffer = commandBuffer.getCommandBuffer();
+    VkCommandBufferBeginInfo beginInfo {
+        .sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO
+    };
+    VK_CHECK(vkBeginCommandBuffer(vulkanCommandBuffer, &beginInfo));
 
-        // begin recording command buffer
-        VkCommandBuffer vulkanCommandBuffer = commandBuffer.getCommandBuffer();
-        VkCommandBufferBeginInfo beginInfo {
-            .sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO
-        };
-        VK_CHECK(vkBeginCommandBuffer(vulkanCommandBuffer, &beginInfo));
+    return commandBuffer;
+}
 
-        return commandBuffer;
-    } 
-    else {
-        // get command buffer from transfer pool
-        CommandBuffer& commandBuffer = m_commandPools[m_currFrame].getCommandBuffer(commandBufferType);
-
-        // begin recording command buffer
-        VkCommandBuffer vulkanCommandBuffer = commandBuffer.getCommandBuffer();
-        VkCommandBufferBeginInfo beginInfo {
-            .sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO
-        };
-        VK_CHECK(vkBeginCommandBuffer(vulkanCommandBuffer, &beginInfo));
-
-        return commandBuffer;
-    }
+RenderFrame& VulkanRenderer::beginFrame() {
+    // reset command pools before use
+    m_commandPools[m_currFrame % MAX_FRAME_COUNT].reset(m_currFrame);
+    m_transferCommandPools[m_currFrame % MAX_FRAME_COUNT].reset(m_currFrame);
     
 }
 
-RenderFrame& VulkanRenderer::beginFrame(){
-
-}
-
 void VulkanRenderer::present(){
+    //
 
+    m_currFrame++;
 }
 
 void VulkanRenderer::wait(){
