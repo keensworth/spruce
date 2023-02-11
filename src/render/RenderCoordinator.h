@@ -21,5 +21,7 @@ private:
 
     VulkanResourceManager m_rm;
     VulkanRenderer m_renderer;
+
+    void init();
 };
 }
