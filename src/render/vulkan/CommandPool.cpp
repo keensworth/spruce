@@ -3,9 +3,13 @@
 #include <vulkan/vulkan_core.h>
 
 namespace spr::gfx {
+
+CommandPool::CommandPool(){}
+
 CommandPool::CommandPool(VulkanDevice device, uint32 familyIndex, VulkanResourceManager* rm){
     m_device = device;
     m_rm = rm;
+    m_frame = 0;
     
     // build command pool create info
     VkCommandPoolCreateInfo commandPoolInfo = {
@@ -64,8 +68,14 @@ CommandBuffer& CommandPool::getCommandBuffer(CommandType commandType){
     return m_mainCommandBuffer;    
 }
 
-void CommandPool::reset(){
+void CommandPool::reset(uint32 frame){
     vkResetCommandPool(m_device.getDevice(), m_commandPool, 0);
+    
+    m_frame = frame;
+
+    m_mainCommandBuffer.setFrame(frame);
+    m_offscreenCommandBuffer.setFrame(frame);
+    m_transferCommandBuffer.setFrame(frame);
 }
 
 }
