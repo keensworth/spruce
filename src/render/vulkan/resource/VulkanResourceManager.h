@@ -1,7 +1,9 @@
 #pragma once
 
 #include <typeindex>
+#include <vulkan/vulkan_core.h>
 #include "VulkanResourceCache.h"
+#include "../UploadHandler.h"
 
 
 typedef ska::flat_hash_map<std::type_index, spr::gfx::VulkanResourceCache*> rmap;
@@ -23,6 +25,9 @@ class VulkanResourceManager {
 public:
     VulkanResourceManager();
     ~VulkanResourceManager();
+
+    void init(VulkanDevice& device, VmaAllocator& allocator);
+    void setUploadHandler(UploadHandler* uploadHandler);
 
     // U := ResourceType
     template <typename U>
@@ -56,7 +61,16 @@ public:
         SprLog::warn("VulkanResourceManager: [RECREATE] Resource recreation not available for this type, excplicit specialization required");
         return Handle<U>();
     }
-    
+
+
+private:
+    // U := ResourceType
+    template <typename U, typename V>
+    void allocate(Handle<U> handle, V& info){
+        SprLog::warn("VulkanResourceManager: [ALLOCATE] Resource not recognized");
+        return;
+    }
+
 private:
     rmap m_resourceMap{
         {typeid(Buffer), new BufferCache},
@@ -70,7 +84,13 @@ private:
     };
 
     VkDevice m_device;
+    VmaAllocator* m_allocator;
+    UploadHandler* m_uploadHandler;
     glm::uvec3 m_screenDim;
+
+    VkDescriptorPool m_globalDescriptorPool;
+    VkDescriptorPool m_dynamicDescriptorPools[MAX_FRAME_COUNT];
+
 
     friend class RenderCoordinator;
 };

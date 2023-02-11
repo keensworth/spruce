@@ -1,9 +1,12 @@
 #include "VulkanResourceManager.h"
+
 #include "ResourceFlags.h"
 #include "ResourceTypes.h"
 #include <filesystem>
 #include <vulkan/vulkan_core.h>
 #include <fstream>
+#include "vk_mem_alloc.h"
+
 
 namespace spr::gfx {
 
@@ -17,6 +20,57 @@ namespace spr::gfx {
 
 VulkanResourceManager::VulkanResourceManager(){
 
+}
+
+void VulkanResourceManager::init(VulkanDevice& device, VmaAllocator& allocator){
+    // set device and allocator
+    m_device = device.getDevice();
+    m_allocator = &allocator;
+
+    // setup global descriptor pool
+    std::vector<VkDescriptorPoolSize> globalPoolSizes = {
+        {
+            .type = VK_DESCRIPTOR_TYPE_STORAGE_BUFFER,
+            .descriptorCount = 4
+        }
+    };
+    VkDescriptorPoolCreateInfo globalPoolInfo = {
+        .sType = VK_STRUCTURE_TYPE_DESCRIPTOR_POOL_CREATE_INFO,
+        .maxSets = 1,
+        .poolSizeCount = (uint32)globalPoolSizes.size(),
+        .pPoolSizes = globalPoolSizes.data()
+    };
+    VK_CHECK(vkCreateDescriptorPool(m_device, &globalPoolInfo, NULL, &m_globalDescriptorPool));
+
+    // setup dynamic descriptor pools
+    for (int frame = 0; frame < MAX_FRAME_COUNT; frame++){
+        std::vector<VkDescriptorPoolSize> dynamicPoolSizes = {
+            {
+                .type = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER,
+                .descriptorCount = 16
+            },
+            {
+                .type = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER,
+                .descriptorCount = 16
+            },
+            {
+                .type = VK_DESCRIPTOR_TYPE_STORAGE_BUFFER,
+                .descriptorCount = 16
+            },
+        };
+        VkDescriptorPoolCreateInfo dynamicPoolInfo = {
+            .sType = VK_STRUCTURE_TYPE_DESCRIPTOR_POOL_CREATE_INFO,
+            .maxSets = 1024,
+            .poolSizeCount = (uint32)dynamicPoolSizes.size(),
+            .pPoolSizes = dynamicPoolSizes.data()
+        };
+        VK_CHECK(vkCreateDescriptorPool(m_device, &dynamicPoolInfo, NULL, &m_dynamicDescriptorPools[frame]));
+    }
+    
+}
+
+void VulkanResourceManager::setUploadHandler(UploadHandler *uploadHandler){
+    m_uploadHandler = uploadHandler;
 }
 
 VulkanResourceManager::~VulkanResourceManager(){
@@ -50,6 +104,63 @@ VulkanResourceManager::~VulkanResourceManager(){
 }
 
 
+
+//   █████╗ ██╗     ██╗      █████╗  █████╗ 
+//  ██╔══██╗██║     ██║     ██╔══██╗██╔══██╗
+//  ███████║██║     ██║     ██║  ██║██║  ╚═╝
+//  ██╔══██║██║     ██║     ██║  ██║██║  ██╗
+//  ██║  ██║███████╗███████╗╚█████╔╝╚█████╔╝
+//  ╚═╝  ╚═╝╚══════╝╚══════╝ ╚════╝  ╚════╝ 
+
+// ------------------------------------------------------------------------- //
+//                 Buffer                                                    //
+// ------------------------------------------------------------------------- //
+template<>
+void VulkanResourceManager::allocate(Handle<Buffer> handle, VkBufferCreateInfo& info){
+    Buffer* buffer = get<Buffer>(handle);
+    
+    // allocation info
+    VmaAllocationCreateInfo allocationInfo;
+    if (buffer->hostVisible){
+        // host visible + device local
+        allocationInfo = {
+            .flags = VMA_ALLOCATION_CREATE_HOST_ACCESS_SEQUENTIAL_WRITE_BIT
+                   | VMA_ALLOCATION_CREATE_MAPPED_BIT,
+            .usage = VMA_MEMORY_USAGE_AUTO
+        };
+    } else {
+        // device local
+        allocationInfo = {
+            .usage = VMA_MEMORY_USAGE_AUTO_PREFER_DEVICE
+        };
+    }
+
+    // create/allocate buffer
+    vmaCreateBuffer(*m_allocator, &info, &allocationInfo, &buffer->buffer, &buffer->alloc, &buffer->allocInfo);
+
+    return;
+}
+
+// ------------------------------------------------------------------------- //
+//                 Texture                                                   //
+// ------------------------------------------------------------------------- //
+template<>
+void VulkanResourceManager::allocate(Handle<Texture> handle, VkImageCreateInfo& info){
+    Texture* texture = get<Texture>(handle);
+
+    // allocation info
+    VmaAllocationCreateInfo allocationInfo {
+        .usage = VMA_MEMORY_USAGE_AUTO_PREFER_DEVICE
+    };
+
+    // create/allocate texture
+    vmaCreateImage(*m_allocator, &info, &allocationInfo, &texture->image, &texture->alloc, &texture->allocInfo);
+
+    return;
+}
+
+
+
 //   █████╗ ██████╗ ███████╗ █████╗ ████████╗███████╗
 //  ██╔══██╗██╔══██╗██╔════╝██╔══██╗╚══██╔══╝██╔════╝
 //  ██║  ╚═╝██████╔╝█████╗  ███████║   ██║   █████╗  
@@ -72,16 +183,22 @@ Handle<Buffer> VulkanResourceManager::create<Buffer>(BufferDesc desc){
         .sharingMode = VK_SHARING_MODE_EXCLUSIVE
     };
 
-    // create buffer
-    VkBuffer vulkankBuffer;
-    VK_CHECK(vkCreateBuffer(m_device, &bufferInfo, NULL, &vulkankBuffer));
+    // create (uninitialized) buffer
+    VkBuffer vulkanBuffer;
 
-    // create buffer resource, return handle
+    // create buffer resource
     Buffer buffer {
-        .buffer = vulkankBuffer
+        .byteSize    = desc.byteSize,
+        .buffer      = vulkanBuffer,
+        .hostVisible = desc.hostVisible
     };
-    return bufferCache->insert(buffer);
+    Handle<Buffer> bufferHandle = bufferCache->insert(buffer);
+
+    // allocate and return
+    allocate<Buffer>(bufferHandle, bufferInfo);
+    return bufferHandle;
 }
+
 
 
 // ------------------------------------------------------------------------- //
@@ -114,9 +231,8 @@ Handle<Texture> VulkanResourceManager::create<Texture>(TextureDesc desc){
         .sharingMode = VK_SHARING_MODE_EXCLUSIVE
     };
 
-    // create image
+    // create (unitialized) image
     VkImage vulkanImage;
-    VK_CHECK(vkCreateImage(m_device, &imageInfo, NULL, &vulkanImage));
 
     // create image sampler (default)
     VkSamplerCreateInfo samplerInfo {
@@ -138,7 +254,6 @@ Handle<Texture> VulkanResourceManager::create<Texture>(TextureDesc desc){
         .unnormalizedCoordinates = VK_FALSE
     };
     VkSampler vulkanSampler;
-    VK_CHECK(vkCreateSampler(m_device, &samplerInfo, NULL, &vulkanSampler));
 
     // create image view (default)
     VkImageSubresourceRange subresourceRange {
@@ -163,9 +278,8 @@ Handle<Texture> VulkanResourceManager::create<Texture>(TextureDesc desc){
         .subresourceRange = subresourceRange
     };
     VkImageView vulkanImageView;
-    VK_CHECK(vkCreateImageView(m_device, &viewInfo, NULL, &vulkanImageView));
 
-    // create texture resource, return handle
+    // create texture resource
     Texture texture {
         .image      = vulkanImage,
         .view       = vulkanImageView,
@@ -179,8 +293,15 @@ Handle<Texture> VulkanResourceManager::create<Texture>(TextureDesc desc){
         .subresourceRange = subresourceRange,
         .defaultRes = defaultRes
     };
-    return textureCache->insert(texture);
+    Handle<Texture> textureHandle = textureCache->insert(texture);
+
+    // allocate and return
+    allocate<Texture>(textureHandle, imageInfo);
+    VK_CHECK(vkCreateSampler(m_device, &samplerInfo, NULL, &vulkanSampler));
+    VK_CHECK(vkCreateImageView(m_device, &viewInfo, NULL, &vulkanImageView));
+    return textureHandle;
 }
+
 
 
 // ------------------------------------------------------------------------- //
@@ -201,6 +322,7 @@ Handle<TextureAttachment> VulkanResourceManager::create<TextureAttachment>(Textu
     // return handle to attachment
     return textureAttachmentCache->insert(textureAttachment);
 }
+
 
 
 // ------------------------------------------------------------------------- //
@@ -251,12 +373,13 @@ Handle<DescriptorSetLayout> VulkanResourceManager::create<DescriptorSetLayout>(D
 
     // create descriptor set layout resource, return handle
     DescriptorSetLayout descriptorSetLayout {
-        .textureLayouts = desc.textures,
-        .bufferLayouts = desc.buffers,
+        .textureLayouts      = desc.textures,
+        .bufferLayouts       = desc.buffers,
         .descriptorSetLayout = vulkanDescriptorSetLayout
     };
     return descriptorSetLayoutCache->insert(descriptorSetLayout);
 }
+
 
 
 // ------------------------------------------------------------------------- //
@@ -269,21 +392,26 @@ Handle<DescriptorSet> VulkanResourceManager::create<DescriptorSet>(DescriptorSet
     // descriptor set layout from handle in desc
     DescriptorSetLayout* layout = get<DescriptorSetLayout>(desc.layout);
 
-    // build descriptor set info
-    VkDescriptorSetAllocateInfo descriptorSetAllocInfo {
-        .sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_ALLOCATE_INFO,
-        .descriptorPool = NULL, // TODO: pass in pool
-        .descriptorSetCount = 1,
-        .pSetLayouts = &(layout->descriptorSetLayout)
-    };
+    // meta
+    uint32 descriptorSetCount = desc.dynamic ? MAX_FRAME_COUNT : 1;
 
-    // allocate descriptor sets
-    VkDescriptorSet vulkanDescriptorSet;
-    VK_CHECK(vkAllocateDescriptorSets(m_device, NULL, &vulkanDescriptorSet));
+    std::vector<VkDescriptorSet> vulkanDescriptorSets;
+    for (uint32 i = 0; i < descriptorSetCount; i++){
+        // build descriptor set info
+        VkDescriptorPool descriptorPool = desc.dynamic ? m_dynamicDescriptorPools[i] : m_globalDescriptorPool;
+        VkDescriptorSetAllocateInfo descriptorSetAllocInfo {
+            .sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_ALLOCATE_INFO,
+            .descriptorPool = desc.dynamic ? m_dynamicDescriptorPools[i] : m_globalDescriptorPool,
+            .descriptorSetCount = descriptorSetCount,
+            .pSetLayouts = &(layout->descriptorSetLayout)
+        };
 
-    // write descriptor sets
-    {
-        // buffers
+        // allocate descriptor sets
+        VkDescriptorSet vulkanDescriptorSet;
+        VK_CHECK(vkAllocateDescriptorSets(m_device, NULL, &vulkanDescriptorSet));
+        vulkanDescriptorSets.push_back(vulkanDescriptorSet);
+
+        // write buffer descriptor sets
         uint32 bufferIndex = 0;
         for (auto bufferBinding : desc.buffers){
             // build buffer info
@@ -291,7 +419,7 @@ Handle<DescriptorSet> VulkanResourceManager::create<DescriptorSet>(DescriptorSet
                 .buffer = get<Buffer>(bufferBinding.buffer)->buffer,
                 .offset = bufferBinding.byteOffset,
                 .range  = (bufferBinding.byteSize == DescriptorSetDesc::ALL_BYTES)
-                           ? VK_WHOLE_SIZE : bufferBinding.byteSize,
+                        ? VK_WHOLE_SIZE : bufferBinding.byteSize,
             };
 
             // build and push descriptor set write
@@ -310,7 +438,7 @@ Handle<DescriptorSet> VulkanResourceManager::create<DescriptorSet>(DescriptorSet
             bufferIndex++;
         }
 
-        // textures
+        // write texture descriptor sets
         uint32 textureIndex = 0;
         for (auto textureBinding : desc.textures){
             // build texture info
@@ -339,10 +467,12 @@ Handle<DescriptorSet> VulkanResourceManager::create<DescriptorSet>(DescriptorSet
     
     // create descriptor set resource, return handle
     DescriptorSet descriptorSet {
-        .descriptorSet = vulkanDescriptorSet
+        .dynamic = desc.dynamic,
+        .descriptorSets = vulkanDescriptorSets
     };
     return descriptorSetCache->insert(descriptorSet);
 }
+
 
 
 // ------------------------------------------------------------------------- //
@@ -412,6 +542,7 @@ Handle<RenderPassLayout> VulkanResourceManager::create<RenderPassLayout>(RenderP
     };
     return renderPassLayoutCache->insert(renderPassLayout);
 }
+
 
 
 // ------------------------------------------------------------------------- //
@@ -512,17 +643,18 @@ Handle<RenderPass> VulkanResourceManager::create<RenderPass>(RenderPassDesc desc
 
     // create render pass resource, return handle
     RenderPass renderPass {
-        .layout = desc.layout,
-        .renderPass = vulkanRenderPass,
-        .framebuffers = vulkanFramebuffers,
-        .dimensions = desc.dimensions,
-        .samples = samples,
+        .layout             = desc.layout,
+        .renderPass         = vulkanRenderPass,
+        .framebuffers       = vulkanFramebuffers,
+        .dimensions         = desc.dimensions,
+        .samples            = samples,
         .hasDepthAttachment = hasDepthAttachment,
-        .depthAttachment = desc.depthAttachment,
-        .colorAttachments = desc.colorAttachments
+        .depthAttachment    = desc.depthAttachment,
+        .colorAttachments   = desc.colorAttachments
     };
     return renderPassCache->insert(renderPass);
 }
+
 
 
 // ------------------------------------------------------------------------- //
@@ -753,6 +885,7 @@ Handle<Shader> VulkanResourceManager::create<Shader>(ShaderDesc desc){
 }
 
 
+
 //  ██████╗ ███████╗ █████╗ ██████╗ ███████╗ █████╗ ████████╗███████╗
 //  ██╔══██╗██╔════╝██╔══██╗██╔══██╗██╔════╝██╔══██╗╚══██╔══╝██╔════╝
 //  ██████╔╝█████╗  ██║  ╚═╝██████╔╝█████╗  ███████║   ██║   █████╗  
@@ -767,6 +900,9 @@ template<>
 Handle<RenderPass> VulkanResourceManager::recreate<RenderPass>(Handle<RenderPass> handle, glm::uvec2 newDimensions){
     RenderPassCache* renderPassCache = ((RenderPassCache*) m_resourceMap[typeid(RenderPass)]);
     RenderPass* renderPass = get<RenderPass>(handle);
+
+    // update screen dimensions
+    m_screenDim = glm::uvec3(newDimensions.x, newDimensions.y, m_screenDim.z);
 
     // attachment info
     bool hasDepthAttachment = renderPass->depthAttachment.texture.isValid();
@@ -950,6 +1086,7 @@ Handle<RenderPass> VulkanResourceManager::recreate<RenderPass>(Handle<RenderPass
     
     return handle;
 }
+
 
 
 //  ██████╗ ███████╗███╗   ███╗ █████╗ ██╗   ██╗███████╗
