@@ -9,16 +9,6 @@
 
 namespace spr::gfx {
 
-typedef struct BufferUpload {
-    TempBuffer<uint8> src;
-    Handle<Buffer> dst;
-} BufferUpload;
-
-typedef struct TextureUpload {
-    TempBuffer<uint8> src;
-    Handle<Texture> dst;
-} TextureUpload;
-
 class UploadHandler{
 public:
     UploadHandler();
@@ -30,6 +20,16 @@ public:
     void uploadTexture(TempBuffer<uint8> src, Handle<Texture> dst);
 
 private:
+    typedef struct BufferUpload {
+        TempBuffer<uint8> src;
+        Handle<Buffer> dst;
+    } BufferUpload;
+
+    typedef struct TextureUpload {
+        TempBuffer<uint8> src;
+        Handle<Texture> dst;
+    } TextureUpload;
+    
     GPUStreamer m_streamer;
 
     std::vector<BufferUpload> m_bufferUploadQueue;
