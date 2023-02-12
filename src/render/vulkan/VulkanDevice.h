@@ -67,6 +67,7 @@ public:
 
 private:
     VkApplicationInfo m_appInfo;
+    std::string m_appName;
     VkInstance m_instance;
     VkPhysicalDevice m_physicalDevice;
     VkDevice m_device;

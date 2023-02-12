@@ -55,9 +55,10 @@ VulkanDevice::~VulkanDevice(){
 }
 
 void VulkanDevice::createInfo(Window& window){
+    m_appName = std::string(window.title());
     VkApplicationInfo appInfo {
         .sType = VK_STRUCTURE_TYPE_APPLICATION_INFO,
-        .pApplicationName = window.title().c_str(),
+        .pApplicationName = m_appName.c_str(),
         .applicationVersion = VK_MAKE_VERSION(1, 0, 0),
         .pEngineName = "spruce",
         .engineVersion = VK_MAKE_VERSION(1, 0, 0),
@@ -333,11 +334,13 @@ void VulkanDevice::getExtensions(Window& window){
             break;
         }
     }
-
     if (!requestedExtensionsFound)
         m_extensionNames.push_back(VK_KHR_SWAPCHAIN_EXTENSION_NAME);
 
-    // add additional debug extension
+    // add additional extensions
+    m_extensionNames.push_back(VK_KHR_SYNCHRONIZATION_2_EXTENSION_NAME);
+
+    // add debug extension (if applicable)
     if (!DEBUG)
         return;
 
@@ -348,7 +351,6 @@ void VulkanDevice::getExtensions(Window& window){
             break;
         }
     }
-
     if (!debugUtilsFound)
         m_extensionNames.push_back("VK_EXT_debug_utils");
 }
