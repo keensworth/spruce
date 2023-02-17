@@ -69,10 +69,6 @@ void VulkanResourceManager::init(VulkanDevice& device, VmaAllocator& allocator){
     
 }
 
-void VulkanResourceManager::setUploadHandler(UploadHandler *uploadHandler){
-    m_uploadHandler = uploadHandler;
-}
-
 VulkanResourceManager::~VulkanResourceManager(){
     // delete buffer cache
     BufferCache* bufferCache = ((BufferCache*) m_resourceMap[typeid(Buffer)]);
@@ -121,17 +117,24 @@ void VulkanResourceManager::allocate(Handle<Buffer> handle, VkBufferCreateInfo& 
     
     // allocation info
     VmaAllocationCreateInfo allocationInfo;
-    if (buffer->hostVisible){
+    if (buffer->memType == (HOST|DEVICE)){
         // host visible + device local
         allocationInfo = {
             .flags = VMA_ALLOCATION_CREATE_HOST_ACCESS_SEQUENTIAL_WRITE_BIT
                    | VMA_ALLOCATION_CREATE_MAPPED_BIT,
             .usage = VMA_MEMORY_USAGE_AUTO
         };
-    } else {
+    } else if (buffer->memType == DEVICE){
         // device local
+        uint32 dedicated = buffer->byteSize >= (1<<21) ? VMA_ALLOCATION_CREATE_DEDICATED_MEMORY_BIT : 0;
         allocationInfo = {
+            .flags = dedicated,
             .usage = VMA_MEMORY_USAGE_AUTO_PREFER_DEVICE
+        };
+    } else {
+        // host local
+        allocationInfo = {
+            .usage = VMA_MEMORY_USAGE_AUTO_PREFER_HOST
         };
     }
 
@@ -141,6 +144,8 @@ void VulkanResourceManager::allocate(Handle<Buffer> handle, VkBufferCreateInfo& 
     return;
 }
 
+
+
 // ------------------------------------------------------------------------- //
 //                 Texture                                                   //
 // ------------------------------------------------------------------------- //
@@ -149,7 +154,9 @@ void VulkanResourceManager::allocate(Handle<Texture> handle, VkImageCreateInfo& 
     Texture* texture = get<Texture>(handle);
 
     // allocation info
+    uint32 dedicated = texture->defaultRes ? VMA_ALLOCATION_CREATE_DEDICATED_MEMORY_BIT : 0;
     VmaAllocationCreateInfo allocationInfo {
+        .flags = dedicated,
         .usage = VMA_MEMORY_USAGE_AUTO_PREFER_DEVICE
     };
 
@@ -183,14 +190,12 @@ Handle<Buffer> VulkanResourceManager::create<Buffer>(BufferDesc desc){
         .sharingMode = VK_SHARING_MODE_EXCLUSIVE
     };
 
-    // create (uninitialized) buffer
-    VkBuffer vulkanBuffer;
 
     // create buffer resource
     Buffer buffer {
-        .byteSize    = desc.byteSize,
-        .buffer      = vulkanBuffer,
-        .hostVisible = desc.hostVisible
+        .byteSize = desc.byteSize,
+        //.buffer   = vulkanBuffer,
+        .memType  = desc.memType
     };
     Handle<Buffer> bufferHandle = bufferCache->insert(buffer);
 
@@ -231,8 +236,23 @@ Handle<Texture> VulkanResourceManager::create<Texture>(TextureDesc desc){
         .sharingMode = VK_SHARING_MODE_EXCLUSIVE
     };
 
-    // create (unitialized) image
-    VkImage vulkanImage;
+    // create texture resource
+    Texture texture {
+        // .image      = vulkanImage,
+        // .view       = vulkanImageView,
+        // .sampler    = vulkanSampler,
+        .format     = (VkFormat)desc.format,
+        .dimensions = dimensions,
+        .mips       = desc.view.mips,
+        .layers     = desc.view.layers,
+        .samples    = (VkSampleCountFlagBits)desc.samples,
+        .usage      = (VkImageUsageFlags)desc.usage,
+        // .subresourceRange = subresourceRange,
+        .defaultRes = defaultRes
+    };
+    Handle<Texture> textureHandle = textureCache->insert(texture);
+    Texture* textureResource = get<Texture>(textureHandle);
+    allocate<Texture>(textureHandle, imageInfo);
 
     // create image sampler (default)
     VkSamplerCreateInfo samplerInfo {
@@ -253,7 +273,6 @@ Handle<Texture> VulkanResourceManager::create<Texture>(TextureDesc desc){
         .borderColor   = VK_BORDER_COLOR_INT_TRANSPARENT_BLACK,
         .unnormalizedCoordinates = VK_FALSE
     };
-    VkSampler vulkanSampler;
 
     // create image view (default)
     VkImageSubresourceRange subresourceRange {
@@ -266,7 +285,7 @@ Handle<Texture> VulkanResourceManager::create<Texture>(TextureDesc desc){
     };
     VkImageViewCreateInfo viewInfo {
         .sType      = VK_STRUCTURE_TYPE_IMAGE_VIEW_CREATE_INFO,
-        .image      = vulkanImage,
+        .image      = textureResource->image,
         .viewType   = VK_IMAGE_VIEW_TYPE_2D,
         .format     = (VkFormat)desc.format,
         .components = {
@@ -277,28 +296,11 @@ Handle<Texture> VulkanResourceManager::create<Texture>(TextureDesc desc){
         },
         .subresourceRange = subresourceRange
     };
-    VkImageView vulkanImageView;
+    textureResource->subresourceRange = subresourceRange;
 
-    // create texture resource
-    Texture texture {
-        .image      = vulkanImage,
-        .view       = vulkanImageView,
-        .sampler    = vulkanSampler,
-        .format     = (VkFormat)desc.format,
-        .dimensions = dimensions,
-        .mips       = desc.view.mips,
-        .layers     = desc.view.layers,
-        .samples    = (VkSampleCountFlagBits)desc.samples,
-        .usage      = (VkImageUsageFlags)desc.usage,
-        .subresourceRange = subresourceRange,
-        .defaultRes = defaultRes
-    };
-    Handle<Texture> textureHandle = textureCache->insert(texture);
-
-    // allocate and return
-    allocate<Texture>(textureHandle, imageInfo);
-    VK_CHECK(vkCreateSampler(m_device, &samplerInfo, NULL, &vulkanSampler));
-    VK_CHECK(vkCreateImageView(m_device, &viewInfo, NULL, &vulkanImageView));
+    
+    VK_CHECK(vkCreateSampler(m_device, &samplerInfo, NULL, &textureResource->sampler));
+    VK_CHECK(vkCreateImageView(m_device, &viewInfo, NULL, &textureResource->view));
     return textureHandle;
 }
 
@@ -897,7 +899,7 @@ Handle<Shader> VulkanResourceManager::create<Shader>(ShaderDesc desc){
 //                 RenderPass                                                //
 // ------------------------------------------------------------------------- //
 template<>
-Handle<RenderPass> VulkanResourceManager::recreate<RenderPass>(Handle<RenderPass> handle, glm::uvec2 newDimensions){
+Handle<RenderPass> VulkanResourceManager::recreate<RenderPass>(Handle<RenderPass> handle, glm::uvec2 newDimensions){ // TODO: realloc textures
     RenderPassCache* renderPassCache = ((RenderPassCache*) m_resourceMap[typeid(RenderPass)]);
     RenderPass* renderPass = get<RenderPass>(handle);
 
@@ -924,7 +926,8 @@ Handle<RenderPass> VulkanResourceManager::recreate<RenderPass>(Handle<RenderPass
             // recreate attachment's images/views
             for(int frame = 0; frame < MAX_FRAME_COUNT; frame++){
                 // get texture
-                Texture* texture = get<Texture>(textureAttachment->textures[frame]);
+                Handle<Texture> textureHandle = textureAttachment->textures[frame];
+                Texture* texture = get<Texture>(textureHandle);
 
                 // only need to create those that match screen res
                 if(!texture->defaultRes)
@@ -935,7 +938,7 @@ Handle<RenderPass> VulkanResourceManager::recreate<RenderPass>(Handle<RenderPass
                 vkDestroyImageView(m_device, texture->view, NULL);
 
                 // destroy image
-                vkDestroyImage(m_device, texture->image, NULL);
+                vmaDestroyImage(*m_allocator, texture->image, texture->alloc);
 
                 // create image
                 VkImageCreateInfo imageInfo {
@@ -954,13 +957,12 @@ Handle<RenderPass> VulkanResourceManager::recreate<RenderPass>(Handle<RenderPass
                     .usage       = texture->usage,
                     .sharingMode = VK_SHARING_MODE_EXCLUSIVE
                 };
-                VkImage vulkanImage;
-                VK_CHECK(vkCreateImage(m_device, &imageInfo, NULL, &vulkanImage));
+                allocate<Texture>(textureHandle, imageInfo);      
 
                 // create image view
                 VkImageViewCreateInfo viewInfo {
                     .sType      = VK_STRUCTURE_TYPE_IMAGE_VIEW_CREATE_INFO,
-                    .image      = vulkanImage,
+                    .image      = texture->image,
                     .viewType   = VK_IMAGE_VIEW_TYPE_2D,
                     .format     = texture->format,
                     .components = {
@@ -971,14 +973,10 @@ Handle<RenderPass> VulkanResourceManager::recreate<RenderPass>(Handle<RenderPass
                     },
                     .subresourceRange = texture->subresourceRange
                 };
-                VkImageView vulkanImageView;
-                VK_CHECK(vkCreateImageView(m_device, &viewInfo, NULL, &vulkanImageView));
-
-                // update texture object
-                texture->image = vulkanImage;
-                texture->view  = vulkanImageView;
-                texture->dimensions = glm::uvec3(newDimensions.x,newDimensions.y,1);
                 
+                // update texture object
+                VK_CHECK(vkCreateImageView(m_device, &viewInfo, NULL, &texture->view));
+                texture->dimensions = glm::uvec3(newDimensions.x,newDimensions.y,1);
             }
             
         }
@@ -991,16 +989,19 @@ Handle<RenderPass> VulkanResourceManager::recreate<RenderPass>(Handle<RenderPass
             // recreate attachment's images/views
             for(int frame = 0; frame < MAX_FRAME_COUNT; frame++){
                 // get texture
-                Texture* texture = get<Texture>(textureAttachment->textures[frame]);
+                Handle<Texture> textureHandle = textureAttachment->textures[frame];
+                Texture* texture = get<Texture>(textureHandle);
 
                 // only need to create those that match screen res
                 if(!texture->defaultRes)
                     continue;
+                
+
                 // destroy image view
                 vkDestroyImageView(m_device, texture->view, NULL);
 
                 // destroy image
-                vkDestroyImage(m_device, texture->image, NULL);
+                vmaDestroyImage(*m_allocator, texture->image, texture->alloc);
 
                 // create image
                 VkImageCreateInfo imageInfo {
@@ -1019,13 +1020,12 @@ Handle<RenderPass> VulkanResourceManager::recreate<RenderPass>(Handle<RenderPass
                     .usage       = texture->usage,
                     .sharingMode = VK_SHARING_MODE_EXCLUSIVE
                 };
-                VkImage vulkanImage;
-                VK_CHECK(vkCreateImage(m_device, &imageInfo, NULL, &vulkanImage));
+                allocate<Texture>(textureHandle, imageInfo);      
 
                 // create image view
                 VkImageViewCreateInfo viewInfo {
                     .sType      = VK_STRUCTURE_TYPE_IMAGE_VIEW_CREATE_INFO,
-                    .image      = vulkanImage,
+                    .image      = texture->image,
                     .viewType   = VK_IMAGE_VIEW_TYPE_2D,
                     .format     = texture->format,
                     .components = {
@@ -1036,12 +1036,9 @@ Handle<RenderPass> VulkanResourceManager::recreate<RenderPass>(Handle<RenderPass
                     },
                     .subresourceRange = texture->subresourceRange
                 };
-                VkImageView vulkanImageView;
-                VK_CHECK(vkCreateImageView(m_device, &viewInfo, NULL, &vulkanImageView));
-
+                
                 // update texture object
-                texture->image = vulkanImage;
-                texture->view  = vulkanImageView;
+                VK_CHECK(vkCreateImageView(m_device, &viewInfo, NULL, &texture->view));
                 texture->dimensions = glm::uvec3(newDimensions.x,newDimensions.y,1);
             }
         }

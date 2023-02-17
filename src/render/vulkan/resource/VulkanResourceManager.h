@@ -3,7 +3,7 @@
 #include <typeindex>
 #include <vulkan/vulkan_core.h>
 #include "VulkanResourceCache.h"
-#include "../UploadHandler.h"
+#include "../VulkanDevice.h"
 
 
 typedef ska::flat_hash_map<std::type_index, spr::gfx::VulkanResourceCache*> rmap;
@@ -27,7 +27,6 @@ public:
     ~VulkanResourceManager();
 
     void init(VulkanDevice& device, VmaAllocator& allocator);
-    void setUploadHandler(UploadHandler* uploadHandler);
 
     // U := ResourceType
     template <typename U>
@@ -85,7 +84,6 @@ private:
 
     VkDevice m_device;
     VmaAllocator* m_allocator;
-    UploadHandler* m_uploadHandler;
     glm::uvec3 m_screenDim;
 
     VkDescriptorPool m_globalDescriptorPool;
