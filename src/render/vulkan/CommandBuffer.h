@@ -4,7 +4,6 @@
 #include <spruce_core.h>
 #include <vulkan/vulkan_core.h>
 #include "RenderPassRenderer.h"
-#include "UploadHandler.h"
 #include "../../debug/SprLog.h"
 #include "resource/VulkanResourceManager.h"
 #include "VulkanDevice.h"
@@ -24,14 +23,8 @@ public:
     CommandBuffer(VulkanDevice device, CommandType commandType, VkCommandBuffer commandBuffer, VulkanResourceManager* rm, VkQueue queue);
     ~CommandBuffer();
 
-    // rendering commands
     RenderPassRenderer& beginRenderPass(Handle<RenderPass> renderPass);
     void endRenderPass();
-
-    // transfer commands
-    UploadHandler& beginTransfer();
-
-    // shared
     void submit();
 
     VkCommandBuffer getCommandBuffer();
@@ -49,11 +42,15 @@ private:
     std::vector<VkSemaphore> m_signalSemaphores;
 
     RenderPassRenderer m_passRenderer;
-    UploadHandler m_uploadHandler;
 
     uint32 m_frame;
     void setFrame(uint32 frame);
 
+    void begin();
+    void end();
+
+    friend class VulkanRenderer;
+    friend class UploadHandler;
     friend class CommandPool;
 };
 }

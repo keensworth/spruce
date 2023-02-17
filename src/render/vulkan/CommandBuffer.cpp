@@ -1,4 +1,5 @@
 #include "CommandBuffer.h"
+
 #include "UploadHandler.h"
 #include "vulkan_core.h"
 #include <vulkan/vulkan_core.h>
@@ -25,12 +26,15 @@ CommandBuffer::CommandBuffer(VulkanDevice device, CommandType commandType, VkCom
 
 CommandBuffer::~CommandBuffer(){}
 
-UploadHandler& CommandBuffer::beginTransfer(){
-    if (m_type != CommandType::TRANSFER){
-        SprLog::warn("CommandBuffer: Not a transfer command buffer");
-    }
+void CommandBuffer::begin(){
+    VkCommandBufferBeginInfo beginInfo {
+        .sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO
+    };
+    VK_CHECK(vkBeginCommandBuffer(m_commandBuffer, &beginInfo));
+}
 
-    return m_uploadHandler;
+void CommandBuffer::end(){
+    VK_CHECK(vkEndCommandBuffer(m_commandBuffer));
 }
 
 RenderPassRenderer& CommandBuffer::beginRenderPass(Handle<RenderPass> handle){
@@ -78,13 +82,13 @@ void CommandBuffer::submit(){
     std::vector<VkPipelineStageFlags> stageFlags;
 
     if (m_type == CommandType::TRANSFER) {
-        m_uploadHandler.submit(m_frame);
         stageFlags = {VK_PIPELINE_STAGE_TRANSFER_BIT};
     } else {
         stageFlags = {VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT};
     }
+    stageFlags = {VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT};
 
-    vkEndCommandBuffer(m_commandBuffer);
+    end();
 
     VkSubmitInfo submitInfo {
         .sType                = VK_STRUCTURE_TYPE_SUBMIT_INFO,
