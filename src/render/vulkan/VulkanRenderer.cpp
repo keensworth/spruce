@@ -57,6 +57,13 @@ VulkanRenderer::VulkanRenderer(Window* window, VulkanResourceManager* rm) : m_de
         .vulkanApiVersion = VK_API_VERSION_1_2
     };
     vmaCreateAllocator(&allocatorCreateInfo, &m_allocator);
+
+    // create upload handlers
+    for (uint32 frame = 0; frame < MAX_FRAME_COUNT; frame++){
+        CommandBuffer& transferCommandBuffer = m_transferCommandPools[frame].getCommandBuffer(CommandType::TRANSFER);
+        CommandBuffer& graphicsCommandBuffer = m_commandPools[frame].getCommandBuffer(CommandType::OFFSCREEN);
+        m_uploadHandlers[frame] = UploadHandler(m_device, *rm, Handle<Buffer>(), transferCommandBuffer, graphicsCommandBuffer);
+    }
     
 }
 
@@ -71,20 +78,29 @@ VmaAllocator& VulkanRenderer::getAllocator() {
     return m_allocator;
 }
 
-CommandBuffer& VulkanRenderer::beginCommandRecording(CommandType commandBufferType){
-    // get the appropriate command buffer
-    CommandBuffer& commandBuffer = (commandBufferType == CommandType::TRANSFER) ?
-                                   m_transferCommandPools[m_currFrame].getCommandBuffer(CommandType::TRANSFER) :
-                                   m_commandPools[m_currFrame].getCommandBuffer(commandBufferType);
-                    
-    // begin recording command buffer
-    VkCommandBuffer vulkanCommandBuffer = commandBuffer.getCommandBuffer();
-    VkCommandBufferBeginInfo beginInfo {
-        .sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO
-    };
-    VK_CHECK(vkBeginCommandBuffer(vulkanCommandBuffer, &beginInfo));
+CommandBuffer& VulkanRenderer::beginGraphicsCommands(CommandType commandBufferType){
+    if (commandBufferType == TRANSFER) {
+        SprLog::error("VulkanRenderer: Not a graphics command buffer");
+    }
+
+    // get the appropriate command buffer and begin recording
+    CommandBuffer& commandBuffer = m_commandPools[m_currFrame % MAX_FRAME_COUNT].getCommandBuffer(commandBufferType);
+    commandBuffer.begin();
 
     return commandBuffer;
+}
+
+UploadHandler& VulkanRenderer::beginTransferCommands(){
+    // get the frame's upload handler
+    UploadHandler& uploadHandler = m_uploadHandlers[m_currFrame % MAX_FRAME_COUNT];
+    uploadHandler.setFrame(m_currFrame);
+    uploadHandler.reset();
+
+    // get transfer command buffer and begin recording
+    CommandBuffer& commandBuffer = m_transferCommandPools[m_currFrame % MAX_FRAME_COUNT].getCommandBuffer(CommandType::TRANSFER);
+    commandBuffer.begin();
+
+    return uploadHandler;
 }
 
 RenderFrame& VulkanRenderer::beginFrame() {

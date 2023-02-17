@@ -6,6 +6,8 @@
 #include "CommandPool.h"
 #include "RenderFrame.h"
 #include "Window.h"
+#include "vulkan_core.h"
+#include "UploadHandler.h"
 
 namespace spr::gfx{
 
@@ -15,8 +17,9 @@ public:
     VulkanRenderer(Window* window, VulkanResourceManager* rm);
     ~VulkanRenderer();
 
-    CommandBuffer& beginCommandRecording(CommandType commandBufferType);
     RenderFrame& beginFrame();
+    CommandBuffer& beginGraphicsCommands(CommandType commandBufferType);
+    UploadHandler& beginTransferCommands();
     void present();
     void onResize();
     void wait();
@@ -35,6 +38,7 @@ private:
 
     CommandPool m_commandPools[MAX_FRAME_COUNT];
     CommandPool m_transferCommandPools[MAX_FRAME_COUNT];
+    UploadHandler m_uploadHandlers[MAX_FRAME_COUNT];
 
     VulkanDevice m_device;
     VulkanDisplay m_display;
