@@ -5,45 +5,39 @@
 #include "BatchManager.h"
 #include "../vulkan/resource/VulkanResourceManager.h"
 #include <vector>
-#include "SceneObjects.h"
+#include "SceneData.h"
 #include "../../core/memory/TempBuffer.h"
 #include "../../../external/flat_hash_map/flat_hash_map.hpp"
 
 
 namespace spr::gfx {
 
-typedef struct MeshData {
-    uint32 vertexOffset;
-    uint32 indexCount;
-    uint32 materialIndex;
-    uint32 padding;
-} MeshData;
-
 typedef ska::flat_hash_map<uint32, MeshData> mmap;
-
-typedef struct Transform {
-    glm::mat4 model;
-    glm::mat4 modelInvTranspose;
-} Transform;
 
 class SceneManager {
 public:
     SceneManager();
     ~SceneManager();
 
-    void insertMesh(uint32 meshId, uint32 materialFlags, glm::mat4 model, glm::mat4 modelInvTranspose);
-    void insertLight(Light light);
-    void updateCamera(Camera camera);
-    void reset();
+    void insertMesh(uint32 frame, uint32 meshId, uint32 materialFlags, glm::mat4 model, glm::mat4 modelInvTranspose);
+    void insertLight(uint32 frame, Light light);
+    void updateCamera(uint32 frame, Camera camera);
+    void reset(uint32 frame);
 
-    
+    TempBuffer<Light>& getLights(uint32 frame);
+    TempBuffer<Transform>& getTransforms(uint32 frame);
+    TempBuffer<Camera>& getCamera(uint32 frame);
+    TempBuffer<Scene>& getScene(uint32 frame);
+
+    BatchManager& getBatchManager(uint32 frame);
 
 private:
-    Camera m_camera;
-    std::vector<Light> m_lights;
-    BatchManager m_batchManager;
-    TempBuffer<Transform> m_transforms;
+    TempBuffer<Camera> m_cameras[MAX_FRAME_COUNT];
+    TempBuffer<Scene> m_sceneData[MAX_FRAME_COUNT];
+    TempBuffer<Light> m_lights[MAX_FRAME_COUNT];
+    TempBuffer<Transform> m_transforms[MAX_FRAME_COUNT];
     
+    BatchManager m_batchManagers[MAX_FRAME_COUNT];
     mmap m_meshData;
 };
 }
