@@ -14,6 +14,11 @@
 
 namespace spr::gfx {
 
+typedef enum MemoryType {
+    DEVICE = 0,
+    HOST   = 1
+} MemoryType;
+
 
 
 //  ██╗███╗   ███╗██████╗ ██╗     
@@ -30,9 +35,9 @@ namespace spr::gfx {
 typedef struct Buffer {
     uint32 byteSize = 0;
     VkBuffer buffer;
+    MemoryType memType;
     VmaAllocation alloc;
     VmaAllocationInfo allocInfo;
-    bool hostVisible = false;
 } Buffer;
 
 
@@ -47,7 +52,7 @@ typedef struct Texture {
     VmaAllocation alloc;
     VmaAllocationInfo allocInfo;
     VkFormat format;
-    glm::vec3 dimensions;
+    glm::uvec3 dimensions;
     uint32 mips;
     uint32 layers;
     VkSampleCountFlagBits samples;
@@ -180,10 +185,10 @@ typedef struct Shader {
 // --------------------------------------------------------- //
 
 typedef struct BufferDesc {
-    uint32 byteOffset = 0;
-    uint32 byteSize   = 0;
-    uint32 usage      = Flags::BufferUsage::BU_UNIFORM_BUFFER;
-    bool hostVisible  = false;
+    uint32 byteOffset  = 0;
+    uint32 byteSize    = 0;
+    uint32 usage       = Flags::BufferUsage::BU_UNIFORM_BUFFER;
+    MemoryType memType = DEVICE;
 } BufferDesc;
 
 
