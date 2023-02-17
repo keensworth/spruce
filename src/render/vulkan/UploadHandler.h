@@ -1,5 +1,6 @@
 #pragma once
 
+#include "resource/VulkanResourceManager.h"
 #include "vulkan_core.h"
 #include "spruce_core.h"
 #include "resource/ResourceTypes.h"
@@ -12,33 +13,53 @@ namespace spr::gfx {
 class UploadHandler{
 public:
     UploadHandler();
-    UploadHandler(VulkanDevice& device);
+    UploadHandler(VulkanDevice& device, VulkanResourceManager& rm, Handle<Buffer> stagingBuffer, CommandBuffer& transferCommandBuffer, CommandBuffer& graphicsCommandBuffer);
     ~UploadHandler();
 
-    void uploadBuffer(TempBuffer<uint8> src, Handle<Buffer> dst);
-    void uploadDyanmicBuffer(TempBuffer<uint8> src, Handle<Buffer> dst);
-    void uploadTexture(TempBuffer<uint8> src, Handle<Texture> dst);
+    template <typename T>
+    void uploadBuffer(TempBuffer<T> src, Handle<Buffer> dst) {
+        m_bufferUploadQueue.push_back({
+            .pSrc = src.getData(),
+            .size = src.getSize(),
+            .dst = dst
+        });
+    }
+
+    template <typename T>
+    void uploadDyanmicBuffer(TempBuffer<T> src, Handle<Buffer> dst) {
+        m_dynamicBufferUploadQueue.push_back({
+            .pSrc = src.getData(),
+            .size = src.getSize(),
+            .dst = dst
+        });
+    }
+
+    template <typename T>
+    void uploadTexture(TempBuffer<T> src, Handle<Texture> dst) {
+        m_textureUploadQueue.push_back({
+            .pSrc = src.getData(),
+            .size = src.getSize(),
+            .dst = dst
+        });
+    }
+
+    void submit();
 
 private:
-    typedef struct BufferUpload {
-        TempBuffer<uint8> src;
-        Handle<Buffer> dst;
-    } BufferUpload;
-
-    typedef struct TextureUpload {
-        TempBuffer<uint8> src;
-        Handle<Texture> dst;
-    } TextureUpload;
     
     GPUStreamer m_streamer;
+    uint32 m_frame;
 
-    std::vector<BufferUpload> m_bufferUploadQueue;
-    std::vector<BufferUpload> m_dynamicBufferUploadQueue;
-    std::vector<TextureUpload> m_textureUploadQueue;
+    CommandBuffer* m_transferCommandBuffer;
+    CommandBuffer* m_graphicsCommandBuffer;
 
-    void resetQueues();
-    void submit(uint32 frame);
+    std::vector<GPUStreamer::BufferTransfer> m_bufferUploadQueue;
+    std::vector<GPUStreamer::BufferTransfer> m_dynamicBufferUploadQueue;
+    std::vector<GPUStreamer::TextureTransfer> m_textureUploadQueue;
 
-    friend class CommandBuffer;
+    void reset();
+    void setFrame(uint32 frame);
+
+    friend class VulkanRenderer;
 };
 }

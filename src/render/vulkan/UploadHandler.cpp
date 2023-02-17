@@ -1,6 +1,7 @@
 #include "UploadHandler.h"
 #include "GPUStreamer.h"
 #include "resource/ResourceTypes.h"
+#include "resource/VulkanResourceManager.h"
 
 namespace spr::gfx {
 
@@ -8,60 +9,53 @@ UploadHandler::UploadHandler() {
     
 }
 
-UploadHandler::UploadHandler(VulkanDevice& device) : m_streamer(device) {
-    resetQueues();
+UploadHandler::UploadHandler(VulkanDevice& device, VulkanResourceManager& rm, Handle<Buffer> stagingBuffer, CommandBuffer& transferCommandBuffer, CommandBuffer& graphicsCommandBuffer)
+                            : m_streamer(device, rm, stagingBuffer, transferCommandBuffer, graphicsCommandBuffer) {
+    m_transferCommandBuffer = &transferCommandBuffer;
+    m_graphicsCommandBuffer = &graphicsCommandBuffer;
+    reset();
 }
 
 UploadHandler::~UploadHandler() {
 
 }
 
-void UploadHandler::uploadBuffer(TempBuffer<uint8> src, Handle<Buffer> dst) {
-    m_bufferUploadQueue.push_back({
-        .src = src,
-        .dst = dst
-    });
-}
-
-void UploadHandler::uploadDyanmicBuffer(TempBuffer<uint8> src, Handle<Buffer> dst) {
-    m_dynamicBufferUploadQueue.push_back({
-        .src = src,
-        .dst = dst
-    });
-}
-
-void UploadHandler::uploadTexture(TempBuffer<uint8> src, Handle<Texture> dst) {
-    m_textureUploadQueue.push_back({
-        .src = src,
-        .dst = dst
-    });
-}
-
-void UploadHandler::submit(uint32 frame) {
+void UploadHandler::submit() {
     // upload buffers
-    for (BufferUpload upload : m_bufferUploadQueue) {
-        m_streamer.upload(upload.src, upload.dst);
+    for (GPUStreamer::BufferTransfer upload : m_bufferUploadQueue) {
+        m_streamer.transfer(upload);
     }
 
     // upload dynamic buffers (N-buffered)
-    for (BufferUpload upload : m_dynamicBufferUploadQueue) {
-        m_streamer.uploadDynamic(upload.src, upload.dst, frame);
+    for (GPUStreamer::BufferTransfer upload : m_dynamicBufferUploadQueue) {
+        m_streamer.transferDynamic(upload, m_frame);
     }
 
     // upload textures/images
-    for (TextureUpload upload : m_textureUploadQueue) {
-        m_streamer.upload(upload.src, upload.dst);
+    for (GPUStreamer::TextureTransfer upload : m_textureUploadQueue) {
+        m_streamer.transfer(upload);
     }
 
-    resetQueues();
+    // flush uploads and submit transfer command buffer
+    m_streamer.flush();
+    m_transferCommandBuffer->submit();
+
+    // prepare gfx resource barriers (but don't submit)
+    m_graphicsCommandBuffer->begin();
+    m_streamer.performGraphicsBarriers();
+    m_graphicsCommandBuffer->end();
 }
 
-void UploadHandler::resetQueues() {
-    m_bufferUploadQueue = std::vector<BufferUpload>();
+void UploadHandler::setFrame(uint32 frame){
+    m_frame = frame;
+}
+
+void UploadHandler::reset() {
+    m_bufferUploadQueue = std::vector<GPUStreamer::BufferTransfer>();
     m_bufferUploadQueue.reserve(32);
-    m_dynamicBufferUploadQueue = std::vector<BufferUpload>();
+    m_dynamicBufferUploadQueue = std::vector<GPUStreamer::BufferTransfer>();
     m_dynamicBufferUploadQueue.reserve(32);
-    m_textureUploadQueue = std::vector<TextureUpload>();
+    m_textureUploadQueue = std::vector<GPUStreamer::TextureTransfer>();
     m_textureUploadQueue.reserve(32);
 }
 
