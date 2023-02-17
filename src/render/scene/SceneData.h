@@ -4,6 +4,18 @@
 
 namespace spr::gfx {
 
+typedef struct Transform {
+    glm::mat4 model;
+    glm::mat4 modelInvTranspose;
+} Transform;
+
+typedef struct MeshData {
+    uint32 vertexOffset;
+    uint32 indexCount;
+    uint32 materialIndex;
+    uint32 padding;
+} MeshData;
+
 typedef enum LightTypes {
     POINT,
     SPOT,
@@ -32,5 +44,11 @@ typedef struct Camera {
     glm::vec3 up;
     float far;
 } Camera;
+
+typedef struct Scene {
+    glm::mat4x4 view;
+    glm::mat4x4 proj;
+    Camera camera;
+} Scene;
 
 }
