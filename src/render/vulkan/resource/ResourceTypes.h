@@ -14,9 +14,9 @@
 
 namespace spr::gfx {
 
-typedef enum MemoryType {
-    DEVICE = 0,
-    HOST   = 1
+typedef enum MemoryType : uint32{
+    DEVICE = 1,
+    HOST   = 2
 } MemoryType;
 
 
@@ -35,7 +35,7 @@ typedef enum MemoryType {
 typedef struct Buffer {
     uint32 byteSize = 0;
     VkBuffer buffer;
-    MemoryType memType;
+    uint32 memType;
     VmaAllocation alloc;
     VmaAllocationInfo allocInfo;
 } Buffer;
@@ -188,7 +188,7 @@ typedef struct BufferDesc {
     uint32 byteOffset  = 0;
     uint32 byteSize    = 0;
     uint32 usage       = Flags::BufferUsage::BU_UNIFORM_BUFFER;
-    MemoryType memType = DEVICE;
+    uint32 memType = DEVICE;
 } BufferDesc;
 
 
