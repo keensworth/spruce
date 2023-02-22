@@ -50,6 +50,38 @@ CommandPool::CommandPool(VulkanDevice device, uint32 familyIndex, VulkanResource
                                             m_commandBuffers[2], 
                                             rm, 
                                             m_device.getQueue(VulkanDevice::QueueType::GRAPHICS));
+
+    // set semaphore dependencies between command buffers
+    //      transfer
+    std::vector<VkSemaphore> transferWaitSem = {
+        m_mainCommandBuffer.getSemaphore()
+    };
+    std::vector<VkSemaphore> transferSignalSem = {
+        m_offscreenCommandBuffer.getSemaphore()
+    };
+    m_transferCommandBuffer.setSemaphoreDependencies(transferWaitSem, transferSignalSem);
+
+    //      offscreen
+    std::vector<VkSemaphore> offscreenWaitSem = {
+        m_transferCommandBuffer.getSemaphore(),
+        // TODO: present semaphore
+    };
+    std::vector<VkSemaphore> offscreenSignalSem = {
+        m_mainCommandBuffer.getSemaphore()
+    };
+    m_offscreenCommandBuffer.setSemaphoreDependencies(offscreenWaitSem, offscreenSignalSem);
+
+    //      main
+    std::vector<VkSemaphore> mainWaitSem = {
+        m_offscreenCommandBuffer.getSemaphore()
+    };
+    std::vector<VkSemaphore> mainSignalSem = {
+        // TODO: present semaphore,
+        m_transferCommandBuffer.getSemaphore()
+    };
+    m_mainCommandBuffer.setSemaphoreDependencies(mainWaitSem, mainSignalSem);
+
+    //      present // TODO:
 }
 
 CommandPool::~CommandPool(){
