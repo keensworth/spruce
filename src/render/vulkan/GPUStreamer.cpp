@@ -11,10 +11,11 @@ GPUStreamer::GPUStreamer() {
     
 }
 
-GPUStreamer::GPUStreamer(VulkanDevice& device, VulkanResourceManager& rm, Handle<Buffer> stagingBuffer, CommandBuffer& transferCommandBuffer, CommandBuffer& graphicsCommandBuffer){
+GPUStreamer::GPUStreamer(VulkanDevice& device, VulkanResourceManager& rm, CommandBuffer& transferCommandBuffer, CommandBuffer& graphicsCommandBuffer)
+                        : m_stagingBuffers(&rm){
     m_device = &device;
     m_rm = &rm;
-    m_stagingBuffer = stagingBuffer;
+
     VkPhysicalDeviceProperties properties;
     VkPhysicalDeviceLimits limits;
     vkGetPhysicalDeviceProperties(m_device->getPhysicalDevice(), &properties);
@@ -26,12 +27,12 @@ GPUStreamer::GPUStreamer(VulkanDevice& device, VulkanResourceManager& rm, Handle
 
     m_graphicsFamilyIndex = m_device->getQueueFamilies().graphicsFamilyIndex.value();
     m_transferFamilyIndex = m_device->getQueueFamilies().transferFamilyIndex.value();
-
+    
     reset();
 }
 
 GPUStreamer::~GPUStreamer(){
-
+    reset();
 }
 
 template<>
@@ -49,7 +50,8 @@ void GPUStreamer::transfer(BufferTransfer data) {
     }
 
     // device local, copy to staging buffer and upload
-    Buffer* stage = m_rm->get<Buffer>(m_stagingBuffer);
+    Handle<Buffer> stagingBuffer = m_stagingBuffers.getStagingBuffer(data.size);
+    Buffer* stage = m_rm->get<Buffer>(stagingBuffer);
     memcpy(stage->allocInfo.pMappedData, data.pSrc, data.size);
 
     // https://github.com/KhronosGroup/Vulkan-Docs/wiki/Synchronization-Examples
@@ -103,7 +105,8 @@ void GPUStreamer::transfer(BufferTransfer data) {
 template<>
 void GPUStreamer::transfer(TextureTransfer data) {
     // device local, copy to staging buffer and upload
-    Buffer* stage = m_rm->get<Buffer>(m_stagingBuffer);
+    Handle<Buffer> stagingBuffer = m_stagingBuffers.getStagingBuffer(data.size);
+    Buffer* stage = m_rm->get<Buffer>(stagingBuffer);
     memcpy(stage->allocInfo.pMappedData, data.pSrc, data.size);
 
     // https://github.com/KhronosGroup/Vulkan-Docs/wiki/Synchronization-Examples
@@ -198,7 +201,8 @@ void GPUStreamer::transferDynamic(BufferTransfer data, uint32 frame) {
     }
 
     // device local, copy to staging buffer and upload
-    Buffer* stage = m_rm->get<Buffer>(m_stagingBuffer);
+    Handle<Buffer> stagingBuffer = m_stagingBuffers.getStagingBuffer(data.size);
+    Buffer* stage = m_rm->get<Buffer>(stagingBuffer);
     memcpy(stage->allocInfo.pMappedData, data.pSrc, data.size);
 
     // https://github.com/KhronosGroup/Vulkan-Docs/wiki/Synchronization-Examples
@@ -325,6 +329,8 @@ void GPUStreamer::reset() {
     m_transferImageBarriers.reserve(32);
     m_graphicsImageBarriers = std::vector<VkImageMemoryBarrier2KHR>();
     m_graphicsImageBarriers.reserve(32);
+
+    m_stagingBuffers.reset();
 }
 
 }

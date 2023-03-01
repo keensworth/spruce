@@ -5,7 +5,7 @@
 #include "memory/TempBuffer.h"
 #include "resource/ResourceTypes.h"
 #include "VulkanDevice.h"
-#include "resource/VulkanResourceManager.h"
+#include "StagingBufferBatch.h"
 #include "../../core/util/FunctionQueue.h"
 #include "CommandBuffer.h"
 
@@ -13,7 +13,7 @@ namespace spr::gfx {
 class GPUStreamer {
 public:
     GPUStreamer();
-    GPUStreamer(VulkanDevice& device, VulkanResourceManager& rm, Handle<Buffer> stagingBuffer, CommandBuffer& transferCommandBuffer, CommandBuffer& graphicsCommandBuffer);
+    GPUStreamer(VulkanDevice& device, VulkanResourceManager& rm, CommandBuffer& transferCommandBuffer, CommandBuffer& graphicsCommandBuffer);
     ~GPUStreamer();
     
     template <typename T>
@@ -42,17 +42,19 @@ private:
         Texture* dst;
     };
 
+    // utility members
     VulkanDevice* m_device;
     VulkanResourceManager* m_rm;
-    Handle<Buffer> m_stagingBuffer;
     uint32 m_nonCoherentAtomSize;
-
     CommandBuffer* m_transferCommandBuffer;
     CommandBuffer* m_graphicsCommandBuffer;
-
     uint32  m_graphicsFamilyIndex;
     uint32  m_transferFamilyIndex;
 
+    // 256 MB pre-allocated staging buffers
+    StagingBuffers m_stagingBuffers;
+
+    // cmd queues
     std::vector<VkBufferMemoryBarrier2KHR> m_transferBufferBarriers;
     std::vector<VkBufferMemoryBarrier2KHR> m_graphicsBufferBarriers;
     std::vector<VkImageMemoryBarrier2KHR> m_imageLayoutBarriers;
