@@ -58,20 +58,12 @@ VulkanRenderer::VulkanRenderer(Window* window, VulkanResourceManager* rm) : m_de
     };
     vmaCreateAllocator(&allocatorCreateInfo, &m_allocator);
 
-    // create staging buffer
-    m_stagingBuffer = rm->create<Buffer>(BufferDesc{
-        .byteSize = 1u << 25, // 2^26 bytes
-        .usage = Flags::BufferUsage::BU_STORAGE_BUFFER |
-                 Flags::BufferUsage::BU_TRANSFER_SRC,
-        .memType = (DEVICE | HOST)
-    });
-
     // create upload handlers
     for (uint32 frame = 0; frame < MAX_FRAME_COUNT; frame++){
         CommandBuffer& transferCommandBuffer = m_transferCommandPools[frame].getCommandBuffer(CommandType::TRANSFER);
         CommandBuffer& graphicsCommandBuffer = m_commandPools[frame].getCommandBuffer(CommandType::OFFSCREEN);
-        m_uploadHandlers[frame] = UploadHandler(m_device, *rm, m_stagingBuffer, transferCommandBuffer, graphicsCommandBuffer);
-    }
+        m_uploadHandlers[frame] = UploadHandler(m_device, *rm, transferCommandBuffer, graphicsCommandBuffer);
+    }   
     
 }
 
