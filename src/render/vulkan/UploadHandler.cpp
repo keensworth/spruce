@@ -9,8 +9,8 @@ UploadHandler::UploadHandler() {
     
 }
 
-UploadHandler::UploadHandler(VulkanDevice& device, VulkanResourceManager& rm, Handle<Buffer> stagingBuffer, CommandBuffer& transferCommandBuffer, CommandBuffer& graphicsCommandBuffer)
-                            : m_streamer(device, rm, stagingBuffer, transferCommandBuffer, graphicsCommandBuffer) {
+UploadHandler::UploadHandler(VulkanDevice& device, VulkanResourceManager& rm, CommandBuffer& transferCommandBuffer, CommandBuffer& graphicsCommandBuffer)
+                            : m_streamer(device, rm, transferCommandBuffer, graphicsCommandBuffer) {
     m_transferCommandBuffer = &transferCommandBuffer;
     m_graphicsCommandBuffer = &graphicsCommandBuffer;
     reset();

@@ -13,7 +13,7 @@ namespace spr::gfx {
 class UploadHandler{
 public:
     UploadHandler();
-    UploadHandler(VulkanDevice& device, VulkanResourceManager& rm, Handle<Buffer> stagingBuffer, CommandBuffer& transferCommandBuffer, CommandBuffer& graphicsCommandBuffer);
+    UploadHandler(VulkanDevice& device, VulkanResourceManager& rm, CommandBuffer& transferCommandBuffer, CommandBuffer& graphicsCommandBuffer);
     ~UploadHandler();
 
     template <typename T>
