@@ -107,7 +107,7 @@ void CommandBuffer::submit(){
         .pSignalSemaphores    = m_signalSemaphores.data(),
     };
 
-    VK_CHECK(vkQueueSubmit(m_queue, 1, &submitInfo, VK_NULL_HANDLE));
+    VK_CHECK(vkQueueSubmit(m_queue, 1, &submitInfo, m_fence));
 }
 
 VkCommandBuffer CommandBuffer::getCommandBuffer(){
