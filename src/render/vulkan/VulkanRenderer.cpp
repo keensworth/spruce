@@ -30,23 +30,37 @@ VulkanRenderer::VulkanRenderer(Window* window, VulkanResourceManager* rm) : m_de
     m_imageCount = m_display.createSwapchain(m_device.getPhysicalDevice(), m_device.getDevice(), m_device.getQueueFamilies());
     m_display.createImageViews(m_device.getDevice());
 
-    // create frames // TODO
+    // create frames
     for (uint32 frame = 0; frame < MAX_FRAME_COUNT; frame++){
-        m_frames[frame] = {
-            .frameId = frame
+        // build frame skeleton
+        m_frames[frame] = {};
+
+        // build semaphore info and create semaphore
+        VkSemaphoreCreateInfo semaphoreInfo {
+            .sType = VK_STRUCTURE_TYPE_SEMAPHORE_CREATE_INFO
         };
+        VK_CHECK(vkCreateSemaphore(m_device.getDevice(), &semaphoreInfo, NULL, &m_frames[frame].acquiredSem));
+        VK_CHECK(vkCreateSemaphore(m_device.getDevice(), &semaphoreInfo, NULL, &m_frames[frame].renderedSem));
+
+        // build fence info and create fence
+        VkFenceCreateInfo fenceInfo {
+            .sType = VK_STRUCTURE_TYPE_FENCE_CREATE_INFO,
+            .pNext = NULL,
+            .flags = VK_FENCE_CREATE_SIGNALED_BIT
+        };
+        VK_CHECK(vkCreateFence(m_device.getDevice(), &fenceInfo, NULL, &m_frames[frame].acquiredFence));
     }
 
     // create command pools (1/frame/queue family)
     QueueFamilies queueFamilies = m_device.getQueueFamilies();
     for (uint32 frame = 0; frame < MAX_FRAME_COUNT; frame++){
         // graphics queue command pools
-        m_commandPools[frame] = CommandPool(m_device, queueFamilies.graphicsFamilyIndex.value(), rm);
+        m_commandPools[frame] = CommandPool(m_device, queueFamilies.graphicsFamilyIndex.value(), rm, m_frames[frame]);
 
         // additional transfer queue command pools (if applicable)
         if (!queueFamilies.familyUnique(queueFamilies.transferFamilyIndex.value()))
             continue;
-        m_transferCommandPools[frame] = CommandPool(m_device, queueFamilies.transferFamilyIndex.value(), rm);
+        m_transferCommandPools[frame] = CommandPool(m_device, queueFamilies.transferFamilyIndex.value(), rm, m_frames[frame]);
     }
 
     // create allocator
