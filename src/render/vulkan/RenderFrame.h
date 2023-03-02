@@ -1,14 +1,15 @@
 #pragma once
 
 #include "vulkan_core.h"
+#include <vulkan/vulkan_core.h>
 
 namespace spr::gfx{
 
 typedef struct RenderFrame {
-    VkFence fence = VK_NULL_HANDLE;
-    VkSemaphore acquireSemaphore = VK_NULL_HANDLE;
-    VkSemaphore presentSem = VK_NULL_HANDLE;
-    uint32 frameId = 0;
+    VkFence acquiredFence   = VK_NULL_HANDLE;
+    VkSemaphore acquiredSem = VK_NULL_HANDLE;
+    VkSemaphore renderedSem = VK_NULL_HANDLE;
+    uint32 frameIndex       = 0;
 } RenderFrame;
 
 };
