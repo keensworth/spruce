@@ -8,10 +8,11 @@ namespace spr::gfx {
 
 CommandBuffer::CommandBuffer() {}
 
-CommandBuffer::CommandBuffer(VulkanDevice device, CommandType commandType, VkCommandBuffer commandBuffer, VulkanResourceManager* rm, VkQueue queue){
+CommandBuffer::CommandBuffer(VulkanDevice& device, CommandType commandType, VkCommandBuffer commandBuffer, VulkanResourceManager* rm, VkQueue queue){
     m_type = commandType;
     m_commandBuffer = commandBuffer;
     m_rm = rm;
+    m_device = &device;
     m_queue = queue;
     m_frame = 0;
 
@@ -120,6 +121,10 @@ VkSemaphore CommandBuffer::getSemaphore(){
 
 VkFence CommandBuffer::getFence(){
     return m_fence;
+}
+
+void CommandBuffer::resetFence(){
+    VK_CHECK(vkResetFences(m_device->getDevice(), 1, &m_fence));
 }
 
 void CommandBuffer::setSemaphoreDependencies(std::vector<VkSemaphore> waitSemaphores, std::vector<VkSemaphore> signalSemaphores){
