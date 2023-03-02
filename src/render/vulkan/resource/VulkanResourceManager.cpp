@@ -5,6 +5,7 @@
 #include <filesystem>
 #include <vulkan/vulkan_core.h>
 #include <fstream>
+#include "memory/Pool.h"
 #include "vk_mem_alloc.h"
 
 
@@ -592,6 +593,29 @@ Handle<RenderPass> VulkanResourceManager::create<RenderPass>(RenderPassDesc desc
         attachmentIndex++;
         samples = attachment.samples;
     }
+
+    // build subpass dependencies (one subpass per renderpass, use EXTERNAL)
+    // TODO: might need to tweak depending on presence of actual dependencies?
+    VkSubpassDependency dependencies[2] = {
+        {
+            .srcSubpass = VK_SUBPASS_EXTERNAL,
+            .dstSubpass = 0,
+            .srcStageMask = VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT,
+            .dstStageMask = VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT,
+            .srcAccessMask = VK_ACCESS_NONE_KHR,
+            .dstAccessMask = VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT,
+            .dependencyFlags = 0
+        },
+        {
+            .srcSubpass = 0,
+            .dstSubpass = VK_SUBPASS_EXTERNAL,
+            .srcStageMask = VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT,
+            .dstStageMask = VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT,
+            .srcAccessMask = VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT,
+            .dstAccessMask = VK_ACCESS_NONE_KHR,
+            .dependencyFlags = 0
+        }
+    };
     
     // build render pass create info
     VkRenderPassCreateInfo createInfo {
@@ -600,8 +624,8 @@ Handle<RenderPass> VulkanResourceManager::create<RenderPass>(RenderPassDesc desc
         .pAttachments    = layout->attachmentDescriptions.data(),
         .subpassCount    = 1,
         .pSubpasses      = &(layout->subpassDescription),
-        .dependencyCount = 0,
-        .pDependencies   = NULL
+        .dependencyCount = 2,
+        .pDependencies   = dependencies
     };
 
     // create vulkan render pass
@@ -899,7 +923,7 @@ Handle<Shader> VulkanResourceManager::create<Shader>(ShaderDesc desc){
 //                 RenderPass                                                //
 // ------------------------------------------------------------------------- //
 template<>
-Handle<RenderPass> VulkanResourceManager::recreate<RenderPass>(Handle<RenderPass> handle, glm::uvec2 newDimensions){ // TODO: realloc textures
+Handle<RenderPass> VulkanResourceManager::recreate<RenderPass>(Handle<RenderPass> handle, glm::uvec2 newDimensions){
     RenderPassCache* renderPassCache = ((RenderPassCache*) m_resourceMap[typeid(RenderPass)]);
     RenderPass* renderPass = get<RenderPass>(handle);
 
