@@ -2,6 +2,8 @@
 
 #include "CommandBuffer.h"
 #include "VulkanDevice.h"
+#include "RenderFrame.h"
+#include "vulkan_core.h"
 #include <vulkan/vulkan_core.h>
 
 namespace spr::gfx{
@@ -9,14 +11,14 @@ namespace spr::gfx{
 class CommandPool{
 public:
     CommandPool();
-    CommandPool(VulkanDevice device, uint32 familyIndex, VulkanResourceManager* rm);
+    CommandPool(VulkanDevice& device, uint32 familyIndex, VulkanResourceManager* rm, RenderFrame& frame);
     ~CommandPool();
 
     CommandBuffer& getCommandBuffer(CommandType commandType);
     void reset(uint32 frame);
 
 private:
-    VulkanDevice m_device;
+    VulkanDevice* m_device;
     VkCommandPool m_commandPool;
     std::vector<VkCommandBuffer> m_commandBuffers;
     VulkanResourceManager* m_rm;

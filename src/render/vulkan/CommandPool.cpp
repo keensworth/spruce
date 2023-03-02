@@ -2,90 +2,87 @@
 #include "vulkan_core.h"
 #include <vulkan/vulkan_core.h>
 
+
 namespace spr::gfx {
 
 CommandPool::CommandPool(){}
 
-CommandPool::CommandPool(VulkanDevice device, uint32 familyIndex, VulkanResourceManager* rm){
-    m_device = device;
+CommandPool::CommandPool(VulkanDevice& device, uint32 familyIndex, VulkanResourceManager* rm, RenderFrame& frame){
+    m_device = &device;
     m_rm = rm;
     m_frame = 0;
     
-    // build command pool create info
+    // build command pool info and create command pool
     VkCommandPoolCreateInfo commandPoolInfo = {
         .sType            = VK_STRUCTURE_TYPE_COMMAND_POOL_CREATE_INFO,
         .flags            = 0,
         .queueFamilyIndex = familyIndex
     };
-
-    // create command pool
-    VK_CHECK(vkCreateCommandPool(m_device.getDevice(), &commandPoolInfo, NULL, &m_commandPool));
+    VK_CHECK(vkCreateCommandPool(m_device->getDevice(), &commandPoolInfo, NULL, &m_commandPool));
 
     // allocate command buffers
     m_commandBuffers = std::vector<VkCommandBuffer>(3);
     VkCommandBufferAllocateInfo cbAllocInfo {
-        .sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_ALLOCATE_INFO,
-        .commandPool = m_commandPool,
-        .level = VK_COMMAND_BUFFER_LEVEL_PRIMARY,
+        .sType              = VK_STRUCTURE_TYPE_COMMAND_BUFFER_ALLOCATE_INFO,
+        .commandPool        = m_commandPool,
+        .level              = VK_COMMAND_BUFFER_LEVEL_PRIMARY,
         .commandBufferCount = (uint32)m_commandBuffers.size()
     };
-    VK_CHECK(vkAllocateCommandBuffers(m_device.getDevice(), &cbAllocInfo, m_commandBuffers.data()));
+    VK_CHECK(vkAllocateCommandBuffers(m_device->getDevice(), &cbAllocInfo, m_commandBuffers.data()));
 
     // distribute command buffers
     m_transferCommandBuffer  = CommandBuffer(
-                                            m_device, 
+                                            device, 
                                             CommandType::TRANSFER, 
                                             m_commandBuffers[0], 
                                             rm, 
-                                            m_device.getQueue(VulkanDevice::QueueType::TRANSFER));
+                                            m_device->getQueue(VulkanDevice::QueueType::TRANSFER));
     m_offscreenCommandBuffer = CommandBuffer(
-                                            m_device, 
+                                            device, 
                                             CommandType::OFFSCREEN, 
                                             m_commandBuffers[1], 
                                             rm, 
-                                            m_device.getQueue(VulkanDevice::QueueType::GRAPHICS));
+                                            m_device->getQueue(VulkanDevice::QueueType::GRAPHICS));
     m_mainCommandBuffer      = CommandBuffer(
-                                            m_device, 
+                                            device, 
                                             CommandType::MAIN, 
                                             m_commandBuffers[2], 
                                             rm, 
-                                            m_device.getQueue(VulkanDevice::QueueType::GRAPHICS));
-
-    // set semaphore dependencies between command buffers
-    //      transfer
+                                            m_device->getQueue(VulkanDevice::QueueType::GRAPHICS));
+    
+    // transfer wait/signal dependencies
     std::vector<VkSemaphore> transferWaitSem = {
-        m_mainCommandBuffer.getSemaphore()
+        
     };
     std::vector<VkSemaphore> transferSignalSem = {
-        m_offscreenCommandBuffer.getSemaphore()
+        m_offscreenCommandBuffer.getSemaphore() 
     };
-    m_transferCommandBuffer.setSemaphoreDependencies(transferWaitSem, transferSignalSem);
-
-    //      offscreen
+    
+    // offscreen wait/signal dependencies
     std::vector<VkSemaphore> offscreenWaitSem = {
-        m_transferCommandBuffer.getSemaphore(),
-        // TODO: present semaphore
+        m_offscreenCommandBuffer.getSemaphore(), 
+        frame.acquiredSem 
     };
     std::vector<VkSemaphore> offscreenSignalSem = {
-        m_mainCommandBuffer.getSemaphore()
+        m_mainCommandBuffer.getSemaphore() 
     };
-    m_offscreenCommandBuffer.setSemaphoreDependencies(offscreenWaitSem, offscreenSignalSem);
-
-    //      main
+    
+    // main wait/signal dependencies
     std::vector<VkSemaphore> mainWaitSem = {
-        m_offscreenCommandBuffer.getSemaphore()
+        m_mainCommandBuffer.getSemaphore() 
     };
     std::vector<VkSemaphore> mainSignalSem = {
-        // TODO: present semaphore,
-        m_transferCommandBuffer.getSemaphore()
+        frame.renderedSem
     };
-    m_mainCommandBuffer.setSemaphoreDependencies(mainWaitSem, mainSignalSem);
 
-    //      present // TODO:
+    // set semaphore dependencies 
+    m_transferCommandBuffer.setSemaphoreDependencies(transferWaitSem, transferSignalSem);
+    m_offscreenCommandBuffer.setSemaphoreDependencies(offscreenWaitSem, offscreenSignalSem);
+    m_mainCommandBuffer.setSemaphoreDependencies(mainWaitSem, mainSignalSem);
 }
 
 CommandPool::~CommandPool(){
-    vkDestroyCommandPool(m_device.getDevice(), m_commandPool, NULL);
+    vkDestroyCommandPool(m_device->getDevice(), m_commandPool, NULL);
 }
 
 CommandBuffer& CommandPool::getCommandBuffer(CommandType commandType){
@@ -101,7 +98,7 @@ CommandBuffer& CommandPool::getCommandBuffer(CommandType commandType){
 }
 
 void CommandPool::reset(uint32 frame){
-    vkResetCommandPool(m_device.getDevice(), m_commandPool, 0);
+    vkResetCommandPool(m_device->getDevice(), m_commandPool, 0);
     
     m_frame = frame;
 
