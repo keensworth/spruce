@@ -29,6 +29,7 @@ public:
 
     VkCommandBuffer getCommandBuffer();
     VkSemaphore getSemaphore();
+    VkFence getFence();
 
     void setSemaphoreDependencies(std::vector<VkSemaphore> waitSemaphores, std::vector<VkSemaphore> signalSemaphores);
 
@@ -37,6 +38,8 @@ private:
     VkCommandBuffer m_commandBuffer;
     VulkanResourceManager* m_rm;
     VkQueue m_queue;
+
+    VkFence m_fence;
     VkSemaphore m_semaphore;
     std::vector<VkSemaphore> m_waitSemaphores;
     std::vector<VkSemaphore> m_signalSemaphores;

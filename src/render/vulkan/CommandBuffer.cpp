@@ -15,13 +15,19 @@ CommandBuffer::CommandBuffer(VulkanDevice device, CommandType commandType, VkCom
     m_queue = queue;
     m_frame = 0;
 
-    // build semaphore info
+    // build semaphore info and create semaphore
     VkSemaphoreCreateInfo semaphoreInfo {
         .sType = VK_STRUCTURE_TYPE_SEMAPHORE_CREATE_INFO
     };
-
-    // create semaphore
     VK_CHECK(vkCreateSemaphore(device.getDevice(), &semaphoreInfo, NULL, &m_semaphore));
+
+    // build fence info and create fence
+    VkFenceCreateInfo fenceInfo {
+        .sType = VK_STRUCTURE_TYPE_FENCE_CREATE_INFO,
+        .pNext = NULL,
+        .flags = VK_FENCE_CREATE_SIGNALED_BIT
+    };
+    VK_CHECK(vkCreateFence(device.getDevice(), &fenceInfo, NULL, &m_fence));
 }
 
 CommandBuffer::~CommandBuffer(){}
@@ -58,15 +64,15 @@ RenderPassRenderer& CommandBuffer::beginRenderPass(Handle<RenderPass> handle){
         }
     }
     VkRenderPassBeginInfo renderPassInfo {
-        .sType = VK_STRUCTURE_TYPE_RENDER_PASS_BEGIN_INFO,
-        .renderPass = renderPass->renderPass,
-        .framebuffer = renderPass->framebuffers[m_frame % MAX_FRAME_COUNT],
-        .renderArea = {
+        .sType           = VK_STRUCTURE_TYPE_RENDER_PASS_BEGIN_INFO,
+        .renderPass      = renderPass->renderPass,
+        .framebuffer     = renderPass->framebuffers[m_frame % MAX_FRAME_COUNT],
+        .renderArea      = {
             .offset = {0,0},
             .extent = {renderPass->dimensions.x, renderPass->dimensions.y}
         },
         .clearValueCount = (uint32)clearValues.size(),
-        .pClearValues = clearValues.data(),
+        .pClearValues    = clearValues.data(),
     };
     vkCmdBeginRenderPass(m_commandBuffer, &renderPassInfo, VK_SUBPASS_CONTENTS_INLINE);
     
@@ -110,6 +116,10 @@ VkCommandBuffer CommandBuffer::getCommandBuffer(){
 
 VkSemaphore CommandBuffer::getSemaphore(){
     return m_semaphore;
+}
+
+VkFence CommandBuffer::getFence(){
+    return m_fence;
 }
 
 void CommandBuffer::setSemaphoreDependencies(std::vector<VkSemaphore> waitSemaphores, std::vector<VkSemaphore> signalSemaphores){
