@@ -555,16 +555,25 @@ template<>
 Handle<RenderPass> VulkanResourceManager::create<RenderPass>(RenderPassDesc desc){
     RenderPassCache* renderPassCache = ((RenderPassCache*) m_resourceMap[typeid(RenderPass)]);
 
-    // layout data from handle in desc
+    // meta
     RenderPassLayout* layout = get<RenderPassLayout>(desc.layout);
+    uint32 attachmentCount = layout->attachmentCount;
+    uint32 swapchainImageCount = desc.colorAttachments[0].swapchainImageViews.size();
+    bool swapchainOverride = swapchainImageCount > 0;
+    uint32 adjustedFrameCount = swapchainOverride ? swapchainImageCount : MAX_FRAME_COUNT;
+
+    // check that renderpass uses exclusively attachments or swapchain images
+    if (swapchainOverride && attachmentCount > 1) {
+        SprLog::error("VRM: [RenderPass] Cannot use both swapchain images and attachments");
+    }
     
     // insert new description info into attachment descriptions
     uint32 samples;
-    bool hasDepthAttachment = (layout->colorReferences.size() + 1) == layout->attachmentCount;
+    bool hasDepthAttachment = (layout->colorReferences.size() + 1) == attachmentCount;
     // depth
     if (hasDepthAttachment) {
         VkAttachmentDescription newAttachment = {
-            .format         = layout->attachmentDescriptions[layout->attachmentCount-1].format,
+            .format         = layout->attachmentDescriptions[attachmentCount-1].format,
             .samples        = (VkSampleCountFlagBits)desc.depthAttachment.samples,
             .loadOp         = (VkAttachmentLoadOp)desc.depthAttachment.loadOp,
             .storeOp        = (VkAttachmentStoreOp)desc.depthAttachment.storeOp,
@@ -573,7 +582,7 @@ Handle<RenderPass> VulkanResourceManager::create<RenderPass>(RenderPassDesc desc
             .initialLayout  = (VkImageLayout)desc.depthAttachment.layout,
             .finalLayout    = (VkImageLayout)desc.depthAttachment.finalLayout
         };
-        layout->attachmentDescriptions[layout->attachmentCount-1] = newAttachment;
+        layout->attachmentDescriptions[attachmentCount-1] = newAttachment;
         samples = desc.depthAttachment.samples;
     }
     // color
@@ -620,7 +629,7 @@ Handle<RenderPass> VulkanResourceManager::create<RenderPass>(RenderPassDesc desc
     // build render pass create info
     VkRenderPassCreateInfo createInfo {
         .sType           = VK_STRUCTURE_TYPE_RENDER_PASS_CREATE_INFO,
-        .attachmentCount = layout->attachmentCount,
+        .attachmentCount = attachmentCount,
         .pAttachments    = layout->attachmentDescriptions.data(),
         .subpassCount    = 1,
         .pSubpasses      = &(layout->subpassDescription),
@@ -632,27 +641,39 @@ Handle<RenderPass> VulkanResourceManager::create<RenderPass>(RenderPassDesc desc
     VkRenderPass vulkanRenderPass;
     VK_CHECK(vkCreateRenderPass(m_device, &createInfo, NULL, &vulkanRenderPass));
 
-    // create framebuffers (one per frame)
-    std::vector<VkFramebuffer> vulkanFramebuffers(MAX_FRAME_COUNT);
-    for (int frame = 0; frame < MAX_FRAME_COUNT; frame++){
+    // create framebuffers (one per frame) 
+    std::vector<VkFramebuffer> vulkanFramebuffers(adjustedFrameCount);
+    for (int frame = 0; frame < adjustedFrameCount; frame++){
+
         // get attachment image views
-        VkImageView attachments[layout->attachmentCount];
-        for (uint32 i = 0; i < layout->attachmentCount-(hasDepthAttachment); i++){
+        VkImageView attachments[attachmentCount];
+
+        // color
+        for (uint32 i = 0; i < attachmentCount-(hasDepthAttachment); i++){
+            // use swapchain image view directly
+            if (swapchainOverride){
+                attachments[i] = desc.colorAttachments[i].swapchainImageViews[frame];
+                break;
+            }
+            
+            // fetch provided attachments
             TextureAttachment* textureAttachment = get<TextureAttachment>(desc.colorAttachments[i].texture);
             Texture* texture =  get<Texture>(textureAttachment->textures[frame]);
             attachments[i] = texture->view;
+            
         }
+        // depth
         if(hasDepthAttachment){
             TextureAttachment* textureAttachment = get<TextureAttachment>(desc.depthAttachment.texture);
             Texture* texture =  get<Texture>(textureAttachment->textures[frame]);
-            attachments[layout->attachmentCount-1] = texture->view;
+            attachments[attachmentCount-1] = texture->view;
         }
 
         // build framebuffer create info
         VkFramebufferCreateInfo framebufferInfo {
             .sType           = VK_STRUCTURE_TYPE_FRAMEBUFFER_CREATE_INFO,
             .renderPass      = vulkanRenderPass,
-            .attachmentCount = layout->attachmentCount,
+            .attachmentCount = attachmentCount,
             .pAttachments    = attachments,
             .width           = desc.dimensions.x,
             .height          = desc.dimensions.y,
@@ -666,7 +687,6 @@ Handle<RenderPass> VulkanResourceManager::create<RenderPass>(RenderPassDesc desc
         vulkanFramebuffers[frame] = vulkanFramebuffer;
     }
     
-
     // create render pass resource, return handle
     RenderPass renderPass {
         .layout             = desc.layout,
@@ -676,7 +696,8 @@ Handle<RenderPass> VulkanResourceManager::create<RenderPass>(RenderPassDesc desc
         .samples            = samples,
         .hasDepthAttachment = hasDepthAttachment,
         .depthAttachment    = desc.depthAttachment,
-        .colorAttachments   = desc.colorAttachments
+        .colorAttachments   = desc.colorAttachments,
+        .swapchainOverride  = swapchainOverride
     };
     return renderPassCache->insert(renderPass);
 }
@@ -929,27 +950,34 @@ Handle<RenderPass> VulkanResourceManager::recreate<RenderPass>(Handle<RenderPass
 
     // update screen dimensions
     m_screenDim = glm::uvec3(newDimensions.x, newDimensions.y, m_screenDim.z);
+    renderPass->dimensions = m_screenDim;
+
+    // layout
+    Handle<RenderPassLayout> renderPassLayout = renderPass->layout;
+    RenderPassLayout* layout = get<RenderPassLayout>(renderPassLayout);
 
     // attachment info
-    bool hasDepthAttachment = renderPass->depthAttachment.texture.isValid();
-    uint32 attachmentCount = hasDepthAttachment + renderPass->colorAttachments.size();
-    std::vector<RenderPass::ColorAttachment> colorAttachments = renderPass->colorAttachments;
-    RenderPass::DepthAttachment depthAttachment = renderPass->depthAttachment;
+    bool hasDepthAttachment = renderPass->hasDepthAttachment;
+    bool swapchainOverride = renderPass->swapchainOverride;
+    uint32 attachmentCount = layout->attachmentCount;
+    std::vector<RenderPass::ColorAttachment>& colorAttachments = renderPass->colorAttachments;
+    RenderPass::DepthAttachment& depthAttachment = renderPass->depthAttachment;
+    uint32 frameCount = swapchainOverride ? colorAttachments[0].swapchainImageViews.size() : MAX_FRAME_COUNT;
     
     // destroy framebuffers
-    for (int i = 0; i < MAX_FRAME_COUNT; i++){
+    for (int i = 0; i < frameCount; i++){
         vkDestroyFramebuffer(m_device, renderPass->framebuffers[i], NULL);
     }
 
-    // rebuild all textures that use default res
-    {   // color
+    // rebuild all textures that use default res,
+    // assuming this renderpass doesnt use swapchain images
+    if (!swapchainOverride){
+        // color
         for (RenderPass::ColorAttachment& attachment : colorAttachments){
-            // get color attachment
             TextureAttachment* textureAttachment = get<TextureAttachment>(attachment.texture);
 
             // recreate attachment's images/views
-            for(int frame = 0; frame < MAX_FRAME_COUNT; frame++){
-                // get texture
+            for(int frame = 0; frame < frameCount; frame++){
                 Handle<Texture> textureHandle = textureAttachment->textures[frame];
                 Texture* texture = get<Texture>(textureHandle);
 
@@ -957,11 +985,7 @@ Handle<RenderPass> VulkanResourceManager::recreate<RenderPass>(Handle<RenderPass
                 if(!texture->defaultRes)
                     continue;
                 
-
-                // destroy image view
                 vkDestroyImageView(m_device, texture->view, NULL);
-
-                // destroy image
                 vmaDestroyImage(*m_allocator, texture->image, texture->alloc);
 
                 // create image
@@ -1004,15 +1028,14 @@ Handle<RenderPass> VulkanResourceManager::recreate<RenderPass>(Handle<RenderPass
             }
             
         }
-    }
-    {   // depth
+    
+        // depth
         if (hasDepthAttachment){
             // get color attachment
             TextureAttachment* textureAttachment = get<TextureAttachment>(depthAttachment.texture);
 
             // recreate attachment's images/views
-            for(int frame = 0; frame < MAX_FRAME_COUNT; frame++){
-                // get texture
+            for(int frame = 0; frame < frameCount; frame++){
                 Handle<Texture> textureHandle = textureAttachment->textures[frame];
                 Texture* texture = get<Texture>(textureHandle);
 
@@ -1020,11 +1043,7 @@ Handle<RenderPass> VulkanResourceManager::recreate<RenderPass>(Handle<RenderPass
                 if(!texture->defaultRes)
                     continue;
                 
-
-                // destroy image view
                 vkDestroyImageView(m_device, texture->view, NULL);
-
-                // destroy image
                 vmaDestroyImage(*m_allocator, texture->image, texture->alloc);
 
                 // create image
@@ -1067,28 +1086,34 @@ Handle<RenderPass> VulkanResourceManager::recreate<RenderPass>(Handle<RenderPass
             }
         }
     }
-        
-    // rebuild framebuffers
-    std::vector<VkFramebuffer>& vulkanFramebuffers = renderPass->framebuffers;
-    VkImageView vulkanAttachments[MAX_FRAME_COUNT][attachmentCount];
-    
+       
     // get attachment image views
-    for (uint32 i = 0; i < attachmentCount+hasDepthAttachment; i++){
-        TextureAttachment* textureAttachment = get<TextureAttachment>(colorAttachments[i].texture);
-        for (int frame = 0;frame < MAX_FRAME_COUNT; frame++){
+    VkImageView vulkanAttachments[frameCount][attachmentCount];
+    for (int frame = 0;frame < frameCount; frame++){
+        if (swapchainOverride){
+            // new sc views will already be provided by the time recreate is called
+            vulkanAttachments[frame][0] = colorAttachments[0].swapchainImageViews[frame];
+            break;
+        }
+        // fetch provided attachments
+        for (uint32 i = 0; i < attachmentCount+hasDepthAttachment; i++){
+            TextureAttachment* textureAttachment = get<TextureAttachment>(colorAttachments[i].texture);
             Texture* texture = get<Texture>(textureAttachment->textures[frame]);
             vulkanAttachments[frame][i] = texture->view;
         }
+        
     }
     if (hasDepthAttachment){
         TextureAttachment* textureAttachment = get<TextureAttachment>(depthAttachment.texture);
-        for (int frame = 0; frame < MAX_FRAME_COUNT; frame++){
+        for (int frame = 0; frame < frameCount; frame++){
             Texture* texture = get<Texture>(textureAttachment->textures[frame]);
             vulkanAttachments[frame][attachmentCount-1] = texture->view;
         }
     }
 
-    for (int frame = 0; frame < MAX_FRAME_COUNT; frame++){
+    // rebuild framebuffers
+    std::vector<VkFramebuffer>& vulkanFramebuffers = renderPass->framebuffers;
+    for (int frame = 0; frame < frameCount; frame++){
         // build framebuffer create info
         VkFramebufferCreateInfo framebufferInfo {
             .sType           = VK_STRUCTURE_TYPE_FRAMEBUFFER_CREATE_INFO,
@@ -1100,8 +1125,8 @@ Handle<RenderPass> VulkanResourceManager::recreate<RenderPass>(Handle<RenderPass
             .layers          = 1
         };
 
-        // create vulkan framebuffer
-        VkFramebuffer vulkanFramebuffer;
+        // create vulkan framebuffer, directly overwriting
+        // existing framebuffers in RenderPass object
         VK_CHECK(vkCreateFramebuffer(m_device, &framebufferInfo, NULL, &vulkanFramebuffers[frame]));
     }
     
