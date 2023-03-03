@@ -30,6 +30,7 @@ public:
     VkCommandBuffer getCommandBuffer();
     VkSemaphore getSemaphore();
     VkFence getFence();
+    void waitFence();
     void resetFence();
 
     void setSemaphoreDependencies(std::vector<VkSemaphore> waitSemaphores, std::vector<VkSemaphore> signalSemaphores);

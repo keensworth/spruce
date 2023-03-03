@@ -123,6 +123,10 @@ VkFence CommandBuffer::getFence(){
     return m_fence;
 }
 
+void CommandBuffer::waitFence(){
+    VK_CHECK(vkWaitForFences(m_device->getDevice(), 1, &m_fence, VK_TRUE, UINT64_MAX));
+}
+
 void CommandBuffer::resetFence(){
     VK_CHECK(vkResetFences(m_device->getDevice(), 1, &m_fence));
 }
