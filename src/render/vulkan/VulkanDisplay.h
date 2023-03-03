@@ -23,6 +23,7 @@ public:
     VkSurfaceKHR getSurface();
     std::vector<VkImageView> getImageViews();
     VkFormat getSwapchainFormat();
+    VkSwapchainKHR getSwapchain();
     
 
 private:

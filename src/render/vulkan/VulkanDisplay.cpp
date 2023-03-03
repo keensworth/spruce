@@ -50,22 +50,22 @@ uint32 VulkanDisplay::createSwapchain(VkPhysicalDevice physicalDevice, VkDevice 
 
     // create info
     VkSwapchainCreateInfoKHR createInfo = {
-        .sType = VK_STRUCTURE_TYPE_SWAPCHAIN_CREATE_INFO_KHR,
-        .surface = m_surface,
-        .minImageCount = m_imageCount,
-        .imageFormat = m_format,
-        .imageColorSpace = m_surfaceFormat.colorSpace,
-        .imageExtent = m_extent,
+        .sType            = VK_STRUCTURE_TYPE_SWAPCHAIN_CREATE_INFO_KHR,
+        .surface          = m_surface,
+        .minImageCount    = m_imageCount,
+        .imageFormat      = m_format,
+        .imageColorSpace  = m_surfaceFormat.colorSpace,
+        .imageExtent      = m_extent,
         .imageArrayLayers = 1,
-        .imageUsage = VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT,
+        .imageUsage       = VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT,
         .imageSharingMode = graphicsPresentShared ? VK_SHARING_MODE_EXCLUSIVE : VK_SHARING_MODE_CONCURRENT,
         .queueFamilyIndexCount = graphicsPresentShared ? 0u : 2u,
-        .pQueueFamilyIndices = graphicsPresentShared ? NULL : queueFamilyIndices,
-        .preTransform = m_capabilities.currentTransform,
-        .compositeAlpha = VK_COMPOSITE_ALPHA_OPAQUE_BIT_KHR,
-        .presentMode = m_presentMode,
-        .clipped = VK_TRUE,
-        .oldSwapchain = VK_NULL_HANDLE,
+        .pQueueFamilyIndices   = graphicsPresentShared ? NULL : queueFamilyIndices,
+        .preTransform    = m_capabilities.currentTransform,
+        .compositeAlpha  = VK_COMPOSITE_ALPHA_OPAQUE_BIT_KHR,
+        .presentMode     = m_presentMode,
+        .clipped         = VK_TRUE,
+        .oldSwapchain    = VK_NULL_HANDLE,
     };
     VK_CHECK(vkCreateSwapchainKHR(device, &createInfo, nullptr, &m_swapchain));
 
@@ -82,12 +82,12 @@ void VulkanDisplay::createImageViews(VkDevice device){
     m_imageViews.resize(m_images.size());
 
     // create image views for all images
-    for (size_t i = 0; i < m_imageCount; i++) {
+    for (uint32 i = 0; i < m_imageCount; i++) {
         VkImageViewCreateInfo createInfo{
-            .sType = VK_STRUCTURE_TYPE_IMAGE_VIEW_CREATE_INFO,
-            .image = m_images[i],
-            .viewType = VK_IMAGE_VIEW_TYPE_2D,
-            .format = m_format,
+            .sType      = VK_STRUCTURE_TYPE_IMAGE_VIEW_CREATE_INFO,
+            .image      = m_images[i],
+            .viewType   = VK_IMAGE_VIEW_TYPE_2D,
+            .format     = m_format,
             .components = {
                 .r = VK_COMPONENT_SWIZZLE_IDENTITY,
                 .g = VK_COMPONENT_SWIZZLE_IDENTITY,
@@ -95,16 +95,17 @@ void VulkanDisplay::createImageViews(VkDevice device){
                 .a = VK_COMPONENT_SWIZZLE_IDENTITY,
             },
             .subresourceRange = {
-                .aspectMask = VK_IMAGE_ASPECT_COLOR_BIT,
-                .baseMipLevel = 0,
-                .levelCount = 1,
+                .aspectMask     = VK_IMAGE_ASPECT_COLOR_BIT,
+                .baseMipLevel   = 0,
+                .levelCount     = 1,
                 .baseArrayLayer = 0,
-                .layerCount = 1
+                .layerCount     = 1
             }
         };
         VK_CHECK(vkCreateImageView(device, &createInfo, nullptr, &m_imageViews[i]));
     }
 }
+
 
 
 //  ██╗  ██╗███████╗██╗     ██████╗ ███████╗██████╗ 
@@ -116,6 +117,10 @@ void VulkanDisplay::createImageViews(VkDevice device){
 
 VkFormat VulkanDisplay::getSwapchainFormat(){
     return m_format;
+}
+
+VkSwapchainKHR VulkanDisplay::getSwapchain(){
+    return m_swapchain;
 }
 
 void VulkanDisplay::cleanup(VkDevice device){
