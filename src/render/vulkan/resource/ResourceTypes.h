@@ -130,9 +130,14 @@ typedef struct RenderPass {
     glm::uvec3 dimensions;
     uint32 samples;
 
-    // only required to set additional properties or texture handle
     typedef struct ColorAttachment {
-        Handle<TextureAttachment> texture; // framebuffer 
+        Handle<TextureAttachment> texture;
+
+        // swapchain image views (optional)
+        // if set, will neglect attachment handle above
+        std::vector<VkImageView> swapchainImageViews;
+
+        // properties
         uint32 format         = Flags::Format::UNDEFINED_FORMAT;
         uint32 samples        = Flags::Sample::SAMPLE_1;
         uint32 loadOp         = Flags::LoadOp::LOAD_CLEAR;
@@ -144,7 +149,7 @@ typedef struct RenderPass {
     } ColorAttachment;
 
     typedef struct DepthAttachment {
-        Handle<TextureAttachment> texture; // framebuffer 
+        Handle<TextureAttachment> texture;
         uint32 format         = Flags::Format::UNDEFINED_FORMAT;
         uint32 samples        = Flags::Sample::SAMPLE_1;
         uint32 loadOp         = Flags::LoadOp::LOAD_DONT_CARE;
@@ -158,6 +163,7 @@ typedef struct RenderPass {
     bool hasDepthAttachment = false;
     DepthAttachment depthAttachment;
     std::vector<ColorAttachment> colorAttachments;
+    bool swapchainOverride = false;
 } RenderPass;
 
 
