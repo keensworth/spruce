@@ -31,7 +31,6 @@ typedef enum MemoryType : uint32{
 // --------------------------------------------------------- //
 //                 Buffer                                    // 
 // --------------------------------------------------------- //
-
 typedef struct Buffer {
     uint32 byteSize = 0;
     VkBuffer buffer;
@@ -44,7 +43,6 @@ typedef struct Buffer {
 // --------------------------------------------------------- //
 //                 Texture                                   // 
 // --------------------------------------------------------- //
-
 typedef struct Texture {
     VkImage image;
     VkImageView view;
@@ -65,7 +63,6 @@ typedef struct Texture {
 // --------------------------------------------------------- //
 //                 Texture Attachment                        // 
 // --------------------------------------------------------- //
-
 typedef struct TextureAttachment {
     std::vector<Handle<Texture>> textures;
 } TextureAttachment;
@@ -74,7 +71,6 @@ typedef struct TextureAttachment {
 // --------------------------------------------------------- //
 //                 Descriptor Set Layout                     // 
 // --------------------------------------------------------- //
-
 typedef struct DescriptorSetLayout {
     typedef struct TextureBindingLayout {
         uint32 slot   = 0;
@@ -99,7 +95,6 @@ typedef struct DescriptorSetLayout {
 // --------------------------------------------------------- //
 //                 Descriptor Set                            // 
 // --------------------------------------------------------- //
-
 typedef struct DescriptorSet {
     bool dynamic = false;
     std::vector<VkDescriptorSet> descriptorSets;
@@ -109,7 +104,6 @@ typedef struct DescriptorSet {
 // --------------------------------------------------------- //
 //                 Render Pass Layout                        // 
 // --------------------------------------------------------- //
-
 typedef struct RenderPassLayout {
     VkAttachmentReference depthReference;
     std::vector<VkAttachmentReference> colorReferences;
@@ -122,7 +116,6 @@ typedef struct RenderPassLayout {
 // --------------------------------------------------------- //
 //                 Render Pass                               // 
 // --------------------------------------------------------- //
-
 typedef struct RenderPass {
     Handle<RenderPassLayout> layout;
     VkRenderPass renderPass;
@@ -170,7 +163,6 @@ typedef struct RenderPass {
 // --------------------------------------------------------- //
 //                 Shader                                    // 
 // --------------------------------------------------------- //
-
 typedef struct Shader {
     VkPipeline pipeline;
 } Shader;
@@ -189,7 +181,6 @@ typedef struct Shader {
 // --------------------------------------------------------- //
 //                 Buffer Desc                               // 
 // --------------------------------------------------------- //
-
 typedef struct BufferDesc {
     uint32 byteOffset  = 0;
     uint32 byteSize    = 0;
@@ -201,7 +192,6 @@ typedef struct BufferDesc {
 // --------------------------------------------------------- //
 //                 Texture Desc                              // 
 // --------------------------------------------------------- //
-
 typedef struct TextureDesc {
     static const uint32 ALL_MIPS = 16;
     static const uint32 ALL_LAYERS = 16;
@@ -234,7 +224,6 @@ typedef struct TextureDesc {
 // --------------------------------------------------------- //
 //                 Texture Attachment Desc                   // 
 // --------------------------------------------------------- //
-
 typedef struct TextureAttachmentDesc {
     TextureDesc textureLayout;
 } TextureAttachmentDesc;
@@ -243,7 +232,6 @@ typedef struct TextureAttachmentDesc {
 // --------------------------------------------------------- //
 //                 Descriptor Set Layout Desc                // 
 // --------------------------------------------------------- //
-
 typedef struct DescriptorSetLayoutDesc {
     std::vector<DescriptorSetLayout::TextureBindingLayout> textures;
     std::vector<DescriptorSetLayout::BufferBindingLayout> buffers;
@@ -253,7 +241,6 @@ typedef struct DescriptorSetLayoutDesc {
 // --------------------------------------------------------- //
 //                 Descriptor Set Desc                       // 
 // --------------------------------------------------------- //
-
 typedef struct DescriptorSetDesc {
     static const uint32 ALL_BYTES = 0xFFFFFFFF;
 
@@ -279,7 +266,6 @@ typedef struct DescriptorSetDesc {
 // --------------------------------------------------------- //
 //                 Render Pass Layout Desc                   // 
 // --------------------------------------------------------- //
-
 typedef struct RenderPassLayoutDesc { 
     typedef struct SubpassLayout {
         bool depthAttachment = false;
@@ -295,10 +281,42 @@ typedef struct RenderPassLayoutDesc {
 // --------------------------------------------------------- //
 //                 Render Pass Desc                          // 
 // --------------------------------------------------------- //
-
 typedef struct RenderPassDesc { 
     glm::uvec3 dimensions = {0,0,0};
     Handle<RenderPassLayout> layout;
+
+    /*
+    typedef struct ColorAttachment {
+        Handle<TextureAttachment> texture;
+
+        // swapchain image views (optional)
+        // if set, will neglect attachment handle above
+        std::vector<VkImageView> swapchainImageViews;
+
+        // properties
+        uint32 format         = Flags::Format::UNDEFINED_FORMAT;
+        uint32 samples        = Flags::Sample::SAMPLE_1;
+        uint32 loadOp         = Flags::LoadOp::LOAD_CLEAR;
+        uint32 storeOp        = Flags::StoreOp::STORE;
+        uint32 stencilLoadOp  = Flags::LoadOp::LOAD_DONT_CARE;
+        uint32 stencilStoreOp = Flags::StoreOp::STORE_DONT_CARE;
+        uint32 layout         = Flags::ImageLayout::UNDEFINED;
+        uint32 finalLayout    = Flags::ImageLayout::COLOR_ATTACHMENT;
+    } ColorAttachment;
+
+    typedef struct DepthAttachment {
+        Handle<TextureAttachment> texture;
+        uint32 format         = Flags::Format::UNDEFINED_FORMAT;
+        uint32 samples        = Flags::Sample::SAMPLE_1;
+        uint32 loadOp         = Flags::LoadOp::LOAD_DONT_CARE;
+        uint32 storeOp        = Flags::StoreOp::STORE_DONT_CARE;
+        uint32 stencilLoadOp  = Flags::LoadOp::LOAD_CLEAR;
+        uint32 stencilStoreOp = Flags::StoreOp::STORE;
+        uint32 layout         = Flags::ImageLayout::UNDEFINED;
+        uint32 finalLayout    = Flags::ImageLayout::DEPTH_STENCIL_ATTACHMENT;
+    } DepthAttachment;
+    */
+
     RenderPass::DepthAttachment depthAttachment;
     std::vector<RenderPass::ColorAttachment> colorAttachments;
 } RenderPassDesc;
@@ -307,7 +325,6 @@ typedef struct RenderPassDesc {
 // --------------------------------------------------------- //
 //                 Shader Desc                               // 
 // --------------------------------------------------------- //
-
 typedef struct ShaderDesc {
     typedef struct Shader{
         std::string shaderPath = "";
