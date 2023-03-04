@@ -344,7 +344,7 @@ Handle<DescriptorSetLayout> VulkanResourceManager::create<DescriptorSetLayout>(D
         // buffers
         for (auto buffer : desc.buffers){
             VkDescriptorSetLayoutBinding bufferBinding {
-                .binding         = buffer.slot,
+                .binding         = buffer.binding,
                 .descriptorType  = (VkDescriptorType)buffer.type,
                 .descriptorCount = 1,
                 .stageFlags      = buffer.stages
@@ -354,7 +354,7 @@ Handle<DescriptorSetLayout> VulkanResourceManager::create<DescriptorSetLayout>(D
         // images/textures
         for (auto texture : desc.textures){
             VkDescriptorSetLayoutBinding bufferBinding {
-                .binding         = texture.slot,
+                .binding         = texture.binding,
                 .descriptorType  = (VkDescriptorType)texture.type,
                 .descriptorCount = 1,
                 .stageFlags      = texture.stages
@@ -367,7 +367,7 @@ Handle<DescriptorSetLayout> VulkanResourceManager::create<DescriptorSetLayout>(D
     VkDescriptorSetLayoutCreateInfo descriptorSetLayoutInfo {
         .sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_LAYOUT_CREATE_INFO,
         .bindingCount = bindingCount,
-        .pBindings = bindings.data()
+        .pBindings = bindingCount > 0 ? bindings.data() : 0
     };
 
     // create descriptor set layout
@@ -429,7 +429,7 @@ Handle<DescriptorSet> VulkanResourceManager::create<DescriptorSet>(DescriptorSet
             VkWriteDescriptorSet descriptorSetWrite {
                 .sType           = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET,
                 .dstSet          = vulkanDescriptorSet,
-                .dstBinding      = layout->bufferLayouts[bufferIndex].slot,
+                .dstBinding      = layout->bufferLayouts[bufferIndex].binding,
                 .descriptorCount = 1,
                 .descriptorType  = (VkDescriptorType)layout->bufferLayouts[bufferIndex].type,
                 .pBufferInfo     = &bufferInfo
@@ -455,7 +455,7 @@ Handle<DescriptorSet> VulkanResourceManager::create<DescriptorSet>(DescriptorSet
             VkWriteDescriptorSet descriptorSetWrite {
                 .sType           = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET,
                 .dstSet          = vulkanDescriptorSet,
-                .dstBinding      = layout->textureLayouts[textureIndex].slot,
+                .dstBinding      = layout->textureLayouts[textureIndex].binding,
                 .descriptorCount = 1,
                 .descriptorType  = (VkDescriptorType)layout->textureLayouts[textureIndex].type,
                 .pImageInfo      = &textureInfo
@@ -607,21 +607,21 @@ Handle<RenderPass> VulkanResourceManager::create<RenderPass>(RenderPassDesc desc
     // TODO: might need to tweak depending on presence of actual dependencies?
     VkSubpassDependency dependencies[2] = {
         {
-            .srcSubpass = VK_SUBPASS_EXTERNAL,
-            .dstSubpass = 0,
-            .srcStageMask = VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT,
-            .dstStageMask = VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT,
-            .srcAccessMask = VK_ACCESS_NONE_KHR,
-            .dstAccessMask = VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT,
+            .srcSubpass      = VK_SUBPASS_EXTERNAL,
+            .dstSubpass      = 0,
+            .srcStageMask    = VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT,
+            .dstStageMask    = VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT,
+            .srcAccessMask   = VK_ACCESS_NONE_KHR,
+            .dstAccessMask   = VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT,
             .dependencyFlags = 0
         },
         {
-            .srcSubpass = 0,
-            .dstSubpass = VK_SUBPASS_EXTERNAL,
-            .srcStageMask = VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT,
-            .dstStageMask = VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT,
-            .srcAccessMask = VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT,
-            .dstAccessMask = VK_ACCESS_NONE_KHR,
+            .srcSubpass      = 0,
+            .dstSubpass      = VK_SUBPASS_EXTERNAL,
+            .srcStageMask    = VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT,
+            .dstStageMask    = VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT,
+            .srcAccessMask   = VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT,
+            .dstAccessMask   = VK_ACCESS_NONE_KHR,
             .dependencyFlags = 0
         }
     };
@@ -718,11 +718,16 @@ Handle<Shader> VulkanResourceManager::create<Shader>(ShaderDesc desc){
     // create vertex shader module
     VkShaderModule vertexShader;
     bool hasVertexShader = false;
-    if (desc.vertexShader.shaderPath.compare("") == 0){
+    if (desc.vertexShader.path.compare("") == 0){
         hasVertexShader = true;
 
         // get shader bytes
-        std::ifstream instream(desc.vertexShader.shaderPath, std::ios::in | std::ios::binary);
+        std::ifstream instream(desc.vertexShader.path, std::ios::in | std::ios::binary);
+        if (!instream){
+            std::string message = "VulkanResourceManager: [SHADER] Shader (VS) not found: ";
+            message += desc.vertexShader.path;
+            SprLog::error(message);
+        }
         std::vector<uint8> bytes = std::vector<uint8>((std::istreambuf_iterator<char>(instream)), std::istreambuf_iterator<char>());
         uint32 size = bytes.size();
 
@@ -740,11 +745,16 @@ Handle<Shader> VulkanResourceManager::create<Shader>(ShaderDesc desc){
     // create fragment shader module
     VkShaderModule fragmentShader;
     bool hasFragmentShader = false;
-    if (desc.fragmentShader.shaderPath.compare("") == 0){
+    if (desc.fragmentShader.path.compare("") == 0){
         hasFragmentShader = true;
 
         // get shader bytes
-        std::ifstream instream(desc.fragmentShader.shaderPath, std::ios::in | std::ios::binary);
+        std::ifstream instream(desc.fragmentShader.path, std::ios::in | std::ios::binary);
+        if (!instream){
+            std::string message = "VulkanResourceManager: [SHADER] Shader (FS) not found: ";
+            message += desc.fragmentShader.path;
+            SprLog::error(message);
+        }
         std::vector<uint8> bytes = std::vector<uint8>((std::istreambuf_iterator<char>(instream)), std::istreambuf_iterator<char>());
         uint32 size = bytes.size();
 
@@ -779,8 +789,22 @@ Handle<Shader> VulkanResourceManager::create<Shader>(ShaderDesc desc){
     // build pipeline layout info
     std::vector<VkDescriptorSetLayout> descriptorSetLayouts;
     for (auto setLayoutHandle : desc.descriptorSets) {
-        DescriptorSetLayout* setLayout = get<DescriptorSetLayout>(setLayoutHandle);
-        descriptorSetLayouts.push_back(setLayout->descriptorSetLayout);
+        // check for empty layouts
+        if (!setLayoutHandle.isValid()){ 
+            VkDescriptorSetLayoutCreateInfo emptyLayoutInfo = {
+                .sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_LAYOUT_CREATE_INFO,
+                .pNext = NULL,
+                .flags = 0,
+                .bindingCount = 0,
+                .pBindings = NULL
+            };
+            VkDescriptorSetLayout emptyLayout;
+            VK_CHECK(vkCreateDescriptorSetLayout(m_device, &emptyLayoutInfo, NULL, &emptyLayout));
+            descriptorSetLayouts.push_back(emptyLayout);
+        } else { // valid layout
+            DescriptorSetLayout* setLayout = get<DescriptorSetLayout>(setLayoutHandle);
+            descriptorSetLayouts.push_back(setLayout->descriptorSetLayout);
+        }
     }
     VkPipelineLayoutCreateInfo pipelineLayoutInfo {
         .sType                  = VK_STRUCTURE_TYPE_PIPELINE_LAYOUT_CREATE_INFO,

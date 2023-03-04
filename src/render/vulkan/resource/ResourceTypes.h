@@ -73,17 +73,16 @@ typedef struct TextureAttachment {
 // --------------------------------------------------------- //
 typedef struct DescriptorSetLayout {
     typedef struct TextureBindingLayout {
-        uint32 slot   = 0;
-        uint32 stages = Flags::DescriptorStage::VERTEX  |
-                        Flags::DescriptorStage::FRAGMENT;
-        uint32 type   = Flags::DescriptorType::COMBINED_IMAGE_SAMPLER;
+        uint32 binding = 0;
+        uint32 stages  = Flags::DescriptorStage::FRAGMENT;
+        uint32 type    = Flags::DescriptorType::COMBINED_IMAGE_SAMPLER;
     } TextureBindingLayout;
 
     typedef struct BufferBindingLayout {
-        uint32 slot   = 0;
-        uint32 stages = Flags::DescriptorStage::VERTEX  |
-                        Flags::DescriptorStage::FRAGMENT;
-        uint32 type   = Flags::DescriptorType::UNIFORM_BUFFER;
+        uint32 binding = 0;
+        uint32 stages  = Flags::DescriptorStage::VERTEX  |
+                         Flags::DescriptorStage::FRAGMENT;
+        uint32 type    = Flags::DescriptorType::UNIFORM_BUFFER;
     } BufferBindingLayout;
 
     std::vector<TextureBindingLayout> textureLayouts;
@@ -233,6 +232,21 @@ typedef struct TextureAttachmentDesc {
 //                 Descriptor Set Layout Desc                // 
 // --------------------------------------------------------- //
 typedef struct DescriptorSetLayoutDesc {
+    /*
+    typedef struct TextureBindingLayout {
+        uint32 binding = 0;
+        uint32 stages  = Flags::DescriptorStage::FRAGMENT;
+        uint32 type    = Flags::DescriptorType::COMBINED_IMAGE_SAMPLER;
+    } TextureBindingLayout;
+
+    typedef struct BufferBindingLayout {
+        uint32 binding = 0;
+        uint32 stages  = Flags::DescriptorStage::VERTEX  |
+                         Flags::DescriptorStage::FRAGMENT;
+        uint32 type    = Flags::DescriptorType::UNIFORM_BUFFER;
+    } BufferBindingLayout;
+    */
+
     std::vector<DescriptorSetLayout::TextureBindingLayout> textures;
     std::vector<DescriptorSetLayout::BufferBindingLayout> buffers;
 } DescriptorSetLayoutDesc;
@@ -327,7 +341,7 @@ typedef struct RenderPassDesc {
 // --------------------------------------------------------- //
 typedef struct ShaderDesc {
     typedef struct Shader{
-        std::string shaderPath = "";
+        std::string path = "";
     } Shader;
 
     typedef struct GraphicsState {
