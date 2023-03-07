@@ -137,7 +137,7 @@ typedef struct RenderPass {
         uint32 stencilLoadOp  = Flags::LoadOp::LOAD_DONT_CARE;
         uint32 stencilStoreOp = Flags::StoreOp::STORE_DONT_CARE;
         uint32 layout         = Flags::ImageLayout::UNDEFINED;
-        uint32 finalLayout    = Flags::ImageLayout::COLOR_ATTACHMENT;
+        uint32 finalLayout    = Flags::ImageLayout::SHADER_READ_ONLY;
     } ColorAttachment;
 
     typedef struct DepthAttachment {
@@ -149,7 +149,7 @@ typedef struct RenderPass {
         uint32 stencilLoadOp  = Flags::LoadOp::LOAD_CLEAR;
         uint32 stencilStoreOp = Flags::StoreOp::STORE;
         uint32 layout         = Flags::ImageLayout::UNDEFINED;
-        uint32 finalLayout    = Flags::ImageLayout::DEPTH_STENCIL_ATTACHMENT;
+        uint32 finalLayout    = Flags::ImageLayout::DEPTH_READ_ONLY;
     } DepthAttachment;
 
     bool hasDepthAttachment = false;
@@ -315,7 +315,7 @@ typedef struct RenderPassDesc {
         uint32 stencilLoadOp  = Flags::LoadOp::LOAD_DONT_CARE;
         uint32 stencilStoreOp = Flags::StoreOp::STORE_DONT_CARE;
         uint32 layout         = Flags::ImageLayout::UNDEFINED;
-        uint32 finalLayout    = Flags::ImageLayout::COLOR_ATTACHMENT;
+        uint32 finalLayout    = Flags::ImageLayout::SHADER_READ_ONLY;
     } ColorAttachment;
 
     typedef struct DepthAttachment {
@@ -327,7 +327,7 @@ typedef struct RenderPassDesc {
         uint32 stencilLoadOp  = Flags::LoadOp::LOAD_CLEAR;
         uint32 stencilStoreOp = Flags::StoreOp::STORE;
         uint32 layout         = Flags::ImageLayout::UNDEFINED;
-        uint32 finalLayout    = Flags::ImageLayout::DEPTH_STENCIL_ATTACHMENT;
+        uint32 finalLayout    = Flags::ImageLayout::DEPTH_READ_ONLY;
     } DepthAttachment;
     */
 
