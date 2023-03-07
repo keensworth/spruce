@@ -528,7 +528,7 @@ Handle<RenderPassLayout> VulkanResourceManager::create<RenderPassLayout>(RenderP
         .inputAttachmentCount    = 0,
         .pInputAttachments       = NULL,
         .colorAttachmentCount    = attachmentCount,
-        .pColorAttachments       = colorReferences.data(),
+        .pColorAttachments       = attachmentCount > 0 ? colorReferences.data() : NULL,
         .pResolveAttachments     = NULL,
         .pDepthStencilAttachment = depthAttachment ? &depthReference : NULL,
         .preserveAttachmentCount = 0,
@@ -561,15 +561,15 @@ Handle<RenderPass> VulkanResourceManager::create<RenderPass>(RenderPassDesc desc
     uint32 swapchainImageCount = desc.colorAttachments[0].swapchainImageViews.size();
     bool swapchainOverride = swapchainImageCount > 0;
     uint32 adjustedFrameCount = swapchainOverride ? swapchainImageCount : MAX_FRAME_COUNT;
+    bool hasDepthAttachment = (layout->colorReferences.size() + 1) == attachmentCount;
 
     // check that renderpass uses exclusively attachments or swapchain images
-    if (swapchainOverride && attachmentCount > 1) {
+    if (swapchainOverride && (attachmentCount > 1 || hasDepthAttachment)){
         SprLog::error("VRM: [RenderPass] Cannot use both swapchain images and attachments");
     }
     
     // insert new description info into attachment descriptions
-    uint32 samples;
-    bool hasDepthAttachment = (layout->colorReferences.size() + 1) == attachmentCount;
+    uint32 samples;    
     // depth
     if (hasDepthAttachment) {
         VkAttachmentDescription newAttachment = {
@@ -603,10 +603,11 @@ Handle<RenderPass> VulkanResourceManager::create<RenderPass>(RenderPassDesc desc
         samples = attachment.samples;
     }
 
-    // build subpass dependencies (one subpass per renderpass, use EXTERNAL)
-    // TODO: might need to tweak depending on presence of actual dependencies?
-    VkSubpassDependency dependencies[2] = {
-        {
+    // build subpass dependencies // TODO all
+    VkSubpassDependency inDependency;
+    VkSubpassDependency outDependency;
+    if (swapchainOverride){ // special case for swapchain image attachments
+        inDependency = {
             .srcSubpass      = VK_SUBPASS_EXTERNAL,
             .dstSubpass      = 0,
             .srcStageMask    = VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT,
@@ -614,8 +615,8 @@ Handle<RenderPass> VulkanResourceManager::create<RenderPass>(RenderPassDesc desc
             .srcAccessMask   = VK_ACCESS_NONE_KHR,
             .dstAccessMask   = VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT,
             .dependencyFlags = 0
-        },
-        {
+        };
+        outDependency = {
             .srcSubpass      = 0,
             .dstSubpass      = VK_SUBPASS_EXTERNAL,
             .srcStageMask    = VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT,
@@ -623,7 +624,31 @@ Handle<RenderPass> VulkanResourceManager::create<RenderPass>(RenderPassDesc desc
             .srcAccessMask   = VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT,
             .dstAccessMask   = VK_ACCESS_NONE_KHR,
             .dependencyFlags = 0
-        }
+        };
+    } else { // offscreen attachment dependencies
+        inDependency = {
+            .srcSubpass      = VK_SUBPASS_EXTERNAL,
+            .dstSubpass      = 0,
+            .srcStageMask    = VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT,
+            .dstStageMask    = VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT,
+            .srcAccessMask   = VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT,
+            .dstAccessMask   = VK_ACCESS_SHADER_READ_BIT,
+            .dependencyFlags = 0
+        };
+        outDependency = {
+            .srcSubpass      = 0,
+            .dstSubpass      = VK_SUBPASS_EXTERNAL,
+            .srcStageMask    = VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT,
+            .dstStageMask    = VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT,
+            .srcAccessMask   = VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT,
+            .dstAccessMask   = VK_ACCESS_SHADER_READ_BIT,
+            .dependencyFlags = 0
+        };
+    }
+    
+    VkSubpassDependency dependencies[2] = {
+        inDependency,
+        outDependency
     };
     
     // build render pass create info
