@@ -18,14 +18,16 @@ public:
     ~VulkanRenderer();
 
     RenderFrame& beginFrame();
+    void present(RenderFrame& frame);
     CommandBuffer& beginGraphicsCommands(CommandType commandBufferType);
     UploadHandler& beginTransferCommands();
-    void present();
+
     void onResize();
     void wait();
     
-    VkFormat getDisplayFormat();
+    uint32 getFrameId();
     VulkanDevice& getDevice();
+    VulkanDisplay& getDisplay();
     VmaAllocator& getAllocator();
 
 private:
@@ -45,7 +47,13 @@ private:
 
     VmaAllocator m_allocator;
 
+    typedef enum SwapchainStage : uint32 {
+        ACQUIRE = 0,
+        PRESENT = 1
+    } SwapchainStage;
+
     void recreateSwapchain();
+    void validateSwapchain(VkResult result, SwapchainStage stage);
     void cleanup();
 };
 }

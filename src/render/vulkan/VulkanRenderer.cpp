@@ -2,6 +2,8 @@
 #include "CommandPool.h"
 #include "VulkanDevice.h"
 #include "vulkan_core.h"
+#include <cstdint>
+#include <string>
 #include <vulkan/vulkan_core.h>
 
 #define VMA_IMPLEMENTATION
@@ -32,7 +34,6 @@ VulkanRenderer::VulkanRenderer(Window* window, VulkanResourceManager* rm) : m_de
 
     // create frames
     for (uint32 frame = 0; frame < MAX_FRAME_COUNT; frame++){
-        // build frame skeleton
         m_frames[frame] = {};
 
         // build semaphore info and create semaphore
@@ -78,19 +79,56 @@ VulkanRenderer::VulkanRenderer(Window* window, VulkanResourceManager* rm) : m_de
         CommandBuffer& graphicsCommandBuffer = m_commandPools[frame].getCommandBuffer(CommandType::OFFSCREEN);
         m_uploadHandlers[frame] = UploadHandler(m_device, *rm, transferCommandBuffer, graphicsCommandBuffer);
     }   
-    
 }
+
 
 VulkanRenderer::~VulkanRenderer(){
 }
 
-VulkanDevice& VulkanRenderer::getDevice(){
-    return m_device;
+
+RenderFrame& VulkanRenderer::beginFrame(){
+    uint32 frameIndex = m_currFrame % MAX_FRAME_COUNT;
+    CommandPool& gfxCommandPool = m_commandPools[frameIndex];
+    CommandPool& transferCommandPool = m_transferCommandPools[frameIndex];
+
+    RenderFrame& frame = m_frames[frameIndex];
+    frame.frameIndex = frameIndex;
+
+    // wait for main command buffer fence
+    CommandBuffer& cb = gfxCommandPool.getCommandBuffer(CommandType::MAIN);
+    cb.waitFence();
+    
+    // acquire swapchain image index
+    VkResult result = vkAcquireNextImageKHR(m_device.getDevice(), m_display.getSwapchain(), UINT64_MAX, frame.acquiredSem, VK_NULL_HANDLE, &(frame.imageIndex));
+    validateSwapchain(result, ACQUIRE);
+    
+    gfxCommandPool.reset(m_currFrame);
+    transferCommandPool.reset(m_currFrame);
+    
+    return frame;
 }
 
-VmaAllocator& VulkanRenderer::getAllocator() {
-    return m_allocator;
+
+void VulkanRenderer::present(RenderFrame& frame){
+    VkSemaphore waitSemaphore[] = {frame.renderedSem};
+    VkSwapchainKHR swapchain[] = {m_display.getSwapchain()};
+
+    // create present info and present frame
+    VkPresentInfoKHR presentInfo = {
+        .sType = VK_STRUCTURE_TYPE_PRESENT_INFO_KHR,
+        .waitSemaphoreCount = 1,
+        .pWaitSemaphores = waitSemaphore,
+        .swapchainCount = 1,
+        .pSwapchains = swapchain,
+        .pImageIndices = &frame.imageIndex
+    };
+    VkQueue presentQueue = m_device.getQueue(VulkanDevice::PRESENT);
+    VkResult result = vkQueuePresentKHR(presentQueue, &presentInfo);
+    validateSwapchain(result, PRESENT);
+
+    m_currFrame++;
 }
+
 
 CommandBuffer& VulkanRenderer::beginGraphicsCommands(CommandType commandBufferType){
     if (commandBufferType == TRANSFER) {
@@ -103,6 +141,7 @@ CommandBuffer& VulkanRenderer::beginGraphicsCommands(CommandType commandBufferTy
 
     return commandBuffer;
 }
+
 
 UploadHandler& VulkanRenderer::beginTransferCommands(){
     // get the frame's upload handler
@@ -117,41 +156,67 @@ UploadHandler& VulkanRenderer::beginTransferCommands(){
     return uploadHandler;
 }
 
-RenderFrame& VulkanRenderer::beginFrame() {
-    // reset command pools before use
-    m_commandPools[m_currFrame % MAX_FRAME_COUNT].reset(m_currFrame);
-    m_transferCommandPools[m_currFrame % MAX_FRAME_COUNT].reset(m_currFrame);
+
+uint32 VulkanRenderer::getFrameId(){
+    return m_currFrame;
+}
+
+
+VulkanDevice& VulkanRenderer::getDevice(){
+    return m_device;
+}
+
+
+VulkanDisplay& VulkanRenderer::getDisplay(){
+    return m_display;
+}
+
+
+VmaAllocator& VulkanRenderer::getAllocator(){
+    return m_allocator;
+}
+
+
+void VulkanRenderer::validateSwapchain(VkResult result, SwapchainStage stage){
+    if (result == VK_SUCCESS)
+        return;
     
+    // abnormal swapchain result, return error
+    if (result != VK_ERROR_OUT_OF_DATE_KHR && result != VK_SUBOPTIMAL_KHR){
+        std::string message = "VulkanRenderer: Swapchain invalid, code: ";
+        message += std::to_string((uint32)result);
+        SprLog::error(message);
+        return;
+    }
+
+    // will need to recreate swapchain, as we know 
+    // either OUT_OF_DATE or SUBOPTIMAL are true
+    if (stage == PRESENT || (stage == ACQUIRE && result == VK_ERROR_OUT_OF_DATE_KHR)){
+        recreateSwapchain();
+    }
 }
 
-void VulkanRenderer::present(){
-    //
-
-    m_currFrame++;
-}
-
-void VulkanRenderer::wait(){
-    vkDeviceWaitIdle(m_device.getDevice());
-}
-
-VkFormat VulkanRenderer::getDisplayFormat(){
-    return m_display.getSwapchainFormat();
-}
 
 void VulkanRenderer::onResize(){
-    // cleanup display
-    m_display.cleanup(m_device.getDevice());
+    wait();
+    cleanup();
+    recreateSwapchain();
 }
 
+
 void VulkanRenderer::recreateSwapchain(){
-    // create swapchain and image views
     m_display.createSwapchain(m_device.getPhysicalDevice(), m_device.getDevice(), m_device.getQueueFamilies());
     m_display.createImageViews(m_device.getDevice());
 }
 
+
 void VulkanRenderer::cleanup(){
-    // cleanup display
     m_display.cleanup(m_device.getDevice());
+}
+
+
+void VulkanRenderer::wait(){
+    vkDeviceWaitIdle(m_device.getDevice());
 }
 
 }
