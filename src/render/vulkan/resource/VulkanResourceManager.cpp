@@ -396,8 +396,18 @@ Handle<DescriptorSet> VulkanResourceManager::create<DescriptorSet>(DescriptorSet
     DescriptorSetLayout* layout = get<DescriptorSetLayout>(desc.layout);
 
     // get descriptor counts
-    uint32 globalDescriptorCount = desc.textures.size() + desc.buffers.size();
-    uint32 perFrameDescriptorCount = desc.perFrameTextures.size() + desc.perFrameBuffers.size();
+    uint32 globalDescriptorCount = 0;
+    for (auto binding : desc.textures)
+        globalDescriptorCount += binding.texture.isValid();
+    for (auto binding : desc.buffers)
+        globalDescriptorCount += binding.buffer.isValid();
+
+    uint32 perFrameDescriptorCount = 0;
+    for (auto binding : desc.textures)
+        perFrameDescriptorCount += (binding.textures.size() > 0);
+    for (auto binding : desc.buffers)
+        perFrameDescriptorCount += (binding.buffers.size() > 0);
+
     if (globalDescriptorCount > 0 && perFrameDescriptorCount > 0){
         SprLog::error("VRM: [DESCRIPTOR SET] Cannot use both global and per-frame descriptors in one set");
     }
@@ -428,12 +438,13 @@ Handle<DescriptorSet> VulkanResourceManager::create<DescriptorSet>(DescriptorSet
         vulkanDescriptorSets.push_back(vulkanDescriptorSet);
 
         // write buffer descriptors 
-        uint32 bufferDescriptorCount = desc.buffers.size() + desc.perFrameBuffers.size();
+        uint32 bufferDescriptorCount = desc.buffers.size();
         for (uint32 bufferIndex = 0; bufferIndex < bufferDescriptorCount; bufferIndex++){
-            auto binding = globalDescriptors ? desc.buffers[bufferIndex]
-                                             : desc.perFrameBuffers[bufferIndex].buffers[frame];
+            DescriptorSetDesc::BufferBinding binding = desc.buffers[bufferIndex];
+            Handle<Buffer> handle = globalDescriptors ? binding.buffer
+                                                      : binding.buffers[frame];
             VkDescriptorBufferInfo bufferInfo {
-                .buffer = get<Buffer>(binding.buffer)->buffer,
+                .buffer = get<Buffer>(handle)->buffer,
                 .offset = binding.byteOffset,
                 .range  = (binding.byteSize == DescriptorSetDesc::ALL_BYTES)
                         ? VK_WHOLE_SIZE : binding.byteSize,
@@ -452,13 +463,14 @@ Handle<DescriptorSet> VulkanResourceManager::create<DescriptorSet>(DescriptorSet
         }
 
         // write texture descriptors
-        uint32 textureDescriptorCount = desc.textures.size() + desc.perFrameTextures.size();
+        uint32 textureDescriptorCount = desc.textures.size();
         for (uint32 textureIndex = 0; textureIndex < textureDescriptorCount; textureIndex++){
-            auto binding = globalDescriptors ? desc.textures[textureIndex]
-                                             : desc.perFrameTextures[textureIndex].textures[frame];
+            DescriptorSetDesc::TextureBinding binding = desc.textures[textureIndex];
+            Handle<Texture> handle = globalDescriptors ? binding.texture
+                                                      : binding.textures[frame];
             VkDescriptorImageInfo textureInfo {
-                .sampler      = get<Texture>(binding.texture)->sampler,
-                .imageView    = get<Texture>(binding.texture)->view,
+                .sampler      = get<Texture>(handle)->sampler,
+                .imageView    = get<Texture>(handle)->view,
                 .imageLayout  = VK_IMAGE_LAYOUT_PREINITIALIZED
             };
 

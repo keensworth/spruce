@@ -259,31 +259,25 @@ typedef struct DescriptorSetLayoutDesc {
 // --------------------------------------------------------- //
 typedef struct DescriptorSetDesc {
     static const uint32 ALL_BYTES = 0xFFFFFFFF;
-
+    
     typedef struct TextureBinding {
+        // used for global textures (shared over frames)
         Handle<Texture> texture;
-        TextureDesc::Sampler sampler; // override
-        TextureDesc::View view;   // override
+        // used for per-frame textures
+        std::vector<Handle<Texture>> textures;
     } TextureBinding;
 
     typedef struct BufferBinding {
+        // used for global buffers (shared over frames)
         Handle<Buffer> buffer;
+        // used for per-frame buffers
+        std::vector<Handle<Buffer>> buffers;
         uint32 byteOffset = 0;
         uint32 byteSize   = ALL_BYTES;
     } BufferBinding;
 
-    typedef struct PerFrameTextureBinding {
-        std::vector<TextureBinding> textures;
-    } PerFrameTextureBinding;
-
-    typedef struct PerFrameBufferBinding {
-        std::vector<BufferBinding> buffers;
-    } PerFrameBufferBinding;
-
     std::vector<TextureBinding> textures;
     std::vector<BufferBinding> buffers;
-    std::vector<PerFrameTextureBinding> perFrameTextures;
-    std::vector<PerFrameBufferBinding> perFrameBuffers;
     Handle<DescriptorSetLayout> layout;
 } DescriptorSetDesc;
 
