@@ -95,8 +95,10 @@ typedef struct DescriptorSetLayout {
 //                 Descriptor Set                            // 
 // --------------------------------------------------------- //
 typedef struct DescriptorSet {
-    bool dynamic = false;
+    //  global ==> (size == 1)
+    // !global ==> (size == MAX_FRAME_COUNT)
     std::vector<VkDescriptorSet> descriptorSets;
+    bool global = false;
 } DescriptorSet;
 
 
@@ -258,7 +260,7 @@ typedef struct DescriptorSetLayoutDesc {
 typedef struct DescriptorSetDesc {
     static const uint32 ALL_BYTES = 0xFFFFFFFF;
 
-    typedef struct TextureBinding{
+    typedef struct TextureBinding {
         Handle<Texture> texture;
         TextureDesc::Sampler sampler; // override
         TextureDesc::View view;   // override
@@ -270,9 +272,18 @@ typedef struct DescriptorSetDesc {
         uint32 byteSize   = ALL_BYTES;
     } BufferBinding;
 
-    bool dynamic = false;
+    typedef struct PerFrameTextureBinding {
+        std::vector<TextureBinding> textures;
+    } PerFrameTextureBinding;
+
+    typedef struct PerFrameBufferBinding {
+        std::vector<BufferBinding> buffers;
+    } PerFrameBufferBinding;
+
     std::vector<TextureBinding> textures;
     std::vector<BufferBinding> buffers;
+    std::vector<PerFrameTextureBinding> perFrameTextures;
+    std::vector<PerFrameBufferBinding> perFrameBuffers;
     Handle<DescriptorSetLayout> layout;
 } DescriptorSetDesc;
 

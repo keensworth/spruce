@@ -395,37 +395,50 @@ Handle<DescriptorSet> VulkanResourceManager::create<DescriptorSet>(DescriptorSet
     // descriptor set layout from handle in desc
     DescriptorSetLayout* layout = get<DescriptorSetLayout>(desc.layout);
 
-    // meta
-    uint32 descriptorSetCount = desc.dynamic ? MAX_FRAME_COUNT : 1;
+    // get descriptor counts
+    uint32 globalDescriptorCount = desc.textures.size() + desc.buffers.size();
+    uint32 perFrameDescriptorCount = desc.perFrameTextures.size() + desc.perFrameBuffers.size();
+    if (globalDescriptorCount > 0 && perFrameDescriptorCount > 0){
+        SprLog::error("VRM: [DESCRIPTOR SET] Cannot use both global and per-frame descriptors in one set");
+    }
+    if (globalDescriptorCount == 0 && perFrameDescriptorCount == 0){
+        SprLog::error("VRM: [DESCRIPTOR SET] Cannot manually create descriptor set with no descriptors");
+    }
+    bool globalDescriptors = globalDescriptorCount > 0;
 
+    // allocate and write descriptor set(s)
+    //      will run once if using global descriptors (shared over frames)
+    //      will run MAX_FRAME_COUNT if using per-frame descriptors 
     std::vector<VkDescriptorSet> vulkanDescriptorSets;
-    for (uint32 i = 0; i < descriptorSetCount; i++){
+    uint32 descriptorSetCount = globalDescriptors ? 1 : MAX_FRAME_COUNT;
+    for (uint32 frame = 0; frame < descriptorSetCount; frame++){
         // build descriptor set info
-        VkDescriptorPool descriptorPool = desc.dynamic ? m_dynamicDescriptorPools[i] : m_globalDescriptorPool;
+        VkDescriptorPool descriptorPool = globalDescriptors ? m_globalDescriptorPool 
+                                                            : m_dynamicDescriptorPools[frame];
         VkDescriptorSetAllocateInfo descriptorSetAllocInfo {
             .sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_ALLOCATE_INFO,
-            .descriptorPool = desc.dynamic ? m_dynamicDescriptorPools[i] : m_globalDescriptorPool,
+            .descriptorPool = descriptorPool,
             .descriptorSetCount = descriptorSetCount,
             .pSetLayouts = &(layout->descriptorSetLayout)
         };
 
-        // allocate descriptor sets
+        // allocate descriptor set
         VkDescriptorSet vulkanDescriptorSet;
         VK_CHECK(vkAllocateDescriptorSets(m_device, NULL, &vulkanDescriptorSet));
         vulkanDescriptorSets.push_back(vulkanDescriptorSet);
 
-        // write buffer descriptor sets
-        uint32 bufferIndex = 0;
-        for (auto bufferBinding : desc.buffers){
-            // build buffer info
+        // write buffer descriptors 
+        uint32 bufferDescriptorCount = desc.buffers.size() + desc.perFrameBuffers.size();
+        for (uint32 bufferIndex = 0; bufferIndex < bufferDescriptorCount; bufferIndex++){
+            auto binding = globalDescriptors ? desc.buffers[bufferIndex]
+                                             : desc.perFrameBuffers[bufferIndex].buffers[frame];
             VkDescriptorBufferInfo bufferInfo {
-                .buffer = get<Buffer>(bufferBinding.buffer)->buffer,
-                .offset = bufferBinding.byteOffset,
-                .range  = (bufferBinding.byteSize == DescriptorSetDesc::ALL_BYTES)
-                        ? VK_WHOLE_SIZE : bufferBinding.byteSize,
+                .buffer = get<Buffer>(binding.buffer)->buffer,
+                .offset = binding.byteOffset,
+                .range  = (binding.byteSize == DescriptorSetDesc::ALL_BYTES)
+                        ? VK_WHOLE_SIZE : binding.byteSize,
             };
 
-            // build and push descriptor set write
             VkWriteDescriptorSet descriptorSetWrite {
                 .sType           = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET,
                 .dstSet          = vulkanDescriptorSet,
@@ -435,23 +448,20 @@ Handle<DescriptorSet> VulkanResourceManager::create<DescriptorSet>(DescriptorSet
                 .pBufferInfo     = &bufferInfo
             };
             
-            // update descriptor set
             vkUpdateDescriptorSets(m_device, 1, &descriptorSetWrite, 0, NULL);
-
-            bufferIndex++;
         }
 
-        // write texture descriptor sets
-        uint32 textureIndex = 0;
-        for (auto textureBinding : desc.textures){
-            // build texture info
+        // write texture descriptors
+        uint32 textureDescriptorCount = desc.textures.size() + desc.perFrameTextures.size();
+        for (uint32 textureIndex = 0; textureIndex < textureDescriptorCount; textureIndex++){
+            auto binding = globalDescriptors ? desc.textures[textureIndex]
+                                             : desc.perFrameTextures[textureIndex].textures[frame];
             VkDescriptorImageInfo textureInfo {
-                .sampler      = get<Texture>(textureBinding.texture)->sampler,
-                .imageView    = get<Texture>(textureBinding.texture)->view,
+                .sampler      = get<Texture>(binding.texture)->sampler,
+                .imageView    = get<Texture>(binding.texture)->view,
                 .imageLayout  = VK_IMAGE_LAYOUT_PREINITIALIZED
             };
 
-            // build and push descriptor set write
             VkWriteDescriptorSet descriptorSetWrite {
                 .sType           = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET,
                 .dstSet          = vulkanDescriptorSet,
@@ -461,17 +471,14 @@ Handle<DescriptorSet> VulkanResourceManager::create<DescriptorSet>(DescriptorSet
                 .pImageInfo      = &textureInfo
             };
             
-            // update descriptor set
             vkUpdateDescriptorSets(m_device, 1, &descriptorSetWrite, 0, NULL);
-
-            textureIndex++;
         }
     }
     
     // create descriptor set resource, return handle
     DescriptorSet descriptorSet {
-        .dynamic = desc.dynamic,
-        .descriptorSets = vulkanDescriptorSets
+        .descriptorSets = vulkanDescriptorSets,
+        .global = globalDescriptors
     };
     return descriptorSetCache->insert(descriptorSet);
 }
@@ -603,7 +610,7 @@ Handle<RenderPass> VulkanResourceManager::create<RenderPass>(RenderPassDesc desc
         samples = attachment.samples;
     }
 
-    // build subpass dependencies // TODO all
+    // build subpass dependencies
     VkSubpassDependency inDependency;
     VkSubpassDependency outDependency;
     if (swapchainOverride){ // special case for swapchain image attachments
