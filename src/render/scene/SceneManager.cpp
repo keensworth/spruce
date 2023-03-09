@@ -1,4 +1,5 @@
 #include "SceneManager.h"
+#include "BatchNode.h"
 
 namespace spr::gfx {
 
@@ -12,18 +13,30 @@ SceneManager::~SceneManager(){
 void SceneManager::insertMesh(uint32 frame, uint32 meshId, uint32 materialFlags, glm::mat4 model, glm::mat4 modelInvTranspose){
     // get mesh data and fill draw
     MeshData& meshData = m_meshData[meshId];
-    DrawData draw {
-        .vertexOffset = meshData.vertexOffset,  
-        .indexCount = meshData.indexCount,
-        .materialIndex = meshData.materialIndex, 
+    DrawData draw = {
+        .vertexOffset   = meshData.vertexOffset,  
+        .materialIndex  = meshData.materialIndex, 
         .transformIndex = m_transforms[frame % MAX_FRAME_COUNT].insert({
             model,
             modelInvTranspose
         })
     };
 
-    // store and batch draw
-    m_batchManagers[frame % MAX_FRAME_COUNT].addDraw(draw, meshId, materialFlags);
+    uint32 drawDataOffset = m_drawData[frame % MAX_FRAME_COUNT].insert(draw);
+
+    // fill out batch info, which will either initialize
+    // a new batch or update an existing one
+    Batch batchInfo = {
+        .meshId         = meshId,
+        .materialFlags  = materialFlags,
+        .indexCount     = meshData.indexCount,
+        .firstIndex     = meshData.firstIndex,
+        .drawDataOffset = drawDataOffset,
+        .drawCount      = 1
+    };
+
+    m_batchManagers[frame % MAX_FRAME_COUNT].addDraw(draw, batchInfo);
+    
 }
 
 void SceneManager::insertLight(uint32 frame, Light light){
@@ -40,26 +53,30 @@ TempBuffer<Light>& SceneManager::getLights(uint32 frame) {
 }
 
 TempBuffer<Transform>& SceneManager::getTransforms(uint32 frame) {
-return m_transforms[frame % MAX_FRAME_COUNT];
+    return m_transforms[frame % MAX_FRAME_COUNT];
 }
 
-TempBuffer<Camera>& SceneManager::getCamera(uint32 frame) {
-return m_cameras[frame % MAX_FRAME_COUNT];
+TempBuffer<DrawData>& SceneManager::getDrawData(uint32 frame) {
+    return m_drawData[frame % MAX_FRAME_COUNT];
+}
+
+TempBuffer<Camera>& SceneManager::getCamera(uint32 frame){
+    return m_cameras[frame % MAX_FRAME_COUNT];
 }
 
 TempBuffer<Scene>& SceneManager::getScene(uint32 frame) {
-return m_sceneData[frame % MAX_FRAME_COUNT];
+    return m_sceneData[frame % MAX_FRAME_COUNT];
 }
 
 BatchManager& SceneManager::getBatchManager(uint32 frame) {
-return m_batchManagers[frame % MAX_FRAME_COUNT];
+    return m_batchManagers[frame % MAX_FRAME_COUNT];
 }
 
 void SceneManager::reset(uint32 frame) {
     m_batchManagers[frame % MAX_FRAME_COUNT].reset();
     m_transforms[frame % MAX_FRAME_COUNT].reset();
     m_lights[frame % MAX_FRAME_COUNT].reset();
-    m_cameras[frame % MAX_FRAME_COUNT].reset();
+    m_drawData[frame % MAX_FRAME_COUNT].reset();
     m_sceneData[frame % MAX_FRAME_COUNT].reset();
 }
 

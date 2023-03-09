@@ -27,11 +27,13 @@ public:
     TempBuffer<Light>& getLights(uint32 frame);
     TempBuffer<Transform>& getTransforms(uint32 frame);
     TempBuffer<Camera>& getCamera(uint32 frame);
+    TempBuffer<DrawData>& getDrawData(uint32 frame);
     TempBuffer<Scene>& getScene(uint32 frame);
 
     BatchManager& getBatchManager(uint32 frame);
 
 private:
+    TempBuffer<DrawData> m_drawData[MAX_FRAME_COUNT];
     TempBuffer<Camera> m_cameras[MAX_FRAME_COUNT];
     TempBuffer<Scene> m_sceneData[MAX_FRAME_COUNT];
     TempBuffer<Light> m_lights[MAX_FRAME_COUNT];
