@@ -14,32 +14,30 @@ BatchNode::BatchNode(uint32 height){
     if (m_height > 0){
         m_nodeData = std::vector<BatchNode*>(16);
     } else {
-        m_leafData = std::vector<ska::flat_hash_map<uint32, BatchDraws>>(16);
+        m_leafData = std::vector<ska::flat_hash_map<uint32, DrawBatch>>(16);
     }
 }
 
 
-//add
-void BatchNode::add(uint32 materialFlags, uint32 meshId, DrawData draw){
+void BatchNode::add(DrawData draw, Batch batchInfo){
     uint32 currIndex;
     BatchNode* currNode = this;
 
     for (uint32 height = m_height; height > 0; height--){
-        currIndex = subIndex(materialFlags, height);
+        currIndex = subIndex(batchInfo.materialFlags, height);
 
-        if (!currNode->getBranch(currIndex)->m_initialized){
+        if (currNode->getBranch(currIndex) == nullptr){
             currNode->buildBranch(currIndex, height);
-            currNode->setBit(currIndex,1);
         }
 
         currNode = currNode->getBranch(currIndex);
     }
 
-    currIndex = subIndex(materialFlags, currNode->getHeight());
-    currNode->addLeafData(currIndex, meshId, draw);
+    currIndex = subIndex(batchInfo.materialFlags, currNode->getHeight());
+    currNode->addLeafData(currIndex, draw, batchInfo);
 }
 
-//remove
+
 void BatchNode::remove(uint32 materialFlags){
     uint32 currIndex;
     BatchNode* currNode = this;
@@ -47,7 +45,7 @@ void BatchNode::remove(uint32 materialFlags){
     for (uint32 height = m_height; height > 0; height--){
         currIndex = subIndex(materialFlags, height);
 
-        if (!currNode->getBranch(currIndex)->m_initialized){
+        if (currNode->getBranch(currIndex) == nullptr){
             return;
         }
 
@@ -58,106 +56,86 @@ void BatchNode::remove(uint32 materialFlags){
     currNode->removeLeafData(currIndex);
 }
 
-//get
-std::vector<Batch> BatchNode::get(uint32 materialFlags){
-    uint32 currIndex;
-    BatchNode* currNode = this;
 
-    for (uint32 height = m_height; height > 0; height--){
-        currIndex = subIndex(materialFlags, height);
+void BatchNode::get(BatchMaterialQuery query, std::vector<DrawBatch>& result){
+    QueryType queryType = {
+        .usesHasAll     = (query.hasAll != 0),
+        .usesHasAny     = (query.hasAny != 0),
+        .usesHasExactly = (query.hasExactly != 0),
+        .usesExcludes   = (query.excludes != 0)
+    };
 
-        if (!currNode->getBranch(currIndex)->m_initialized){
-            return std::vector<Batch>();
-        }
-
-        currNode = currNode->getBranch(currIndex);
-    }
-
-    currIndex = subIndex(materialFlags, currNode->getHeight());
-    return currNode->getLeafData(currIndex);
+    getRec(query, result, queryType);
 }
 
-std::vector<Batch> BatchNode::getAny(uint32 materialFlags){
-    uint32 currIndex = subIndex(materialFlags, m_height);
-    std::vector<Batch> accum;
-    accum.reserve((m_height+1)*256);
-    for (uint32 i = 0; i < 16; i++){
-        if (m_height > 0){
-            if (!((((currIndex & i) != 0) || ((currIndex & i) == currIndex)) && getBranch(i)->m_initialized)){
+
+void BatchNode::getRec(BatchMaterialQuery query, std::vector<DrawBatch>& result, QueryType queryType){
+    uint32 hasAllMask     = subIndex(query.hasAll, m_height);
+    uint32 hasAnyMask     = subIndex(query.hasAll, m_height);
+    uint32 hasExactlyMask = subIndex(query.hasAll, m_height);
+    uint32 excludesMask   = subIndex(query.hasAll, m_height);
+
+    // check each branch for query validity
+    for(uint32 branchMask = 0; branchMask < 16; branchMask++){
+        // check conditions for each query type
+        bool hasAllValid     = (hasAllMask & branchMask) == hasAllMask;
+        bool hasAnyValid     = (hasAnyMask & branchMask) != 0;
+        bool hasExactlyValid = (hasExactlyMask == branchMask);
+        bool excludesValid   = (excludesMask & branchMask) == 0;
+
+        // verify that every query being used is satisfied
+        if (queryType.usesHasExactly && !hasExactlyValid)
+            continue;
+        if (queryType.usesHasAll && !hasAllValid)
+            continue;
+        if (queryType.usesExcludes && !excludesValid)
+            continue;
+        if (queryType.usesHasAny && !hasAnyValid)
+            continue;
+
+        // relevant queries are satisfied, progress down tree
+        // or grab draw batches from leaves
+        if(m_height > 0){
+            BatchNode* node = getBranch(branchMask);
+            if (node == nullptr)
                 continue;
-            }
-            BatchNode* node = getBranch(i);
-            std::vector<Batch> batches = node->getAny(materialFlags);
-            accum.insert(accum.end(), batches.begin(), batches.end());
+            node->getRec(query, result, queryType);
         } else {
-            if (!((((currIndex & i) != 0) || ((currIndex & i) == currIndex)) && m_initialized)){
-                continue;
-            }
-            std::vector<Batch> batches = getLeafData(i);
-            accum.insert(accum.end(), batches.begin(), batches.end());
+            getLeafData(branchMask, result);
         }
     }
-
-    return accum;
 }
 
-// void BatchNode::uploadDrawData(){
-//     if (!getBranch(i)->m_initialized)
-//                 continue;
-            
-//             uploadDrawDataRec(rm, getBranch(i)); // go down correct branch
-// }
 
-// void BatchNode::uploadDrawDataRec(BatchNode* batchNode){
-//     for (uint32 i = 0; i < 16; i++){
-//         if (m_height > 0){
-//             if (!getBranch(i)->m_initialized)
-//                 continue;
-            
-//             uploadDrawDataRec(getBranch(i), rm); // go down correct branch
-            
-//         } else {
-//             if (!m_initialized)
-//                 continue;
+void BatchNode::addLeafData(uint32 branchIndex, DrawData draw, Batch batchInfo){
+    ska::flat_hash_map<uint32, DrawBatch> leafNode = m_leafData.at(branchIndex);
 
-//             for(auto item : m_leafData[i]){
-//                 BatchDraws& batchDraws = item.second;
-//                 uint32 drawDataOffset = rm->addDrawData(batchDraws.draws); // TODO: bump allocator
-//                 batchDraws.batch.drawDataOffset = drawDataOffset;
-//                 batchDraws.batch.drawCount = batchDraws.draws.size();
-//             }
-//         }
-//     }
-// }
-
-
-
-void BatchNode::addLeafData(uint32 materialFlags, uint32 meshId, DrawData draw){
-    if (!m_leafData.at(materialFlags).count(meshId)) {
-        m_leafData.at(materialFlags)[meshId] = BatchDraws();
-        BatchDraws& batchDraws = m_leafData.at(materialFlags)[meshId];
-        batchDraws.batch = Batch();
-        batchDraws.batch.meshId = meshId;
-        batchDraws.batch.materialFlags = materialFlags;
-        return;
+    // insert a new drawbatch if none exists for this material/mesh pair
+    if (!leafNode.count(batchInfo.meshId)) {
+        leafNode[batchInfo.meshId] = DrawBatch();
+        leafNode[batchInfo.meshId].batch = batchInfo;
+    } else {
+        leafNode[batchInfo.meshId].batch.drawCount++;
     }
 
-    m_leafData.at(materialFlags)[meshId].draws.push_back(draw);
+    // add draw to existing draw batch 
+    leafNode[batchInfo.meshId].draws.push_back(draw);
 }
 
-void BatchNode::removeLeafData(uint32 key){
-    m_leafData.at(key) = ska::flat_hash_map<uint32, BatchDraws>();
+void BatchNode::removeLeafData(uint32 branchIndex){
+    m_leafData.at(branchIndex) = ska::flat_hash_map<uint32, DrawBatch>();
 }
 
-std::vector<Batch> BatchNode::getLeafData(uint32 key){
-    std::vector<Batch> batches;
-    for(auto item : m_leafData.at(key))
-        batches.push_back(item.second.batch);
-    return batches;
+void BatchNode::getLeafData(uint32 branchIndex, std::vector<DrawBatch>& dst){
+    // iterate over every materialFlags/DrawBatch pair
+    // at the given branch and store them in dst
+    for(auto item : m_leafData.at(branchIndex))
+        dst.push_back(item.second);
 }
 
 
 void BatchNode::buildBranch(uint32 branchIndex, uint32 height){
+    setBit(branchIndex,1);
     m_nodeData.at(branchIndex) = new BatchNode(height-1);
 }
 
@@ -168,6 +146,7 @@ BatchNode* BatchNode::getBranch(uint32 branchIndex){
 void BatchNode::setBranch(uint32 branchIndex, BatchNode* branchData){
     m_nodeData.at(branchIndex) = branchData;
 }
+
 
 uint32 BatchNode::subIndex(uint32 num, uint32 height){
     return ((num>>(height*4))&0b1111);

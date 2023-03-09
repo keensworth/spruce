@@ -3,16 +3,12 @@
 
 namespace spr::gfx {
 
-void BatchManager::addDraw(DrawData draw, uint32 meshId, uint32 materialFlags){
-    m_batches.add(materialFlags, meshId, draw);
+void BatchManager::addDraw(DrawData draw, Batch batchInfo){
+    m_batches.add(draw, batchInfo);
 }
 
-std::vector<Batch> BatchManager::getBatches(uint32 materialFlags){
-    return m_batches.getAny(materialFlags);
-}
-
-void BatchManager::prepareDraws(){
-    //m_batches.uploadDrawData(rm);
+void BatchManager::getDrawBatches(BatchMaterialQuery query, std::vector<DrawBatch>& result){
+    m_batches.get(query, result);
 }
 
 void BatchManager::reset(){
