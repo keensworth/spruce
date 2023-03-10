@@ -17,7 +17,7 @@ public:
     ~UploadHandler();
 
     template <typename T>
-    void uploadBuffer(TempBuffer<T> src, Handle<Buffer> dst) {
+    void uploadBuffer(TempBuffer<T>& src, Handle<Buffer> dst) {
         m_bufferUploadQueue.push_back({
             .pSrc = src.getData(),
             .size = src.getSize(),
@@ -26,7 +26,7 @@ public:
     }
 
     template <typename T>
-    void uploadDyanmicBuffer(TempBuffer<T> src, Handle<Buffer> dst) {
+    void uploadDyanmicBuffer(TempBuffer<T>& src, Handle<Buffer> dst) {
         m_dynamicBufferUploadQueue.push_back({
             .pSrc = src.getData(),
             .size = src.getSize(),
@@ -35,7 +35,7 @@ public:
     }
 
     template <typename T>
-    void uploadTexture(TempBuffer<T> src, Handle<Texture> dst) {
+    void uploadTexture(TempBuffer<T>& src, Handle<Texture> dst) {
         m_textureUploadQueue.push_back({
             .pSrc = src.getData(),
             .size = src.getSize(),
