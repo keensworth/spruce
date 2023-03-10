@@ -21,7 +21,6 @@ private:
     Window* m_window;
     VulkanResourceManager m_rm;
     VulkanRenderer m_renderer;
-
     uint32 m_frame = 0;
 
     Handle<Buffer> m_lightsBuffer;

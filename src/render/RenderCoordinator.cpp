@@ -1,4 +1,6 @@
 #include "RenderCoordinator.h"
+#include "scene/Draw.h"
+#include "scene/Material.h"
 #include "scene/SceneData.h"
 #include "scene/SceneManager.h"
 #include "vulkan/CommandBuffer.h"
@@ -16,7 +18,6 @@ RenderCoordinator::RenderCoordinator(Window* window){
     m_renderer = VulkanRenderer(window, &m_rm);
     m_rm.init(m_renderer.getDevice(), m_renderer.getAllocator());
 
-
     initBuffers();
     initRenderers();
 }
@@ -33,6 +34,8 @@ void RenderCoordinator::render(SceneManager& sceneManager){
     // upload scene resources
     uploadResources(sceneManager);
 
+    BatchManager& batchManager = sceneManager.getBatchManager(m_frame);
+
     // PASS 1
     // PASS 2
     // PASS 3
@@ -40,9 +43,10 @@ void RenderCoordinator::render(SceneManager& sceneManager){
     // PASS N
 
     // render to swapchain image
-    // TODO: passing in renderpass/framebuffers...
     m_frameRenderer.render();
 
+    // present result
+    m_renderer.present(frame);
     m_frame = m_renderer.getFrameId();
 }
 
@@ -76,7 +80,7 @@ void RenderCoordinator::initRenderers(){
 
 void RenderCoordinator::initBuffers(){
     Handle<Buffer> m_lightsBuffer = m_rm.create<Buffer>(BufferDesc{
-        .byteSize = (uint32) (MAX_DRAWS * MAX_FRAME_COUNT * sizeof(Light)),
+        .byteSize = (uint32) (MAX_LIGHTS * MAX_FRAME_COUNT * sizeof(Light)),
         .usage = Flags::BufferUsage::BU_STORAGE_BUFFER |
                  Flags::BufferUsage::BU_TRANSFER_DST,
         .memType = DEVICE | HOST
@@ -90,7 +94,7 @@ void RenderCoordinator::initBuffers(){
     });
 
     Handle<Buffer> m_drawDataBuffer = m_rm.create<Buffer>(BufferDesc{
-        .byteSize = (uint32) (MAX_DRAWS * MAX_FRAME_COUNT * sizeof(Camera)),
+        .byteSize = (uint32) (MAX_DRAWS * MAX_FRAME_COUNT * sizeof(DrawData)),
         .usage = Flags::BufferUsage::BU_STORAGE_BUFFER |
                  Flags::BufferUsage::BU_TRANSFER_DST,
         .memType = DEVICE | HOST
