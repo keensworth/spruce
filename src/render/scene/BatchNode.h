@@ -38,6 +38,7 @@ private:
         bool usesHasAny;
         bool usesHasExactly;
         bool usesExcludes;
+        bool foundAny;
     } QueryType;
 
     void getRec(BatchMaterialQuery query, std::vector<DrawBatch>& result, QueryType queryType);
@@ -46,6 +47,7 @@ private:
     void removeLeafData(uint32 branchIndex);
     void getLeafData(uint32 branchIndex, std::vector<DrawBatch>& dst);
 
+    bool branchInitialized(uint32 branchIndex);
     void buildBranch(uint32 branchIndex, uint32 height);
     BatchNode* getBranch(uint32 branchIndex);
     void setBranch(uint32 branchIndex, BatchNode* branchData);
