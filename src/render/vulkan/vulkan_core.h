@@ -16,6 +16,8 @@
 namespace spr::gfx {
 
 static const uint32 MAX_FRAME_COUNT = 3;
+static const uint32 MAX_DRAWS = 1<<17; // 2^18 draws
+
 
 typedef struct QueueFamilies{
     std::optional<uint32> graphicsFamilyIndex;

@@ -6,7 +6,6 @@
 #include "vulkan/FrameRenderer.h"
 
 
-
 namespace spr::gfx{
 
 class RenderCoordinator{
@@ -30,9 +29,7 @@ private:
     Handle<Buffer> m_drawDataBuffer;
     Handle<Buffer> m_cameraBuffer;
     Handle<Buffer> m_sceneBuffer;
-
-    const uint32 MAX_DRAWS = 1<<17; // 2^18 draws
-
+    
     void initBuffers();
     void initRenderers();
     void uploadResources(SceneManager& sceneManager);
