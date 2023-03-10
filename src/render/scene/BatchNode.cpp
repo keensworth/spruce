@@ -79,7 +79,7 @@ void BatchNode::getRec(BatchMaterialQuery query, std::vector<DrawBatch>& result,
     for(uint32 branchMask = 0; branchMask < 16; branchMask++){
         // check conditions for each query type
         bool hasAllValid     = (hasAllMask & branchMask) == hasAllMask;
-        bool hasAnyValid     = (hasAnyMask & branchMask) != 0;
+        bool hasAnyValid     = ((hasAnyMask & branchMask) != 0) || (hasAnyMask == branchMask);
         bool hasExactlyValid = (hasExactlyMask == branchMask);
         bool excludesValid   = (excludesMask & branchMask) == 0;
 
