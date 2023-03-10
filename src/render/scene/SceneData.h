@@ -27,6 +27,8 @@ typedef struct MeshData {
 //                 Light Info                                // 
 // --------------------------------------------------------- //
 
+static const uint32 MAX_LIGHTS = 2048;
+
 typedef enum LightType {
     POINT,
     SPOT,
