@@ -16,7 +16,7 @@ VulkanRenderer::VulkanRenderer() {
 
 }
 
-VulkanRenderer::VulkanRenderer(Window* window, VulkanResourceManager* rm) : m_device(VulkanDevice()), m_display(VulkanDisplay(window)){
+VulkanRenderer::VulkanRenderer(Window* window) : m_device(VulkanDevice()), m_display(VulkanDisplay(window)){
     // create device info, instance, and physical device
     m_device.createInfo(*window);
     m_device.createInstance(*window);
@@ -52,6 +52,22 @@ VulkanRenderer::VulkanRenderer(Window* window, VulkanResourceManager* rm) : m_de
         VK_CHECK(vkCreateFence(m_device.getDevice(), &fenceInfo, NULL, &m_frames[frame].acquiredFence));
     }
 
+    // create allocator
+    VmaAllocatorCreateInfo allocatorCreateInfo = {
+        .physicalDevice   = m_device.getPhysicalDevice(),
+        .device           = m_device.getDevice(),
+        .instance         = m_device.getInstance(),
+        .vulkanApiVersion = VK_API_VERSION_1_2
+    };
+    vmaCreateAllocator(&allocatorCreateInfo, &m_allocator);
+}
+
+VulkanRenderer::~VulkanRenderer(){
+
+}
+
+
+void VulkanRenderer::init(VulkanResourceManager *rm){
     // create command pools (1/frame/queue family)
     QueueFamilies queueFamilies = m_device.getQueueFamilies();
     for (uint32 frame = 0; frame < MAX_FRAME_COUNT; frame++){
@@ -64,25 +80,12 @@ VulkanRenderer::VulkanRenderer(Window* window, VulkanResourceManager* rm) : m_de
         m_transferCommandPools[frame] = CommandPool(m_device, queueFamilies.transferFamilyIndex.value(), rm, m_frames[frame]);
     }
 
-    // create allocator
-    VmaAllocatorCreateInfo allocatorCreateInfo = {
-        .physicalDevice   = m_device.getPhysicalDevice(),
-        .device           = m_device.getDevice(),
-        .instance         = m_device.getInstance(),
-        .vulkanApiVersion = VK_API_VERSION_1_2
-    };
-    vmaCreateAllocator(&allocatorCreateInfo, &m_allocator);
-
     // create upload handlers
     for (uint32 frame = 0; frame < MAX_FRAME_COUNT; frame++){
         CommandBuffer& transferCommandBuffer = m_transferCommandPools[frame].getCommandBuffer(CommandType::TRANSFER);
         CommandBuffer& graphicsCommandBuffer = m_commandPools[frame].getCommandBuffer(CommandType::OFFSCREEN);
         m_uploadHandlers[frame] = UploadHandler(m_device, *rm, transferCommandBuffer, graphicsCommandBuffer);
     }   
-}
-
-
-VulkanRenderer::~VulkanRenderer(){
 }
 
 

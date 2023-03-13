@@ -1,6 +1,5 @@
 #pragma once
 
-#include <vulkan/vulkan_core.h>
 #include "VulkanDevice.h"
 #include "VulkanDisplay.h"
 #include "CommandPool.h"
@@ -14,8 +13,10 @@ namespace spr::gfx{
 class VulkanRenderer{
 public:
     VulkanRenderer();
-    VulkanRenderer(Window* window, VulkanResourceManager* rm);
+    VulkanRenderer(Window* window);
     ~VulkanRenderer();
+
+    void init(VulkanResourceManager* rm);
 
     RenderFrame& beginFrame();
     void present(RenderFrame& frame);
@@ -30,9 +31,7 @@ public:
     VulkanDisplay& getDisplay();
     VmaAllocator& getAllocator();
 
-private:
-    
-    uint32 m_framesInFlight = 2;
+private:    
     uint32 m_imageCount = 0;
     uint32 m_currFrame = 0;
 
