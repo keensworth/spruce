@@ -60,7 +60,7 @@ void BatchNode::remove(uint32 materialFlags){
 }
 
 
-void BatchNode::get(BatchMaterialQuery query, std::vector<DrawBatch>& result){
+void BatchNode::getBatches(MaterialQuery query, std::vector<Batch>& result){
     QueryType queryType = {
         .usesHasAll     = (query.hasAll != 0),
         .usesHasAny     = (query.hasAny != 0),
@@ -69,11 +69,11 @@ void BatchNode::get(BatchMaterialQuery query, std::vector<DrawBatch>& result){
         .foundAny = false
     };
 
-    getRec(query, result, queryType);
+    getBatchesRec(query, result, queryType);
 }
 
 
-void BatchNode::getRec(BatchMaterialQuery query, std::vector<DrawBatch>& result, QueryType queryType){
+void BatchNode::getBatchesRec(MaterialQuery query, std::vector<Batch>& result, QueryType queryType){
     uint32 hasAllMask     = subIndex(query.hasAll, m_height);
     uint32 hasAnyMask     = subIndex(query.hasAny, m_height);
     uint32 hasExactlyMask = subIndex(query.hasExactly, m_height);
@@ -81,6 +81,8 @@ void BatchNode::getRec(BatchMaterialQuery query, std::vector<DrawBatch>& result,
 
     // check each branch for query validity
     for(uint32 branchMask = 0; branchMask < 16; branchMask++){
+        if (!branchInitialized(branchMask))
+                continue;
         // check conditions for each query type
         bool hasAllValid     = (hasAllMask & branchMask) == hasAllMask;
         bool hasAnyValid     = (hasAnyMask & branchMask) != 0;
@@ -100,14 +102,65 @@ void BatchNode::getRec(BatchMaterialQuery query, std::vector<DrawBatch>& result,
         // relevant queries are satisfied, progress down tree
         // or grab draw batches from leaves
         if(m_height > 0){
-            if (!branchInitialized(branchMask))
-                continue;
             BatchNode* node = getBranch(branchMask);
-            node->getRec(query, result, queryType);
+            node->getBatchesRec(query, result, queryType);
         } else {
             if (queryType.usesHasAny && !queryType.foundAny)
                 continue;
-            getLeafData(branchMask, result);
+            getLeafBatches(branchMask, result);
+        }
+    }
+}
+
+
+void BatchNode::getDraws(MaterialQuery query, TempBuffer<DrawData>& result){
+    QueryType queryType = {
+        .usesHasAll     = (query.hasAll != 0),
+        .usesHasAny     = (query.hasAny != 0),
+        .usesHasExactly = (query.hasExactly != 0),
+        .usesExcludes   = (query.excludes != 0),
+        .foundAny = false
+    };
+
+    getDrawsRec(query, result, queryType);
+}
+
+
+void BatchNode::getDrawsRec(MaterialQuery query, TempBuffer<DrawData>& result, QueryType queryType){
+    uint32 hasAllMask     = subIndex(query.hasAll, m_height);
+    uint32 hasAnyMask     = subIndex(query.hasAny, m_height);
+    uint32 hasExactlyMask = subIndex(query.hasExactly, m_height);
+    uint32 excludesMask   = subIndex(query.excludes, m_height);
+
+    // check each branch for query validity
+    for(uint32 branchMask = 0; branchMask < 16; branchMask++){
+        if (!branchInitialized(branchMask))
+                continue;
+        // check conditions for each query type
+        bool hasAllValid     = (hasAllMask & branchMask) == hasAllMask;
+        bool hasAnyValid     = (hasAnyMask & branchMask) != 0;
+        bool hasExactlyValid = (hasExactlyMask == branchMask);
+        bool excludesValid   = (excludesMask & branchMask) == 0;
+
+        // verify that every query being used is satisfied
+        if (queryType.usesHasExactly && !hasExactlyValid)
+            continue;
+        if (queryType.usesHasAll && !hasAllValid)
+            continue;
+        if (queryType.usesExcludes && !excludesValid)
+            continue;
+        if (queryType.usesHasAny && hasAnyValid)
+            queryType.foundAny = true;
+
+        // relevant queries are satisfied, progress down tree
+        // or grab draw batches from leaves
+        if(m_height > 0){
+            BatchNode* node = getBranch(branchMask);
+            node->getDrawsRec(query, result, queryType);
+        } else {
+            if (queryType.usesHasAny && !queryType.foundAny)
+                continue;
+            getLeafDraws(branchMask, result);
         }
     }
 }
@@ -132,11 +185,22 @@ void BatchNode::removeLeafData(uint32 branchIndex){
     m_leafData.at(branchIndex) = ska::flat_hash_map<uint32, DrawBatch>();
 }
 
-void BatchNode::getLeafData(uint32 branchIndex, std::vector<DrawBatch>& dst){
+void BatchNode::getLeafBatches(uint32 branchIndex, std::vector<Batch>& dst){
     // iterate over every materialFlags/DrawBatch pair
-    // at the given branch and store them in dst
+    // at the given branch and store batch in dst
     for(auto item : m_leafData.at(branchIndex))
-        dst.push_back(item.second);
+        dst.push_back(item.second.batch);
+}
+
+void BatchNode::getLeafDraws(uint32 branchIndex, TempBuffer<DrawData>& dst){
+    // iterate over every materialFlags/DrawBatch pair
+    // at the given branch and store every set of draws
+    // in dst, storing the offset in the batch
+    for(auto item : m_leafData.at(branchIndex)){
+        DrawBatch& drawBatch = item.second;
+        uint32 drawDataOffset = dst.insert(drawBatch.draws.data(), drawBatch.draws.size());
+        drawBatch.batch.drawDataOffset = drawDataOffset;
+    }
 }
 
 

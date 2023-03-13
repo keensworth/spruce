@@ -4,6 +4,7 @@
 #include "spruce_core.h"
 #include "../../../external/flat_hash_map/flat_hash_map.hpp"
 #include "../vulkan/resource/VulkanResourceManager.h"
+#include "../../core/memory/TempBuffer.h"
 #include "Draw.h"
 
 namespace spr::gfx {
@@ -20,7 +21,8 @@ public:
 
     void add(DrawData draw, Batch batchInfo);
     void remove(uint32 materialFlags);
-    void get(BatchMaterialQuery query, std::vector<DrawBatch>& result);
+    void getBatches(MaterialQuery query, std::vector<Batch>& result);
+    void getDraws(MaterialQuery query, TempBuffer<DrawData>& result);
 
     uint32 getHeight(){
         return m_height;
@@ -41,11 +43,13 @@ private:
         bool foundAny;
     } QueryType;
 
-    void getRec(BatchMaterialQuery query, std::vector<DrawBatch>& result, QueryType queryType);
+    void getBatchesRec(MaterialQuery query, std::vector<Batch>& result, QueryType queryType);
+    void getDrawsRec(MaterialQuery query, TempBuffer<DrawData>& result, QueryType queryType);
 
     void addLeafData(uint32 branchIndex, DrawData draw, Batch batchInfo);
     void removeLeafData(uint32 branchIndex);
-    void getLeafData(uint32 branchIndex, std::vector<DrawBatch>& dst);
+    void getLeafBatches(uint32 branchIndex, std::vector<Batch>& dst);
+    void getLeafDraws(uint32 branchIndex, TempBuffer<DrawData>& dst);
 
     bool branchInitialized(uint32 branchIndex);
     void buildBranch(uint32 branchIndex, uint32 height);
