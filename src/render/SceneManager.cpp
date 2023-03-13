@@ -1,8 +1,19 @@
 #include "SceneManager.h"
+#include "scene/Mesh.h"
+#include "vulkan/vulkan_core.h"
 
 namespace spr::gfx {
 
-SceneManager::SceneManager(){
+SceneManager::SceneManager(){}
+
+SceneManager::SceneManager(VulkanResourceManager& rm){
+    m_initialized = false;
+    
+    for (uint32 i = 0; i < MAX_FRAME_COUNT; i++){
+        m_batchManagers[i] = BatchManager();
+    }
+
+    // per frame resource temp buffers
     for (uint32 i = 0; i < MAX_FRAME_COUNT; i++){        
         m_transforms[i] = TempBuffer<Transform>(MAX_DRAWS);
         m_drawData[i] = TempBuffer<DrawData>(MAX_DRAWS);
@@ -11,8 +22,25 @@ SceneManager::SceneManager(){
         m_sceneData[i] = TempBuffer<Scene>(1);
     }
 }
+
 SceneManager::~SceneManager(){
 
+}
+
+
+void SceneManager::initializeAssets(SprResourceManager &rm, VulkanResourceManager &vrm){
+
+    //
+    //
+
+    // initialize buffers
+    PrimitiveCounts counts = {
+        .vertexCount   = 0,
+        .indexCount    = 0,
+        .materialCount = 0,
+        .textureCount  = 0
+    };
+    initBuffers(vrm, counts);
 }
 
 
@@ -55,6 +83,81 @@ void SceneManager::updateCamera(uint32 frame, Camera camera){
 
 BatchManager& SceneManager::getBatchManager(uint32 frame) {
     return m_batchManagers[frame % MAX_FRAME_COUNT];
+}
+
+
+void SceneManager::initBuffers(VulkanResourceManager& rm, PrimitiveCounts counts){
+    // per frame resource handles
+    Handle<Buffer> m_lightsBuffer = rm.create<Buffer>(BufferDesc{
+        .byteSize = (uint32) (MAX_LIGHTS * MAX_FRAME_COUNT * sizeof(Light)),
+        .usage = Flags::BufferUsage::BU_STORAGE_BUFFER |
+                 Flags::BufferUsage::BU_TRANSFER_DST,
+        .memType = DEVICE | HOST
+    });
+
+    Handle<Buffer> m_transformBuffer = rm.create<Buffer>(BufferDesc{
+        .byteSize = (uint32) (MAX_DRAWS * MAX_FRAME_COUNT * sizeof(Transform)),
+        .usage = Flags::BufferUsage::BU_STORAGE_BUFFER |
+                 Flags::BufferUsage::BU_TRANSFER_DST,
+        .memType = DEVICE | HOST
+    });
+
+    Handle<Buffer> m_drawDataBuffer = rm.create<Buffer>(BufferDesc{
+        .byteSize = (uint32) (MAX_DRAWS * MAX_FRAME_COUNT * sizeof(DrawData)),
+        .usage = Flags::BufferUsage::BU_STORAGE_BUFFER |
+                 Flags::BufferUsage::BU_TRANSFER_DST,
+        .memType = DEVICE | HOST
+    });
+
+    Handle<Buffer> m_cameraBuffer = rm.create<Buffer>(BufferDesc{
+        .byteSize = (uint32) (MAX_FRAME_COUNT * sizeof(Camera)),
+        .usage = Flags::BufferUsage::BU_STORAGE_BUFFER |
+                 Flags::BufferUsage::BU_TRANSFER_DST,
+        .memType = DEVICE | HOST
+    });
+
+    Handle<Buffer> m_sceneBuffer = rm.create<Buffer>(BufferDesc{
+        .byteSize = (uint32) (MAX_FRAME_COUNT * sizeof(Scene)),
+        .usage = Flags::BufferUsage::BU_STORAGE_BUFFER |
+                 Flags::BufferUsage::BU_TRANSFER_DST,
+        .memType = DEVICE | HOST
+    });
+
+    // global resource handles
+    Handle<Buffer> m_positionsBuffer = rm.create<Buffer>(BufferDesc{
+        .byteSize = (uint32) (counts.vertexCount * sizeof(VertexPosition)),
+        .usage = Flags::BufferUsage::BU_STORAGE_BUFFER |
+                 Flags::BufferUsage::BU_TRANSFER_DST,
+        .memType = DEVICE | HOST
+    });
+
+    Handle<Buffer> m_attributesBuffer = rm.create<Buffer>(BufferDesc{
+        .byteSize = (uint32) (counts.vertexCount * sizeof(VertexAttributes)),
+        .usage = Flags::BufferUsage::BU_STORAGE_BUFFER |
+                 Flags::BufferUsage::BU_TRANSFER_DST,
+        .memType = DEVICE | HOST
+    });
+
+    Handle<Buffer> m_indexBuffer = rm.create<Buffer>(BufferDesc{
+        .byteSize = (uint32) (counts.indexCount * sizeof(uint32)),
+        .usage = Flags::BufferUsage::BU_STORAGE_BUFFER |
+                 Flags::BufferUsage::BU_TRANSFER_DST,
+        .memType = DEVICE | HOST
+    });
+
+    Handle<Buffer> m_materialsBuffer = rm.create<Buffer>(BufferDesc{
+        .byteSize = (uint32) (counts.materialCount * sizeof(MaterialData)),
+        .usage = Flags::BufferUsage::BU_STORAGE_BUFFER |
+                 Flags::BufferUsage::BU_TRANSFER_DST,
+        .memType = DEVICE | HOST
+    });
+
+    Handle<Buffer> m_textureDescBuffer = rm.create<Buffer>(BufferDesc{
+        .byteSize = (uint32) (counts.textureCount * sizeof(uint32)), // TODO
+        .usage = Flags::BufferUsage::BU_STORAGE_BUFFER |
+                 Flags::BufferUsage::BU_TRANSFER_DST,
+        .memType = DEVICE | HOST
+    });
 }
 
 void SceneManager::reset(uint32 frame) {
