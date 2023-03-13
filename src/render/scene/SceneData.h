@@ -7,20 +7,13 @@ namespace spr::gfx {
 
 
 // --------------------------------------------------------- //
-//                 Mesh Properties                           // 
+//                 Mesh Transforms                           // 
 // --------------------------------------------------------- //
 
 typedef struct Transform {
     glm::mat4 model;
     glm::mat4 modelInvTranspose;
 } Transform;
-
-typedef struct MeshData {
-    uint32 vertexOffset;
-    uint32 indexCount;
-    uint32 firstIndex;
-    uint32 materialIndex;
-} MeshData;
 
 
 // --------------------------------------------------------- //

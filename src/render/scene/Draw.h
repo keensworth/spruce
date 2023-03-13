@@ -27,11 +27,11 @@ typedef struct {
     std::vector<DrawData> draws;
 } DrawBatch;
 
-typedef struct BatchMaterialQuery {
+typedef struct MaterialQuery {
     uint32 hasAll     = 0;
     uint32 hasAny     = 0;
     uint32 hasExactly = 0;
     uint32 excludes   = 0;
-} BatchMaterialQuery;
+} MaterialQuery;
 
 }

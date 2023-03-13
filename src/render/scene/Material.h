@@ -22,4 +22,8 @@ typedef enum : uint32 {
     MTL_NONE               = 0x00000000
 } MaterialFlags;
 
+typedef struct MaterialData {
+
+} MaterialData;
+
 }
