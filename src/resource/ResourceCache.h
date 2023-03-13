@@ -58,7 +58,7 @@ public:
         return m_data.get(handle);    
     }
 
-    friend class ResourceManager;
+    friend class SprResourceManager;
 
 private:
     // Resource metadata
