@@ -1,8 +1,8 @@
-#include "ResourceManager.h"
+#include "SprResourceManager.h"
 
 namespace spr{
 
-ResourceManager::ResourceManager(){
+SprResourceManager::SprResourceManager(){
     // m_resourceCaches = std::vector<ResourceCache*>();
     // m_resourceMap = rmap();
     // m_resourceIndex = 0;
@@ -16,7 +16,7 @@ ResourceManager::ResourceManager(){
     init();
 }
 
-ResourceManager::~ResourceManager(){
+SprResourceManager::~SprResourceManager(){
     // delete model cache
     ModelCache* modelCache = ((ModelCache*) m_resourceMap[typeid(Model)]);
     delete modelCache;
@@ -38,7 +38,7 @@ ResourceManager::~ResourceManager(){
     delete bufferCache;
 }
 
-void ResourceManager::init(){
+void SprResourceManager::init(){
     // load resource metadata from asset_manifest.json
     AssetLoader assetLoader;
     std::vector<ResourceMetadata> resourceMetadata = assetLoader.loadMetadata();

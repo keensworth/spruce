@@ -5,10 +5,9 @@
 #include "../../external/flat_hash_map/flat_hash_map.hpp"
 
 
+namespace spr {
 
 typedef ska::flat_hash_map<std::type_index, spr::ResourceCache*> rmap;
-
-namespace spr {
 
 class ModelCache : public TypedResourceCache<Model>{};
 class MeshCache : public TypedResourceCache<Mesh>{};
@@ -16,10 +15,10 @@ class MaterialCache : public TypedResourceCache<Material>{};
 class TextureCache : public TypedResourceCache<Texture>{};
 class BufferCache : public TypedResourceCache<Buffer>{};
 
-class ResourceManager {
+class SprResourceManager {
 public:
-    ResourceManager();
-    ~ResourceManager();
+    SprResourceManager();
+    ~SprResourceManager();
 
     // U := ResourceType
     template <typename U>

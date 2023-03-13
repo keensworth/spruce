@@ -1,7 +1,7 @@
 #pragma once
 
-#include "ResourceTypes.h"
 #include <fstream>
+#include "ResourceTypes.h"
 #include "../../external/json/json.hpp"
 
 namespace spr{
@@ -10,7 +10,7 @@ public:
     AssetLoader(){}
     ~AssetLoader(){}
 
-    friend class ResourceManager;
+    friend class SprResourceManager;
 private:
 
     std::vector<ResourceMetadata> loadMetadata();
