@@ -11,17 +11,23 @@ namespace spr::gfx {
 class BatchManager {
 
 public:
-    BatchManager(){
-        m_batches = BatchNode();
-    }
-    ~BatchManager(){}
+    BatchManager();
+    ~BatchManager();
 
-    void addDraw(DrawData draw, Batch batchInfo);
-    void getDrawBatches(BatchMaterialQuery query, std::vector<DrawBatch>& result);
+    void getBatches(MaterialQuery query, std::vector<Batch>& result);
+
+    uint32 getDrawCount();
+
     void reset();
     void destroy();
     
 private:
     BatchNode m_batches;
+    uint32 m_drawCount;
+
+    void addDraw(DrawData draw, Batch batchInfo);
+    void getDrawData(TempBuffer<DrawData>& result);
+
+    friend class SceneManager;
 };
 }
