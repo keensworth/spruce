@@ -1,11 +1,11 @@
 #pragma once
 
-#include "scene/BatchManager.h"
-#include "scene/SceneManager.h"
+#include "SceneManager.h"
 #include "spruce_core.h"
 #include "RenderCoordinator.h"
 #include "vulkan/VulkanRenderer.h"
 #include "../interface/Window.h"
+#include "../resource/SprResourceManager.h"
 
 namespace spr::gfx {
 class SprRenderer {
@@ -13,7 +13,7 @@ public:
     SprRenderer(Window* window);
     ~SprRenderer();
 
-    void uploadMeshes();
+    void loadAssets(const SprResourceManager& rm);
 
     void insertMesh(uint32 meshId, uint32 materialFlags, glm::mat4 model, glm::mat4 modelInvTranspose);
 
@@ -24,9 +24,13 @@ public:
     void render();
     
 private:
-    Window* m_window;
-
+    VulkanRenderer m_renderer;
+    VulkanResourceManager m_rm;
+        
     SceneManager m_sceneManager;
     RenderCoordinator m_renderCoordinator;
+    Window* m_window;
+
+    uint32 m_frameId;    
 };
 }

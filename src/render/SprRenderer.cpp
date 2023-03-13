@@ -1,30 +1,27 @@
 #include "SprRenderer.h"
-#include "scene/SceneManager.h"
-#include <vulkan/vulkan_core.h>
+
 
 namespace spr::gfx {
 
-SprRenderer::SprRenderer(Window* window) : m_renderCoordinator(window){
+SprRenderer::SprRenderer(Window* window){
+    m_window = window;
+    m_frameId = 0;
 
+    // init renderer and resource manager
+    m_rm = VulkanResourceManager();
+    m_renderer = VulkanRenderer(window);
+    m_rm.init(m_renderer.getDevice(), m_renderer.getAllocator());
+    m_renderer.init(&m_rm);
+
+    // init render coordinator and scene manager
+    m_renderCoordinator = RenderCoordinator(window, &m_renderer, &m_rm);
+    m_sceneManager = SceneManager(m_rm);
 }
 
 SprRenderer::~SprRenderer(){
     m_renderCoordinator.destroy();
 }
 
-void SprRenderer::uploadMeshes() {}
-
-void SprRenderer::insertMesh(uint32 meshId, uint32 materialFlags, glm::mat4 model, glm::mat4 modelInvTranspose){
-    m_sceneManager.insertMesh(meshId, materialFlags, model, modelInvTranspose);
-}
-
-void SprRenderer::insertLight(){
-    m_sceneManager.insertLight();
-}
-
-void SprRenderer::updateCamera(){
-    m_sceneManager.updateCamera();
-}
 
 void SprRenderer::render(){
     // check for valid presentation
@@ -38,8 +35,24 @@ void SprRenderer::render(){
 
     // render the scene
     m_renderCoordinator.render(m_sceneManager);
-    m_sceneManager.reset();
+    m_sceneManager.reset(m_frameId);
+    m_frameId = m_renderer.getFrameId();
 }
 
+
+void SprRenderer::insertMesh(uint32 meshId, uint32 materialFlags, glm::mat4 model, glm::mat4 modelInvTranspose){
+    //m_sceneManager.insertMesh(meshId, materialFlags, model, modelInvTranspose);
+}
+
+void SprRenderer::insertLight(){
+    //m_sceneManager.insertLight();
+}
+
+void SprRenderer::updateCamera(){
+    //m_sceneManager.updateCamera();
+}
+
+
+void SprRenderer::loadAssets(const SprResourceManager& rm){}
 
 }

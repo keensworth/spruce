@@ -1,8 +1,8 @@
 #pragma once
 
-#include "scene/SceneManager.h"
+#include "SceneManager.h"
 #include "vulkan/VulkanRenderer.h"
-#include "vulkan/resource/ResourceTypes.h"
+#include "vulkan/resource/VulkanResourceManager.h"
 #include "vulkan/FrameRenderer.h"
 
 
@@ -10,7 +10,8 @@ namespace spr::gfx{
 
 class RenderCoordinator{
 public:
-    RenderCoordinator(Window* window);
+    RenderCoordinator();
+    RenderCoordinator(Window* window, VulkanRenderer* renderer, VulkanResourceManager* rm);
     ~RenderCoordinator();
 
     void render(SceneManager& sceneManager);
@@ -19,19 +20,12 @@ public:
 
 private:
     Window* m_window;
-    VulkanResourceManager m_rm;
-    VulkanRenderer m_renderer;
-    uint32 m_frame = 0;
+    VulkanResourceManager* m_rm;
+    VulkanRenderer* m_renderer;
 
-    Handle<Buffer> m_lightsBuffer;
-    Handle<Buffer> m_transformBuffer;
-    Handle<Buffer> m_drawDataBuffer;
-    Handle<Buffer> m_cameraBuffer;
-    Handle<Buffer> m_sceneBuffer;
+    uint32 m_frameId = 0;
     
-    void initBuffers();
     void initRenderers();
-    void uploadResources(SceneManager& sceneManager);
 
 private:
     // MAIN renderer
