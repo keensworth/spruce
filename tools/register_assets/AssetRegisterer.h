@@ -28,7 +28,7 @@ public:
     int loadModel(std::string path);
     int loadMesh(std::string path);
     int loadMaterial(std::string path);
-    int loadTexture(std::string path);
+    int loadTexture(std::string path, bool subresource);
     int loadBuffer(std::string path);
     void writeHeader();
     void writeManifest(int totalBytes);
@@ -36,6 +36,7 @@ private:
     // Filename <-> ResourceId map 
     ska::flat_hash_map<std::string, ResourceMetadata> m_metadataMap;
     ska::flat_hash_map<std::string, ResourceMetadata> m_modelMetadataMap;
+    ska::flat_hash_map<std::string, ResourceMetadata> m_nonSubresourceTextureMap;
 
     uint32 m_id = 1;
 };

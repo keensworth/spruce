@@ -78,7 +78,7 @@ int AssetRegisterer::loadBuffer(std::string path){
 // ╠═══════════════════════════════════╣
 // ║     image type (4)                ║ // 0-raw/1-png/2-jpg (0 only)
 // ╚═══════════════════════════════════╝
-int AssetRegisterer::loadTexture(std::string path){
+int AssetRegisterer::loadTexture(std::string path, bool subresource){
     std::cout << "    Registering texture:  " << path << std::endl;
     // open file
     std::ifstream f(path, std::ios::binary);
@@ -110,11 +110,17 @@ int AssetRegisterer::loadTexture(std::string path){
     metadata.resourceId = m_id++;
     int totalBytes = 0;
     
-    totalBytes += loadBuffer(ResourceTypes::getPath(SPR_BUFFER) + name.substr(0,found) + "_" + std::to_string(bufferId) + ResourceTypes::getExtension(SPR_BUFFER)); 
-
+    if(subresource){
+        totalBytes += loadBuffer(ResourceTypes::getPath(SPR_BUFFER) + name.substr(0,found) + "_" + std::to_string(bufferId) + ResourceTypes::getExtension(SPR_BUFFER)); 
+    } else {
+        totalBytes += loadBuffer(ResourceTypes::getPath(SPR_BUFFER) + name + "_" + std::to_string(bufferId) + ResourceTypes::getExtension(SPR_BUFFER)); 
+    }
     metadata.sizeBytes = totalBytes;
     // store metadata
-    m_metadataMap[name] = metadata;
+    if (subresource)
+        m_metadataMap[name] = metadata;
+    else
+        m_nonSubresourceTextureMap[name] = metadata;
 
     return totalBytes;
 }
@@ -186,23 +192,23 @@ int AssetRegisterer::loadMaterial(std::string path){
 
     uint32 materialFlags;
 
-    int32 baseColorTexId = -1;
+    uint32 baseColorTexId = 0;
     glm::vec4 baseColorFactor;
 
-    int32 metalRoughTexId = -1;
+    uint32 metalRoughTexId = 0;
     float metalFactor;
     float roughnessFactor;
 
-    int32 normalTexId = -1;
+    uint32 normalTexId = 0;
     float normalScale;
 
-    int32 occlusionTexId = -1;
+    uint32 occlusionTexId = 0;
     float occlusionStrength;
 
-    int32 emissiveTexId = -1;
+    uint32 emissiveTexId = 0;
     glm::vec3 emissiveFactor;
 
-    int32 alphaType;
+    uint32 alphaType;
     float alphaCutoff;
 
     bool doubleSided;
@@ -215,7 +221,7 @@ int AssetRegisterer::loadMaterial(std::string path){
         switch(materialType) {
             case 1 : // base color
                 materialFlags |= 0b1;
-                f.read((char*)&baseColorTexId, sizeof(int32));
+                f.read((char*)&baseColorTexId, sizeof(uint32));
                 baseColorTexId &= 0xffff;
                 f.read((char*)&baseColorFactor.x, sizeof(float));
                 f.read((char*)&baseColorFactor.y, sizeof(float));
@@ -224,26 +230,26 @@ int AssetRegisterer::loadMaterial(std::string path){
                 break;
             case 2 : // metalroughness
                 materialFlags |= (0b1<<1);
-                f.read((char*)&metalRoughTexId, sizeof(int32));
+                f.read((char*)&metalRoughTexId, sizeof(uint32));
                 metalRoughTexId &= 0xffff;
                 f.read((char*)&metalFactor, sizeof(float));
                 f.read((char*)&roughnessFactor, sizeof(float));
                 break;
             case 3 : // normal
                 materialFlags |= (0b1<<2);
-                f.read((char*)&normalTexId, sizeof(int32));
+                f.read((char*)&normalTexId, sizeof(uint32));
                 normalTexId &= 0xffff;
                 f.read((char*)&normalScale, sizeof(float));
                 break;
             case 4 : // occlusion
                 materialFlags |= (0b1<<3);
-                f.read((char*)&occlusionTexId, sizeof(int32));
+                f.read((char*)&occlusionTexId, sizeof(uint32));
                 occlusionTexId &= 0xffff;
                 f.read((char*)&occlusionStrength, sizeof(float));
                 break;
             case 5 : // emissive
                 materialFlags |= (0b1<<4);
-                f.read((char*)&emissiveTexId, sizeof(int32));
+                f.read((char*)&emissiveTexId, sizeof(uint32));
                 emissiveTexId &= 0xffff;
                 f.read((char*)&emissiveFactor.x, sizeof(float));
                 f.read((char*)&emissiveFactor.y, sizeof(float));
@@ -251,7 +257,7 @@ int AssetRegisterer::loadMaterial(std::string path){
                 break;
             case 6 : // alpha
                 materialFlags |= (0b1<<5);
-                f.read((char*)&alphaType, sizeof(int32));
+                f.read((char*)&alphaType, sizeof(uint32));
                 f.read((char*)&alphaCutoff, sizeof(float));
                 break;
             case 7 : // double-sided
@@ -277,20 +283,20 @@ int AssetRegisterer::loadMaterial(std::string path){
     metadata.resourceId = m_id++;
     int totalBytes = 0;
     
-    if (materialFlags & 0b1 && baseColorTexId >= 0){ // base color
-        totalBytes += loadTexture(ResourceTypes::getPath(SPR_TEXTURE) + name.substr(0,found) + "_" + std::to_string(baseColorTexId) + ResourceTypes::getExtension(SPR_TEXTURE));
+    if (materialFlags & 0b1 && baseColorTexId > 0){ // base color
+        totalBytes += loadTexture(ResourceTypes::getPath(SPR_TEXTURE) + name.substr(0,found) + "_" + std::to_string(baseColorTexId) + ResourceTypes::getExtension(SPR_TEXTURE), true);
     }
-    if (materialFlags & (0b1<<1) && metalRoughTexId >= 0){ // metallicroughness
-        totalBytes += loadTexture(ResourceTypes::getPath(SPR_TEXTURE) + name.substr(0,found) + "_" + std::to_string(metalRoughTexId) + ResourceTypes::getExtension(SPR_TEXTURE));
+    if (materialFlags & (0b1<<1) && metalRoughTexId > 0){ // metallicroughness
+        totalBytes += loadTexture(ResourceTypes::getPath(SPR_TEXTURE) + name.substr(0,found) + "_" + std::to_string(metalRoughTexId) + ResourceTypes::getExtension(SPR_TEXTURE), true);
     }
-    if (materialFlags & (0b1<<2) && normalTexId >= 0){ // normal
-        totalBytes += loadTexture(ResourceTypes::getPath(SPR_TEXTURE) + name.substr(0,found) + "_" + std::to_string(normalTexId) + ResourceTypes::getExtension(SPR_TEXTURE));
+    if (materialFlags & (0b1<<2) && normalTexId > 0){ // normal
+        totalBytes += loadTexture(ResourceTypes::getPath(SPR_TEXTURE) + name.substr(0,found) + "_" + std::to_string(normalTexId) + ResourceTypes::getExtension(SPR_TEXTURE), true);
     }
-    if (materialFlags & (0b1<<3) && occlusionTexId >= 0){ // occlusion
-        totalBytes += loadTexture(ResourceTypes::getPath(SPR_TEXTURE) + name.substr(0,found) + "_" + std::to_string(occlusionTexId) + ResourceTypes::getExtension(SPR_TEXTURE));
+    if (materialFlags & (0b1<<3) && occlusionTexId > 0){ // occlusion
+        totalBytes += loadTexture(ResourceTypes::getPath(SPR_TEXTURE) + name.substr(0,found) + "_" + std::to_string(occlusionTexId) + ResourceTypes::getExtension(SPR_TEXTURE), true);
     }
-    if (materialFlags & (0b1<<4) && emissiveTexId >= 0){ // emissive
-        totalBytes += loadTexture(ResourceTypes::getPath(SPR_TEXTURE) + name.substr(0,found) + "_" + std::to_string(emissiveTexId) + ResourceTypes::getExtension(SPR_TEXTURE));
+    if (materialFlags & (0b1<<4) && emissiveTexId > 0){ // emissive
+        totalBytes += loadTexture(ResourceTypes::getPath(SPR_TEXTURE) + name.substr(0,found) + "_" + std::to_string(emissiveTexId) + ResourceTypes::getExtension(SPR_TEXTURE), true);
     }
 
     metadata.sizeBytes = totalBytes;
@@ -312,15 +318,7 @@ int AssetRegisterer::loadMaterial(std::string path){
 // ╠═══════════════════════════════════╣
 // ║     position buffer id (4)        ║ // position buffer file
 // ╠═══════════════════════════════════╣ 
-// ║     normal buffer id (4)          ║ // normal buffer file
-// ╠═══════════════════════════════════╣
-// ║     color buffer id (4)           ║ // color buffer file
-// ╠═══════════════════════════════════╣
-// ║     tangent buffer id (4)         ║ // tangent buffer file
-// ╠═══════════════════════════════════╣ 
-// ║                 ...               ║
-// ╠     texcoord buffer id(s) (4 * n) ╣ // texcoord buffer file(s)
-// ║                 ...               ║ // should equal # of textures in material
+// ║     attribute buffer id (4)       ║ // attributes buffer file
 // ╚═══════════════════════════════════╝
 int AssetRegisterer::loadMesh(std::string path){
     std::cout << "    Registering mesh:     " << path << std::endl;
@@ -333,50 +331,27 @@ int AssetRegisterer::loadMesh(std::string path){
     }
 
     uint32 materialId;
-    int32 indexBufferId;
-    int32 positionBufferId;
-    int32 normalBufferId;
-    int32 colorBufferId;
-    int32 tangentBufferId;
-    std::vector<int32> texCoordBufferIds;
+    uint32 indexBufferId;
+    uint32 positionBufferId;
+    uint32 attributesBufferId;
 
     // read material id
     f.read((char*)&materialId, sizeof(uint32));
 
     // read index buffer id
-    f.read((char*)&indexBufferId, sizeof(int32));
-    if (indexBufferId >= 0)
+    f.read((char*)&indexBufferId, sizeof(uint32));
+    if (indexBufferId > 0)
         indexBufferId &= 0xffff;
 
     // read position buffer id
-    f.read((char*)&positionBufferId, sizeof(int32));
-    if (positionBufferId >= 0)
+    f.read((char*)&positionBufferId, sizeof(uint32));
+    if (positionBufferId > 0)
         positionBufferId &= 0xffff;
 
     // read normal buffer id
-    f.read((char*)&normalBufferId, sizeof(int32));
-    if (normalBufferId >= 0)
-        normalBufferId &= 0xffff;
-
-    // read color buffer id
-    f.read((char*)&colorBufferId, sizeof(int32));
-    if (colorBufferId >= 0)
-        colorBufferId &= 0xffff;
-
-    // read tangent buffer id
-    f.read((char*)&tangentBufferId, sizeof(int32));
-    if (tangentBufferId >= 0)
-        tangentBufferId &= 0xffff;
-
-    // read tex coord buffer ids
-    int32 index = 0;
-    while (!f.eof()){
-        texCoordBufferIds.push_back(-1);
-        f.read((char*)&texCoordBufferIds[index], sizeof(int32));
-        if (f.eof())
-            texCoordBufferIds.pop_back();
-        index++;
-    }
+    f.read((char*)&attributesBufferId, sizeof(uint32));
+    if (attributesBufferId > 0)
+        attributesBufferId &= 0xffff;
 
     // close file
     f.close();
@@ -400,18 +375,9 @@ int AssetRegisterer::loadMesh(std::string path){
     if (positionBufferId > 0)
         totalBytes += loadBuffer(ResourceTypes::getPath(SPR_BUFFER) + name.substr(0,found) + "_" + std::to_string(positionBufferId) + ResourceTypes::getExtension(SPR_BUFFER));
     // normal
-    if (normalBufferId > 0)
-        totalBytes += loadBuffer(ResourceTypes::getPath(SPR_BUFFER) + name.substr(0,found) + "_" + std::to_string(normalBufferId) + ResourceTypes::getExtension(SPR_BUFFER));  
-    // color
-    if (colorBufferId > 0)
-        totalBytes += loadBuffer(ResourceTypes::getPath(SPR_BUFFER) + name.substr(0,found) + "_" + std::to_string(colorBufferId) + ResourceTypes::getExtension(SPR_BUFFER));
-    // tangent
-    if (tangentBufferId > 0)
-        totalBytes += loadBuffer(ResourceTypes::getPath(SPR_BUFFER) + name.substr(0,found) + "_" + std::to_string(tangentBufferId) + ResourceTypes::getExtension(SPR_BUFFER));
-    // texCoord
-    for (int id : texCoordBufferIds){
-        totalBytes += loadBuffer(ResourceTypes::getPath(SPR_BUFFER) + name.substr(0,found) + "_" + std::to_string(id) + ResourceTypes::getExtension(SPR_BUFFER)); 
-    }
+    if (attributesBufferId > 0)
+        totalBytes += loadBuffer(ResourceTypes::getPath(SPR_BUFFER) + name.substr(0,found) + "_" + std::to_string(attributesBufferId) + ResourceTypes::getExtension(SPR_BUFFER));  
+
     metadata.sizeBytes = totalBytes;
     // store metadata
     m_metadataMap[name] = metadata;
@@ -466,7 +432,7 @@ int AssetRegisterer::loadModel(std::string path){
 
     // read mesh ids
     std::vector<uint32> meshIds(meshCount);
-    for (int i = 0; i < meshCount; i++){
+    for (uint32 i = 0; i < meshCount; i++){
         f.read((char*)&meshIds[i], sizeof(uint32));
         std::cout << "  r: meshId: " << meshIds[i] << std::endl;
     }
@@ -481,7 +447,7 @@ int AssetRegisterer::loadModel(std::string path){
     metadata.resourceType = SPR_MODEL;
     metadata.resourceId = m_id++;
     int totalBytes = 0;
-    for (int id : meshIds){
+    for (uint32 id : meshIds){
         totalBytes += loadMesh(ResourceTypes::getPath(SPR_MESH) + name + "_" + std::to_string(id) + ResourceTypes::getExtension(SPR_MESH));
     }
     metadata.sizeBytes = totalBytes;
@@ -519,6 +485,16 @@ void AssetRegisterer::writeHeader(){
         std::replace(name.begin(), name.end(), ' ', '_');    // " " -> "_"
         f << "    " << name << " = " << std::to_string(metadata.second.resourceId) << ",\n";
     }
+    f << "\n";
+    f << "    // textures:\n";
+    for (std::pair<std::string, ResourceMetadata> metadata : m_nonSubresourceTextureMap){
+        std::string name = metadata.first;
+        std::transform(name.begin(), name.end(), name.begin(),
+            [](unsigned char c){ return std::tolower(c); }); // lowercase
+        std::replace(name.begin(), name.end(), ' ', '_');    // " " -> "_"
+        f << "    " << name << " = " << std::to_string(metadata.second.resourceId) << ",\n";
+    }
+    f << "\n";
     f << "    // shaders:\n";
     f << "    // audio:\n";
     f << "} ResourceId;\n";
@@ -530,6 +506,12 @@ void AssetRegisterer::writeHeader(){
     f << "    {\n";
     f << "        // models\n";
     for (std::pair<std::string, ResourceMetadata> metadata : m_modelMetadataMap){
+        std::string name = metadata.first;
+        int id = metadata.second.resourceId;
+        f << "        {\"" << name << "\", " << metadata.second.resourceId << "},\n";
+    }
+    f << "        // textures\n";
+    for (std::pair<std::string, ResourceMetadata> metadata : m_nonSubresourceTextureMap){
         std::string name = metadata.first;
         int id = metadata.second.resourceId;
         f << "        {\"" << name << "\", " << metadata.second.resourceId << "},\n";
@@ -582,6 +564,21 @@ void AssetRegisterer::writeManifest(int totalBytes){
         manifest["models"].push_back(model);
     }
 
+    // nonsubresouce texture info
+    manifest["nonSubresourceTextureCount"] = m_nonSubresourceTextureMap.size();
+    manifest["nonSubresourceTextures"] = nlohmann::json::array();
+    // write models
+    for (std::pair<std::string, ResourceMetadata> metadata : m_nonSubresourceTextureMap){
+        std::string name = metadata.first;
+        int id = metadata.second.resourceId;
+        nlohmann::json model;
+        model["id"] = id;
+        model["name"] = name;
+        model["sizeBytes"] = metadata.second.sizeBytes;
+        model["type"] = ResourceTypes::typeToString(metadata.second.resourceType);
+        manifest["nonSubresourceTextures"].push_back(model);
+    }
+
     // subresource info
     manifest["subresourceCount"] = m_metadataMap.size();
     manifest["subresources"] = nlohmann::json::array();
@@ -612,6 +609,16 @@ void AssetRegisterer::writeManifest(int totalBytes){
     f.close();
 }
 
+
+bool isNumber(const std::string& s){
+    for (char const &ch : s) {
+        if (std::isdigit(ch) == 0) 
+            return false;
+    }
+    return true;
+ }
+
+
 void AssetRegisterer::registerDirectory(std::string dir){
     int totalSizeBytes = 0;
 
@@ -625,6 +632,24 @@ void AssetRegisterer::registerDirectory(std::string dir){
     // process models and subresources
     for (const auto& dirEntry : std::filesystem::recursive_directory_iterator(dir + "models/")){
         totalSizeBytes += loadModel(dirEntry.path());
+    }
+
+    // process non-subresource textures
+    for (const auto& dirEntry : std::filesystem::recursive_directory_iterator(dir + "textures/")){
+        std::string name = std::filesystem::path(dirEntry).stem();
+
+        size_t found = name.find_last_of("_");
+        if (found == std::string::npos){
+            totalSizeBytes += loadTexture(dirEntry.path(), false);
+            continue;
+        }
+
+        std::string tail = name.substr(found+1);
+        std::cout << "   ----------------------------   " << tail << std::endl;
+        if (isNumber(tail))
+            continue;
+        
+        totalSizeBytes += loadTexture(dirEntry.path(), false);
     }
 
     // write asset_ids.h

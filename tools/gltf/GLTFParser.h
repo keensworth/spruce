@@ -28,29 +28,39 @@ private:
 
     void parse();
     void parseNode(const tinygltf::Node& node, std::vector<uint32_t> &meshIds);
+
     void handleMesh(const tinygltf::Mesh& mesh, std::vector<uint32_t> &meshIds);
     uint32_t handlePrimitive(const tinygltf::Primitive& primitive);
+    uint32_t interleaveVertexAttributes(
+        std::vector<uint8_t>& normalBuffer,
+        std::vector<uint8_t>& tangentBuffer,
+        std::vector<uint8_t>& texCoordBuffer,
+        std::vector<uint8_t>& colorBuffer);
     uint32_t handleMaterial(const tinygltf::Material& material);
     uint32_t handleTexture(const tinygltf::TextureInfo& texInfo);
     uint32_t handleTexture(const tinygltf::NormalTextureInfo& texInfo);
     uint32_t handleTexture(const tinygltf::OcclusionTextureInfo& texInfo);
     uint32_t handleTexture(const tinygltf::Texture& tex);
-    uint32_t handleAccessor(const tinygltf::Accessor& accessor);
+    uint32_t handleAccessor(const tinygltf::Accessor& accessor, std::vector<uint8_t>& out, bool writeToFile);
     void handleBufferView(const tinygltf::BufferView& bufferView, 
         uint32_t byteOffset, 
         uint32_t calcByteStride,
         uint32_t elementCount, 
         uint32_t elementType, 
         uint32_t componentType,
-        uint32_t bufferId);
+        uint32_t bufferId,
+        std::vector<uint8_t>& out,
+        bool writeToFile);
     void handleBuffer(
         const tinygltf::Buffer& buffer, 
         uint32_t byteOffset, 
         uint32_t byteLength, 
         uint32_t elementType, 
         uint32_t componentType,
-        uint32_t bufferId);
-    void handleBufferint32_terleaved(
+        uint32_t bufferId,
+        std::vector<uint8_t>& out,
+        bool writeToFile);
+    void handleBufferInterleaved(
         const tinygltf::Buffer& buffer, 
         uint32_t byteOffset, 
         uint32_t byteLength, 
@@ -58,16 +68,20 @@ private:
         uint32_t bytesPerElement, 
         uint32_t elementType, 
         uint32_t componentType,
+        uint32_t bufferId,
+        std::vector<uint8_t>& out,
+        bool writeToFile);
+    void writeBufferFile(
+        const unsigned char* data, 
+        uint32_t byteLength, 
+        uint32_t elementType, 
+        uint32_t componentType, 
         uint32_t bufferId);
-    void writeBufferFile(const unsigned char* data, uint32_t byteLength, uint32_t elementType, uint32_t componentType, uint32_t bufferId);
     void writeMeshFile(
         uint32_t materialId, 
-        int32_t indexBufferId, 
-        int32_t posBufferId, 
-        int32_t normalBufferId, 
-        int32_t colorBufferId, 
-        int32_t tangentBufferId, 
-        std::vector<uint32_t> texCoordBufferIds,
+        uint32_t indexBufferId, 
+        uint32_t posBufferId,  
+        uint32_t attributesBufferId,
         uint32_t meshId);
     void writeMaterialFile(
         uint32_t materialFlags, 
