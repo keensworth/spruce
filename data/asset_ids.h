@@ -3,17 +3,20 @@
 #include "../external/flat_hash_map/flat_hash_map.hpp"
 
 
-namespace spr{
+namespace spr::data{
 typedef enum {
     // === Null Resource ===
     null_resource = 0,
 
     // === Imported Resources ===
     // models:
-    default_model = 20,
-    box = 14,
-    triangle = 10,
+    default_model = 14,
+    triangle = 9,
     duck = 1,
+
+    // textures:
+    default_texture = 20,
+
     // shaders:
     // audio:
 } ResourceId;
@@ -24,33 +27,29 @@ public:
     ska::flat_hash_map<std::string, uint32_t> idMap = 
     {
         // models
-        {"default_model", 20},
-        {"Box", 14},
-        {"Triangle", 10},
+        {"default_model", 14},
+        {"Triangle", 9},
         {"Duck", 1},
+        // textures
+        {"default_texture", 20},
         // sub-resources
-        {"Duck_6", 3},
+        {"Duck_6", 8},
         {"Duck_2", 6},
         {"Duck_1", 2},
-        {"default_model_2", 23},
-        {"Triangle_1", 11},
-        {"default_model_1", 21},
-        {"Duck_5", 9},
-        {"default_model_3", 24},
-        {"Duck_7", 4},
-        {"Box_1", 15},
-        {"Triangle_3", 13},
-        {"default_model_4", 25},
-        {"Box_4", 19},
-        {"Duck_8", 5},
-        {"default_model_5", 26},
+        {"default_model_2", 17},
+        {"Triangle_1", 10},
+        {"default_model_1", 15},
+        {"default_texture_1", 21},
+        {"default_model_3", 18},
+        {"Duck_7", 3},
+        {"Triangle_3", 12},
+        {"Triangle_4", 13},
+        {"Duck_9", 5},
+        {"Duck_8", 4},
         {"Duck_3", 7},
-        {"default_model_6", 22},
-        {"Box_3", 18},
-        {"Box_5", 16},
-        {"Triangle_2", 12},
-        {"Duck_4", 8},
-        {"Box_2", 17},
+        {"default_model_6", 19},
+        {"default_model_7", 16},
+        {"Triangle_2", 11},
     };
 
     uint32_t getIdFromName(std::string name){
