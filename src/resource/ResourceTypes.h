@@ -58,7 +58,9 @@ static std::vector<std::string> resourceTypeStrings{
     "SPR_MATERIAL",
 };
 
-// ---------------- Metadata --------------------------------------------------
+// --------------------------------------------------------- //
+//                 Metada                                    // 
+// --------------------------------------------------------- //
 typedef struct ResourceMetadata {
     std::string name = "no-name";         // resource name (file name)
     ResourceType resourceType = SPR_NONE; // resource enum (links path/ext)
@@ -66,7 +68,11 @@ typedef struct ResourceMetadata {
     uint32 resourceId = 0;                // resource-unique id (enum value)
 } ResourceMetadata;
 
-// ---------------- Instance --------------------------------------------------
+
+
+// --------------------------------------------------------- //
+//                 Instance                                  // 
+// --------------------------------------------------------- //
 // base instance data
 typedef struct ResourceInstance { 
     uint32 id;             // instance id
@@ -83,13 +89,10 @@ typedef struct Model : ResourceInstance {
 
 // mesh
 typedef struct Mesh : ResourceInstance {
-    uint32 materialId = 0;
-    int32 indexBufferId = -1;
-    int32 positionBufferId = -1;
-    int32 normalBufferId = -1;
-    int32 colorBufferId = -1;
-    int32 tangentBufferId = -1;
-    std::vector<int32> texCoordBufferIds;
+    uint32 materialId         = 0;
+    uint32 indexBufferId      = 0;
+    uint32 positionBufferId   = 0;
+    uint32 attributesBufferId = 0;
 } Mesh;
 
 
@@ -97,23 +100,23 @@ typedef struct Mesh : ResourceInstance {
 typedef struct Material : ResourceInstance {
     uint32 materialFlags = 0;
 
-    int32 baseColorTexId = -1;
+    uint32 baseColorTexId     = 0;
     glm::vec4 baseColorFactor = glm::vec4(1.f,1.f,1.f,1.f);
 
-    int32 metalRoughTexId = -1;
-    float metalFactor = 1;
-    float roughnessFactor = 1;
+    uint32 metalRoughTexId = 0;
+    float metalFactor      = 1;
+    float roughnessFactor  = 1;
 
-    int32 normalTexId = -1;
-    float normalScale = 1;
+    uint32 normalTexId = 0;
+    float normalScale  = 1;
 
-    int32 occlusionTexId = -1;
+    uint32 occlusionTexId   = 0;
     float occlusionStrength = 1;
 
-    int32 emissiveTexId = -1;
+    uint32 emissiveTexId     = 0;
     glm::vec3 emissiveFactor = glm::vec3(0.f,0.f,0.f);
 
-    int32 alphaType = -1;
+    uint32 alphaType  = 0;
     float alphaCutoff = 0.5f;
 
     bool doubleSided = false;
@@ -122,17 +125,17 @@ typedef struct Material : ResourceInstance {
 
 // texture
 typedef struct Texture : ResourceInstance {
-    uint32 bufferId = -1;
+    uint32 bufferId  = 0;
     uint32 imageType = 0;
 } Texture;
 
 
 // buffer
 typedef struct Buffer : ResourceInstance {
-    uint32 elementType = 0;
+    uint32 elementType   = 0;
     uint32 componentType = 0;
-    uint32 byteLength = 0;
-    char* data;
+    uint32 byteLength    = 0;
+    std::vector<uint8> data;
 } Buffer;
 
 // unused
@@ -140,7 +143,9 @@ typedef struct Audio : ResourceInstance {} Audio;
 typedef struct Shader : ResourceInstance {} Shader;
 
 
-// ---------------- Utility ---------------------------------------------------
+// --------------------------------------------------------- //
+//                 Utility                                   // 
+// --------------------------------------------------------- //
 class ResourceTypes {
 public:
     

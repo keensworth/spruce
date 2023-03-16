@@ -44,22 +44,22 @@ Model ResourceLoader::loadFromMetadata<Model>(ResourceMetadata metadata){
     }
 
     uint32 nameLength;
-    char* name;
+    std::vector<uint8> name;
     uint32 meshCount;
 
     // read name length
     f.read((char*)&nameLength, sizeof(uint32));
 
     // read name
-    name = (char*)malloc(nameLength*sizeof(char));
-    f.read(name, nameLength);
+    name = std::vector<uint8>(nameLength);
+    f.read((char*)name.data(), nameLength);
 
     // read mesh count
     f.read((char*)&meshCount, sizeof(uint32));
 
     // read mesh ids
     std::vector<uint32> meshIds(meshCount);
-    for (int i = 0; i < meshCount; i++){
+    for (uint32 i = 0; i < meshCount; i++){
         f.read((char*)&meshIds[i], sizeof(uint32));
     }
 
@@ -89,15 +89,7 @@ Model ResourceLoader::loadFromMetadata<Model>(ResourceMetadata metadata){
 // ╠═══════════════════════════════════╣
 // ║     position buffer id (4)        ║ // position buffer file
 // ╠═══════════════════════════════════╣ 
-// ║     normal buffer id (4)          ║ // normal buffer file
-// ╠═══════════════════════════════════╣
-// ║     color buffer id (4)           ║ // color buffer file
-// ╠═══════════════════════════════════╣
-// ║     tangent buffer id (4)         ║ // tangent buffer file
-// ╠═══════════════════════════════════╣ 
-// ║                 ...               ║
-// ╠     texcoord buffer id(s) (4 * n) ╣ // texcoord buffer file(s)
-// ║                 ...               ║ // should equal # of textures in material
+// ║     attribute buffer id (4)       ║ // attributes buffer file
 // ╚═══════════════════════════════════╝
 template <>
 Mesh ResourceLoader::loadFromMetadata<Mesh>(ResourceMetadata metadata){
@@ -113,38 +105,21 @@ Mesh ResourceLoader::loadFromMetadata<Mesh>(ResourceMetadata metadata){
     }
 
     uint32 materialId;
-    int32 indexBufferId;
-    int32 positionBufferId;
-    int32 normalBufferId;
-    int32 colorBufferId;
-    int32 tangentBufferId;
-    std::vector<int32> texCoordBufferIds;
+    uint32 indexBufferId;
+    uint32 positionBufferId;
+    uint32 attributesBufferId;
 
     // read material id
     f.read((char*)&materialId, sizeof(uint32));
 
     // read index buffer id
-    f.read((char*)&indexBufferId, sizeof(int32));
+    f.read((char*)&indexBufferId, sizeof(uint32));
 
     // read position buffer id
-    f.read((char*)&positionBufferId, sizeof(int32));
+    f.read((char*)&positionBufferId, sizeof(uint32));
 
     // read normal buffer id
-    f.read((char*)&normalBufferId, sizeof(int32));
-
-    // read color buffer id
-    f.read((char*)&colorBufferId, sizeof(int32));
-
-    // read tangent buffer id
-    f.read((char*)&tangentBufferId, sizeof(int32));
-
-    // read tex coord buffer ids
-    int32 index = 0;
-    while (!f.eof()){
-        texCoordBufferIds.push_back(-1);
-        f.read((char*)&texCoordBufferIds[index], sizeof(int32));
-        index++;
-    }
+    f.read((char*)&attributesBufferId, sizeof(uint32));
 
     // close file
     f.close();
@@ -158,10 +133,7 @@ Mesh ResourceLoader::loadFromMetadata<Mesh>(ResourceMetadata metadata){
     mesh.materialId = materialId;
     mesh.indexBufferId = indexBufferId;
     mesh.positionBufferId = positionBufferId;
-    mesh.normalBufferId = normalBufferId;
-    mesh.colorBufferId = colorBufferId;
-    mesh.tangentBufferId = tangentBufferId;
-    mesh.texCoordBufferIds = texCoordBufferIds;
+    mesh.attributesBufferId = attributesBufferId;
 
     return mesh;
 }
@@ -236,23 +208,23 @@ Material ResourceLoader::loadFromMetadata<Material>(ResourceMetadata metadata){
 
     uint32 materialFlags;
 
-    int32 baseColorTexId;
+    uint32 baseColorTexId;
     glm::vec4 baseColorFactor;
 
-    int32 metalRoughTexId;
+    uint32 metalRoughTexId;
     float metalFactor;
     float roughnessFactor;
 
-    int32 normalTexId;
+    uint32 normalTexId;
     float normalScale;
 
-    int32 occlusionTexId;
+    uint32 occlusionTexId;
     float occlusionStrength;
 
-    int32 emissiveTexId;
+    uint32 emissiveTexId;
     glm::vec3 emissiveFactor;
 
-    int32 alphaType;
+    uint32 alphaType;
     float alphaCutoff;
 
     bool doubleSided;
@@ -264,7 +236,7 @@ Material ResourceLoader::loadFromMetadata<Material>(ResourceMetadata metadata){
         switch(materialType) {
             case 1 : // base color
                 materialFlags |= 0b1;
-                f.read((char*)&baseColorTexId, sizeof(int32));
+                f.read((char*)&baseColorTexId, sizeof(uint32));
                 f.read((char*)&baseColorFactor.x, sizeof(float));
                 f.read((char*)&baseColorFactor.y, sizeof(float));
                 f.read((char*)&baseColorFactor.z, sizeof(float));
@@ -272,30 +244,30 @@ Material ResourceLoader::loadFromMetadata<Material>(ResourceMetadata metadata){
                 break;
             case 2 : // metalroughness
                 materialFlags |= (0b1<<1);
-                f.read((char*)&metalRoughTexId, sizeof(int32));
+                f.read((char*)&metalRoughTexId, sizeof(uint32));
                 f.read((char*)&metalFactor, sizeof(float));
                 f.read((char*)&roughnessFactor, sizeof(float));
                 break;
             case 3 : // normal
                 materialFlags |= (0b1<<2);
-                f.read((char*)&normalTexId, sizeof(int32));
+                f.read((char*)&normalTexId, sizeof(uint32));
                 f.read((char*)&normalScale, sizeof(float));
                 break;
             case 4 : // occlusion
                 materialFlags |= (0b1<<3);
-                f.read((char*)&occlusionTexId, sizeof(int32));
+                f.read((char*)&occlusionTexId, sizeof(uint32));
                 f.read((char*)&occlusionStrength, sizeof(float));
                 break;
             case 5 : // emissive
                 materialFlags |= (0b1<<4);
-                f.read((char*)&emissiveTexId, sizeof(int32));
+                f.read((char*)&emissiveTexId, sizeof(uint32));
                 f.read((char*)&emissiveFactor.x, sizeof(float));
                 f.read((char*)&emissiveFactor.y, sizeof(float));
                 f.read((char*)&emissiveFactor.z, sizeof(float));
                 break;
             case 6 : // alpha
                 materialFlags |= (0b1<<5);
-                f.read((char*)&alphaType, sizeof(int32));
+                f.read((char*)&alphaType, sizeof(uint32));
                 f.read((char*)&alphaCutoff, sizeof(float));
                 break;
             case 7 : // double-sided
@@ -425,7 +397,7 @@ Buffer ResourceLoader::loadFromMetadata<Buffer>(ResourceMetadata metadata){
     uint32 elementType;
     uint32 componentType;
     uint32 byteLength;
-    char* data;
+    std::vector<uint8> data;
 
     // read element type
     f.read((char*)&elementType, sizeof(uint32));
@@ -437,8 +409,8 @@ Buffer ResourceLoader::loadFromMetadata<Buffer>(ResourceMetadata metadata){
     f.read((char*)&byteLength, sizeof(uint32));
 
     // read data
-    data = (char*)malloc(byteLength*sizeof(char));
-    f.read(data, byteLength);
+    data = std::vector<uint8>(byteLength);
+    f.read((char*)data.data(), byteLength);
 
     // close file
     f.close();
@@ -468,7 +440,7 @@ Audio ResourceLoader::loadFromMetadata<Audio>(ResourceMetadata metadata){
 
 
 // ----------------------------------------------------------------------------
-//    Shader - .hlsl
+//    Shader - .glsl
 //    iw
 template <>
 Shader ResourceLoader::loadFromMetadata<Shader>(ResourceMetadata metadata){
