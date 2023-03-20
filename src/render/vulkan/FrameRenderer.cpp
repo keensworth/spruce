@@ -73,8 +73,21 @@ void FrameRenderer::init(std::vector<VkImageView>& swapchainImageViews, Handle<T
 }
 
 
-void FrameRenderer::render(){
+void FrameRenderer::render(BatchManager& batchManager){
+    CommandBuffer& cb = m_renderer->beginGraphicsCommands(CommandType::MAIN);
+    RenderPassRenderer& passRenderer = cb.beginRenderPass(m_renderPass);
 
+    // TODO: override this with built-in fullscreen quad draw
+    std::vector<Batch> drawBatches;
+    batchManager.getBatches({
+        //...
+    }, drawBatches);
+
+    
+    passRenderer.drawSubpass({.shader = m_shader, .set3 = m_descriptorSet}, drawBatches);
+
+    cb.endRenderPass();
+    cb.submit();
 }
 
 

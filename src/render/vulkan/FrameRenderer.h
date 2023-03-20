@@ -3,6 +3,7 @@
 #include "VulkanRenderer.h"
 #include "resource/ResourceTypes.h"
 #include "resource/VulkanResourceManager.h"
+#include "../scene/BatchManager.h"
 
 namespace spr::gfx {
 class FrameRenderer {
@@ -13,7 +14,7 @@ public:
 
 
     void init(std::vector<VkImageView>& swapchainImages, Handle<TextureAttachment> input);
-    void render();
+    void render(BatchManager& batchManager);
     void destroy();
 
 private:
