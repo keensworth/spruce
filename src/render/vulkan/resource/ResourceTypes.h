@@ -165,6 +165,7 @@ typedef struct RenderPass {
 //                 Shader                                    // 
 // --------------------------------------------------------- //
 typedef struct Shader {
+    VkPipelineLayout layout;
     VkPipeline pipeline;
 } Shader;
 

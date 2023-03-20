@@ -994,6 +994,7 @@ Handle<Shader> VulkanResourceManager::create<Shader>(ShaderDesc desc){
 
     // create shader resource, return handle
     Shader shader {
+        .layout = pipelineLayout,
         .pipeline = vulkanPipeline
     };
     return shaderCache->insert(shader);
