@@ -3,7 +3,7 @@
 #include "vulkan_core.h"
 #include "Window.h"
 #include <vulkan/vulkan_core.h>
-
+#include "../../core/util/FunctionStack.h"
 #include "../../debug/SprLog.h"
 
 
@@ -18,7 +18,9 @@ public:
     void createSurface(VkInstance instance);
     uint32 createSwapchain(VkPhysicalDevice physicalDevice, VkDevice device, QueueFamilies families);
     void createImageViews(VkDevice device);
+    
     void cleanup(VkDevice device);
+    void destroy(VkDevice device, VkInstance instance);
 
     VkSurfaceKHR getSurface();
     std::vector<VkImageView> getImageViews();
@@ -44,6 +46,11 @@ private:
     VkSurfaceCapabilitiesKHR m_capabilities;
     std::vector<VkSurfaceFormatKHR> m_formats;
     std::vector<VkPresentModeKHR> m_presentModes;
+
+    bool m_imageViewsInitialized;
+    bool m_swapchainInitialized;
+    bool m_cleanedUp;
+    bool m_destroyed;
 
     void querySwapchainSupport(VkPhysicalDevice physicalDevice);
     VkSurfaceFormatKHR chooseSwapSurfaceFormat();

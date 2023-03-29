@@ -19,9 +19,17 @@ VulkanDisplay::VulkanDisplay(){
 
 VulkanDisplay::VulkanDisplay(Window* window){
     m_window = window;
+    m_imageViewsInitialized = false;
+    m_swapchainInitialized = false;
+    m_cleanedUp = true;
+    m_destroyed = false;
 }
 
-VulkanDisplay::~VulkanDisplay(){}
+VulkanDisplay::~VulkanDisplay(){
+
+    if (!m_destroyed)
+        SprLog::error("[VulkanDisplay] [~] 'destroy' must be called before destructing - Improper release of resources");
+}
 
 void VulkanDisplay::createSurface(VkInstance instance){
     if(!SDL_Vulkan_CreateSurface(m_window->getHandle(), instance, &m_surface))
@@ -74,10 +82,13 @@ uint32 VulkanDisplay::createSwapchain(VkPhysicalDevice physicalDevice, VkDevice 
     m_images.resize(m_imageCount);
     vkGetSwapchainImagesKHR(device, m_swapchain, &m_imageCount, m_images.data());
 
+    m_swapchainInitialized = true;
     return m_imageCount;
 }
 
 void VulkanDisplay::createImageViews(VkDevice device){
+    assert(m_swapchainInitialized);
+
     // resize image views
     m_imageViews.resize(m_images.size());
 
@@ -104,6 +115,9 @@ void VulkanDisplay::createImageViews(VkDevice device){
         };
         VK_CHECK(vkCreateImageView(device, &createInfo, nullptr, &m_imageViews[i]));
     }
+
+    m_imageViewsInitialized = true;
+    m_cleanedUp = false;
 }
 
 
@@ -115,25 +129,46 @@ void VulkanDisplay::createImageViews(VkDevice device){
 //  ██║  ██║███████╗███████╗██║     ███████╗██║  ██║
 //  ╚═╝  ╚═╝╚══════╝╚══════╝╚═╝     ╚══════╝╚═╝  ╚═╝
 
-VkFormat VulkanDisplay::getSwapchainFormat(){
-    return m_format;
-}
-
-VkSwapchainKHR VulkanDisplay::getSwapchain(){
-    return m_swapchain;
-}
-
 void VulkanDisplay::cleanup(VkDevice device){
     for (auto imageView : m_imageViews) {
         vkDestroyImageView(device, imageView, nullptr);
     }
 
     vkDestroySwapchainKHR(device, m_swapchain, nullptr);
+
+    m_imageViewsInitialized = false;
+    m_swapchainInitialized = false;
+    m_cleanedUp = true;
+}
+
+void VulkanDisplay::destroy(VkDevice device, VkInstance instance){
+    if (!m_cleanedUp)
+        cleanup(device);
+    
+    vkDestroySwapchainKHR(device, m_swapchain, nullptr);
+    vkDestroySurfaceKHR(instance, m_surface, nullptr);
+
+    m_destroyed = true;
+}
+
+VkSwapchainKHR VulkanDisplay::getSwapchain(){
+    if (!m_swapchainInitialized)
+        SprLog::error("[VulkanDisplay] Failed to retrieve swapchain, unitialized");
+
+    return m_swapchain;
 }
 
 std::vector<VkImageView> VulkanDisplay::getImageViews(){
+    if (!m_imageViewsInitialized)
+        SprLog::error("[VulkanDisplay] Failed to retrieve image views, unitialized");
+
     return m_imageViews;
 }
+
+VkFormat VulkanDisplay::getSwapchainFormat(){
+    return m_format;
+}
+
 
 VkSurfaceKHR VulkanDisplay::getSurface(){
     return m_surface;

@@ -49,6 +49,7 @@ debugCallback(VkDebugUtilsMessageSeverityFlagBitsEXT messageSeverity,
 VulkanDevice::VulkanDevice(){}
 
 VulkanDevice::~VulkanDevice(){
+    vkDestroyDevice(m_device, nullptr);
     if (DEBUG)
         DestroyDebugUtilsMessengerEXT(m_instance, m_debugMessenger, nullptr);
     vkDestroyInstance(m_instance, nullptr);

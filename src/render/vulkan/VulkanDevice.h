@@ -5,6 +5,7 @@
 #include "Window.h"
 #include <vulkan/vulkan_core.h>
 #include "../../debug/SprLog.h"
+#include "../../core/util/FunctionStack.h"
 
 namespace spr::gfx {
 
