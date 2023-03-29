@@ -33,7 +33,7 @@ debugCallback(VkDebugUtilsMessageSeverityFlagBitsEXT messageSeverity,
             const VkDebugUtilsMessengerCallbackDataEXT* pCallbackData,
             void* pUserData) {
     
-    SprLog::warn("Validation layer: " + std::string(pCallbackData->pMessage));
+    SprLog::warn("[VulkanDevice] Validation layer: " + std::string(pCallbackData->pMessage));
 
     return VK_FALSE;
 }
@@ -380,7 +380,7 @@ void VulkanDevice::enableValidationLayers(VkDebugUtilsMessengerCreateInfoEXT& de
 
         if (!layerFound){
             // validation layer not found
-            SprLog::warn("Validation layer not found: " + layerName);
+            SprLog::warn("[VulkanDevice] Validation layer not found: " + layerName);
             m_validationLayerCount = 0;
             m_validationLayers.clear();
             return;

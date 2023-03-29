@@ -68,7 +68,7 @@ void SprResourceManager::init(){
                 registerResource<Material>(metadata);
                 break;
             default:
-                SprLog::warn("ResourceType not recognized");
+                SprLog::warn("[SprResourceManager] ResourceType not recognized");
                 break;
         }
     }

@@ -10,7 +10,7 @@ ResourceLoader::ResourceLoader(){
 template <typename T>
 T ResourceLoader::loadFromMetadata(ResourceMetadata metadata){
     // log unknown resource
-    SprLog::error("Unkown resource");
+    SprLog::error("[ResourceLoader] Unkown resource");
 }
 
 
@@ -39,7 +39,7 @@ Model ResourceLoader::loadFromMetadata<Model>(ResourceMetadata metadata){
         ResourceTypes::getExtension(metadata.resourceType), 
         std::ios::binary);
     if (!f.is_open()){
-        SprLog::warn("Model not found");
+        SprLog::warn("[ResourceLoader] Model not found");
         return Model();
     }
 
@@ -100,7 +100,7 @@ Mesh ResourceLoader::loadFromMetadata<Mesh>(ResourceMetadata metadata){
         ResourceTypes::getExtension(metadata.resourceType), 
         std::ios::binary);
     if (!f.is_open()){
-        SprLog::warn("Mesh not found");
+        SprLog::warn("[ResourceLoader] Mesh not found");
         return Mesh();
     }
 
@@ -202,7 +202,7 @@ Material ResourceLoader::loadFromMetadata<Material>(ResourceMetadata metadata){
         ResourceTypes::getExtension(metadata.resourceType), 
         std::ios::binary);
     if (!f.is_open()){
-        SprLog::warn("Material not found");
+        SprLog::warn("[ResourceLoader] Material not found");
         return Material();
     }
 
@@ -275,7 +275,7 @@ Material ResourceLoader::loadFromMetadata<Material>(ResourceMetadata metadata){
                 doubleSided = true;
                 break;
             default: // unknown
-                SprLog::warn("Material type not recognized");
+                SprLog::warn("[ResourceLoader] Material type not recognized");
                 break;
         }
     }
@@ -338,7 +338,7 @@ Texture ResourceLoader::loadFromMetadata<Texture>(ResourceMetadata metadata){
         ResourceTypes::getExtension(metadata.resourceType), 
         std::ios::binary);
     if (!f.is_open()){
-        SprLog::warn("Texture not found");
+        SprLog::warn("[ResourceLoader] Texture not found");
         return Texture();
     }
 
@@ -390,7 +390,7 @@ Buffer ResourceLoader::loadFromMetadata<Buffer>(ResourceMetadata metadata){
         ResourceTypes::getExtension(metadata.resourceType), 
         std::ios::binary);
     if (!f.is_open()){
-        SprLog::warn("Buffer not found");
+        SprLog::warn("[ResourceLoader] Buffer not found");
         return Buffer();
     }
 

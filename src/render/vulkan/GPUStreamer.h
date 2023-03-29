@@ -18,12 +18,12 @@ public:
     
     template <typename T>
     void transfer(T data) {
-        SprLog::warn("GPUStreamer: Upload not available for buffer of this type");
+        SprLog::warn("[GPUStreamer] Upload not available for buffer of this type");
     }
 
     template <typename T>
     void transferDynamic(T data, uint32 frame) {
-        SprLog::warn("GPUStreamer: Dynamic upload not available for buffer of this type");
+        SprLog::warn("[GPUStreamer] Dynamic upload not available for buffer of this type");
     }
 
     void flush();

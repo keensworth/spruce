@@ -39,7 +39,7 @@ public:
     // U := ResourceType
     template <typename U>
     void remove(Handle<U> handle){
-        SprLog::warn("VulkanResourceManager: [REMOVE] Resource may not be properly destroyed");
+        SprLog::warn("[VulkanResourceManager] [REMOVE] Resource may not be properly destroyed");
         auto resourceCache = m_resourceMap[typeid(U)];
         auto typedCache = dynamic_cast<TypedResourceCache<U>*>(resourceCache);
         return typedCache->remove(handle);
@@ -49,7 +49,7 @@ public:
     // V := ResourceDesc
     template <typename U, typename V>
     Handle<U> create(V desc){
-        SprLog::warn("VulkanResourceManager: [CREATE] Resource not recognized");
+        SprLog::warn("[VulkanResourceManager] [CREATE] Resource not recognized");
         return Handle<U>();
     }
 
@@ -57,7 +57,7 @@ public:
     // V := (unknown)
     template <typename U, typename V>
     Handle<U> recreate(Handle<U> handle, V arg){
-        SprLog::warn("VulkanResourceManager: [RECREATE] Resource recreation not available for this type, excplicit specialization required");
+        SprLog::warn("[VulkanResourceManager] [RECREATE] Resource recreation not available for this type, excplicit specialization required");
         return Handle<U>();
     }
 
@@ -66,7 +66,7 @@ private:
     // U := ResourceType
     template <typename U, typename V>
     void allocate(Handle<U> handle, V& info){
-        SprLog::warn("VulkanResourceManager: [ALLOCATE] Resource not recognized");
+        SprLog::warn("[VulkanResourceManager] [ALLOCATE] Resource not recognized");
         return;
     }
 

@@ -409,10 +409,10 @@ Handle<DescriptorSet> VulkanResourceManager::create<DescriptorSet>(DescriptorSet
         perFrameDescriptorCount += (binding.buffers.size() > 0);
 
     if (globalDescriptorCount > 0 && perFrameDescriptorCount > 0){
-        SprLog::error("VRM: [DESCRIPTOR SET] Cannot use both global and per-frame descriptors in one set");
+        SprLog::error("[VulkanResourceManager] [create<DescriptorSet>] Cannot use both global and per-frame descriptors in one set");
     }
     if (globalDescriptorCount == 0 && perFrameDescriptorCount == 0){
-        SprLog::error("VRM: [DESCRIPTOR SET] Cannot manually create descriptor set with no descriptors");
+        SprLog::error("[VulkanResourceManager] [create<DescriptorSet>] Cannot manually create descriptor set with no descriptors");
     }
     bool globalDescriptors = globalDescriptorCount > 0;
 
@@ -584,7 +584,7 @@ Handle<RenderPass> VulkanResourceManager::create<RenderPass>(RenderPassDesc desc
 
     // check that renderpass uses exclusively attachments or swapchain images
     if (swapchainOverride && (attachmentCount > 1 || hasDepthAttachment)){
-        SprLog::error("VRM: [RenderPass] Cannot use both swapchain images and attachments");
+        SprLog::error("[VulkanResourceManager] [create<RenderPass>] Cannot use both swapchain images and attachments");
     }
     
     // insert new description info into attachment descriptions
@@ -768,7 +768,7 @@ Handle<Shader> VulkanResourceManager::create<Shader>(ShaderDesc desc){
         // get shader bytes
         std::ifstream instream(desc.vertexShader.path, std::ios::in | std::ios::binary);
         if (!instream){
-            std::string message = "VulkanResourceManager: [SHADER] Shader (VS) not found: ";
+            std::string message = "[VulkanResourceManager] [create<Shader>] Shader (VS) not found: ";
             message += desc.vertexShader.path;
             SprLog::error(message);
         }
@@ -795,7 +795,7 @@ Handle<Shader> VulkanResourceManager::create<Shader>(ShaderDesc desc){
         // get shader bytes
         std::ifstream instream(desc.fragmentShader.path, std::ios::in | std::ios::binary);
         if (!instream){
-            std::string message = "VulkanResourceManager: [SHADER] Shader (FS) not found: ";
+            std::string message = "[VulkanResourceManager] [create<Shader>] Shader (FS) not found: ";
             message += desc.fragmentShader.path;
             SprLog::error(message);
         }
@@ -1217,6 +1217,8 @@ Handle<RenderPass> VulkanResourceManager::recreate<RenderPass>(Handle<RenderPass
 template<>
 void VulkanResourceManager::remove<Buffer>(Handle<Buffer> handle){
     BufferCache* resourceCache = ((BufferCache*) m_resourceMap[typeid(Buffer)]);
+    
+    resourceCache->remove(handle);
 };
 
 

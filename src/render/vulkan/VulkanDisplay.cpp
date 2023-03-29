@@ -25,7 +25,7 @@ VulkanDisplay::~VulkanDisplay(){}
 
 void VulkanDisplay::createSurface(VkInstance instance){
     if(!SDL_Vulkan_CreateSurface(m_window->getHandle(), instance, &m_surface))
-        SprLog::fatal("VulkanDisplay: Failed to create surface");
+        SprLog::fatal("[VulkanDisplay] Failed to create surface");
 }
 
 uint32 VulkanDisplay::createSwapchain(VkPhysicalDevice physicalDevice, VkDevice device, QueueFamilies families){
@@ -186,7 +186,7 @@ void VulkanDisplay::querySwapchainSupport(VkPhysicalDevice physicalDevice) {
     vkGetPhysicalDeviceSurfaceFormatsKHR(physicalDevice, m_surface, &formatCount, nullptr);
 
     if (formatCount == 0) 
-        SprLog::fatal("Vulkan Display: No surface formats available");
+        SprLog::fatal("[VulkanDisplay] No surface formats available");
 
     m_formats.resize(formatCount);
     vkGetPhysicalDeviceSurfaceFormatsKHR(physicalDevice, m_surface, &formatCount, m_formats.data());
@@ -196,7 +196,7 @@ void VulkanDisplay::querySwapchainSupport(VkPhysicalDevice physicalDevice) {
     vkGetPhysicalDeviceSurfacePresentModesKHR(physicalDevice, m_surface, &presentModeCount, nullptr);
 
     if (presentModeCount == 0)
-        SprLog::fatal("Vulkan DIsplay: No present modes available");
+        SprLog::fatal("[VulkanDisplay] No present modes available");
 
     m_presentModes.resize(presentModeCount);
     vkGetPhysicalDeviceSurfacePresentModesKHR(physicalDevice, m_surface, &presentModeCount, m_presentModes.data());

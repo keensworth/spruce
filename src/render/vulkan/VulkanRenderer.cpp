@@ -188,7 +188,7 @@ void VulkanRenderer::validateSwapchain(VkResult result, SwapchainStage stage){
     
     // abnormal swapchain result, return error
     if (result != VK_ERROR_OUT_OF_DATE_KHR && result != VK_SUBOPTIMAL_KHR){
-        std::string message = "VulkanRenderer: Swapchain invalid, code: ";
+        std::string message = "[VulkanRenderer] Swapchain invalid, code: ";
         message += std::to_string((uint32)result);
         SprLog::error(message);
         return;

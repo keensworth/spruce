@@ -20,7 +20,7 @@ DescriptorSetHandler::~DescriptorSetHandler(){
 
 void DescriptorSetHandler::set(uint32 set, Handle<DescriptorSet> handle){
     if (set >= 4){
-        SprLog::warn("DescriptorSetHandler: Set does not exist, set must be < 4");
+        SprLog::warn("[DescriptorSetHandler] Set does not exist, set must be < 4");
         return;
     }
     

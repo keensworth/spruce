@@ -44,7 +44,7 @@ public:
         // check that data can fit
         if (m_size + size >= m_capacity){
             size = m_capacity-m_size;
-            SprLog::warn("TempBuffer: " + std::string("size >= capacity, writing partial data"));
+            SprLog::warn("[TempBuffer] [insert] " + std::string("size >= capacity, writing partial data"));
         }
 
         // emplace data into buffer

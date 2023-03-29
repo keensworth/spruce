@@ -97,7 +97,7 @@ CommandBuffer& CommandPool::getCommandBuffer(CommandType commandType){
     else if (commandType == CommandType::MAIN)
         return m_mainCommandBuffer;
     
-    SprLog::error("CommandPool: Unknown command buffer type");
+    SprLog::error("[CommandPool] Unknown command buffer type");
     return m_mainCommandBuffer;    
 }
 
