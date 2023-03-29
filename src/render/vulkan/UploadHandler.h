@@ -46,7 +46,6 @@ public:
     void submit();
 
 private:
-    
     GPUStreamer m_streamer;
     uint32 m_frameId;
 

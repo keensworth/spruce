@@ -17,7 +17,8 @@ UploadHandler::UploadHandler(VulkanDevice& device, VulkanResourceManager& rm, Co
 }
 
 UploadHandler::~UploadHandler() {
-
+    // teardown GPUStreamer + associated staging buffers
+    m_streamer.~GPUStreamer();
 }
 
 void UploadHandler::submit() {
