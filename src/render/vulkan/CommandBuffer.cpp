@@ -36,7 +36,11 @@ CommandBuffer::CommandBuffer(VulkanDevice& device, CommandType commandType, VkCo
     m_passRenderer = RenderPassRenderer(rm, commandBuffer, frameIndex);
 }
 
-CommandBuffer::~CommandBuffer(){}
+CommandBuffer::~CommandBuffer(){
+    // teardown command buffer's own sync structures
+    vkDestroyFence(m_device->getDevice(), m_fence, nullptr);
+    vkDestroySemaphore(m_device->getDevice(), m_semaphore, nullptr);
+}
 
 
 void CommandBuffer::begin(){
