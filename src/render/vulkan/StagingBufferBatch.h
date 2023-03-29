@@ -15,7 +15,7 @@ public:
             .memType = (HOST)
         });
 
-        for (uint32 i = 0; i < 4; i++) {
+        for (uint32 i = 0; i < m_maxCount16MB; i++) {
             m_stages16MB[i] = rm->create<Buffer>(BufferDesc{
                 .byteSize = m_size16MB, 
                 .usage = Flags::BufferUsage::BU_TRANSFER_SRC,
@@ -23,7 +23,7 @@ public:
             });
         }
 
-        for (uint32 i = 0; i < 16; i++) {
+        for (uint32 i = 0; i < m_maxCount4MB; i++) {
             m_stages4MB[i] = rm->create<Buffer>(BufferDesc{
                 .byteSize = m_size4MB, 
                 .usage = Flags::BufferUsage::BU_TRANSFER_SRC,
@@ -31,7 +31,7 @@ public:
             });
         }
 
-        for (uint32 i = 0; i < 64; i++) {
+        for (uint32 i = 0; i < m_maxCount1MB; i++) {
             m_stages1MB[i] = rm->create<Buffer>(BufferDesc{
                 .byteSize = m_size1MB, 
                 .usage = Flags::BufferUsage::BU_TRANSFER_SRC,
@@ -45,48 +45,46 @@ public:
         m_count1MB  = 0;
     }
 
-    ~StagingBuffers() {          
+    ~StagingBuffers() {     
         m_rm->remove(m_stage64MB);
-
-        for (uint32 i = 0; i < 4; i++) {
+        
+        for (uint32 i = 0; i < m_maxCount16MB; i++) {
             m_rm->remove(m_stages16MB[i]);
-
         }
 
-        for (uint32 i = 0; i < 16; i++) {
+        for (uint32 i = 0; i < m_maxCount4MB; i++) {
             m_rm->remove(m_stages4MB[i]);
-
         }
 
-        for (uint32 i = 0; i < 64; i++) {
+        for (uint32 i = 0; i < m_maxCount1MB; i++) {
             m_rm->remove(m_stages1MB[i]);
         }
     }
 
     Handle<Buffer> getStagingBuffer(uint32 sizeBytes) {
         // try 1MB staging buffer
-        if (sizeBytes <= m_size1MB && m_count1MB < 64){
+        if (sizeBytes <= m_size1MB && m_count1MB < m_maxCount1MB){
             Handle<Buffer> buffer = m_stages1MB[m_count1MB];
             m_count1MB++;
             return buffer;
         }
 
         // try 4MB staging bufer
-        if (sizeBytes <= m_size4MB && m_count4MB < 16){
+        if (sizeBytes <= m_size4MB && m_count4MB < m_maxCount4MB){
             Handle<Buffer> buffer = m_stages4MB[m_count4MB];
             m_count4MB++;
             return buffer;
         }
 
         // try 16MB staging buffer
-        if (sizeBytes <= m_size16MB && m_count16MB < 4){
+        if (sizeBytes <= m_size16MB && m_count16MB < m_maxCount16MB){
             Handle<Buffer> buffer = m_stages16MB[m_count16MB];
             m_count16MB++;
             return buffer;
         }
 
         // try 64MB staging buffer
-        if (sizeBytes <= m_size64MB && m_count64MB < 1){
+        if (sizeBytes <= m_size64MB && m_count64MB < m_maxCount64MB){
             Handle<Buffer> buffer = m_stage64MB;
             m_count64MB++;
             return buffer;
@@ -121,22 +119,28 @@ public:
     }
 
 private:
+    static const uint32 m_maxCount64MB = 1;
+    static const uint32 m_maxCount16MB = 4;
+    static const uint32 m_maxCount4MB  = 16;
+    static const uint32 m_maxCount1MB  = 64;
+
+    static const uint32 m_size64MB = 1u << 25; // 2^26 bytes (64MB)
+    static const uint32 m_size16MB = 1u << 23; // 2^24 bytes (16MB)
+    static const uint32 m_size4MB = 1u << 21;  // 2^22 bytes (4MB)
+    static const uint32 m_size1MB = 1u << 19;  // 2^20 bytes (1MB)
+
+private:
     // 256 MB (total) pre-allocated staging buffers
-    Handle<Buffer> m_stage64MB;     // 1x 64MB 
-    Handle<Buffer> m_stages16MB[4]; // 4x 16MB
-    Handle<Buffer> m_stages4MB[16]; // 16x 4MB
-    Handle<Buffer> m_stages1MB[64]; // 64x 1MB
+    Handle<Buffer> m_stage64MB;                  // 1x 64MB 
+    Handle<Buffer> m_stages16MB[m_maxCount16MB]; // 4x 16MB
+    Handle<Buffer> m_stages4MB[m_maxCount4MB];   // 16x 4MB
+    Handle<Buffer> m_stages1MB[m_maxCount1MB];   // 64x 1MB
     std::vector<Handle<Buffer>> m_overflowStages;
 
     uint32 m_count64MB = 0;
     uint32 m_count16MB = 0;
     uint32 m_count4MB  = 0;
     uint32 m_count1MB  = 0;
-
-    uint32 m_size64MB = 1u << 25; // 2^26 bytes (64MB)
-    uint32 m_size16MB = 1u << 23; // 2^24 bytes (16MB)
-    uint32 m_size4MB = 1u << 21;  // 2^22 bytes (4MB)
-    uint32 m_size1MB = 1u << 19;  // 2^20 bytes (1MB)
 
     VulkanResourceManager* m_rm;
 };
