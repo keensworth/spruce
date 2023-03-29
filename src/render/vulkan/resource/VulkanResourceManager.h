@@ -72,14 +72,14 @@ private:
 
 private:
     rmap m_resourceMap{
-        {typeid(Buffer), new BufferCache},
-        {typeid(Texture), new TextureCache},
-        {typeid(TextureAttachment), new TextureAttachmentCache},
+        {typeid(Buffer),              new BufferCache},
+        {typeid(Texture),             new TextureCache},
+        {typeid(TextureAttachment),   new TextureAttachmentCache},
         {typeid(DescriptorSetLayout), new DescriptorSetLayoutCache},
-        {typeid(DescriptorSet), new DescriptorSetCache},
-        {typeid(RenderPassLayout), new RenderPassLayoutCache},
-        {typeid(RenderPass), new RenderPassCache},
-        {typeid(Shader), new ShaderCache},
+        {typeid(DescriptorSet),       new DescriptorSetCache},
+        {typeid(RenderPassLayout),    new RenderPassLayoutCache},
+        {typeid(RenderPass),          new RenderPassCache},
+        {typeid(Shader),              new ShaderCache},
     };
 
     VkDevice m_device;
@@ -88,7 +88,6 @@ private:
 
     VkDescriptorPool m_globalDescriptorPool;
     VkDescriptorPool m_dynamicDescriptorPools[MAX_FRAME_COUNT];
-
 
     friend class RenderCoordinator;
     friend class RenderPassRenderer;
