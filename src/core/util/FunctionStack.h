@@ -5,7 +5,7 @@
 
 namespace spr {
 
-typedef struct FunctionQueue {
+typedef struct FunctionStack {
     std::deque<std::function<void()>> functors;
 
     void push_function(std::function<void()>&& function) {
@@ -13,12 +13,12 @@ typedef struct FunctionQueue {
     }
 
     void execute() {
-        for (auto it = functors.begin(); it != functors.end(); it++) {
+        for (auto it = functors.rbegin(); it != functors.rend(); it++) {
             (*it)(); 
         }
 
         functors.clear();
     }
-} FunctionQueue;
+} FunctionStack;
 
 }
