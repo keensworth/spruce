@@ -63,7 +63,32 @@ VulkanRenderer::VulkanRenderer(Window* window) : m_device(VulkanDevice()), m_dis
 }
 
 VulkanRenderer::~VulkanRenderer(){
+    // upload handlers
+    for (uint32 i = 0; i < MAX_FRAME_COUNT; i++){
+        m_uploadHandlers[i].~UploadHandler();
+    }
 
+    // command pools
+    for (uint32 i = 0; i < MAX_FRAME_COUNT; i++){
+        m_commandPools[i].~CommandPool();
+        m_transferCommandPools[i].~CommandPool();
+    }
+
+    // allocator
+    vmaDestroyAllocator(m_allocator);
+
+    // frame sync structures
+    for (uint32 i = 0; i < MAX_FRAME_COUNT; i++){
+        RenderFrame& renderFrame = m_frames[i];
+        vkDestroySemaphore(m_device.getDevice(), renderFrame.renderedSem, nullptr);
+        vkDestroySemaphore(m_device.getDevice(), renderFrame.acquiredSem, nullptr);
+        vkDestroyFence(m_device.getDevice(), renderFrame.acquiredFence, nullptr);
+    }
+
+    // display + device
+    m_display.destroy(m_device.getDevice(), m_device.getInstance());
+    m_display.~VulkanDisplay();
+    m_device.~VulkanDevice();
 }
 
 
