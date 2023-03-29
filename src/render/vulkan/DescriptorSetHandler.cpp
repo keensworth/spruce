@@ -24,7 +24,7 @@ void DescriptorSetHandler::set(uint32 set, Handle<DescriptorSet> handle){
         return;
     }
     
-    if (!(handle == m_sets[set]))
+    if (handle != m_sets[set])
         m_sets[set] = handle;
 }
 
