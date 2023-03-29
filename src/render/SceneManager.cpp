@@ -1,14 +1,14 @@
 #include "SceneManager.h"
 #include "scene/Mesh.h"
+#include "vulkan/resource/VulkanResourceManager.h"
 #include "vulkan/vulkan_core.h"
+#include <cctype>
 
 namespace spr::gfx {
 
 SceneManager::SceneManager(){}
 
-SceneManager::SceneManager(VulkanResourceManager& rm){
-    m_initialized = false;
-    
+SceneManager::SceneManager(VulkanResourceManager& rm){  
     for (uint32 i = 0; i < MAX_FRAME_COUNT; i++){
         m_batchManagers[i] = BatchManager();
     }
@@ -30,7 +30,7 @@ SceneManager::~SceneManager(){
 
 void SceneManager::initializeAssets(SprResourceManager &rm, VulkanResourceManager &vrm){
 
-    //
+    // TODO
     //
 
     // initialize buffers
@@ -167,6 +167,36 @@ void SceneManager::reset(uint32 frame) {
     m_lights[frame % MAX_FRAME_COUNT].reset();
     m_drawData[frame % MAX_FRAME_COUNT].reset();
     m_sceneData[frame % MAX_FRAME_COUNT].reset();
+}
+
+void SceneManager::destroy(VulkanResourceManager& rm){
+    // destroy per-frame batch managers
+    for (uint32 i = 0; i < MAX_FRAME_COUNT; i++){
+        m_batchManagers[i].destroy();
+    }
+
+    // destroy per-frame tempbuffers
+    for (uint32 i = 0; i < MAX_FRAME_COUNT; i++){
+        m_drawData[i].reset();
+        m_cameras[i].reset();
+        m_sceneData[i].reset();
+        m_lights[i].reset();
+        m_transforms[i].reset();
+    }
+
+    // destroy per-frame resources
+    rm.remove(m_lightsBuffer);
+    rm.remove(m_transformBuffer);
+    rm.remove(m_drawDataBuffer);
+    rm.remove(m_cameraBuffer);
+    rm.remove(m_sceneBuffer);
+
+    // destroy global resources
+    rm.remove(m_positionsBuffer);
+    rm.remove(m_attributesBuffer);
+    rm.remove(m_indexBuffer);
+    rm.remove(m_materialsBuffer);
+    rm.remove(m_textureDescBuffer);
 }
 
 }

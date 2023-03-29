@@ -44,6 +44,8 @@ public:
 
     BatchManager& getBatchManager(uint32 frame);
 
+    void destroy(VulkanResourceManager& rm);
+
 private:
     BatchManager m_batchManagers[MAX_FRAME_COUNT];
     mmap m_meshInfo;
@@ -70,7 +72,5 @@ private:
     TempBuffer<Transform> m_transforms[MAX_FRAME_COUNT];
 
     void initBuffers(VulkanResourceManager& vrm, PrimitiveCounts counts);
-
-    bool m_initialized;
 };
 }
