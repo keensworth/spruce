@@ -30,14 +30,12 @@ uint32 BatchManager::getDrawCount(){
 }
 
 void BatchManager::reset(){
-    // rm->deleteDraws
     m_batches.~BatchNode();
     m_batches = BatchNode();
     m_drawCount = 0;
 }
 
 void BatchManager::destroy(){
-    // rm->deleteDraws
     m_batches.~BatchNode();
 }
 
