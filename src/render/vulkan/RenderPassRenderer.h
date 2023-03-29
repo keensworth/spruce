@@ -20,16 +20,18 @@ typedef struct PassContext {
 class RenderPassRenderer{
 public:
     RenderPassRenderer();
-    RenderPassRenderer(VulkanResourceManager* rm, VkCommandBuffer commandBuffer, glm::uvec3 dimensions, uint32 frameIndex);
+    RenderPassRenderer(VulkanResourceManager* rm, VkCommandBuffer commandBuffer, uint32 frameIndex);
     ~RenderPassRenderer();
 
     void drawSubpass(PassContext context, std::vector<Batch>& batches);
+    void setFrameId(uint32 frameId);
 
 private:
     VulkanResourceManager* m_rm;
     VkCommandBuffer m_commandBuffer;
     DescriptorSetHandler m_descSetHandler;
-    glm::uvec3 m_dim;
+
+    uint32 m_frameId;
     uint32 m_frameIndex;
 };
 }
