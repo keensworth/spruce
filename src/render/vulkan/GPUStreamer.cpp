@@ -1,5 +1,6 @@
 #include "GPUStreamer.h"
 
+#include "StagingBufferBatch.h"
 #include "VulkanDevice.h"
 #include "resource/VulkanResourceManager.h"
 #include "vulkan_core.h"
@@ -32,7 +33,8 @@ GPUStreamer::GPUStreamer(VulkanDevice& device, VulkanResourceManager& rm, Comman
 }
 
 GPUStreamer::~GPUStreamer(){
-    reset();
+    // destroy and deallocate staging buffers
+    m_stagingBuffers.~StagingBuffers();
 }
 
 template<>
