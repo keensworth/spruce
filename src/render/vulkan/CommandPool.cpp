@@ -1,4 +1,5 @@
 #include "CommandPool.h"
+#include "CommandBuffer.h"
 #include "vulkan_core.h"
 #include <vulkan/vulkan_core.h>
 
@@ -86,7 +87,13 @@ CommandPool::CommandPool(VulkanDevice& device, uint32 familyIndex, VulkanResourc
 }
 
 CommandPool::~CommandPool(){
-    vkDestroyCommandPool(m_device->getDevice(), m_commandPool, NULL);
+    // teardown command buffers (non-owning of any VkCommandBuffer)
+    m_transferCommandBuffer.~CommandBuffer();
+    m_offscreenCommandBuffer.~CommandBuffer();
+    m_mainCommandBuffer.~CommandBuffer();
+
+    // teardown command pool (and VkCommandBuffers with it)
+    vkDestroyCommandPool(m_device->getDevice(), m_commandPool, nullptr);
 }
 
 CommandBuffer& CommandPool::getCommandBuffer(CommandType commandType){
