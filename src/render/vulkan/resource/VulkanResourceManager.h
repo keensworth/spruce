@@ -91,5 +91,6 @@ private:
 
 
     friend class RenderCoordinator;
+    friend class RenderPassRenderer;
 };
 }

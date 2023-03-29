@@ -28,7 +28,7 @@ void UploadHandler::submit() {
 
     // upload dynamic buffers (N-buffered)
     for (GPUStreamer::BufferTransfer upload : m_dynamicBufferUploadQueue) {
-        m_streamer.transferDynamic(upload, m_frame);
+        m_streamer.transferDynamic(upload, m_frameId);
     }
 
     // upload textures/images
@@ -46,8 +46,8 @@ void UploadHandler::submit() {
     m_graphicsCommandBuffer->end();
 }
 
-void UploadHandler::setFrame(uint32 frame){
-    m_frame = frame;
+void UploadHandler::setFrameId(uint32 frame){
+    m_frameId = frame;
 }
 
 void UploadHandler::reset() {

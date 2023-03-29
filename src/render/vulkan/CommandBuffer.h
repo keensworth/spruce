@@ -20,10 +20,10 @@ typedef enum CommandType : uint32 {
 class CommandBuffer{
 public:
     CommandBuffer();
-    CommandBuffer(VulkanDevice& device, CommandType commandType, VkCommandBuffer commandBuffer, VulkanResourceManager* rm, VkQueue queue);
+    CommandBuffer(VulkanDevice& device, CommandType commandType, VkCommandBuffer commandBuffer, VulkanResourceManager* rm, VkQueue queue, uint32 frameIndex);
     ~CommandBuffer();
 
-    RenderPassRenderer& beginRenderPass(Handle<RenderPass> renderPass);
+    RenderPassRenderer& beginRenderPass(Handle<RenderPass> renderPass, glm::vec4 clearColor);
     void endRenderPass();
     void submit();
 
@@ -49,8 +49,9 @@ private:
     std::vector<VkSemaphore> m_signalSemaphores;
     VkQueue m_queue;
 
-    uint32 m_frame;
-    void setFrame(uint32 frame);
+    uint32 m_frameId;
+    uint32 m_frameIndex;
+    void setFrameId(uint32 frameId);
 
     void begin();
     void end();

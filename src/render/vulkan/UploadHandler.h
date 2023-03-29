@@ -48,7 +48,7 @@ public:
 private:
     
     GPUStreamer m_streamer;
-    uint32 m_frame;
+    uint32 m_frameId;
 
     CommandBuffer* m_transferCommandBuffer;
     CommandBuffer* m_graphicsCommandBuffer;
@@ -58,7 +58,7 @@ private:
     std::vector<GPUStreamer::TextureTransfer> m_textureUploadQueue;
 
     void reset();
-    void setFrame(uint32 frame);
+    void setFrameId(uint32 frameId);
 
     friend class VulkanRenderer;
 };

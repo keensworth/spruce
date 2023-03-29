@@ -33,7 +33,8 @@ public:
 
 private:    
     uint32 m_imageCount = 0;
-    uint32 m_currFrame = 0;
+    uint32 m_currFrameId = 0;
+    uint32 m_frameIndex = 0;
 
     RenderFrame m_frames[MAX_FRAME_COUNT];
 

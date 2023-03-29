@@ -11,11 +11,11 @@ namespace spr::gfx{
 class CommandPool{
 public:
     CommandPool();
-    CommandPool(VulkanDevice& device, uint32 familyIndex, VulkanResourceManager* rm, RenderFrame& frame);
+    CommandPool(VulkanDevice& device, uint32 familyIndex, VulkanResourceManager* rm, RenderFrame& frame, uint32 frameIndex);
     ~CommandPool();
 
     CommandBuffer& getCommandBuffer(CommandType commandType);
-    void reset(uint32 frame);
+    void prepare(uint32 frameId);
 
 private:
     VulkanDevice* m_device;
@@ -23,7 +23,8 @@ private:
     std::vector<VkCommandBuffer> m_commandBuffers;
     VulkanResourceManager* m_rm;
 
-    uint32 m_frame;
+    uint32 m_frameId;
+    uint32 m_frameIndex;
 
     CommandBuffer m_transferCommandBuffer;
     CommandBuffer m_offscreenCommandBuffer;

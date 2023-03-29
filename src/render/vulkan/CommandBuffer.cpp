@@ -1,5 +1,6 @@
 #include "CommandBuffer.h"
 
+#include "RenderPassRenderer.h"
 #include "UploadHandler.h"
 #include "vulkan_core.h"
 #include <vulkan/vulkan_core.h>
@@ -8,16 +9,17 @@ namespace spr::gfx {
 
 CommandBuffer::CommandBuffer() {}
 
-CommandBuffer::CommandBuffer(VulkanDevice& device, CommandType commandType, VkCommandBuffer commandBuffer, VulkanResourceManager* rm, VkQueue queue){
+CommandBuffer::CommandBuffer(VulkanDevice& device, CommandType commandType, VkCommandBuffer commandBuffer, VulkanResourceManager* rm, VkQueue queue, uint32 frameIndex){
     m_type = commandType;
     m_commandBuffer = commandBuffer;
     m_rm = rm;
     m_device = &device;
     m_queue = queue;
-    m_frame = 0;
+    m_frameId = 0;
+    m_frameIndex = frameIndex;
 
     // build semaphore info and create semaphore
-    VkSemaphoreCreateInfo semaphoreInfo {
+    VkSemaphoreCreateInfo semaphoreInfo { 
         .sType = VK_STRUCTURE_TYPE_SEMAPHORE_CREATE_INFO
     };
     VK_CHECK(vkCreateSemaphore(device.getDevice(), &semaphoreInfo, NULL, &m_semaphore));
@@ -29,9 +31,13 @@ CommandBuffer::CommandBuffer(VulkanDevice& device, CommandType commandType, VkCo
         .flags = VK_FENCE_CREATE_SIGNALED_BIT
     };
     VK_CHECK(vkCreateFence(device.getDevice(), &fenceInfo, NULL, &m_fence));
+
+    // create render pass renderer
+    m_passRenderer = RenderPassRenderer(rm, commandBuffer, frameIndex);
 }
 
 CommandBuffer::~CommandBuffer(){}
+
 
 void CommandBuffer::begin(){
     VkCommandBufferBeginInfo beginInfo {
@@ -44,30 +50,33 @@ void CommandBuffer::end(){
     VK_CHECK(vkEndCommandBuffer(m_commandBuffer));
 }
 
-RenderPassRenderer& CommandBuffer::beginRenderPass(Handle<RenderPass> handle){
+
+RenderPassRenderer& CommandBuffer::beginRenderPass(Handle<RenderPass> handle, glm::vec4 clearColor = {0.45098f, 0.52549f, 0.47058f, 1.0f}){
     // make sure user is accessing correct commandbuffer
     if (m_type != CommandType::OFFSCREEN && m_type != CommandType::MAIN){
-        SprLog::warn("CommandBuffer: Not a render command buffer");
+        SprLog::warn("[CommandBuffer] Not a render command buffer");
     }
 
-    // begin the renderpass
+    // get attachment counts (color + depth)
     RenderPass* renderPass = m_rm->get<RenderPass>(handle);
-    std::vector<VkClearValue> clearValues(renderPass->hasDepthAttachment + renderPass->colorAttachments.size());
-    for (uint32 i = 0; i < clearValues.size(); i++){
-        if (i < clearValues.size() - 1){
-            clearValues[i] = VkClearValue {
-                .color = {{0.0f, 0.0f, 0.0f, 1.0f}}
-            };
-        } else {
-            clearValues[i] = VkClearValue {
-                .depthStencil = {1.0f, 0}
-            };
-        }
-    }
+    bool hasDepth = renderPass->hasDepthAttachment;
+    uint32 colorCount = renderPass->colorAttachments.size();
+
+    // create clear values and begin renderpass
+    std::vector<VkClearValue> clearValues(colorCount + hasDepth);
+    for (uint32 i = 0; i < colorCount; i++)
+        clearValues[i] = VkClearValue {
+            .color = {{clearColor.x, clearColor.y, clearColor.z, clearColor.w}} // (green-gray by default)
+        };
+    if (hasDepth)
+        clearValues[colorCount] = VkClearValue {
+            .depthStencil = {1.0f, 0}
+        };    
+
     VkRenderPassBeginInfo renderPassInfo {
         .sType           = VK_STRUCTURE_TYPE_RENDER_PASS_BEGIN_INFO,
         .renderPass      = renderPass->renderPass,
-        .framebuffer     = renderPass->framebuffers[m_frame % MAX_FRAME_COUNT],
+        .framebuffer     = renderPass->framebuffers[m_frameId % MAX_FRAME_COUNT],
         .renderArea      = {
             .offset = {0,0},
             .extent = {renderPass->dimensions.x, renderPass->dimensions.y}
@@ -77,7 +86,7 @@ RenderPassRenderer& CommandBuffer::beginRenderPass(Handle<RenderPass> handle){
     };
     vkCmdBeginRenderPass(m_commandBuffer, &renderPassInfo, VK_SUBPASS_CONTENTS_INLINE);
     
-    // return the pass renderer
+    // prepare and return render pass renderer
     return m_passRenderer;
 }
 
@@ -111,6 +120,7 @@ void CommandBuffer::submit(){
     VK_CHECK(vkQueueSubmit(m_queue, 1, &submitInfo, m_fence));
 }
 
+
 VkCommandBuffer CommandBuffer::getCommandBuffer(){
     return m_commandBuffer;
 }
@@ -123,6 +133,7 @@ VkFence CommandBuffer::getFence(){
     return m_fence;
 }
 
+
 void CommandBuffer::waitFence(){
     VK_CHECK(vkWaitForFences(m_device->getDevice(), 1, &m_fence, VK_TRUE, UINT64_MAX));
 }
@@ -131,13 +142,23 @@ void CommandBuffer::resetFence(){
     VK_CHECK(vkResetFences(m_device->getDevice(), 1, &m_fence));
 }
 
+
 void CommandBuffer::setSemaphoreDependencies(std::vector<VkSemaphore> waitSemaphores, std::vector<VkSemaphore> signalSemaphores){
     m_waitSemaphores = waitSemaphores;
     m_signalSemaphores = signalSemaphores;
 }
 
-void CommandBuffer::setFrame(uint32 frame) {
-    m_frame = frame;
+
+void CommandBuffer::setFrameId(uint32 frameId) {
+    m_frameId = frameId;
+    uint32 frameIndex = m_frameId % MAX_FRAME_COUNT;
+    if (frameIndex != m_frameIndex){
+        std::string errMsg("[CommandBuffer] Frame Index mismatch! ");
+        std::string errInfo("Expected: " + std::to_string(m_frameIndex) + ", got: " + std::to_string(frameIndex));
+        SprLog::error(errMsg + errInfo);
+    }
+
+    m_passRenderer.setFrameId(frameId);
 }
 
 }
