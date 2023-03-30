@@ -49,6 +49,7 @@ private:
     GPUStreamer m_streamer;
     uint32 m_frameId;
 
+    // non-owning
     CommandBuffer* m_transferCommandBuffer;
     CommandBuffer* m_graphicsCommandBuffer;
 

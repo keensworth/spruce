@@ -17,15 +17,16 @@ public:
     void render(BatchManager& batchManager);
     void destroy();
 
-private:
-    VulkanResourceManager* m_rm;
-    VulkanRenderer* m_renderer;
-    glm::uvec3 m_dim;
-
+private: // owning
     Handle<RenderPassLayout> m_renderPassLayout;
     Handle<RenderPass> m_renderPass;
     Handle<DescriptorSetLayout> m_descriptorSetLayout;
     Handle<DescriptorSet> m_descriptorSet;
     Handle<Shader> m_shader;
+
+private: // non-owning
+    VulkanResourceManager* m_rm;
+    VulkanRenderer* m_renderer;
+    glm::uvec3 m_dim;
 };
 }

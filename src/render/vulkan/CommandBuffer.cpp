@@ -37,7 +37,7 @@ CommandBuffer::CommandBuffer(VulkanDevice& device, CommandType commandType, VkCo
 }
 
 CommandBuffer::~CommandBuffer(){
-    // teardown command buffer's own sync structures
+    // teardown own sync structures
     vkDestroyFence(m_device->getDevice(), m_fence, nullptr);
     vkDestroySemaphore(m_device->getDevice(), m_semaphore, nullptr);
 }

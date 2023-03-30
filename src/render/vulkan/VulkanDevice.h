@@ -66,20 +66,22 @@ public:
     }
 
 
-private:
+private: // owning
+    VkDevice m_device;
+    VkInstance m_instance;
+    VkDebugUtilsMessengerEXT m_debugMessenger;
+
+private: // non-owning
+    VkPhysicalDevice m_physicalDevice;
+
     VkApplicationInfo m_appInfo;
     std::string m_appName;
-    VkInstance m_instance;
-    VkPhysicalDevice m_physicalDevice;
-    VkDevice m_device;
 
     QueueFamilies m_queueFamilyIndices;
     VkQueue m_graphicsQueue;
     VkQueue m_presentQueue;
     VkQueue m_transferQueue;
     VkQueue m_computeQueue;
-
-    VkDebugUtilsMessengerEXT m_debugMessenger;
 
     uint32 m_extensionCount = 0;
     std::vector<std::string> m_extensionNames;

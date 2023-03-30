@@ -17,7 +17,7 @@ public:
     void updateBindings(VkPipelineLayout pipelineLayout, uint32 frameIndex);
     void reset();
 
-private:
+private: // non-owning
     VulkanResourceManager* m_rm;
     VkCommandBuffer m_commandBuffer;
     

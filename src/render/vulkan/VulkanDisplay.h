@@ -28,15 +28,16 @@ public:
     VkSwapchainKHR getSwapchain();
     
 
-private:
-    Window* m_window;
+private: //owning    
     VkSurfaceKHR m_surface;
     VkSwapchainKHR m_swapchain;
+    std::vector<VkImageView> m_imageViews;
+
+private: // non-owning
+    Window* m_window;
 
     uint32 m_imageCount;
     std::vector<VkImage> m_images;
-    std::vector<VkImageView> m_imageViews;
-    std::vector<VkFramebuffer> m_frameBuffers;
 
     VkSurfaceFormatKHR m_surfaceFormat;
     VkPresentModeKHR m_presentMode;

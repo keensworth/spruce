@@ -35,19 +35,21 @@ public:
 
     void setSemaphoreDependencies(std::vector<VkSemaphore> waitSemaphores, std::vector<VkSemaphore> signalSemaphores);
 
-private:
+
+private: // owning
+    VkFence m_fence;
+    VkSemaphore m_semaphore;
+
+private: // non-owning
     CommandType m_type;
     VkCommandBuffer m_commandBuffer;
+    std::vector<VkSemaphore> m_waitSemaphores;
+    std::vector<VkSemaphore> m_signalSemaphores;
+    VkQueue m_queue;
     
     VulkanDevice* m_device; 
     VulkanResourceManager* m_rm;
     RenderPassRenderer m_passRenderer;
-
-    VkFence m_fence;
-    VkSemaphore m_semaphore;
-    std::vector<VkSemaphore> m_waitSemaphores;
-    std::vector<VkSemaphore> m_signalSemaphores;
-    VkQueue m_queue;
 
     uint32 m_frameId;
     uint32 m_frameIndex;

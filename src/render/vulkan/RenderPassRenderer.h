@@ -26,7 +26,7 @@ public:
     void drawSubpass(PassContext context, std::vector<Batch>& batches);
     void setFrameId(uint32 frameId);
 
-private:
+private: // non-owning
     VulkanResourceManager* m_rm;
     VkCommandBuffer m_commandBuffer;
     DescriptorSetHandler m_descSetHandler;

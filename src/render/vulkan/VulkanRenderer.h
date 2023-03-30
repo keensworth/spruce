@@ -29,22 +29,8 @@ public:
     uint32 getFrameId();
     VulkanDevice& getDevice();
     VulkanDisplay& getDisplay();
-    VmaAllocator& getAllocator();
 
-private:    
-    uint32 m_imageCount = 0;
-    uint32 m_currFrameId = 0;
-    uint32 m_frameIndex = 0;
-
-    RenderFrame m_frames[MAX_FRAME_COUNT];
-
-    CommandPool m_commandPools[MAX_FRAME_COUNT];
-    CommandPool m_transferCommandPools[MAX_FRAME_COUNT];
-    UploadHandler m_uploadHandlers[MAX_FRAME_COUNT];
-
-    VulkanDevice m_device;
-    VulkanDisplay m_display;
-
+private:
     typedef enum SwapchainStage : uint32 {
         ACQUIRE = 0,
         PRESENT = 1
@@ -53,5 +39,19 @@ private:
     void recreateSwapchain();
     void validateSwapchain(VkResult result, SwapchainStage stage);
     void cleanup();
+
+private:
+    VulkanDevice m_device;
+    VulkanDisplay m_display;
+
+    CommandPool m_commandPools[MAX_FRAME_COUNT];
+    CommandPool m_transferCommandPools[MAX_FRAME_COUNT];
+
+    UploadHandler m_uploadHandlers[MAX_FRAME_COUNT];
+    RenderFrame m_frames[MAX_FRAME_COUNT];
+
+    uint32 m_imageCount = 0;
+    uint32 m_currFrameId = 0;
+    uint32 m_frameIndex = 0;
 };
 }

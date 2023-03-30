@@ -42,14 +42,15 @@ private:
         Texture* dst;
     };
 
-    // utility members
+    // utility members (non-owning)
     VulkanDevice* m_device;
     VulkanResourceManager* m_rm;
-    uint32 m_nonCoherentAtomSize;
     CommandBuffer* m_transferCommandBuffer;
     CommandBuffer* m_graphicsCommandBuffer;
-    uint32  m_graphicsFamilyIndex;
-    uint32  m_transferFamilyIndex;
+
+    uint32 m_nonCoherentAtomSize;
+    uint32 m_graphicsFamilyIndex;
+    uint32 m_transferFamilyIndex;
 
     // 256 MB pre-allocated staging buffers
     StagingBuffers m_stagingBuffers;

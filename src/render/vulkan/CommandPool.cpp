@@ -87,7 +87,7 @@ CommandPool::CommandPool(VulkanDevice& device, uint32 familyIndex, VulkanResourc
 }
 
 CommandPool::~CommandPool(){
-    // teardown command buffers (non-owning of any VkCommandBuffer)
+    // teardown command buffers
     m_transferCommandBuffer.~CommandBuffer();
     m_offscreenCommandBuffer.~CommandBuffer();
     m_mainCommandBuffer.~CommandBuffer();

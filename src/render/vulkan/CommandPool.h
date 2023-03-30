@@ -17,17 +17,20 @@ public:
     CommandBuffer& getCommandBuffer(CommandType commandType);
     void prepare(uint32 frameId);
 
-private:
-    VulkanDevice* m_device;
+
+private: // owning
     VkCommandPool m_commandPool;
     std::vector<VkCommandBuffer> m_commandBuffers;
-    VulkanResourceManager* m_rm;
 
-    uint32 m_frameId;
-    uint32 m_frameIndex;
+private: // non-owning
+    VulkanDevice* m_device;
+    VulkanResourceManager* m_rm;
 
     CommandBuffer m_transferCommandBuffer;
     CommandBuffer m_offscreenCommandBuffer;
     CommandBuffer m_mainCommandBuffer;
+
+    uint32 m_frameId;
+    uint32 m_frameIndex;
 };
 }
