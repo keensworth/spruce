@@ -29,8 +29,9 @@ private:
         
     SceneManager m_sceneManager;
     RenderCoordinator m_renderCoordinator;
-    Window* m_window;
-
     uint32 m_frameId;    
+
+    // non-owning
+    Window* m_window;
 };
 }

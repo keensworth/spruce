@@ -46,10 +46,14 @@ public:
 
     void destroy(VulkanResourceManager& rm);
 
+
 private:
     BatchManager m_batchManagers[MAX_FRAME_COUNT];
     mmap m_meshInfo;
 
+    void initBuffers(VulkanResourceManager& vrm, PrimitiveCounts counts);
+
+private: // owning
     // per frame resource handles
     Handle<Buffer> m_lightsBuffer;
     Handle<Buffer> m_transformBuffer;
@@ -70,7 +74,5 @@ private:
     TempBuffer<Scene> m_sceneData[MAX_FRAME_COUNT];
     TempBuffer<Light> m_lights[MAX_FRAME_COUNT];
     TempBuffer<Transform> m_transforms[MAX_FRAME_COUNT];
-
-    void initBuffers(VulkanResourceManager& vrm, PrimitiveCounts counts);
 };
 }
