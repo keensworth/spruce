@@ -1,4 +1,5 @@
 #include "SprRenderer.h"
+#include "vulkan/resource/VulkanResourceManager.h"
 
 
 namespace spr::gfx {
@@ -10,7 +11,7 @@ SprRenderer::SprRenderer(Window* window){
     // init renderer and resource manager
     m_rm = VulkanResourceManager();
     m_renderer = VulkanRenderer(window);
-    m_rm.init(m_renderer.getDevice(), m_renderer.getAllocator());
+    m_rm.init(m_renderer.getDevice());
     m_renderer.init(&m_rm);
 
     // init render coordinator and scene manager
@@ -19,7 +20,14 @@ SprRenderer::SprRenderer(Window* window){
 }
 
 SprRenderer::~SprRenderer(){
+    // wait on all queues
+    m_renderer.wait();
+    
+    // begin teardown
+    m_sceneManager.destroy(m_rm);
     m_renderCoordinator.destroy();
+    m_renderer.destroy();
+    m_rm.destroy();
 }
 
 
@@ -41,18 +49,17 @@ void SprRenderer::render(){
 
 
 void SprRenderer::insertMesh(uint32 meshId, uint32 materialFlags, glm::mat4 model, glm::mat4 modelInvTranspose){
-    //m_sceneManager.insertMesh(meshId, materialFlags, model, modelInvTranspose);
 }
 
 void SprRenderer::insertLight(){
-    //m_sceneManager.insertLight();
 }
 
 void SprRenderer::updateCamera(){
-    //m_sceneManager.updateCamera();
 }
 
 
-void SprRenderer::loadAssets(const SprResourceManager& rm){}
+void SprRenderer::loadAssets(const SprResourceManager& rm){
+    
+}
 
 }
