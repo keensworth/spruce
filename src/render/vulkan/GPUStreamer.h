@@ -64,8 +64,11 @@ private:
     FunctionQueue m_bufferCopyCmdQueue;
     FunctionQueue m_imageCopyCmdQueue;
 
+    bool m_destroyed = false;
+
     void reset();
     void performGraphicsBarriers();
+    void destroy();
 
     friend class UploadHandler;
 };

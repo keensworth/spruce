@@ -37,9 +37,15 @@ CommandBuffer::CommandBuffer(VulkanDevice& device, CommandType commandType, VkCo
 }
 
 CommandBuffer::~CommandBuffer(){
+    if (!m_destroyed)
+        SprLog::error("[CommandBuffer] [~] 'destroy' must be called before destructing - Improper release of resources");
+}
+
+void CommandBuffer::destroy(){
     // teardown own sync structures
     vkDestroyFence(m_device->getDevice(), m_fence, nullptr);
     vkDestroySemaphore(m_device->getDevice(), m_semaphore, nullptr);
+    m_destroyed = true;
 }
 
 

@@ -25,6 +25,7 @@ public:
     void createInstance(Window& window);
     void createPhysicalDevice();
     void createDevice(VkSurfaceKHR surface);
+    void destroy();
 
     VkApplicationInfo& getInfo(){
         return m_appInfo;
@@ -76,6 +77,7 @@ private: // non-owning
 
     VkApplicationInfo m_appInfo;
     std::string m_appName;
+    bool m_destroyed = false;
 
     QueueFamilies m_queueFamilyIndices;
     VkQueue m_graphicsQueue;

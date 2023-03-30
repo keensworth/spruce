@@ -17,6 +17,7 @@ public:
     CommandBuffer& getCommandBuffer(CommandType commandType);
     void prepare(uint32 frameId);
 
+    void destroy();
 
 private: // owning
     VkCommandPool m_commandPool;
@@ -32,5 +33,7 @@ private: // non-owning
 
     uint32 m_frameId;
     uint32 m_frameIndex;
+
+    bool m_destroyed = false;
 };
 }

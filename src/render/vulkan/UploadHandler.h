@@ -57,8 +57,11 @@ private:
     std::vector<GPUStreamer::BufferTransfer> m_dynamicBufferUploadQueue;
     std::vector<GPUStreamer::TextureTransfer> m_textureUploadQueue;
 
-    void reset();
+    bool m_destroyed = false;
+
     void setFrameId(uint32 frameId);
+    void reset();
+    void destroy();
 
     friend class VulkanRenderer;
 };

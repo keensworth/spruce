@@ -48,10 +48,10 @@ private: // non-owning
     std::vector<VkSurfaceFormatKHR> m_formats;
     std::vector<VkPresentModeKHR> m_presentModes;
 
-    bool m_imageViewsInitialized;
-    bool m_swapchainInitialized;
-    bool m_cleanedUp;
-    bool m_destroyed;
+    bool m_imageViewsInitialized = false;
+    bool m_swapchainInitialized = false;
+    bool m_cleanedUp = true;
+    bool m_destroyed = false;
 
     void querySwapchainSupport(VkPhysicalDevice physicalDevice);
     VkSurfaceFormatKHR chooseSwapSurfaceFormat();

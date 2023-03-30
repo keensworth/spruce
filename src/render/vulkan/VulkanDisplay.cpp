@@ -19,10 +19,6 @@ VulkanDisplay::VulkanDisplay(){
 
 VulkanDisplay::VulkanDisplay(Window* window){
     m_window = window;
-    m_imageViewsInitialized = false;
-    m_swapchainInitialized = false;
-    m_cleanedUp = true;
-    m_destroyed = false;
 }
 
 VulkanDisplay::~VulkanDisplay(){

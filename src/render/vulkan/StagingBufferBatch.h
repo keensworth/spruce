@@ -10,6 +10,7 @@ public:
 
     Handle<Buffer> getStagingBuffer(uint32 sizeBytes);
     void reset();
+    void destroy();
 
 private:
     // quantity of buffers at each scale
@@ -41,5 +42,7 @@ private: // non-owning
     uint32 m_count1MB  = 0;
 
     uint32 m_totalOverflowSizeBytes = 0;
+
+    bool m_destroyed = false;
 };
 }

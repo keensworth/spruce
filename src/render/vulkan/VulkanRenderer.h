@@ -17,6 +17,7 @@ public:
     ~VulkanRenderer();
 
     void init(VulkanResourceManager* rm);
+    void destroy();
 
     RenderFrame& beginFrame();
     void present(RenderFrame& frame);
@@ -53,5 +54,7 @@ private:
     uint32 m_imageCount = 0;
     uint32 m_currFrameId = 0;
     uint32 m_frameIndex = 0;
+
+    bool m_destroyed = false;
 };
 }

@@ -17,8 +17,13 @@ UploadHandler::UploadHandler(VulkanDevice& device, VulkanResourceManager& rm, Co
 }
 
 UploadHandler::~UploadHandler() {
-    // teardown GPUStreamer + associated staging buffers
-    m_streamer.~GPUStreamer();
+    if (!m_destroyed)
+        SprLog::error("[UploadHandler] [~] 'destroy' must be called before destructing - Improper release of resources");
+}
+
+void UploadHandler::destroy(){
+    m_streamer.destroy();
+    m_destroyed = true;
 }
 
 void UploadHandler::submit() {

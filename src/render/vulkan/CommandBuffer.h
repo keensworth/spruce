@@ -53,10 +53,13 @@ private: // non-owning
 
     uint32 m_frameId;
     uint32 m_frameIndex;
-    void setFrameId(uint32 frameId);
 
+    bool m_destroyed = false;
+
+    void setFrameId(uint32 frameId);
     void begin();
     void end();
+    void destroy();
 
     friend class VulkanRenderer;
     friend class UploadHandler;

@@ -22,6 +22,10 @@ namespace spr::gfx {
 //  ╚═╝╚═╝  ╚══╝╚═╝   ╚═╝   
 
 VulkanResourceManager::VulkanResourceManager(){}
+VulkanResourceManager::~VulkanResourceManager(){
+    if (!m_destroyed)
+        SprLog::error("[VulkanResourceManager] [~] 'destroy' must be called before destructing - Improper release of resources");
+}
 
 void VulkanResourceManager::init(VulkanDevice& device){
     // set device and allocator
@@ -75,10 +79,9 @@ void VulkanResourceManager::init(VulkanDevice& device){
         };
         VK_CHECK(vkCreateDescriptorPool(m_device, &dynamicPoolInfo, NULL, &m_dynamicDescriptorPools[frame]));
     }
-    
 }
 
-VulkanResourceManager::~VulkanResourceManager(){
+void VulkanResourceManager::destroy(){
     // delete buffer cache
     BufferCache* bufferCache = ((BufferCache*) m_resourceMap[typeid(Buffer)]);
     delete bufferCache;
@@ -115,6 +118,8 @@ VulkanResourceManager::~VulkanResourceManager(){
     for(uint32 i = 0; i < MAX_FRAME_COUNT; i++){
         vkDestroyDescriptorPool(m_device, m_dynamicDescriptorPools[i], nullptr);
     }
+
+    m_destroyed = true;
 }
 
 

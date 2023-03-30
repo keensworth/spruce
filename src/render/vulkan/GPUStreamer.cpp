@@ -33,9 +33,15 @@ GPUStreamer::GPUStreamer(VulkanDevice& device, VulkanResourceManager& rm, Comman
 }
 
 GPUStreamer::~GPUStreamer(){
-    // destroy and deallocate staging buffers
-    m_stagingBuffers.~StagingBuffers();
+    if (!m_destroyed)
+        SprLog::error("[GPUStreamer] [~] 'destroy' must be called before destructing - Improper release of resources");
 }
+
+void GPUStreamer::destroy(){
+    m_stagingBuffers.destroy();
+    m_destroyed = true;
+}
+
 
 template<>
 void GPUStreamer::transfer(BufferTransfer data) {

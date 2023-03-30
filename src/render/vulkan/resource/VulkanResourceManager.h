@@ -27,6 +27,7 @@ public:
     ~VulkanResourceManager();
 
     void init(VulkanDevice& device);
+    void destroy();
 
     // U := ResourceType
     template <typename U>
@@ -91,6 +92,7 @@ private: // owning
 private: // non-owning
     VkDevice m_device;
     glm::uvec3 m_screenDim;
+    bool m_destroyed = false;
 
     friend class RenderCoordinator;
     friend class RenderPassRenderer;

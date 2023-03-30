@@ -87,13 +87,20 @@ CommandPool::CommandPool(VulkanDevice& device, uint32 familyIndex, VulkanResourc
 }
 
 CommandPool::~CommandPool(){
+    if (!m_destroyed)
+        SprLog::error("[CommandPool] [~] 'destroy' must be called before destructing - Improper release of resources");
+}
+
+void CommandPool::destroy(){
     // teardown command buffers
-    m_transferCommandBuffer.~CommandBuffer();
-    m_offscreenCommandBuffer.~CommandBuffer();
-    m_mainCommandBuffer.~CommandBuffer();
+    m_transferCommandBuffer.destroy();
+    m_offscreenCommandBuffer.destroy();
+    m_mainCommandBuffer.destroy();
 
     // teardown command pool (and VkCommandBuffers with it)
     vkDestroyCommandPool(m_device->getDevice(), m_commandPool, nullptr);
+
+    m_destroyed = true;
 }
 
 CommandBuffer& CommandPool::getCommandBuffer(CommandType commandType){

@@ -50,6 +50,11 @@ StagingBuffers::StagingBuffers(VulkanResourceManager* rm) {
 }
 
 StagingBuffers::~StagingBuffers() {
+    if (!m_destroyed)
+        SprLog::error("[StagingBuffers] [~] 'destroy' must be called before destructing - Improper release of resources");
+}
+
+void StagingBuffers::destroy(){
     reset(); // remove any overflow
 
     m_rm->remove(m_stage64MB);
@@ -65,6 +70,7 @@ StagingBuffers::~StagingBuffers() {
     for (uint32 i = 0; i < m_maxCount1MB; i++) {
         m_rm->remove(m_stages1MB[i]);
     }
+    m_destroyed = true;
 }
 
 
@@ -131,4 +137,5 @@ void StagingBuffers::reset() {
     m_overflowStages = std::vector<Handle<Buffer>>();
     m_totalOverflowSizeBytes = 0;
 }
+
 }
