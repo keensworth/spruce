@@ -6,6 +6,8 @@
 #include <vulkan/vulkan_core.h>
 #include <fstream>
 #include "memory/Pool.h"
+
+#define VMA_IMPLEMENTATION
 #include "vk_mem_alloc.h"
 
 
