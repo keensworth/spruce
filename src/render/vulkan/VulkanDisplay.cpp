@@ -26,7 +26,6 @@ VulkanDisplay::VulkanDisplay(Window* window){
 }
 
 VulkanDisplay::~VulkanDisplay(){
-
     if (!m_destroyed)
         SprLog::error("[VulkanDisplay] [~] 'destroy' must be called before destructing - Improper release of resources");
 }
@@ -145,7 +144,6 @@ void VulkanDisplay::destroy(VkDevice device, VkInstance instance){
     if (!m_cleanedUp)
         cleanup(device);
     
-    vkDestroySwapchainKHR(device, m_swapchain, nullptr);
     vkDestroySurfaceKHR(instance, m_surface, nullptr);
 
     m_destroyed = true;
