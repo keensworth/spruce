@@ -107,6 +107,12 @@ VulkanResourceManager::~VulkanResourceManager(){
 
     // destroy allocator
     vmaDestroyAllocator(m_allocator);
+
+    // destroy descriptor pools
+    vkDestroyDescriptorPool(m_device, m_globalDescriptorPool, nullptr);
+    for(uint32 i = 0; i < MAX_FRAME_COUNT; i++){
+        vkDestroyDescriptorPool(m_device, m_dynamicDescriptorPools[i], nullptr);
+    }
 }
 
 

@@ -72,7 +72,6 @@ private:
         return;
     }
 
-private:
     rmap m_resourceMap{
         {typeid(Buffer),              new BufferCache},
         {typeid(Texture),             new TextureCache},
@@ -84,12 +83,14 @@ private:
         {typeid(Shader),              new ShaderCache},
     };
 
-    VkDevice m_device;
+private: // owning
     VmaAllocator m_allocator;
-    glm::uvec3 m_screenDim;
-
     VkDescriptorPool m_globalDescriptorPool;
-    VkDescriptorPool m_dynamicDescriptorPools[MAX_FRAME_COUNT];    
+    VkDescriptorPool m_dynamicDescriptorPools[MAX_FRAME_COUNT]; 
+
+private: // non-owning
+    VkDevice m_device;
+    glm::uvec3 m_screenDim;
 
     friend class RenderCoordinator;
     friend class RenderPassRenderer;
