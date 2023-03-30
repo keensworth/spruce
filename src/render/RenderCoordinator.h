@@ -18,12 +18,13 @@ public:
     void onResize();
     void destroy();
 
-private:
+private: 
+    // non-owning
     Window* m_window;
     VulkanResourceManager* m_rm;
     VulkanRenderer* m_renderer;
 
-    uint32 m_frameId = 0;
+    uint32 m_frameId;
     
     void initRenderers();
 
