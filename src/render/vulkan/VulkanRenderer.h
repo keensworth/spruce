@@ -45,8 +45,6 @@ private:
     VulkanDevice m_device;
     VulkanDisplay m_display;
 
-    VmaAllocator m_allocator;
-
     typedef enum SwapchainStage : uint32 {
         ACQUIRE = 0,
         PRESENT = 1

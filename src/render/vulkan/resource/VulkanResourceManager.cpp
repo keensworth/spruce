@@ -19,14 +19,20 @@ namespace spr::gfx {
 //  ██║██║ ╚███║██║   ██║   
 //  ╚═╝╚═╝  ╚══╝╚═╝   ╚═╝   
 
-VulkanResourceManager::VulkanResourceManager(){
+VulkanResourceManager::VulkanResourceManager(){}
 
-}
-
-void VulkanResourceManager::init(VulkanDevice& device, VmaAllocator& allocator){
+void VulkanResourceManager::init(VulkanDevice& device){
     // set device and allocator
     m_device = device.getDevice();
-    m_allocator = &allocator;
+
+    // create allocator
+    VmaAllocatorCreateInfo allocatorCreateInfo = {
+        .physicalDevice   = device.getPhysicalDevice(),
+        .device           = device.getDevice(),
+        .instance         = device.getInstance(),
+        .vulkanApiVersion = VK_API_VERSION_1_2
+    };
+    vmaCreateAllocator(&allocatorCreateInfo, &m_allocator);
 
     // setup global descriptor pool
     std::vector<VkDescriptorPoolSize> globalPoolSizes = {
@@ -98,6 +104,9 @@ VulkanResourceManager::~VulkanResourceManager(){
     // delete shader cache
     ShaderCache* shaderCache = ((ShaderCache*) m_resourceMap[typeid(Shader)]);
     delete shaderCache;
+
+    // destroy allocator
+    vmaDestroyAllocator(m_allocator);
 }
 
 
@@ -140,7 +149,7 @@ void VulkanResourceManager::allocate(Handle<Buffer> handle, VkBufferCreateInfo& 
     }
 
     // create/allocate buffer
-    vmaCreateBuffer(*m_allocator, &info, &allocationInfo, &buffer->buffer, &buffer->alloc, &buffer->allocInfo);
+    vmaCreateBuffer(m_allocator, &info, &allocationInfo, &buffer->buffer, &buffer->alloc, &buffer->allocInfo);
 
     return;
 }
@@ -162,7 +171,7 @@ void VulkanResourceManager::allocate(Handle<Texture> handle, VkImageCreateInfo& 
     };
 
     // create/allocate texture
-    vmaCreateImage(*m_allocator, &info, &allocationInfo, &texture->image, &texture->alloc, &texture->allocInfo);
+    vmaCreateImage(m_allocator, &info, &allocationInfo, &texture->image, &texture->alloc, &texture->allocInfo);
 
     return;
 }
@@ -1055,7 +1064,7 @@ Handle<RenderPass> VulkanResourceManager::recreate<RenderPass>(Handle<RenderPass
                     continue;
                 
                 vkDestroyImageView(m_device, texture->view, NULL);
-                vmaDestroyImage(*m_allocator, texture->image, texture->alloc);
+                vmaDestroyImage(m_allocator, texture->image, texture->alloc);
 
                 // create image
                 VkImageCreateInfo imageInfo {
@@ -1113,7 +1122,7 @@ Handle<RenderPass> VulkanResourceManager::recreate<RenderPass>(Handle<RenderPass
                     continue;
                 
                 vkDestroyImageView(m_device, texture->view, NULL);
-                vmaDestroyImage(*m_allocator, texture->image, texture->alloc);
+                vmaDestroyImage(m_allocator, texture->image, texture->alloc);
 
                 // create image
                 VkImageCreateInfo imageInfo {

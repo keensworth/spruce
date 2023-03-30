@@ -51,15 +51,6 @@ VulkanRenderer::VulkanRenderer(Window* window) : m_device(VulkanDevice()), m_dis
         };
         VK_CHECK(vkCreateFence(m_device.getDevice(), &fenceInfo, NULL, &m_frames[frameIndex].acquiredFence));
     }
-
-    // create allocator
-    VmaAllocatorCreateInfo allocatorCreateInfo = {
-        .physicalDevice   = m_device.getPhysicalDevice(),
-        .device           = m_device.getDevice(),
-        .instance         = m_device.getInstance(),
-        .vulkanApiVersion = VK_API_VERSION_1_2
-    };
-    vmaCreateAllocator(&allocatorCreateInfo, &m_allocator);
 }
 
 VulkanRenderer::~VulkanRenderer(){
@@ -73,9 +64,6 @@ VulkanRenderer::~VulkanRenderer(){
         m_commandPools[i].~CommandPool();
         m_transferCommandPools[i].~CommandPool();
     }
-
-    // allocator
-    vmaDestroyAllocator(m_allocator);
 
     // frame sync structures
     for (uint32 i = 0; i < MAX_FRAME_COUNT; i++){
@@ -199,11 +187,6 @@ VulkanDevice& VulkanRenderer::getDevice(){
 
 VulkanDisplay& VulkanRenderer::getDisplay(){
     return m_display;
-}
-
-
-VmaAllocator& VulkanRenderer::getAllocator(){
-    return m_allocator;
 }
 
 

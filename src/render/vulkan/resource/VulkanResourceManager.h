@@ -26,7 +26,7 @@ public:
     VulkanResourceManager();
     ~VulkanResourceManager();
 
-    void init(VulkanDevice& device, VmaAllocator& allocator);
+    void init(VulkanDevice& device);
 
     // U := ResourceType
     template <typename U>
@@ -61,6 +61,8 @@ public:
         return Handle<U>();
     }
 
+    void update(uint32 frameId);
+
 
 private:
     // U := ResourceType
@@ -83,11 +85,11 @@ private:
     };
 
     VkDevice m_device;
-    VmaAllocator* m_allocator;
+    VmaAllocator m_allocator;
     glm::uvec3 m_screenDim;
 
     VkDescriptorPool m_globalDescriptorPool;
-    VkDescriptorPool m_dynamicDescriptorPools[MAX_FRAME_COUNT];
+    VkDescriptorPool m_dynamicDescriptorPools[MAX_FRAME_COUNT];    
 
     friend class RenderCoordinator;
     friend class RenderPassRenderer;
