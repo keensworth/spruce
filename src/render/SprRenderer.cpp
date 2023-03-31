@@ -24,7 +24,7 @@ SprRenderer::~SprRenderer(){
     m_renderer.wait();
     
     // begin teardown
-    m_sceneManager.destroy(m_rm);
+    m_sceneManager.destroy();
     m_renderCoordinator.destroy();
     m_renderer.destroy();
     m_rm.destroy();

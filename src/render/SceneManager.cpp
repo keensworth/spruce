@@ -9,6 +9,8 @@ namespace spr::gfx {
 SceneManager::SceneManager(){}
 
 SceneManager::SceneManager(VulkanResourceManager& rm){  
+    m_rm = &rm;
+
     for (uint32 i = 0; i < MAX_FRAME_COUNT; i++){
         m_batchManagers[i] = BatchManager();
     }
@@ -24,12 +26,15 @@ SceneManager::SceneManager(VulkanResourceManager& rm){
 }
 
 SceneManager::~SceneManager(){
+    if (m_destroyed)
+        return;
 
+    SprLog::warn("[SceneManager] [~] Calling destroy() in destructor");
+    destroy();
 }
 
 
-void SceneManager::initializeAssets(SprResourceManager &rm, VulkanResourceManager &vrm){
-
+void SceneManager::initializeAssets(SprResourceManager &rm){
     // TODO
     //
 
@@ -40,7 +45,7 @@ void SceneManager::initializeAssets(SprResourceManager &rm, VulkanResourceManage
         .materialCount = 0,
         .textureCount  = 0
     };
-    initBuffers(vrm, counts);
+    initBuffers(counts);
 }
 
 
@@ -86,37 +91,37 @@ BatchManager& SceneManager::getBatchManager(uint32 frame) {
 }
 
 
-void SceneManager::initBuffers(VulkanResourceManager& rm, PrimitiveCounts counts){
+void SceneManager::initBuffers(PrimitiveCounts counts){
     // per frame resource handles
-    Handle<Buffer> m_lightsBuffer = rm.create<Buffer>(BufferDesc{
+    Handle<Buffer> m_lightsBuffer = m_rm->create<Buffer>(BufferDesc{
         .byteSize = (uint32) (MAX_LIGHTS * MAX_FRAME_COUNT * sizeof(Light)),
         .usage = Flags::BufferUsage::BU_STORAGE_BUFFER |
                  Flags::BufferUsage::BU_TRANSFER_DST,
         .memType = DEVICE | HOST
     });
 
-    Handle<Buffer> m_transformBuffer = rm.create<Buffer>(BufferDesc{
+    Handle<Buffer> m_transformBuffer = m_rm->create<Buffer>(BufferDesc{
         .byteSize = (uint32) (MAX_DRAWS * MAX_FRAME_COUNT * sizeof(Transform)),
         .usage = Flags::BufferUsage::BU_STORAGE_BUFFER |
                  Flags::BufferUsage::BU_TRANSFER_DST,
         .memType = DEVICE | HOST
     });
 
-    Handle<Buffer> m_drawDataBuffer = rm.create<Buffer>(BufferDesc{
+    Handle<Buffer> m_drawDataBuffer = m_rm->create<Buffer>(BufferDesc{
         .byteSize = (uint32) (MAX_DRAWS * MAX_FRAME_COUNT * sizeof(DrawData)),
         .usage = Flags::BufferUsage::BU_STORAGE_BUFFER |
                  Flags::BufferUsage::BU_TRANSFER_DST,
         .memType = DEVICE | HOST
     });
 
-    Handle<Buffer> m_cameraBuffer = rm.create<Buffer>(BufferDesc{
+    Handle<Buffer> m_cameraBuffer = m_rm->create<Buffer>(BufferDesc{
         .byteSize = (uint32) (MAX_FRAME_COUNT * sizeof(Camera)),
         .usage = Flags::BufferUsage::BU_STORAGE_BUFFER |
                  Flags::BufferUsage::BU_TRANSFER_DST,
         .memType = DEVICE | HOST
     });
 
-    Handle<Buffer> m_sceneBuffer = rm.create<Buffer>(BufferDesc{
+    Handle<Buffer> m_sceneBuffer = m_rm->create<Buffer>(BufferDesc{
         .byteSize = (uint32) (MAX_FRAME_COUNT * sizeof(Scene)),
         .usage = Flags::BufferUsage::BU_STORAGE_BUFFER |
                  Flags::BufferUsage::BU_TRANSFER_DST,
@@ -124,35 +129,35 @@ void SceneManager::initBuffers(VulkanResourceManager& rm, PrimitiveCounts counts
     });
 
     // global resource handles
-    Handle<Buffer> m_positionsBuffer = rm.create<Buffer>(BufferDesc{
+    Handle<Buffer> m_positionsBuffer = m_rm->create<Buffer>(BufferDesc{
         .byteSize = (uint32) (counts.vertexCount * sizeof(VertexPosition)),
         .usage = Flags::BufferUsage::BU_STORAGE_BUFFER |
                  Flags::BufferUsage::BU_TRANSFER_DST,
         .memType = DEVICE | HOST
     });
 
-    Handle<Buffer> m_attributesBuffer = rm.create<Buffer>(BufferDesc{
+    Handle<Buffer> m_attributesBuffer = m_rm->create<Buffer>(BufferDesc{
         .byteSize = (uint32) (counts.vertexCount * sizeof(VertexAttributes)),
         .usage = Flags::BufferUsage::BU_STORAGE_BUFFER |
                  Flags::BufferUsage::BU_TRANSFER_DST,
         .memType = DEVICE | HOST
     });
 
-    Handle<Buffer> m_indexBuffer = rm.create<Buffer>(BufferDesc{
+    Handle<Buffer> m_indexBuffer = m_rm->create<Buffer>(BufferDesc{
         .byteSize = (uint32) (counts.indexCount * sizeof(uint32)),
         .usage = Flags::BufferUsage::BU_STORAGE_BUFFER |
                  Flags::BufferUsage::BU_TRANSFER_DST,
         .memType = DEVICE | HOST
     });
 
-    Handle<Buffer> m_materialsBuffer = rm.create<Buffer>(BufferDesc{
+    Handle<Buffer> m_materialsBuffer = m_rm->create<Buffer>(BufferDesc{
         .byteSize = (uint32) (counts.materialCount * sizeof(MaterialData)),
         .usage = Flags::BufferUsage::BU_STORAGE_BUFFER |
                  Flags::BufferUsage::BU_TRANSFER_DST,
         .memType = DEVICE | HOST
     });
 
-    Handle<Buffer> m_textureDescBuffer = rm.create<Buffer>(BufferDesc{
+    Handle<Buffer> m_textureDescBuffer = m_rm->create<Buffer>(BufferDesc{
         .byteSize = (uint32) (counts.textureCount * sizeof(uint32)), // TODO
         .usage = Flags::BufferUsage::BU_STORAGE_BUFFER |
                  Flags::BufferUsage::BU_TRANSFER_DST,
@@ -169,7 +174,7 @@ void SceneManager::reset(uint32 frame) {
     m_sceneData[frame % MAX_FRAME_COUNT].reset();
 }
 
-void SceneManager::destroy(VulkanResourceManager& rm){
+void SceneManager::destroy(){
     // destroy per-frame batch managers
     for (uint32 i = 0; i < MAX_FRAME_COUNT; i++){
         m_batchManagers[i].destroy();
@@ -185,18 +190,20 @@ void SceneManager::destroy(VulkanResourceManager& rm){
     }
 
     // destroy per-frame resources
-    rm.remove(m_lightsBuffer);
-    rm.remove(m_transformBuffer);
-    rm.remove(m_drawDataBuffer);
-    rm.remove(m_cameraBuffer);
-    rm.remove(m_sceneBuffer);
+    m_rm->remove(m_lightsBuffer);
+    m_rm->remove(m_transformBuffer);
+    m_rm->remove(m_drawDataBuffer);
+    m_rm->remove(m_cameraBuffer);
+    m_rm->remove(m_sceneBuffer);
 
     // destroy global resources
-    rm.remove(m_positionsBuffer);
-    rm.remove(m_attributesBuffer);
-    rm.remove(m_indexBuffer);
-    rm.remove(m_materialsBuffer);
-    rm.remove(m_textureDescBuffer);
+    m_rm->remove(m_positionsBuffer);
+    m_rm->remove(m_attributesBuffer);
+    m_rm->remove(m_indexBuffer);
+    m_rm->remove(m_materialsBuffer);
+    m_rm->remove(m_textureDescBuffer);
+
+    m_destroyed = true;
 }
 
 }

@@ -34,7 +34,7 @@ public:
     void updateCamera(uint32 frame, Camera camera);
     void reset(uint32 frame);
 
-    void initializeAssets(SprResourceManager& rm, VulkanResourceManager& vrm);
+    void initializeAssets(SprResourceManager& rm);
 
     Handle<DescriptorSet> getGlobalDescriptorSet();
     Handle<DescriptorSet> getPerFrameDescriptorSet(uint32 frame);
@@ -44,14 +44,16 @@ public:
 
     BatchManager& getBatchManager(uint32 frame);
 
-    void destroy(VulkanResourceManager& rm);
+    void destroy();
 
 
 private:
+    VulkanResourceManager* m_rm;
     BatchManager m_batchManagers[MAX_FRAME_COUNT];
     mmap m_meshInfo;
+    bool m_destroyed = false;
 
-    void initBuffers(VulkanResourceManager& vrm, PrimitiveCounts counts);
+    void initBuffers(PrimitiveCounts counts);
 
 private: // owning
     // per frame resource handles
