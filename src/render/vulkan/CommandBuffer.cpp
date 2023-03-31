@@ -37,8 +37,11 @@ CommandBuffer::CommandBuffer(VulkanDevice& device, CommandType commandType, VkCo
 }
 
 CommandBuffer::~CommandBuffer(){
-    if (!m_destroyed)
-        SprLog::error("[CommandBuffer] [~] 'destroy' must be called before destructing - Improper release of resources");
+    if (m_destroyed)
+        return;
+    
+    SprLog::warn("[CommandBuffer] [~] Calling destroy() in destructor");
+    destroy();
 }
 
 void CommandBuffer::destroy(){

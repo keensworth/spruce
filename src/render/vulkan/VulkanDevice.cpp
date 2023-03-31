@@ -49,8 +49,11 @@ debugCallback(VkDebugUtilsMessageSeverityFlagBitsEXT messageSeverity,
 VulkanDevice::VulkanDevice(){}
 
 VulkanDevice::~VulkanDevice(){
-    if (!m_destroyed)
-        SprLog::error("[VulkanDevice] [~] 'destroy' must be called before destructing - Improper release of resources");
+    if (m_destroyed)
+        return;
+    
+    SprLog::warn("[VulkanDevice] [~] Calling destroy() in destructor");
+    destroy();
 }
 
 void VulkanDevice::destroy(){

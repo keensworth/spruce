@@ -50,8 +50,11 @@ VulkanRenderer::VulkanRenderer(Window* window) : m_device(VulkanDevice()), m_dis
 }
 
 VulkanRenderer::~VulkanRenderer(){
-    if (!m_destroyed)
-        SprLog::error("[VulkanRenderer] [~] 'destroy' must be called before destructing - Improper release of resources");
+    if (m_destroyed)
+        return;
+    
+    SprLog::warn("[VulkanRenderer] [~] Calling destroy() in destructor");
+    destroy();    
 }
 
 void VulkanRenderer::init(VulkanResourceManager *rm){

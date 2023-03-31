@@ -33,8 +33,11 @@ GPUStreamer::GPUStreamer(VulkanDevice& device, VulkanResourceManager& rm, Comman
 }
 
 GPUStreamer::~GPUStreamer(){
-    if (!m_destroyed)
-        SprLog::error("[GPUStreamer] [~] 'destroy' must be called before destructing - Improper release of resources");
+    if (m_destroyed)
+        return;
+    
+    SprLog::warn("[GPUStreamer] [~] Calling destroy() in destructor");
+    destroy();
 }
 
 void GPUStreamer::destroy(){

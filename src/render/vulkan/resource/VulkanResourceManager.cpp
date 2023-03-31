@@ -23,8 +23,11 @@ namespace spr::gfx {
 
 VulkanResourceManager::VulkanResourceManager(){}
 VulkanResourceManager::~VulkanResourceManager(){
-    if (!m_destroyed)
-        SprLog::error("[VulkanResourceManager] [~] 'destroy' must be called before destructing - Improper release of resources");
+    if (m_destroyed)
+        return;
+    
+    SprLog::warn("[VulkanResourceManager] [~] Calling destroy() in destructor");
+    destroy();
 }
 
 void VulkanResourceManager::init(VulkanDevice& device){

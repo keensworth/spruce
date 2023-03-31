@@ -87,8 +87,11 @@ CommandPool::CommandPool(VulkanDevice& device, uint32 familyIndex, VulkanResourc
 }
 
 CommandPool::~CommandPool(){
-    if (!m_destroyed)
-        SprLog::error("[CommandPool] [~] 'destroy' must be called before destructing - Improper release of resources");
+    if (m_destroyed)
+        return;
+    
+    SprLog::warn("[CommandPool] [~] Calling destroy() in destructor");
+    destroy();
 }
 
 void CommandPool::destroy(){

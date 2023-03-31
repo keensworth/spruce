@@ -17,8 +17,11 @@ UploadHandler::UploadHandler(VulkanDevice& device, VulkanResourceManager& rm, Co
 }
 
 UploadHandler::~UploadHandler() {
-    if (!m_destroyed)
-        SprLog::error("[UploadHandler] [~] 'destroy' must be called before destructing - Improper release of resources");
+    if (m_destroyed)
+        return;
+    
+    SprLog::warn("[UploadHandler] [~] Calling destroy() in destructor");
+    destroy();
 }
 
 void UploadHandler::destroy(){
