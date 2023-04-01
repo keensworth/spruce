@@ -4,6 +4,7 @@
 #include <vulkan/vulkan_core.h>
 #include "VulkanResourceCache.h"
 #include "../VulkanDevice.h"
+#include "util/FunctionQueue.h"
 
 
 typedef ska::flat_hash_map<std::type_index, spr::gfx::VulkanResourceCache*> rmap;
@@ -62,8 +63,6 @@ public:
         return Handle<U>();
     }
 
-    void update(uint32 frameId);
-
 
 private:
     // U := ResourceType
@@ -72,6 +71,8 @@ private:
         SprLog::warn("[VulkanResourceManager] [ALLOCATE] Resource not recognized");
         return;
     }
+
+    void flushDeletionQueue(uint32 frameId);
 
     rmap m_resourceMap{
         {typeid(Buffer),              new BufferCache},
@@ -88,13 +89,15 @@ private: // owning
     VmaAllocator m_allocator;
     VkDescriptorPool m_globalDescriptorPool;
     VkDescriptorPool m_dynamicDescriptorPools[MAX_FRAME_COUNT]; 
+    FunctionQueue m_deletionQueue[MAX_FRAME_COUNT];
 
 private: // non-owning
     VkDevice m_device;
     glm::uvec3 m_screenDim;
     bool m_destroyed = false;
+    uint32 m_frameId = 0;
 
-    friend class RenderCoordinator;
+    friend class VulkanRenderer;
     friend class RenderPassRenderer;
 };
 }

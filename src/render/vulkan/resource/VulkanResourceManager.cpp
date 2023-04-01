@@ -6,6 +6,7 @@
 #include <vulkan/vulkan_core.h>
 #include <fstream>
 #include "memory/Pool.h"
+#include "util/FunctionQueue.h"
 
 #define VMA_IMPLEMENTATION
 #include "vk_mem_alloc.h"
@@ -82,6 +83,11 @@ void VulkanResourceManager::init(VulkanDevice& device){
         };
         VK_CHECK(vkCreateDescriptorPool(m_device, &dynamicPoolInfo, NULL, &m_dynamicDescriptorPools[frame]));
     }
+
+    // setup deletion queues, 1 per frame
+    for (int frame = 0; frame < MAX_FRAME_COUNT; frame++){
+        m_deletionQueue[frame] = FunctionQueue();
+    }
 }
 
 void VulkanResourceManager::destroy(){
@@ -120,6 +126,11 @@ void VulkanResourceManager::destroy(){
     vkDestroyDescriptorPool(m_device, m_globalDescriptorPool, nullptr);
     for(uint32 i = 0; i < MAX_FRAME_COUNT; i++){
         vkDestroyDescriptorPool(m_device, m_dynamicDescriptorPools[i], nullptr);
+    }
+
+    // flush deletion queue
+    for(uint32 i = 0; i < MAX_FRAME_COUNT; i++){
+        m_deletionQueue[i].execute();
     }
 
     m_destroyed = true;
@@ -1242,8 +1253,12 @@ Handle<RenderPass> VulkanResourceManager::recreate<RenderPass>(Handle<RenderPass
 template<>
 void VulkanResourceManager::remove<Buffer>(Handle<Buffer> handle){
     BufferCache* resourceCache = ((BufferCache*) m_resourceMap[typeid(Buffer)]);
-    
-    resourceCache->remove(handle);
+    Buffer* buffer = get<Buffer>(handle);
+
+    m_deletionQueue[m_frameId % MAX_FRAME_COUNT].push_function([=]() {
+        vmaDestroyBuffer(m_allocator, buffer->buffer, buffer->alloc);
+        resourceCache->remove(handle);
+    });
 };
 
 
@@ -1253,6 +1268,31 @@ void VulkanResourceManager::remove<Buffer>(Handle<Buffer> handle){
 template<>
 void VulkanResourceManager::remove<Texture>(Handle<Texture> handle){
     TextureCache* resourceCache = ((TextureCache*) m_resourceMap[typeid(Texture)]);
+    Texture* texture = get<Texture>(handle);
+
+    m_deletionQueue[m_frameId % MAX_FRAME_COUNT].push_function([=]() {
+        vkDestroySampler(m_device, texture->sampler, nullptr);
+        vkDestroyImageView(m_device, texture->view, nullptr);
+        vmaDestroyImage(m_allocator, texture->image, texture->alloc);
+        resourceCache->remove(handle);
+    });
+};
+
+
+// ------------------------------------------------------------------------- //
+//                 Texture Attachment                                        //
+// ------------------------------------------------------------------------- //
+template<>
+void VulkanResourceManager::remove<TextureAttachment>(Handle<TextureAttachment> handle){
+    TextureAttachmentCache* resourceCache = ((TextureAttachmentCache*) m_resourceMap[typeid(TextureAttachment)]);
+    TextureAttachment* textureAttachment = get<TextureAttachment>(handle);
+
+    for(Handle<Texture> textureHandle : textureAttachment->textures){
+        remove<Texture>(textureHandle);
+    }
+    m_deletionQueue[m_frameId % MAX_FRAME_COUNT].push_function([=]() {
+        resourceCache->remove(handle);
+    });
 };
 
 
@@ -1262,6 +1302,12 @@ void VulkanResourceManager::remove<Texture>(Handle<Texture> handle){
 template<>
 void VulkanResourceManager::remove<DescriptorSetLayout>(Handle<DescriptorSetLayout> handle){
     DescriptorSetLayoutCache* resourceCache = ((DescriptorSetLayoutCache*) m_resourceMap[typeid(DescriptorSetLayout)]);
+    DescriptorSetLayout* descriptorSetLayout = get<DescriptorSetLayout>(handle);
+
+    m_deletionQueue[m_frameId % MAX_FRAME_COUNT].push_function([=]() {
+        vkDestroyDescriptorSetLayout(m_device, descriptorSetLayout->descriptorSetLayout, nullptr);
+        resourceCache->remove(handle);
+    });
 };
 
 
@@ -1271,6 +1317,12 @@ void VulkanResourceManager::remove<DescriptorSetLayout>(Handle<DescriptorSetLayo
 template<>
 void VulkanResourceManager::remove<DescriptorSet>(Handle<DescriptorSet> handle){
     DescriptorSetCache* resourceCache = ((DescriptorSetCache*) m_resourceMap[typeid(DescriptorSet)]);
+    DescriptorSet* descriptorSet = get<DescriptorSet>(handle);
+
+    m_deletionQueue[m_frameId % MAX_FRAME_COUNT].push_function([=]() {
+        // descriptor set destroyed w/ descriptor pool
+        resourceCache->remove(handle);
+    });
 };
 
 
@@ -1280,6 +1332,11 @@ void VulkanResourceManager::remove<DescriptorSet>(Handle<DescriptorSet> handle){
 template<>
 void VulkanResourceManager::remove<RenderPassLayout>(Handle<RenderPassLayout> handle){
     RenderPassLayoutCache* resourceCache = ((RenderPassLayoutCache*) m_resourceMap[typeid(RenderPassLayout)]);
+    RenderPassLayout* renderPassLayout = get<RenderPassLayout>(handle);
+
+    m_deletionQueue[m_frameId % MAX_FRAME_COUNT].push_function([=]() {
+        resourceCache->remove(handle);
+    });
 };
 
 
@@ -1289,6 +1346,15 @@ void VulkanResourceManager::remove<RenderPassLayout>(Handle<RenderPassLayout> ha
 template<>
 void VulkanResourceManager::remove<RenderPass>(Handle<RenderPass> handle){
     RenderPassCache* resourceCache = ((RenderPassCache*) m_resourceMap[typeid(RenderPass)]);
+    RenderPass* renderPass = get<RenderPass>(handle);
+
+    m_deletionQueue[m_frameId % MAX_FRAME_COUNT].push_function([=]() {
+        for (VkFramebuffer framebuffer : renderPass->framebuffers){
+            vkDestroyFramebuffer(m_device, framebuffer, nullptr);
+        }
+        vkDestroyRenderPass(m_device, renderPass->renderPass, nullptr);
+        resourceCache->remove(handle);
+    });
 };
 
 
@@ -1298,6 +1364,28 @@ void VulkanResourceManager::remove<RenderPass>(Handle<RenderPass> handle){
 template<>
 void VulkanResourceManager::remove<Shader>(Handle<Shader> handle){
     ShaderCache* resourceCache = ((ShaderCache*) m_resourceMap[typeid(Shader)]);
+    Shader* shader = get<Shader>(handle);
+
+    m_deletionQueue[m_frameId % MAX_FRAME_COUNT].push_function([=]() {
+        vkDestroyPipeline(m_device, shader->pipeline, nullptr);
+        vkDestroyPipelineLayout(m_device, shader->layout, nullptr);
+        resourceCache->remove(handle);
+    });
 };
+
+
+
+//  ██╗  ██╗███████╗██╗     ██████╗ ███████╗██████╗ 
+//  ██║  ██║██╔════╝██║     ██╔══██╗██╔════╝██╔══██╗
+//  ███████║█████╗  ██║     ██████╔╝█████╗  ██████╔╝
+//  ██╔══██║██╔══╝  ██║     ██╔═══╝ ██╔══╝  ██╔══██╗
+//  ██║  ██║███████╗███████╗██║     ███████╗██║  ██║
+//  ╚═╝  ╚═╝╚══════╝╚══════╝╚═╝     ╚══════╝╚═╝  ╚═╝
+
+void VulkanResourceManager::flushDeletionQueue(uint32 frameId){
+    m_frameId = frameId;
+    m_deletionQueue[frameId % MAX_FRAME_COUNT].execute();
+}
+                                                
 
 }
