@@ -13,7 +13,10 @@ public:
     friend class SprResourceManager;
 private:
 
-    std::vector<ResourceMetadata> loadMetadata();
+    std::vector<ResourceMetadata> loadMetadata(
+        std::vector<ResourceMetadata>& resourceMetadata,
+        std::vector<uint32>& modelIds,
+        std::vector<uint32>& textureIds);
 
 };
 }

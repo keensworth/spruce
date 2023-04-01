@@ -7,7 +7,7 @@
 
 namespace spr {
 
-typedef ska::flat_hash_map<std::type_index, spr::ResourceCache*> rmap;
+typedef ska::flat_hash_map<std::type_index, spr::ResourceCache*> CacheMap;
 
 class ModelCache : public TypedResourceCache<Model>{};
 class MeshCache : public TypedResourceCache<Mesh>{};
@@ -35,15 +35,21 @@ public:
         auto typedCache = dynamic_cast<TypedResourceCache<U>*>(resourceCache);
         return typedCache->getData(handle);
     }
+
+    std::vector<uint32>& getModelIds();
+    std::vector<uint32>& getTextureIds();
     
 private:
-    rmap m_resourceMap{
+    CacheMap m_resourceMap{
         {typeid(Model), new ModelCache},
         {typeid(Mesh), new MeshCache},
         {typeid(Material), new MaterialCache},
         {typeid(Texture), new TextureCache},
         {typeid(Buffer), new BufferCache},
     };
+
+    std::vector<uint32> m_modelIds;
+    std::vector<uint32> m_textureIds;
 
     void init();
 

@@ -59,7 +59,7 @@ static std::vector<std::string> resourceTypeStrings{
 };
 
 // --------------------------------------------------------- //
-//                 Metada                                    // 
+//                 Metadata                                    // 
 // --------------------------------------------------------- //
 typedef struct ResourceMetadata {
     std::string name = "no-name";         // resource name (file name)

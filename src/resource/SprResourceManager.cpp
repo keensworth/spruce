@@ -40,8 +40,10 @@ SprResourceManager::~SprResourceManager(){
 
 void SprResourceManager::init(){
     // load resource metadata from asset_manifest.json
+    std::vector<ResourceMetadata> resourceMetadata;
+
     AssetLoader assetLoader;
-    std::vector<ResourceMetadata> resourceMetadata = assetLoader.loadMetadata();
+    assetLoader.loadMetadata(resourceMetadata, m_modelIds, m_textureIds);
 
     // register resources with metadata
     for (auto & metadata : resourceMetadata){
@@ -72,6 +74,13 @@ void SprResourceManager::init(){
                 break;
         }
     }
+}
+
+std::vector<uint32>& SprResourceManager::getModelIds(){
+    return m_modelIds;
+}
+std::vector<uint32>& SprResourceManager::getTextureIds(){
+    return m_textureIds;
 }
 
 }
