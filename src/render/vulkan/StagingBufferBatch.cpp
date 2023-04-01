@@ -1,5 +1,4 @@
 #include "StagingBufferBatch.h"
-#include "vulkan_core.h"
 #include <string>
 
 
