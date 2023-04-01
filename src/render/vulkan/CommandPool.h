@@ -3,7 +3,6 @@
 #include "CommandBuffer.h"
 #include "VulkanDevice.h"
 #include "RenderFrame.h"
-#include "vulkan_core.h"
 #include <vulkan/vulkan_core.h>
 
 namespace spr::gfx{

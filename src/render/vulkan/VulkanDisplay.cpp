@@ -1,6 +1,5 @@
 #include "VulkanDisplay.h"
 #include "VulkanDevice.h"
-#include "vulkan_core.h"
 #include <vulkan/vulkan_core.h>
 
 namespace spr::gfx{

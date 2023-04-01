@@ -1,6 +1,5 @@
 #include "RenderPassRenderer.h"
 #include "DescriptorSetHandler.h"
-#include "vulkan_core.h"
 #include <vulkan/vulkan_core.h>
 
 

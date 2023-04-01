@@ -1,7 +1,6 @@
 #include "SceneManager.h"
 #include "scene/Mesh.h"
 #include "vulkan/resource/VulkanResourceManager.h"
-#include "vulkan/vulkan_core.h"
 #include <cctype>
 
 namespace spr::gfx {

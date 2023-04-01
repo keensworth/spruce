@@ -3,7 +3,6 @@
 #include "StagingBufferBatch.h"
 #include "VulkanDevice.h"
 #include "resource/VulkanResourceManager.h"
-#include "vulkan_core.h"
 #include <vulkan/vulkan_core.h>
 
 namespace spr::gfx {

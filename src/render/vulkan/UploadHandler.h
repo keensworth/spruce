@@ -1,7 +1,7 @@
 #pragma once
 
 #include "resource/VulkanResourceManager.h"
-#include "vulkan_core.h"
+#include "gfx_vulkan_core.h"
 #include "spruce_core.h"
 #include "resource/ResourceTypes.h"
 #include "../core/memory/TempBuffer.h"

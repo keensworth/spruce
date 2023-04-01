@@ -1,6 +1,6 @@
 #pragma once
 
-#include "vulkan_core.h"
+#include "gfx_vulkan_core.h"
 #include "Window.h"
 #include <vulkan/vulkan_core.h>
 #include "../../core/util/FunctionStack.h"

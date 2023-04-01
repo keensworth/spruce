@@ -2,7 +2,6 @@
 
 #include "RenderPassRenderer.h"
 #include "UploadHandler.h"
-#include "vulkan_core.h"
 #include <vulkan/vulkan_core.h>
 
 namespace spr::gfx {
