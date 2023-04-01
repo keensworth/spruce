@@ -12,10 +12,21 @@ std::vector<ResourceMetadata> AssetLoader::loadMetadata(){
     // load models
     for (const auto& model : manifest["models"]) {
         ResourceMetadata metadata;
-        metadata.sizeBytes = model["sizeBytes"];
-        metadata.resourceId = model["id"];
-        metadata.name = model["name"];
+        metadata.sizeBytes    = model["sizeBytes"];
+        metadata.resourceId   = model["id"];
+        metadata.name         = model["name"];
         metadata.resourceType = ResourceTypes::stringToType(model["type"]);
+
+        resourceMetadata.push_back(metadata);
+    }
+
+    // load non-subresource textures
+    for (const auto& subresource : manifest["nonSubresourceTextures"]) {
+        ResourceMetadata metadata;
+        metadata.sizeBytes    = subresource["sizeBytes"];
+        metadata.resourceId   = subresource["id"];
+        metadata.name         = subresource["name"];
+        metadata.resourceType = ResourceTypes::stringToType(subresource["type"]);
 
         resourceMetadata.push_back(metadata);
     }
@@ -23,10 +34,11 @@ std::vector<ResourceMetadata> AssetLoader::loadMetadata(){
     // load subresources
     for (const auto& subresource : manifest["subresources"]) {
         ResourceMetadata metadata;
-        metadata.sizeBytes = subresource["sizeBytes"];
-        metadata.resourceId = subresource["id"];
-        metadata.name = subresource["name"];
+        metadata.sizeBytes    = subresource["sizeBytes"];
+        metadata.resourceId   = subresource["id"];
+        metadata.name         = subresource["name"];
         metadata.resourceType = ResourceTypes::stringToType(subresource["type"]);
+
         resourceMetadata.push_back(metadata);
     }
 
