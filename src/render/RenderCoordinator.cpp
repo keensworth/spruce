@@ -7,6 +7,7 @@ RenderCoordinator::RenderCoordinator(Window* window, VulkanRenderer* renderer, V
     m_window = window;
     m_rm = rm;
     m_renderer = renderer;
+    m_frameId = 0;
 
     initRenderers();
 }
@@ -17,9 +18,10 @@ RenderCoordinator::~RenderCoordinator(){
 
 
 void RenderCoordinator::render(SceneManager& sceneManager){
-    // get current frame
-    RenderFrame& frame = m_renderer->beginFrame();
+    // begin frame
+    RenderFrame& frame = m_renderer->beginFrame(m_rm);
 
+    // begin render passes
     BatchManager& batchManager = sceneManager.getBatchManager(m_frameId);
 
     // PASS 1
