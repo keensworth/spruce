@@ -12,12 +12,12 @@ typedef struct MeshInfo {
 } MeshInfo;
 
 typedef struct VertexPosition {
-    glm::vec4 vertexPos;
+    glm::vec3 vertexPos;
 } VertexPosition;
 
 typedef struct VertexAttributes {
-    glm::vec4 normal_u;
-    glm::vec4 color_v;
+    glm::vec4 normal3_u1; // [  normal.xyz  | tex.u ]
+    glm::vec4 color3_v1;  // [  color.xyz   | tex.v ]
 } VertexAttributes;
 
 }
