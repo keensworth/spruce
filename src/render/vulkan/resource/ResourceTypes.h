@@ -7,7 +7,7 @@
 #include <vulkan/vulkan_core.h>
 #include "ResourceFlags.h"
 #include "../core/spruce_core.h"
-#include "../vulkan_core.h"
+#include "../gfx_vulkan_core.h"
 #include "glm/fwd.hpp"
 #include "memory/Handle.h"
 #include "vk_mem_alloc.h"
@@ -261,18 +261,16 @@ typedef struct DescriptorSetLayoutDesc {
 typedef struct DescriptorSetDesc {
     static const uint32 ALL_BYTES = 0xFFFFFFFF;
     
-    typedef struct TextureBinding {
-        // used for global textures (shared over frames)
-        Handle<Texture> texture;
-        // used for per-frame textures
-        std::vector<Handle<Texture>> textures;
+    typedef struct TextureBinding {            // [mutually exclusive]
+        Handle<Texture> texture;               // global texture
+        std::vector<Handle<Texture>> textures; // global array of textures
+        Handle<TextureAttachment> attachment;  // per-frame textures
     } TextureBinding;
 
-    typedef struct BufferBinding {
-        // used for global buffers (shared over frames)
-        Handle<Buffer> buffer;
-        // used for per-frame buffers
-        std::vector<Handle<Buffer>> buffers;
+    typedef struct BufferBinding {           // [mutually exclusive]
+        Handle<Buffer> buffer;               // global buffer
+        std::vector<Handle<Buffer>> buffers; // per-frame buffers
+
         uint32 byteOffset = 0;
         uint32 byteSize   = ALL_BYTES;
     } BufferBinding;

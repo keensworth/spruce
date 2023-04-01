@@ -433,17 +433,27 @@ Handle<DescriptorSet> VulkanResourceManager::create<DescriptorSet>(DescriptorSet
 
     // get descriptor counts
     uint32 globalDescriptorCount = 0;
-    for (auto binding : desc.textures)
-        globalDescriptorCount += binding.texture.isValid();
-    for (auto binding : desc.buffers)
-        globalDescriptorCount += binding.buffer.isValid();
-
     uint32 perFrameDescriptorCount = 0;
-    for (auto binding : desc.textures)
-        perFrameDescriptorCount += (binding.textures.size() > 0);
-    for (auto binding : desc.buffers)
-        perFrameDescriptorCount += (binding.buffers.size() > 0);
+    for (auto binding : desc.textures){
+        bool texBinding        =  binding.texture.isValid();
+        bool arrayTexBinding   = !binding.textures.empty();
+        bool attachmentBinding =  binding.attachment.isValid();
 
+        if (texBinding && arrayTexBinding){
+            SprLog::warn("[VulkanResourceManager] [create<DescriptorSet>] Texture binding overdefined, defaulting to single texture");
+            arrayTexBinding = false;
+        }
+
+        globalDescriptorCount   += texBinding;
+        globalDescriptorCount   += arrayTexBinding;
+        perFrameDescriptorCount += attachmentBinding;
+    }
+    for (auto binding : desc.buffers){
+        globalDescriptorCount   +=  binding.buffer.isValid();
+        perFrameDescriptorCount += !binding.buffers.empty();
+    }
+    
+    // validate
     if (globalDescriptorCount > 0 && perFrameDescriptorCount > 0){
         SprLog::error("[VulkanResourceManager] [create<DescriptorSet>] Cannot use both global and per-frame descriptors in one set");
     }
@@ -454,9 +464,10 @@ Handle<DescriptorSet> VulkanResourceManager::create<DescriptorSet>(DescriptorSet
 
     // allocate and write descriptor set(s)
     //      will run once if using global descriptors (shared over frames)
-    //      will run MAX_FRAME_COUNT if using per-frame descriptors 
+    //      will run MAX_FRAME_COUNT if using per-frame descriptors (frame buffered sets)
     std::vector<VkDescriptorSet> vulkanDescriptorSets;
     uint32 descriptorSetCount = globalDescriptors ? 1 : MAX_FRAME_COUNT;
+
     for (uint32 frame = 0; frame < descriptorSetCount; frame++){
         // build descriptor set info
         VkDescriptorPool descriptorPool = globalDescriptors ? m_globalDescriptorPool 
@@ -485,7 +496,6 @@ Handle<DescriptorSet> VulkanResourceManager::create<DescriptorSet>(DescriptorSet
                 .range  = (binding.byteSize == DescriptorSetDesc::ALL_BYTES)
                         ? VK_WHOLE_SIZE : binding.byteSize,
             };
-
             VkWriteDescriptorSet descriptorSetWrite {
                 .sType           = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET,
                 .dstSet          = vulkanDescriptorSet,
@@ -502,21 +512,56 @@ Handle<DescriptorSet> VulkanResourceManager::create<DescriptorSet>(DescriptorSet
         uint32 textureDescriptorCount = desc.textures.size();
         for (uint32 textureIndex = 0; textureIndex < textureDescriptorCount; textureIndex++){
             DescriptorSetDesc::TextureBinding binding = desc.textures[textureIndex];
-            Handle<Texture> handle = globalDescriptors ? binding.texture
-                                                      : binding.textures[frame];
-            VkDescriptorImageInfo textureInfo {
-                .sampler      = get<Texture>(handle)->sampler,
-                .imageView    = get<Texture>(handle)->view,
-                .imageLayout  = VK_IMAGE_LAYOUT_PREINITIALIZED
-            };
+
+            bool usesTexture = binding.texture.isValid();
+            bool usesAttachment = binding.attachment.isValid();
+            bool usesTextureArray = !binding.textures.empty();
+
+            std::vector<VkDescriptorImageInfo> textureInfos;
+            if (usesAttachment) {
+                Handle<TextureAttachment> attachmentHandle = binding.attachment;
+                TextureAttachment* attachment = get<TextureAttachment>(attachmentHandle);
+                Handle<Texture> handle = attachment->textures[frame];
+
+                Texture* texture = get<Texture>(handle);
+                VkDescriptorImageInfo textureInfo {
+                    .sampler      = texture->sampler,
+                    .imageView    = texture->view,
+                    .imageLayout  = VK_IMAGE_LAYOUT_PREINITIALIZED
+                };
+                textureInfos.push_back(textureInfo);
+
+            } else if (usesTexture){
+                Handle<Texture> handle = binding.texture;
+                Texture* texture = get<Texture>(handle);
+
+                VkDescriptorImageInfo textureInfo {
+                    .sampler      = texture->sampler,
+                    .imageView    = texture->view,
+                    .imageLayout  = VK_IMAGE_LAYOUT_PREINITIALIZED
+                };
+                textureInfos.push_back(textureInfo);
+
+            } else { // usesTextureArray
+                for (Handle<Texture> handle : binding.textures){
+                    Texture* texture = get<Texture>(handle);
+
+                    VkDescriptorImageInfo textureInfo {
+                        .sampler      = texture->sampler,
+                        .imageView    = texture->view,
+                        .imageLayout  = VK_IMAGE_LAYOUT_PREINITIALIZED
+                    };
+                    textureInfos.push_back(textureInfo);
+                }
+            }
 
             VkWriteDescriptorSet descriptorSetWrite {
                 .sType           = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET,
                 .dstSet          = vulkanDescriptorSet,
                 .dstBinding      = layout->textureLayouts[textureIndex].binding,
-                .descriptorCount = 1,
+                .descriptorCount = (uint32)textureInfos.size(),
                 .descriptorType  = (VkDescriptorType)layout->textureLayouts[textureIndex].type,
-                .pImageInfo      = &textureInfo
+                .pImageInfo      = textureInfos.data()
             };
             
             vkUpdateDescriptorSets(m_device, 1, &descriptorSetWrite, 0, NULL);
