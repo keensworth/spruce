@@ -1,7 +1,7 @@
 #include "VulkanRenderer.h"
 #include "CommandPool.h"
 #include "VulkanDevice.h"
-#include "vulkan_core.h"
+#include "resource/VulkanResourceManager.h"
 #include <cstdint>
 #include <string>
 #include <vulkan/vulkan_core.h>
@@ -106,7 +106,7 @@ void VulkanRenderer::destroy(){
 }
 
 
-RenderFrame& VulkanRenderer::beginFrame(){
+RenderFrame& VulkanRenderer::beginFrame(VulkanResourceManager* rm){
     m_frameIndex = m_currFrameId % MAX_FRAME_COUNT;
 
     CommandPool& gfxCommandPool = m_commandPools[m_frameIndex];
@@ -126,6 +126,9 @@ RenderFrame& VulkanRenderer::beginFrame(){
     // pass them current frame id
     gfxCommandPool.prepare(m_currFrameId);
     transferCommandPool.prepare(m_currFrameId);
+
+    // flush resources pending deletion
+    rm->flushDeletionQueue(m_currFrameId);
     
     return renderFrame;
 }

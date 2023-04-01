@@ -5,7 +5,7 @@
 #include "CommandPool.h"
 #include "RenderFrame.h"
 #include "Window.h"
-#include "vulkan_core.h"
+#include "gfx_vulkan_core.h"
 #include "UploadHandler.h"
 
 namespace spr::gfx{
@@ -19,7 +19,7 @@ public:
     void init(VulkanResourceManager* rm);
     void destroy();
 
-    RenderFrame& beginFrame();
+    RenderFrame& beginFrame(VulkanResourceManager* rm);
     void present(RenderFrame& frame);
     CommandBuffer& beginGraphicsCommands(CommandType commandBufferType);
     UploadHandler& beginTransferCommands();
