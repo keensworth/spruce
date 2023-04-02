@@ -15,10 +15,10 @@ MeshInfoMap GfxAssetLoader::loadAssets(SprResourceManager& rm){
     std::vector<uint32>& modelIds = rm.getModelIds();
     std::vector<uint32>& textureIds = rm.getTextureIds();
 
-    // load default textures
-    loadTexture(rm, spr::data::default_color);
-    loadTexture(rm, spr::data::default_input_black);
-    loadTexture(rm, spr::data::default_input_white);
+    // load built-in textures
+    loadTexture(rm, spr::data::default_color, true);
+    loadTexture(rm, spr::data::default_input_black, false);
+    loadTexture(rm, spr::data::default_input_white, false);
 
     // iterate over models and load subresources
     MeshInfoMap map;
@@ -41,8 +41,7 @@ MeshInfoMap GfxAssetLoader::loadAssets(SprResourceManager& rm){
 
     // iterate over non-subresource textures
     for (uint32 texId : textureIds){
-        uint32 textureIndex = loadTexture(rm, texId);
-        // TODO: store tmap
+        uint32 textureIndex = loadTexture(rm, texId, true);
     }
 
     return map;
@@ -81,27 +80,27 @@ void GfxAssetLoader::loadMaterial(SprResourceManager& rm, Mesh* mesh, MeshInfo& 
     MaterialData materialData;
     if (material->baseColorTexId > 0){
         materialData.flags |= MTL_BASE_COLOR;
-        materialData.baseColorTexIdx = loadTexture(rm, material->baseColorTexId);
+        materialData.baseColorTexIdx = loadTexture(rm, material->baseColorTexId, true);
         materialData.baseColorFactor = material->baseColorFactor;
     }
     if (material->metalRoughTexId > 0){
         materialData.flags |= MTL_METALLIC_ROUGHNESS;
-        materialData.metalRoughTexIdx = loadTexture(rm, material->metalRoughTexId);
+        materialData.metalRoughTexIdx = loadTexture(rm, material->metalRoughTexId, false);
         materialData.metallicFactor = material->metalFactor;
     }
     if (material->normalTexId > 0){
         materialData.flags |= MTL_NORMAL;
-        materialData.normalTexIdx = loadTexture(rm, material->normalTexId);
+        materialData.normalTexIdx = loadTexture(rm, material->normalTexId, false);
         materialData.normalScale = material->normalScale;
     }
     if (material->occlusionTexId > 0){
         materialData.flags |= MTL_OCCLUSION;
-        materialData.occlusionTexIdx = loadTexture(rm, material->occlusionTexId);
+        materialData.occlusionTexIdx = loadTexture(rm, material->occlusionTexId, false);
         materialData.occlusionStrength = material->occlusionStrength;
     }
     if (material->emissiveTexId > 0){
         materialData.flags |= MTL_EMISSIVE;
-        materialData.emissiveTexIdx = loadTexture(rm, material->emissiveTexId);
+        materialData.emissiveTexIdx = loadTexture(rm, material->emissiveTexId, false);
         materialData.emissiveFactor = material->emissiveFactor;
     }
     if (material->alphaType > 0){
@@ -116,7 +115,7 @@ void GfxAssetLoader::loadMaterial(SprResourceManager& rm, Mesh* mesh, MeshInfo& 
     m_counts.materialCount++;
 }
 
-uint32 GfxAssetLoader::loadTexture(SprResourceManager& rm, uint32 textureId){
+uint32 GfxAssetLoader::loadTexture(SprResourceManager& rm, uint32 textureId, bool srgb){
     Handle<spr::Texture> handle = rm.getHandle<spr::Texture>(textureId);
     spr::Texture* texture = rm.getData<spr::Texture>(handle);
 
@@ -127,14 +126,19 @@ uint32 GfxAssetLoader::loadTexture(SprResourceManager& rm, uint32 textureId){
     textureBuffer.insert(texBuffer->data.data(), texBuffer->byteLength);
 
     uint32 texIndex = m_textures.size();
-    m_textures.push_back(textureBuffer);
+    m_textures.push_back({
+        .data = textureBuffer,
+        .height = texture->height,
+        .width = texture->width,
+        .components = texture->components,
+        .srgb = srgb});
 
     m_counts.textureCount++;
     return texIndex;
 }
 
 void GfxAssetLoader::clear(){
-
+    
 }
 
 PrimitiveCounts GfxAssetLoader::getPrimitiveCounts(){
@@ -157,7 +161,7 @@ TempBuffer<MaterialData>& GfxAssetLoader::getMaterialData(){
     return m_materials;
 }
 
-std::vector<TempBuffer<uint8>>& GfxAssetLoader::getTextureDta(){
+std::vector<TextureInfo>& GfxAssetLoader::getTextureData(){
     return m_textures;
 }
 

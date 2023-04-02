@@ -12,6 +12,14 @@ namespace spr::gfx {
 
 typedef ska::flat_hash_map<uint32, MeshInfo> MeshInfoMap;
 
+typedef struct TextureInfo {
+    TempBuffer<uint8> data;
+    uint32 height;
+    uint32 width;
+    uint32 components;
+    bool srgb;
+} TextureInfo;
+
 typedef struct PrimitiveCounts {
     uint32 vertexCount   = 0;
     uint32 indexCount    = 0;
@@ -33,7 +41,7 @@ public:
     TempBuffer<VertexAttributes>& getVertexAttributeData();
     TempBuffer<uint32>& getVertexIndicesData();
     TempBuffer<MaterialData>& getMaterialData();
-    std::vector<TempBuffer<uint8>>& getTextureDta();
+    std::vector<TextureInfo>& getTextureData();
 
 private:
     SprResourceManager* m_rm;
@@ -43,10 +51,10 @@ private:
     TempBuffer<VertexAttributes> m_vertexAttributes;
     TempBuffer<uint32> m_vertexIndices;
     TempBuffer<MaterialData> m_materials;
-    std::vector<TempBuffer<uint8>> m_textures;
+    std::vector<TextureInfo> m_textures;
 
     void loadVertexData(SprResourceManager& rm, Mesh* mesh, MeshInfo& info);
     void loadMaterial(SprResourceManager& rm, Mesh* mesh, MeshInfo& info);
-    uint32 loadTexture(SprResourceManager& rm, uint32 texId);
+    uint32 loadTexture(SprResourceManager& rm, uint32 texId, bool srgb);
 };
 }
