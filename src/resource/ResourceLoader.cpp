@@ -327,6 +327,10 @@ Material ResourceLoader::loadFromMetadata<Material>(ResourceMetadata metadata){
 // ╔═══════════════════════════════════╗
 // ║     buffer id (4)                 ║ // buffer holding tex data
 // ╠═══════════════════════════════════╣
+// ║     height (4)                    ║ // texture height
+// ╠═══════════════════════════════════╣
+// ║     width  id (4)                 ║ // texture width
+// ╠═══════════════════════════════════╣
 // ║     components (4)                ║ // 1 - grey | 2 - grey,red | 3 - rgb | 4 - rgba
 // ╚═══════════════════════════════════╝
 template <>
@@ -343,10 +347,18 @@ Texture ResourceLoader::loadFromMetadata<Texture>(ResourceMetadata metadata){
     }
 
     uint32 bufferId;
+    uint32 height;
+    uint32 width;
     uint32 components;
 
     // read buffer id
     f.read((char*)&bufferId, sizeof(uint32));
+
+    // read image height
+    f.read((char*)&height, sizeof(uint32));
+
+    // read image width
+    f.read((char*)&width, sizeof(uint32));
 
     // read image type
     f.read((char*)&components, sizeof(uint32));
@@ -361,6 +373,8 @@ Texture ResourceLoader::loadFromMetadata<Texture>(ResourceMetadata metadata){
     texture.resourceId = metadata.resourceId;
     // resource data
     texture.bufferId = bufferId;
+    texture.height = height;
+    texture.width = width;
     texture.components = components;
 
     return texture;

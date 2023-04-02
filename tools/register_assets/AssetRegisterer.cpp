@@ -76,6 +76,10 @@ int AssetRegisterer::loadBuffer(std::string path){
 // ╔═══════════════════════════════════╗
 // ║     buffer id (4)                 ║ // buffer holding tex data
 // ╠═══════════════════════════════════╣
+// ║     height (4)                    ║ // texture height
+// ╠═══════════════════════════════════╣
+// ║     width  id (4)                 ║ // texture width
+// ╠═══════════════════════════════════╣
 // ║     components (4)                ║ // 1 - grey | 2 - grey,red | 3 - rgb | 4 - rgba
 // ╚═══════════════════════════════════╝
 int AssetRegisterer::loadTexture(std::string path, bool subresource){
@@ -89,10 +93,18 @@ int AssetRegisterer::loadTexture(std::string path, bool subresource){
     }
 
     uint32 bufferId;
+    uint32 height;
+    uint32 width;
     uint32 components;
 
     // read buffer id
     f.read((char*)&bufferId, sizeof(uint32));
+
+    // read image height
+    f.read((char*)&height, sizeof(uint32));
+
+    // read image width
+    f.read((char*)&width, sizeof(uint32));
 
     // read image type
     f.read((char*)&components, sizeof(uint32));

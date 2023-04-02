@@ -126,6 +126,8 @@ typedef struct Material : ResourceInstance {
 // texture
 typedef struct Texture : ResourceInstance {
     uint32 bufferId   = 0;
+    uint32 height     = 0;
+    uint32 width      = 0;
     uint32 components = 0;
 } Texture;
 
