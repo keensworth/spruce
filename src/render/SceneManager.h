@@ -3,6 +3,7 @@
 #include "glm/fwd.hpp"
 #include "spruce_core.h"
 #include "scene/BatchManager.h"
+#include "vulkan/gfx_vulkan_core.h"
 #include "vulkan/resource/VulkanResourceManager.h"
 #include <vector>
 #include "vulkan/VulkanRenderer.h"
@@ -45,6 +46,8 @@ private:
     bool m_destroyed = false;
 
     void initBuffers(PrimitiveCounts counts);
+    void initTextures(uint32 textureCount);
+    void initDescriptorSets();
 
 private: // owning
     // per frame resource handles
@@ -53,12 +56,17 @@ private: // owning
     Handle<Buffer> m_drawDataBuffer;
     Handle<Buffer> m_cameraBuffer;
     Handle<Buffer> m_sceneBuffer;
+    Handle<DescriptorSetLayout> m_frameDescriptorSetLayouts[MAX_FRAME_COUNT];
+    Handle<DescriptorSet> m_frameDescriptorSets[MAX_FRAME_COUNT];
 
     // global resource handles
     Handle<Buffer> m_positionsBuffer;  
     Handle<Buffer> m_attributesBuffer;
     Handle<Buffer> m_indexBuffer;
     Handle<Buffer> m_materialsBuffer;
+    std::vector<Handle<Texture>> m_textures;
+    Handle<DescriptorSetLayout> m_globalDescriptorSetLayout;
+    Handle<DescriptorSet> m_globalDescriptorSet;
 
     // per-frame resource tempbuffers
     TempBuffer<DrawData> m_drawData[MAX_FRAME_COUNT];

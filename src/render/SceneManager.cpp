@@ -2,6 +2,8 @@
 #include "scene/GfxAssetLoader.h"
 #include "scene/Material.h"
 #include "scene/Mesh.h"
+#include "vulkan/gfx_vulkan_core.h"
+#include "vulkan/resource/ResourceTypes.h"
 #include "vulkan/resource/VulkanResourceManager.h"
 #include <cctype>
 
@@ -73,10 +75,31 @@ void SceneManager::updateCamera(uint32 frame, Camera camera){
 }
 
 
+void uploadGlobalResources(){}
+
+void uploadPerFrameResources(uint32 frame){}
+
+
+Handle<DescriptorSet> getGlobalDescriptorSet(){
+
+}
+
+Handle<DescriptorSet> getPerFrameDescriptorSet(uint32 frame){
+
+}
+
 BatchManager& SceneManager::getBatchManager(uint32 frame) {
     return m_batchManagers[frame % MAX_FRAME_COUNT];
 }
 
+
+void SceneManager::initializeAssets(SprResourceManager &rm){
+    m_meshInfo = m_assetLoader.loadAssets(rm);
+    PrimitiveCounts counts = m_assetLoader.getPrimitiveCounts();
+    initBuffers(counts);
+    initTextures(counts.textureCount);
+    initDescriptorSets();
+}
 
 void SceneManager::initBuffers(PrimitiveCounts counts){
     // per frame resource handles
@@ -145,9 +168,87 @@ void SceneManager::initBuffers(PrimitiveCounts counts){
     });
 }
 
-void SceneManager::initializeAssets(SprResourceManager &rm){
-    m_meshInfo = m_assetLoader.loadAssets(rm);
-    initBuffers(m_assetLoader.getPrimitiveCounts());
+void SceneManager::initTextures(uint32 textureCount){
+    m_textures.resize(textureCount);
+    
+    std::vector<TextureInfo>& textureData = m_assetLoader.getTextureData();
+
+    for (uint32 i = 0; i < textureCount; i++){
+        TextureInfo& info = textureData[i];
+
+        Flags::Format format;
+        if (info.components == 1){
+            format = info.srgb ? Flags::Format::R8_SRGB
+                               : Flags::Format::R8_UNORM;
+        } else if (info.components == 2){
+            format = info.srgb ? Flags::Format::RG8_SRGB
+                               : Flags::Format::RG8_UNORM;
+        } else if (info.components == 3){
+            format = info.srgb ? Flags::Format::RGB8_SRGB
+                               : Flags::Format::RGB8_UNORM;
+        } else {
+            format = info.srgb ? Flags::Format::RGBA8_SRGB
+                               : Flags::Format::RGBA8_UNORM;
+        }
+
+        m_textures[i] = m_rm->create<Texture>(TextureDesc{
+            .dimensions = {
+                info.width,
+                info.height,
+                1
+            },
+            .format = format,
+            .usage = Flags::ImageUsage::IU_SAMPLED |
+                     Flags::ImageUsage::IU_TRANSFER_DST
+        });
+    }
+}
+
+void SceneManager::initDescriptorSets(){
+    // global (set = 0)
+    m_globalDescriptorSetLayout = m_rm->create<DescriptorSetLayout>(DescriptorSetLayoutDesc{
+        .textures = {
+            {.binding = 3},
+        },
+        .buffers = {
+            {.binding = 0},
+            {.binding = 1},
+            {.binding = 2}
+        }
+    });
+    m_globalDescriptorSet = m_rm->create<DescriptorSet>(DescriptorSetDesc{
+        .textures = {
+            {.textures = m_textures}
+        },
+        .buffers = {
+            {.buffer = m_positionsBuffer},
+            {.buffer = m_attributesBuffer},
+            {.buffer = m_materialsBuffer}
+        },
+        .layout = m_globalDescriptorSetLayout
+    });
+    
+    // per-frame (set = 1)
+    for (uint32 i = 0; i < MAX_FRAME_COUNT; i++){
+        m_frameDescriptorSetLayouts[i] = m_rm->create<DescriptorSetLayout>(DescriptorSetLayoutDesc{
+            .buffers = {
+                {.binding = 0},
+                {.binding = 1},
+                {.binding = 2},
+                {.binding = 3},
+                {.binding = 4}
+            }
+        });
+        m_frameDescriptorSets[i] = m_rm->create<DescriptorSet>(DescriptorSetDesc{
+            .buffers = {
+                {.buffer = m_sceneBuffer},
+                {.buffer = m_cameraBuffer},
+                {.buffer = m_lightsBuffer},
+                {.buffer = m_transformBuffer},
+                {.buffer = m_drawDataBuffer}
+            }
+        });
+    }
 }
 
 
