@@ -327,7 +327,7 @@ void GLTFParser::writeModelFile(uint32_t meshCount, std::vector<uint32_t> meshId
     std::cout << "" << std::endl;
 }
 
-void GLTFParser::writeTextureFile(uint32_t bufferId, uint32_t imageType, uint32_t texId){
+void GLTFParser::writeTextureFile(uint32_t bufferId, uint32_t components, uint32_t texId){
     // buffer id (4)
     // raw/png/jpg/raw/bmp (4)
 
@@ -348,8 +348,8 @@ void GLTFParser::writeTextureFile(uint32_t bufferId, uint32_t imageType, uint32_
     std::cout << "          w: bufferId: " << bufferId << std::endl;
 
     // write image type
-    f.write((char*)&imageType, sizeof(uint32_t));
-    std::cout << "          w: imageType: " << imageType << std::endl;
+    f.write((char*)&components, sizeof(uint32_t));
+    std::cout << "          w: components: " << components << std::endl;
 
     // close file
     f.close();
@@ -524,18 +524,23 @@ uint32_t GLTFParser::handleTexture(const tinygltf::Texture& tex){
     // create masked id (id + filter)
     uint32_t maskedTexId = (texId & 0xFFFF) | (minFilter << 16);
     
+    // get image
+    image = model.images[sourceIndex];
+
+    // get image components
+    uint32_t components = image.component;
+    if (components == 0)
+        components = 3;
+
     // tex already written to buffer
     // write tex file but not buffer
     if (m_sourceIdMap.count(sourceIndex) > 0){
         // write texture to file
         std::cout << "  [exists, skipping]" << std::endl;
         std::cout << "" << std::endl;
-        writeTextureFile(m_sourceIdMap[sourceIndex], 0, texId);
+        writeTextureFile(m_sourceIdMap[sourceIndex], components, texId);
         return maskedTexId;
     }
-
-    // get image
-    image = model.images[sourceIndex];
 
     // get min filter
     minFilter = sampler.minFilter;
@@ -567,7 +572,7 @@ uint32_t GLTFParser::handleTexture(const tinygltf::Texture& tex){
     std::cout << "" << std::endl;
 
     // write texture to file
-    writeTextureFile(bufferId, 0, texId);
+    writeTextureFile(bufferId, components, texId);
     return maskedTexId;
 }
 

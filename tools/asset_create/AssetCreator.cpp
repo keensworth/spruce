@@ -30,12 +30,12 @@ void AssetCreator::createTexture(std::string path){
     uint32_t componentType = 5121;
 
     writeBufferFile(data, x*y*n, elementType, componentType, 1);
-    writeTextureFile(1, 0, 0);
+    writeTextureFile(1, n, 0);
 
     stbi_image_free(data);
 }
 
-void AssetCreator::writeTextureFile(uint32_t bufferId, uint32_t imageType, uint32_t texId){
+void AssetCreator::writeTextureFile(uint32_t bufferId, uint32_t components, uint32_t texId){
     // buffer id (4)
     // raw/png/jpg/raw/bmp (4)
 
@@ -56,8 +56,8 @@ void AssetCreator::writeTextureFile(uint32_t bufferId, uint32_t imageType, uint3
     std::cout << "          w: bufferId: " << bufferId << std::endl;
 
     // write image type
-    f.write((char*)&imageType, sizeof(uint32_t));
-    std::cout << "          w: imageType: " << imageType << std::endl;
+    f.write((char*)&components, sizeof(uint32_t));
+    std::cout << "          w: components: " << components << std::endl;
 
     // close file
     f.close();
