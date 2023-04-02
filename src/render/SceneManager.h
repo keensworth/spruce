@@ -5,23 +5,13 @@
 #include "scene/BatchManager.h"
 #include "vulkan/resource/VulkanResourceManager.h"
 #include <vector>
-#include "scene/SceneData.h"
-#include "scene/Mesh.h"
-#include "../../external/flat_hash_map/flat_hash_map.hpp"
-#include "../resource/SprResourceManager.h"
 #include "vulkan/VulkanRenderer.h"
+#include "scene/GfxAssetLoader.h"
 
 
 namespace spr::gfx {
 
-typedef ska::flat_hash_map<uint32, MeshInfo> mmap;
 
-typedef struct PrimitiveCounts {
-    uint32 vertexCount   = 0;
-    uint32 indexCount    = 0;
-    uint32 materialCount = 0;
-    uint32 textureCount  = 0;
-} PrimitiveCounts;
 
 class SceneManager {
 public:
@@ -49,8 +39,9 @@ public:
 
 private:
     VulkanResourceManager* m_rm;
+    GfxAssetLoader m_assetLoader;
     BatchManager m_batchManagers[MAX_FRAME_COUNT];
-    mmap m_meshInfo;
+    MeshInfoMap m_meshInfo;
     bool m_destroyed = false;
 
     void initBuffers(PrimitiveCounts counts);
@@ -68,7 +59,6 @@ private: // owning
     Handle<Buffer> m_attributesBuffer;
     Handle<Buffer> m_indexBuffer;
     Handle<Buffer> m_materialsBuffer;
-    Handle<Buffer> m_textureDescBuffer;
 
     // per-frame resource tempbuffers
     TempBuffer<DrawData> m_drawData[MAX_FRAME_COUNT];

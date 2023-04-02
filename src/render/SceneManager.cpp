@@ -1,4 +1,6 @@
 #include "SceneManager.h"
+#include "scene/GfxAssetLoader.h"
+#include "scene/Material.h"
 #include "scene/Mesh.h"
 #include "vulkan/resource/VulkanResourceManager.h"
 #include <cctype>
@@ -9,7 +11,8 @@ SceneManager::SceneManager(){}
 
 SceneManager::SceneManager(VulkanResourceManager& rm){  
     m_rm = &rm;
-
+    m_assetLoader = GfxAssetLoader();
+    
     for (uint32 i = 0; i < MAX_FRAME_COUNT; i++){
         m_batchManagers[i] = BatchManager();
     }
@@ -30,21 +33,6 @@ SceneManager::~SceneManager(){
 
     SprLog::warn("[SceneManager] [~] Calling destroy() in destructor");
     destroy();
-}
-
-
-void SceneManager::initializeAssets(SprResourceManager &rm){
-    // TODO
-    //
-
-    // initialize buffers
-    PrimitiveCounts counts = {
-        .vertexCount   = 0,
-        .indexCount    = 0,
-        .materialCount = 0,
-        .textureCount  = 0
-    };
-    initBuffers(counts);
 }
 
 
@@ -155,14 +143,13 @@ void SceneManager::initBuffers(PrimitiveCounts counts){
                  Flags::BufferUsage::BU_TRANSFER_DST,
         .memType = DEVICE | HOST
     });
-
-    Handle<Buffer> m_textureDescBuffer = m_rm->create<Buffer>(BufferDesc{
-        .byteSize = (uint32) (counts.textureCount * sizeof(uint32)), // TODO
-        .usage = Flags::BufferUsage::BU_STORAGE_BUFFER |
-                 Flags::BufferUsage::BU_TRANSFER_DST,
-        .memType = DEVICE | HOST
-    });
 }
+
+void SceneManager::initializeAssets(SprResourceManager &rm){
+    m_meshInfo = m_assetLoader.loadAssets(rm);
+    initBuffers(m_assetLoader.getPrimitiveCounts());
+}
+
 
 void SceneManager::reset(uint32 frame) {
     m_batchManagers[frame % MAX_FRAME_COUNT].reset();
@@ -200,7 +187,6 @@ void SceneManager::destroy(){
     m_rm->remove(m_attributesBuffer);
     m_rm->remove(m_indexBuffer);
     m_rm->remove(m_materialsBuffer);
-    m_rm->remove(m_textureDescBuffer);
 
     m_destroyed = true;
 }
