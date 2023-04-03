@@ -13,7 +13,7 @@ public:
     SprRenderer(Window* window);
     ~SprRenderer();
 
-    void loadAssets(const SprResourceManager& rm);
+    void loadAssets(SprResourceManager& rm);
 
     void insertMesh(uint32 meshId, uint32 materialFlags, glm::mat4 model, glm::mat4 modelInvTranspose);
 

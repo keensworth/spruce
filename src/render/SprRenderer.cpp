@@ -58,8 +58,8 @@ void SprRenderer::updateCamera(){
 }
 
 
-void SprRenderer::loadAssets(const SprResourceManager& rm){
-    
+void SprRenderer::loadAssets(SprResourceManager& rm){
+    m_sceneManager.initializeAssets(rm);
 }
 
 }
