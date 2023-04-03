@@ -151,7 +151,7 @@ VkSwapchainKHR VulkanDisplay::getSwapchain(){
     return m_swapchain;
 }
 
-std::vector<VkImageView> VulkanDisplay::getImageViews(){
+std::vector<VkImageView>& VulkanDisplay::getImageViews(){
     if (!m_imageViewsInitialized)
         SprLog::error("[VulkanDisplay] Failed to retrieve image views, unitialized");
 

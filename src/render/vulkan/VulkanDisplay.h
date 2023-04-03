@@ -23,7 +23,7 @@ public:
     void destroy(VkDevice device, VkInstance instance);
 
     VkSurfaceKHR getSurface();
-    std::vector<VkImageView> getImageViews();
+    std::vector<VkImageView>& getImageViews();
     VkFormat getSwapchainFormat();
     VkSwapchainKHR getSwapchain();
     
