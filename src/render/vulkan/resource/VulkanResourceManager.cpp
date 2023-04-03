@@ -913,6 +913,7 @@ Handle<Shader> VulkanResourceManager::create<Shader>(ShaderDesc desc){
 
     // build pipeline layout info
     std::vector<VkDescriptorSetLayout> descriptorSetLayouts;
+    std::vector<VkDescriptorSetLayout> emptyLayouts;
     for (auto setLayoutHandle : desc.descriptorSets) {
         // check for empty layouts
         if (!setLayoutHandle.isValid()){ 
@@ -926,6 +927,7 @@ Handle<Shader> VulkanResourceManager::create<Shader>(ShaderDesc desc){
             VkDescriptorSetLayout emptyLayout;
             VK_CHECK(vkCreateDescriptorSetLayout(m_device, &emptyLayoutInfo, NULL, &emptyLayout));
             descriptorSetLayouts.push_back(emptyLayout);
+            emptyLayouts.push_back(emptyLayout);
         } else { // valid layout
             DescriptorSetLayout* setLayout = get<DescriptorSetLayout>(setLayoutHandle);
             descriptorSetLayouts.push_back(setLayout->descriptorSetLayout);
@@ -1076,7 +1078,10 @@ Handle<Shader> VulkanResourceManager::create<Shader>(ShaderDesc desc){
     // create shader resource, return handle
     Shader shader {
         .layout = pipelineLayout,
-        .pipeline = vulkanPipeline
+        .pipeline = vulkanPipeline,
+        .emptyDescSetLayouts = emptyLayouts,
+        .vertexModule = vertexShader,
+        .fragmentModule = fragmentShader
     };
     return shaderCache->insert(shader);
 }
@@ -1414,6 +1419,10 @@ void VulkanResourceManager::remove<Shader>(Handle<Shader> handle){
     m_deletionQueue[m_frameId % MAX_FRAME_COUNT].push_function([=]() {
         vkDestroyPipeline(m_device, shader->pipeline, nullptr);
         vkDestroyPipelineLayout(m_device, shader->layout, nullptr);
+        vkDestroyShaderModule(m_device, shader->vertexModule, nullptr);
+        vkDestroyShaderModule(m_device, shader->fragmentModule, nullptr);
+        for (VkDescriptorSetLayout emptyLayout : shader->emptyDescSetLayouts)
+            vkDestroyDescriptorSetLayout(m_device, emptyLayout, nullptr);
         resourceCache->remove(handle);
     });
 };

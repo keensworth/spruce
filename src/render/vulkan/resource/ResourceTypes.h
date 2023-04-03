@@ -167,6 +167,9 @@ typedef struct RenderPass {
 typedef struct Shader {
     VkPipelineLayout layout;
     VkPipeline pipeline;
+    std::vector<VkDescriptorSetLayout> emptyDescSetLayouts;
+    VkShaderModule vertexModule;
+    VkShaderModule fragmentModule;
 } Shader;
 
 
