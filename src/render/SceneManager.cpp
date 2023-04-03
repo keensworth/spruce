@@ -75,17 +75,34 @@ void SceneManager::updateCamera(uint32 frame, Camera camera){
 }
 
 
-void uploadGlobalResources(){}
+void SceneManager::uploadGlobalResources(UploadHandler& uploadHandler){
+    uploadHandler.uploadBuffer(m_assetLoader.getVertexPositionData(), m_positionsBuffer);
+    uploadHandler.uploadBuffer(m_assetLoader.getVertexPositionData(), m_attributesBuffer);
+    uploadHandler.uploadBuffer(m_assetLoader.getVertexPositionData(), m_materialsBuffer);
+    uploadHandler.uploadBuffer(m_assetLoader.getVertexPositionData(), m_indexBuffer);
 
-void uploadPerFrameResources(uint32 frame){}
-
-
-Handle<DescriptorSet> getGlobalDescriptorSet(){
-
+    std::vector<TextureInfo> textures = m_assetLoader.getTextureData();
+    for (uint32 i = 0; i < m_assetLoader.getPrimitiveCounts().textureCount; i++){
+        TextureInfo texture = textures[i];
+        uploadHandler.uploadTexture(texture.data, m_textures[i]);
+    }
 }
 
-Handle<DescriptorSet> getPerFrameDescriptorSet(uint32 frame){
+void SceneManager::uploadPerFrameResources(UploadHandler& uploadHandler, uint32 frame){
+    uploadHandler.uploadDyanmicBuffer(m_sceneData[frame % MAX_FRAME_COUNT], m_sceneBuffer);
+    uploadHandler.uploadDyanmicBuffer(m_cameras[frame % MAX_FRAME_COUNT], m_cameraBuffer);
+    uploadHandler.uploadDyanmicBuffer(m_lights[frame % MAX_FRAME_COUNT], m_lightsBuffer);
+    uploadHandler.uploadDyanmicBuffer(m_transforms[frame % MAX_FRAME_COUNT], m_transformBuffer);
+    uploadHandler.uploadDyanmicBuffer(m_drawData[frame % MAX_FRAME_COUNT], m_drawDataBuffer);
+}
 
+
+Handle<DescriptorSet> SceneManager::getGlobalDescriptorSet(){
+    return m_globalDescriptorSet;
+}
+
+Handle<DescriptorSet> SceneManager::getPerFrameDescriptorSet(uint32 frame){
+    return m_frameDescriptorSets[frame % MAX_FRAME_COUNT];
 }
 
 BatchManager& SceneManager::getBatchManager(uint32 frame) {
@@ -239,13 +256,18 @@ void SceneManager::initDescriptorSets(){
                 {.binding = 4}
             }
         });
+        Buffer* scene = m_rm->get<Buffer>(m_sceneBuffer);
+        Buffer* cameras = m_rm->get<Buffer>(m_sceneBuffer);
+        Buffer* lights = m_rm->get<Buffer>(m_sceneBuffer);
+        Buffer* transforms = m_rm->get<Buffer>(m_sceneBuffer);
+        Buffer* draws = m_rm->get<Buffer>(m_sceneBuffer);
         m_frameDescriptorSets[i] = m_rm->create<DescriptorSet>(DescriptorSetDesc{
             .buffers = {
-                {.buffer = m_sceneBuffer},
-                {.buffer = m_cameraBuffer},
-                {.buffer = m_lightsBuffer},
-                {.buffer = m_transformBuffer},
-                {.buffer = m_drawDataBuffer}
+                {.buffer = m_sceneBuffer, .byteOffset = i*(scene->byteSize/MAX_FRAME_COUNT)},
+                {.buffer = m_cameraBuffer, .byteOffset = i*(cameras->byteSize/MAX_FRAME_COUNT)},
+                {.buffer = m_lightsBuffer, .byteOffset = i*(lights->byteSize/MAX_FRAME_COUNT)},
+                {.buffer = m_transformBuffer, .byteOffset = i*(transforms->byteSize/MAX_FRAME_COUNT)},
+                {.buffer = m_drawDataBuffer, .byteOffset = i*(draws->byteSize/MAX_FRAME_COUNT)}
             }
         });
     }
@@ -277,17 +299,26 @@ void SceneManager::destroy(){
     }
 
     // destroy per-frame resources
-    m_rm->remove(m_lightsBuffer);
-    m_rm->remove(m_transformBuffer);
-    m_rm->remove(m_drawDataBuffer);
-    m_rm->remove(m_cameraBuffer);
-    m_rm->remove(m_sceneBuffer);
+    m_rm->remove<Buffer>(m_lightsBuffer);
+    m_rm->remove<Buffer>(m_transformBuffer);
+    m_rm->remove<Buffer>(m_drawDataBuffer);
+    m_rm->remove<Buffer>(m_cameraBuffer);
+    m_rm->remove<Buffer>(m_sceneBuffer);
+    for (uint32 i = 0; i < MAX_FRAME_COUNT; i++){
+        m_rm->remove<DescriptorSetLayout>(m_frameDescriptorSetLayouts[i]);
+        m_rm->remove<DescriptorSet>(m_frameDescriptorSets[i]);
+    }
 
     // destroy global resources
-    m_rm->remove(m_positionsBuffer);
-    m_rm->remove(m_attributesBuffer);
-    m_rm->remove(m_indexBuffer);
-    m_rm->remove(m_materialsBuffer);
+    m_rm->remove<Buffer>(m_positionsBuffer);
+    m_rm->remove<Buffer>(m_attributesBuffer);
+    m_rm->remove<Buffer>(m_indexBuffer);
+    m_rm->remove<Buffer>(m_materialsBuffer);
+    for (Handle<Texture> texture : m_textures)
+        m_rm->remove<Texture>(texture);
+    m_rm->remove<DescriptorSetLayout>(m_globalDescriptorSetLayout);
+    m_rm->remove<DescriptorSet>(m_globalDescriptorSet);
+
 
     m_destroyed = true;
 }

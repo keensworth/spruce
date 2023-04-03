@@ -30,8 +30,8 @@ public:
     Handle<DescriptorSet> getGlobalDescriptorSet();
     Handle<DescriptorSet> getPerFrameDescriptorSet(uint32 frame);
 
-    void uploadGlobalResources();
-    void uploadPerFrameResources(uint32 frame);
+    void uploadGlobalResources(UploadHandler& uploadHandler);
+    void uploadPerFrameResources(UploadHandler& uploadHandler, uint32 frame);
 
     BatchManager& getBatchManager(uint32 frame);
 
