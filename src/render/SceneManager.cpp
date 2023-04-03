@@ -115,6 +115,14 @@ void SceneManager::initializeAssets(SprResourceManager &rm){
     initBuffers(counts);
     initTextures(counts.textureCount);
     initDescriptorSets();
+    
+    for (uint32 i = 0; i < MAX_FRAME_COUNT; i++){
+        m_batchManagers[i].setQuadBatch({
+            .indexCount = m_meshInfo[1].indexCount,
+            .firstIndex = m_meshInfo[1].firstIndex,
+            .drawCount = 1
+        });
+    }
 }
 
 void SceneManager::initBuffers(PrimitiveCounts counts){

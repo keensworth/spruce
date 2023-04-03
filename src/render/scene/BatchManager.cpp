@@ -25,8 +25,16 @@ void BatchManager::getBatches(MaterialQuery query, std::vector<Batch>& result){
     m_batches.getBatches(query, result);
 }
 
+Batch BatchManager::getQuadBatch(){
+    return m_quadBatch;
+}
+
 uint32 BatchManager::getDrawCount(){
     return m_drawCount;
+}
+
+void BatchManager::setQuadBatch(Batch quadBatch){
+    m_quadBatch = quadBatch;
 }
 
 void BatchManager::reset(){
