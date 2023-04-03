@@ -57,5 +57,6 @@ private:
     void loadVertexData(SprResourceManager& rm, Mesh* mesh, MeshInfo& info);
     void loadMaterial(SprResourceManager& rm, Mesh* mesh, MeshInfo& info);
     uint32 loadTexture(SprResourceManager& rm, uint32 texId, bool srgb);
+    void loadBuiltinAssets(SprResourceManager& rm, MeshInfoMap& meshes);
 };
 }

@@ -1,5 +1,6 @@
 #include "GfxAssetLoader.h"
 #include "Material.h"
+#include "Mesh.h"
 
 namespace spr::gfx {
 
@@ -16,13 +17,12 @@ MeshInfoMap GfxAssetLoader::loadAssets(SprResourceManager& rm){
     std::vector<uint32>& modelIds = rm.getModelIds();
     std::vector<uint32>& textureIds = rm.getTextureIds();
 
-    // load built-in textures
-    loadTexture(rm, spr::data::default_color, true);
-    loadTexture(rm, spr::data::default_input_black, false);
-    loadTexture(rm, spr::data::default_input_white, false);
+    MeshInfoMap map;
+
+    // built-in assets
+    loadBuiltinAssets(rm, map);
 
     // iterate over models and load subresources
-    MeshInfoMap map;
     for (uint32 modelId : modelIds){
         Handle<spr::Model> modelHandle = rm.getHandle<spr::Model>(modelId);
         spr::Model* model = rm.getData<spr::Model>(modelHandle);
@@ -41,9 +41,9 @@ MeshInfoMap GfxAssetLoader::loadAssets(SprResourceManager& rm){
     }
 
     // iterate over non-subresource textures
-    for (uint32 texId : textureIds){
-        uint32 textureIndex = loadTexture(rm, texId, true);
-    }
+    // for (uint32 texId : textureIds){
+    //     uint32 textureIndex = loadTexture(rm, texId, true);
+    // }
 
     return map;
 }
@@ -136,6 +136,47 @@ uint32 GfxAssetLoader::loadTexture(SprResourceManager& rm, uint32 textureId, boo
 
     m_counts.textureCount++;
     return texIndex;
+}
+
+void GfxAssetLoader::loadBuiltinAssets(SprResourceManager& rm, MeshInfoMap& meshes){
+    // load built-in textures
+    loadTexture(rm, spr::data::default_color, true);
+    loadTexture(rm, spr::data::default_input_black, false);
+    loadTexture(rm, spr::data::default_input_white, false);
+
+    // load default/error model
+    Handle<spr::Mesh> meshHandle = rm.getHandle<spr::Mesh>(spr::data::default_model);
+    spr::Mesh* mesh = rm.getData<spr::Mesh>(meshHandle);
+    MeshInfo info;
+    loadVertexData(rm, mesh, info);
+    loadMaterial(rm, mesh, info);
+    meshes[0] = info;
+
+    // create built-in quad mesh
+    std::vector<VertexPosition> quadPos = {
+        {{-1.0f, -1.0f, 0.0f}},
+        {{ 1.0f, -1.0f, 0.0f}},
+        {{ 1.0f,  1.0f, 0.0f}},
+        {{-1.0f,  1.0f, 0.0f}}
+    };
+    std::vector<VertexAttributes> quadAttr = {
+        {{0.0f, 0.0f, 1.0f, 0.0f},{1.0f, 1.0f, 1.0f, 1.0f}},
+        {{0.0f, 0.0f, 1.0f, 0.0f},{1.0f, 1.0f, 1.0f, 1.0f}},
+        {{0.0f, 0.0f, 1.0f, 0.0f},{1.0f, 1.0f, 1.0f, 1.0f}},
+        {{0.0f, 0.0f, 1.0f, 0.0f},{1.0f, 1.0f, 1.0f, 1.0f}}
+    };
+    std::vector<uint32> quadIndices = {
+        0,1,2,0,2,3
+    };
+
+    MeshInfo quadInfo;
+    quadInfo.indexCount = quadIndices.size();
+    quadInfo.firstIndex = m_vertexIndices.insert((uint32*)(quadIndices.data()), quadIndices.size()); 
+    quadInfo.vertexOffset = m_vertexPositions.insert((VertexPosition*)(quadPos.data()), quadPos.size());
+    m_vertexAttributes.insert((VertexAttributes*)(quadAttr.data()), quadAttr.size());
+    m_counts.indexCount += quadInfo.indexCount;
+    m_counts.vertexCount += quadPos.size();
+    meshes[1] = quadInfo;
 }
 
 void GfxAssetLoader::clear(){
