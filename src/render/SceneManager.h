@@ -20,9 +20,9 @@ public:
     SceneManager(VulkanResourceManager& rm);
     ~SceneManager();
 
-    void insertMesh(uint32 frame, uint32 meshId, uint32 materialFlags, glm::mat4 model, glm::mat4 modelInvTranspose);
-    void insertLight(uint32 frame, Light light);
-    void updateCamera(uint32 frame, Camera camera);
+    void insertMesh(uint32 frame, uint32 meshId, uint32 materialFlags, Transform& transform);
+    void insertLight(uint32 frame, Light& light);
+    void updateCamera(uint32 frame, Camera& camera);
     void reset(uint32 frame);
 
     void initializeAssets(SprResourceManager& rm);

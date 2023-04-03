@@ -15,11 +15,9 @@ public:
 
     void loadAssets(SprResourceManager& rm);
 
-    void insertMesh(uint32 meshId, uint32 materialFlags, glm::mat4 model, glm::mat4 modelInvTranspose);
-
-    void insertLight();
-
-    void updateCamera();
+    void insertMesh(uint32 meshId, uint32 materialFlags, Transform& transform);
+    void insertLight(Light& light);
+    void updateCamera(Camera& camera);
 
     void render();
     

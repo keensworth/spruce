@@ -38,16 +38,13 @@ SceneManager::~SceneManager(){
 }
 
 
-void SceneManager::insertMesh(uint32 frame, uint32 meshId, uint32 materialFlags, glm::mat4 model, glm::mat4 modelInvTranspose){
+void SceneManager::insertMesh(uint32 frame, uint32 meshId, uint32 materialFlags, Transform& transform){
     // get mesh data and fill draw
     MeshInfo& meshInfo = m_meshInfo[meshId];
     DrawData draw = {
         .vertexOffset   = meshInfo.vertexOffset,  
         .materialIndex  = meshInfo.materialIndex, 
-        .transformIndex = m_transforms[frame % MAX_FRAME_COUNT].insert({
-            model,
-            modelInvTranspose
-        })
+        .transformIndex = m_transforms[frame % MAX_FRAME_COUNT].insert(transform)
     };
 
     // fill out batch info, which will either initialize
@@ -65,12 +62,12 @@ void SceneManager::insertMesh(uint32 frame, uint32 meshId, uint32 materialFlags,
 }
 
 
-void SceneManager::insertLight(uint32 frame, Light light){
+void SceneManager::insertLight(uint32 frame, Light& light){
     m_lights[frame % MAX_FRAME_COUNT].insert(light);
 }
 
 
-void SceneManager::updateCamera(uint32 frame, Camera camera){
+void SceneManager::updateCamera(uint32 frame, Camera& camera){
     m_cameras[frame % MAX_FRAME_COUNT].insert(camera);
 }
 

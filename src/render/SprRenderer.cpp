@@ -48,13 +48,16 @@ void SprRenderer::render(){
 }
 
 
-void SprRenderer::insertMesh(uint32 meshId, uint32 materialFlags, glm::mat4 model, glm::mat4 modelInvTranspose){
+void SprRenderer::insertMesh(uint32 meshId, uint32 materialFlags, Transform& transform){
+    m_sceneManager.insertMesh(m_frameId, meshId, materialFlags, transform);
 }
 
-void SprRenderer::insertLight(){
+void SprRenderer::insertLight(Light& light){
+    m_sceneManager.insertLight(m_frameId, light);
 }
 
-void SprRenderer::updateCamera(){
+void SprRenderer::updateCamera(Camera& camera){
+    m_sceneManager.updateCamera(m_frameId, camera);
 }
 
 
