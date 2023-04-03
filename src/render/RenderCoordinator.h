@@ -23,10 +23,12 @@ private:
     Window* m_window;
     VulkanResourceManager* m_rm;
     VulkanRenderer* m_renderer;
-
     uint32 m_frameId;
+
+    bool m_sceneInitialized = false;
     
     void initRenderers();
+    void uploadSceneData(SceneManager& sceneManager);
 
 private:
     // MAIN renderer

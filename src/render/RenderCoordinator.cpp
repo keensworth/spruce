@@ -21,6 +21,9 @@ void RenderCoordinator::render(SceneManager& sceneManager){
     // begin frame
     RenderFrame& frame = m_renderer->beginFrame(m_rm);
 
+    // upload scene data
+    uploadSceneData(sceneManager);
+
     // begin render passes
     BatchManager& batchManager = sceneManager.getBatchManager(m_frameId);
 
@@ -36,6 +39,22 @@ void RenderCoordinator::render(SceneManager& sceneManager){
     // present result
     m_renderer->present(frame);
     m_frameId = m_renderer->getFrameId();
+}
+
+
+void RenderCoordinator::uploadSceneData(SceneManager& sceneManager){
+    UploadHandler& uploadHandler = m_renderer->beginTransferCommands();
+
+    // global frame resources
+    if (!m_sceneInitialized){
+        m_sceneInitialized = true;   
+        sceneManager.uploadGlobalResources(uploadHandler);
+    }
+
+    // per-frame scene resources
+    sceneManager.uploadPerFrameResources(uploadHandler, m_frameId);
+
+    uploadHandler.submit();
 }
 
 
