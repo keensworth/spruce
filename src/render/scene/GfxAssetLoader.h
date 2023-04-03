@@ -52,6 +52,7 @@ private:
     TempBuffer<uint32> m_vertexIndices;
     TempBuffer<MaterialData> m_materials;
     std::vector<TextureInfo> m_textures;
+    bool m_cleared = false;
 
     void loadVertexData(SprResourceManager& rm, Mesh* mesh, MeshInfo& info);
     void loadMaterial(SprResourceManager& rm, Mesh* mesh, MeshInfo& info);

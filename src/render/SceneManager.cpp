@@ -86,6 +86,8 @@ void SceneManager::uploadGlobalResources(UploadHandler& uploadHandler){
         TextureInfo texture = textures[i];
         uploadHandler.uploadTexture(texture.data, m_textures[i]);
     }
+
+    m_assetLoader.clear();
 }
 
 void SceneManager::uploadPerFrameResources(UploadHandler& uploadHandler, uint32 frame){

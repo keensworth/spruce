@@ -8,7 +8,8 @@ GfxAssetLoader::GfxAssetLoader(){
 }
 
 GfxAssetLoader::~GfxAssetLoader(){
-
+    if (!m_cleared)
+        clear();
 }
 
 MeshInfoMap GfxAssetLoader::loadAssets(SprResourceManager& rm){
@@ -138,7 +139,12 @@ uint32 GfxAssetLoader::loadTexture(SprResourceManager& rm, uint32 textureId, boo
 }
 
 void GfxAssetLoader::clear(){
-    
+    m_vertexPositions.reset();
+    m_vertexAttributes.reset();
+    m_vertexIndices.reset();
+    m_materials.reset();
+    m_textures.clear();
+    m_cleared = true;
 }
 
 PrimitiveCounts GfxAssetLoader::getPrimitiveCounts(){
