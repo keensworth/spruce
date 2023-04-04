@@ -18,10 +18,17 @@ public:
     ~FrameRenderer(){}
 
 
-    void init(std::vector<VkImageView>& swapchainImageViews, Handle<TextureAttachment> input){
-        VkFormat displayFormat = m_renderer->getDisplay().getSwapchainFormat();
+    void init(
+        std::vector<VkImageView>& swapchainImageViews, 
+        Handle<TextureAttachment> input, 
+        Handle<DescriptorSet> globalDescriptorSet, 
+        Handle<DescriptorSetLayout> globalDescSetLayout)
+    {
+        m_globalDescriptorSet = globalDescriptorSet;
+        m_globalDescriptorSetLayout = globalDescSetLayout;
 
         // render pass
+        VkFormat displayFormat = m_renderer->getDisplay().getSwapchainFormat();
         m_renderPassLayout = m_rm->create<RenderPassLayout>(RenderPassLayoutDesc{
             .colorAttatchmentFormats = {displayFormat},
             .subpass = {
@@ -49,13 +56,13 @@ public:
 
         // shader
         m_shader = m_rm->create<Shader>(ShaderDesc{
-            .vertexShader = {.path = ""},
-            .fragmentShader = {.path = ""},
+            .vertexShader = {.path = "../data/shaders/test.vert.spv"},
+            .fragmentShader = {.path = "../data/shaders/test.frag.spv"},
             .descriptorSets = {
+                { globalDescSetLayout },
                 { }, // unused
-                { }, // unused
-                { }, // unused
-                { m_descriptorSetLayout }
+                { m_descriptorSetLayout },
+                { } // unused
             },
             .graphicsState = {
                 .renderPass = m_renderPass,
@@ -72,18 +79,31 @@ public:
         });
     }
 
-    void render(BatchManager& batchManager){
-        CommandBuffer& cb = m_renderer->beginGraphicsCommands(CommandType::MAIN);
+
+    void render(CommandBuffer& cb, BatchManager& batchManager){
         RenderPassRenderer& passRenderer = cb.beginRenderPass(m_renderPass, glm::vec4(1.0f,0.f,0.f,1.f));
         
-        passRenderer.drawSubpass({.shader = m_shader, .set3 = m_descriptorSet}, batchManager.getQuadBatch());
+        passRenderer.drawSubpass({
+            .shader = m_shader,
+            .set0 =  m_globalDescriptorSet,
+            .set2 = m_descriptorSet}, 
+            batchManager.getQuadBatch(),
+            batchManager.getQuadVertexOffset());
 
         cb.endRenderPass();
-        cb.submit();
+    }
+
+
+    Handle<RenderPass> getRenderPass(){
+        return m_renderPass;
     }
 
     void destroy(){
-        
+        m_rm->remove<DescriptorSet>(m_descriptorSet);
+        m_rm->remove<Shader>(m_shader);
+        m_rm->remove<DescriptorSetLayout>(m_descriptorSetLayout);
+        m_rm->remove<RenderPass>(m_renderPass);
+        m_rm->remove<RenderPassLayout>(m_renderPassLayout);
     }
 
 private: // owning
@@ -97,5 +117,8 @@ private: // non-owning
     VulkanResourceManager* m_rm;
     VulkanRenderer* m_renderer;
     glm::uvec3 m_dim;
+
+    Handle<DescriptorSet> m_globalDescriptorSet;
+    Handle<DescriptorSetLayout> m_globalDescriptorSetLayout;
 };
 }
