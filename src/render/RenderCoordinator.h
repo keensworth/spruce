@@ -14,7 +14,9 @@ public:
     RenderCoordinator(Window* window, VulkanRenderer* renderer, VulkanResourceManager* rm);
     ~RenderCoordinator();
 
+    void initRenderers(SceneManager& sceneManager);
     void render(SceneManager& sceneManager);
+    
     void onResize();
     void destroy();
 
@@ -27,7 +29,6 @@ private:
 
     bool m_sceneInitialized = false;
     
-    void initRenderers();
     void uploadSceneData(SceneManager& sceneManager);
 
 private:
