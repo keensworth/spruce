@@ -24,7 +24,7 @@ public:
     ~RenderPassRenderer();
 
     void drawSubpass(PassContext context, std::vector<Batch>& batches);
-    void drawSubpass(PassContext context, Batch batch);
+    void drawSubpass(PassContext context, Batch batch, uint32 vertexOffset);
     void setFrameId(uint32 frameId);
 
 private: // non-owning

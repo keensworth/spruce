@@ -63,7 +63,7 @@ void RenderPassRenderer::drawSubpass(PassContext context, std::vector<Batch>& ba
     }
 }
 
-void RenderPassRenderer::drawSubpass(PassContext context, Batch batch){
+void RenderPassRenderer::drawSubpass(PassContext context, Batch batch, uint32 vertexOffset){
     glm::uvec3 screenDim = m_rm->m_screenDim;
 
     // viewport
@@ -96,7 +96,7 @@ void RenderPassRenderer::drawSubpass(PassContext context, Batch batch){
     m_descSetHandler.updateBindings(shader->layout, m_frameIndex);
     
     // draw the batch:
-    vkCmdDrawIndexed(m_commandBuffer, batch.indexCount, batch.drawCount, batch.firstIndex, 0, 0);
+    vkCmdDrawIndexed(m_commandBuffer, batch.indexCount, batch.drawCount, batch.firstIndex, vertexOffset, 0);
     
 }
 
