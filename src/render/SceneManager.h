@@ -28,7 +28,11 @@ public:
     void initializeAssets(SprResourceManager& rm);
 
     Handle<DescriptorSet> getGlobalDescriptorSet();
+    Handle<DescriptorSetLayout> getGlobalDescriptorSetLayout();
     Handle<DescriptorSet> getPerFrameDescriptorSet(uint32 frame);
+    Handle<DescriptorSetLayout> getPerFrameDescriptorSetLayout(uint32 frame);
+
+    Handle<Buffer> getIndexBuffer();
 
     void uploadGlobalResources(UploadHandler& uploadHandler);
     void uploadPerFrameResources(UploadHandler& uploadHandler, uint32 frame);

@@ -100,8 +100,20 @@ Handle<DescriptorSet> SceneManager::getGlobalDescriptorSet(){
     return m_globalDescriptorSet;
 }
 
+Handle<DescriptorSetLayout> SceneManager::getGlobalDescriptorSetLayout(){
+    return m_globalDescriptorSetLayout;
+}
+
 Handle<DescriptorSet> SceneManager::getPerFrameDescriptorSet(uint32 frame){
     return m_frameDescriptorSets[frame % MAX_FRAME_COUNT];
+}
+
+Handle<DescriptorSetLayout> SceneManager::getPerFrameDescriptorSetLayout(uint32 frame){
+    return m_frameDescriptorSetLayouts[frame % MAX_FRAME_COUNT];
+}
+
+Handle<Buffer> SceneManager::getIndexBuffer(){
+    return m_indexBuffer;
 }
 
 BatchManager& SceneManager::getBatchManager(uint32 frame) {
@@ -117,11 +129,11 @@ void SceneManager::initializeAssets(SprResourceManager &rm){
     initDescriptorSets();
     
     for (uint32 i = 0; i < MAX_FRAME_COUNT; i++){
-        m_batchManagers[i].setQuadBatch({
+        m_batchManagers[i].setQuadInfo({
             .indexCount = m_meshInfo[1].indexCount,
             .firstIndex = m_meshInfo[1].firstIndex,
             .drawCount = 1
-        });
+        }, m_meshInfo[1].vertexOffset);
     }
 }
 
