@@ -29,12 +29,17 @@ Batch BatchManager::getQuadBatch(){
     return m_quadBatch;
 }
 
+uint32 BatchManager::getQuadVertexOffset(){
+    return m_quadVertexOffset;
+}
+
 uint32 BatchManager::getDrawCount(){
     return m_drawCount;
 }
 
-void BatchManager::setQuadBatch(Batch quadBatch){
+void BatchManager::setQuadInfo(Batch quadBatch, uint32 quadVertexOffset){
     m_quadBatch = quadBatch;
+    m_quadVertexOffset = quadVertexOffset;
 }
 
 void BatchManager::reset(){

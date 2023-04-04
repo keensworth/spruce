@@ -16,7 +16,7 @@ public:
 
     void getBatches(MaterialQuery query, std::vector<Batch>& result);
     Batch getQuadBatch();
-
+    uint32 getQuadVertexOffset();
     uint32 getDrawCount();
 
     void reset();
@@ -27,10 +27,11 @@ private:
     uint32 m_drawCount;
 
     Batch m_quadBatch;
+    uint32 m_quadVertexOffset;
 
     void addDraw(DrawData draw, Batch batchInfo);
     void getDrawData(TempBuffer<DrawData>& result);
-    void setQuadBatch(Batch quadBatch);
+    void setQuadInfo(Batch quadBatch, uint32 quadVertexOffset);
 
     friend class SceneManager;
 };
