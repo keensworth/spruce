@@ -63,6 +63,7 @@ void SprRenderer::updateCamera(Camera& camera){
 
 void SprRenderer::loadAssets(SprResourceManager& rm){
     m_sceneManager.initializeAssets(rm);
+    m_renderCoordinator.initRenderers(m_sceneManager);
 }
 
 }
