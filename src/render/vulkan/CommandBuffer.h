@@ -25,6 +25,9 @@ public:
 
     RenderPassRenderer& beginRenderPass(Handle<RenderPass> renderPass, glm::vec4 clearColor);
     void endRenderPass();
+
+    void bindIndexBuffer(Handle<Buffer> indexBuffer);
+
     void submit();
 
     VkCommandBuffer getCommandBuffer();

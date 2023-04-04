@@ -106,6 +106,11 @@ void CommandBuffer::endRenderPass(){
     vkCmdEndRenderPass(m_commandBuffer);
 }
 
+void CommandBuffer::bindIndexBuffer(Handle<Buffer> indexBuffer){
+    Buffer* buffer = m_rm->get<Buffer>(indexBuffer);
+    vkCmdBindIndexBuffer(m_commandBuffer, buffer->buffer, 0, VK_INDEX_TYPE_UINT32);
+}
+
 void CommandBuffer::submit(){
     std::vector<VkPipelineStageFlags> stageFlags;
 
