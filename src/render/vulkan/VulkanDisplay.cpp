@@ -1,6 +1,11 @@
 #include "VulkanDisplay.h"
+#include "SDL_stdinc.h"
 #include "VulkanDevice.h"
-#include <vulkan/vulkan_core.h>
+#include "../../external/volk/volk.h"
+#include "../../debug/SprLog.h"
+#include "../../interface/Window.h"
+#include "SDL_vulkan.h"
+#include <algorithm>
 
 namespace spr::gfx{
 
@@ -26,7 +31,7 @@ VulkanDisplay::~VulkanDisplay(){
 }
 
 void VulkanDisplay::createSurface(VkInstance instance){
-    if(!SDL_Vulkan_CreateSurface(m_window->getHandle(), instance, &m_surface))
+    if(SDL_Vulkan_CreateSurface(m_window->getHandle(), instance, &m_surface) != SDL_TRUE)
         SprLog::fatal("[VulkanDisplay] Failed to create surface");
 }
 
@@ -46,13 +51,17 @@ uint32 VulkanDisplay::createSwapchain(VkPhysicalDevice physicalDevice, VkDevice 
         m_imageCount = m_capabilities.maxImageCount;
     }
 
-    // check if present and graphics queue are the same
-    bool graphicsPresentShared = families.graphicsFamilyIndex == families.presentFamilyIndex;
-    uint32 queueFamilyIndices[] = {families.graphicsFamilyIndex.value(), families.presentFamilyIndex.value()};
+    // // check if present and graphics queue are the same
+    bool graphicsPresentShared = true;
+    // uint32 queueFamilyIndices[2];// = {families.graphicsFamilyIndex.value(), families.presentFamilyIndex.value()};
+    // if (families.graphicsFamilyIndex.has_value() && families.presentFamilyIndex.has_value())
+    //     queueFamilyIndices = {families.graphicsFamilyIndex.value(), families.presentFamilyIndex.value()};
 
     // create info
     VkSwapchainCreateInfoKHR createInfo = {
         .sType            = VK_STRUCTURE_TYPE_SWAPCHAIN_CREATE_INFO_KHR,
+        .pNext            = NULL,
+        .flags            = 0,
         .surface          = m_surface,
         .minImageCount    = m_imageCount,
         .imageFormat      = m_format,
@@ -62,7 +71,7 @@ uint32 VulkanDisplay::createSwapchain(VkPhysicalDevice physicalDevice, VkDevice 
         .imageUsage       = VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT,
         .imageSharingMode = graphicsPresentShared ? VK_SHARING_MODE_EXCLUSIVE : VK_SHARING_MODE_CONCURRENT,
         .queueFamilyIndexCount = graphicsPresentShared ? 0u : 2u,
-        .pQueueFamilyIndices   = graphicsPresentShared ? NULL : queueFamilyIndices,
+        .pQueueFamilyIndices   = NULL,//graphicsPresentShared ? NULL : queueFamilyIndices,
         .preTransform    = m_capabilities.currentTransform,
         .compositeAlpha  = VK_COMPOSITE_ALPHA_OPAQUE_BIT_KHR,
         .presentMode     = m_presentMode,
@@ -90,6 +99,8 @@ void VulkanDisplay::createImageViews(VkDevice device){
     for (uint32 i = 0; i < m_imageCount; i++) {
         VkImageViewCreateInfo createInfo{
             .sType      = VK_STRUCTURE_TYPE_IMAGE_VIEW_CREATE_INFO,
+            .pNext      = NULL,
+            .flags      = 0,
             .image      = m_images[i],
             .viewType   = VK_IMAGE_VIEW_TYPE_2D,
             .format     = m_format,
@@ -142,6 +153,7 @@ void VulkanDisplay::destroy(VkDevice device, VkInstance instance){
     vkDestroySurfaceKHR(instance, m_surface, nullptr);
 
     m_destroyed = true;
+    SprLog::info("[VulkanDisplay] [destroy] destroyed...");
 }
 
 VkSwapchainKHR VulkanDisplay::getSwapchain(){
