@@ -17,26 +17,18 @@ VulkanRenderer::VulkanRenderer() {
 VulkanRenderer::VulkanRenderer(Window* window) : m_display(window){
     // create device info, instance, and physical device
     m_device.createInfo(*window);
-    SprLog::debug("[VulkanRenderer] create info");
     m_device.createInstance(*window);
-    SprLog::debug("[VulkanRenderer] create instance");
     m_device.createPhysicalDevice();
-    SprLog::debug("[VulkanRenderer] create physical device");
 
-    SprLog::debug("[VulkanRenderer] vulkan display created");
     // create display surface
     m_display.createSurface(m_device.getInstance());
-    SprLog::debug("[VulkanRenderer] display surface created");
 
     // create device with display surface
     m_device.createDevice(m_display.getSurface());
-    SprLog::debug("[VulkanRenderer] device created");
 
     // create swapchain and respective image views
     m_imageCount = m_display.createSwapchain(m_device.getPhysicalDevice(), m_device.getDevice(), m_device.getQueueFamilies());
-    SprLog::debug("[VulkanRenderer] display swapchain created");
     m_display.createImageViews(m_device.getDevice());
-    SprLog::debug("[VulkanRenderer] display image views created");
 
 
     // create frames
@@ -59,7 +51,6 @@ VulkanRenderer::VulkanRenderer(Window* window) : m_display(window){
         };
         VK_CHECK(vkCreateFence(m_device.getDevice(), &fenceInfo, NULL, &m_frames[frameIndex].acquiredFence));
     }
-    SprLog::debug("[VulkanRenderer] done.");
 }
 
 VulkanRenderer::~VulkanRenderer(){
@@ -78,12 +69,9 @@ void VulkanRenderer::init(VulkanResourceManager *rm){
     for (uint32 frameIndex = 0; frameIndex < MAX_FRAME_COUNT; frameIndex++){
         // graphics queue command pools
         m_commandPools[frameIndex].init(m_device, rm, graphicsFamilyIndex, frameIndex, m_frames[frameIndex]);
-        SprLog::debug("[VulkanRenderer] created gfx command pool, frame: " + std::to_string(frameIndex));
 
         // additional transfer queue command pools (if applicable)
-        SprLog::debug("[VulkanRenderer] ???");
         m_transferCommandPools[frameIndex].init(m_device, rm, transferFamilyIndex, frameIndex, m_frames[frameIndex]);
-        SprLog::debug("[VulkanRenderer] created transfer command pool, frame: " + std::to_string(frameIndex));
 
         // setup semaphore dependencies between them
         CommandBuffer& offscreenCB = m_commandPools[frameIndex].getCommandBuffer(CommandType::OFFSCREEN);
@@ -120,16 +108,13 @@ void VulkanRenderer::init(VulkanResourceManager *rm){
         transferCB.setSemaphoreDependencies(transferWaitSem, transferSignalSem);
         offscreenCB.setSemaphoreDependencies(offscreenWaitSem, offscreenSignalSem);
         mainCB.setSemaphoreDependencies(mainWaitSem, mainSignalSem);
-        SprLog::debug("[VulkanRenderer] set semaphore dependencies");
     }
 
     // create upload handlers
     for (uint32 frameIndex = 0; frameIndex < MAX_FRAME_COUNT; frameIndex++){
-        SprLog::debug("[VulkanRenderer] attempting to create upload handler...");
         CommandBuffer& transferCommandBuffer = m_transferCommandPools[frameIndex].getCommandBuffer(CommandType::TRANSFER);
         CommandBuffer& graphicsCommandBuffer = m_commandPools[frameIndex].getCommandBuffer(CommandType::OFFSCREEN);
         m_uploadHandlers[frameIndex].init(m_device, *rm, transferCommandBuffer, graphicsCommandBuffer);
-        SprLog::debug("[VulkanRenderer] created upload handler, frame: " + std::to_string(frameIndex));
     }
 
     m_initialized = true;
@@ -170,41 +155,33 @@ void VulkanRenderer::destroy(){
 
 RenderFrame& VulkanRenderer::beginFrame(VulkanResourceManager* rm){
     m_frameIndex = m_currFrameId % MAX_FRAME_COUNT;
-    SprLog::debug("[VulkanRenderer] [beginFrame] Beginning frame: ", m_frameIndex);
     CommandPool& gfxCommandPool = m_commandPools[m_frameIndex];
     CommandPool& transferCommandPool = m_transferCommandPools[m_frameIndex];
     RenderFrame& renderFrame = m_frames[m_frameIndex];
     renderFrame.frameIndex = m_frameIndex;
-    SprLog::debug("[VulkanRenderer] [beginFrame]     got pools+frame");
 
     // // wait for fences, so we can reset pools
     CommandBuffer& transferCB = transferCommandPool.getCommandBuffer(CommandType::TRANSFER);
     CommandBuffer& offscreenCB = gfxCommandPool.getCommandBuffer(CommandType::OFFSCREEN);
     CommandBuffer& mainCB = gfxCommandPool.getCommandBuffer(CommandType::MAIN);
-    SprLog::debug("[VulkanRenderer] [beginFrame]     got cb");
     transferCB.waitFence();
     offscreenCB.waitFence();
     mainCB.waitFence();
     transferCB.resetFence();
     offscreenCB.resetFence();
     mainCB.resetFence();
-    SprLog::debug("[VulkanRenderer] [beginFrame]     waited");
     
     // acquire swapchain image index
     VkResult result = vkAcquireNextImageKHR(m_device.getDevice(), m_display.getSwapchain(), UINT64_MAX, renderFrame.acquiredSem, renderFrame.acquiredFence, &(renderFrame.imageIndex));
-    SprLog::debug("[VulkanRenderer] [beginFrame]     acquired sci");
     validateSwapchain(result, ACQUIRE);
-    SprLog::debug("[VulkanRenderer] [beginFrame]     validated");
 
     // reset command pools before use
     // pass them current frame id
     gfxCommandPool.prepare(m_currFrameId);
     transferCommandPool.prepare(m_currFrameId);
-    SprLog::debug("[VulkanRenderer] [beginFrame]     prepared c pools");
 
     // flush resources pending deletion
     rm->flushDeletionQueue(m_currFrameId);
-    SprLog::debug("[VulkanRenderer] [beginFrame]     flushed rm del queue");
     
     return renderFrame;
 }
@@ -215,8 +192,6 @@ void VulkanRenderer::present(RenderFrame& frame){
     VkSemaphore waitSemaphore[] = {frame.renderedSem};
     VkSwapchainKHR swapchain[] = {m_display.getSwapchain()};
 
-    SprLog::debug("[VulkanRenderer] [present] test: ", m_display.getSwapchain() == VK_NULL_HANDLE);
-    SprLog::debug("[VulkanRenderer] [present] test: ", frame.renderedSem == VK_NULL_HANDLE);
 
     // create present info and present frame
     VkPresentInfoKHR presentInfo = {
@@ -231,9 +206,7 @@ void VulkanRenderer::present(RenderFrame& frame){
     };
     VkQueue presentQueue = m_device.getQueue(VulkanDevice::GRAPHICS);
     VkResult result = vkQueuePresentKHR(presentQueue, &presentInfo);
-    SprLog::debug("[VulkanRenderer] [present] presented ");
     validateSwapchain(result, PRESENT);
-    SprLog::debug("[VulkanRenderer] [present] validated");
 
     m_currFrameId++;
 }

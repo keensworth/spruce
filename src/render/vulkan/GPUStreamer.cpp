@@ -66,29 +66,20 @@ void GPUStreamer::transfer(BufferTransfer data) {
             .size   = alignedSize
         };
         vkFlushMappedMemoryRanges(m_device->getDevice(), 1, &stagingRange);
-        SprLog::debug("[GPUStreamer] [transfer<BufferTransfer>] flushed");
         return;
     }
-    SprLog::debug("[GPUStreamer] [transfer<BufferTransfer>] wasn't just shared");
 
     // host local, just copy
     if (data.memType == HOST) {
         std::memcpy(data.dst->allocInfo.pMappedData, data.pSrc, data.size);
         return;
     }
-    SprLog::debug("[GPUStreamer] [transfer<BufferTransfer>] wasn't just host");
 
     // device local, copy to staging buffer and upload
     Handle<Buffer> stagingBuffer = m_stagingBuffers.getStagingBuffer(data.size);
     Buffer* stage = m_rm->get<Buffer>(stagingBuffer);
-    SprLog::debug("[GPUStreamer] [transfer<BufferTransfer>] got stage: ", stage->allocInfo.pMappedData == nullptr);
-    SprLog::debug("[GPUStreamer] [transfer<BufferTransfer>] got ssize: ", stage->allocInfo.size);
-    SprLog::debug("[GPUStreamer] [transfer<BufferTransfer>] got sofst: ", stage->allocInfo.offset);
-    SprLog::debug("[GPUStreamer] [transfer<BufferTransfer>] got datas: ", data.pSrc == nullptr);
-    SprLog::debug("[GPUStreamer] [transfer<BufferTransfer>] got dsize: ", data.size);
 
     memcpy(stage->allocInfo.pMappedData, data.pSrc, data.size);
-    SprLog::debug("[GPUStreamer] [transfer<BufferTransfer>] memcopied");
 
     // https://github.com/KhronosGroup/Vulkan-Docs/wiki/Synchronization-Examples
     uint32_t alignedSize = (data.size-1) - ((data.size-1) % m_nonCoherentAtomSize) + m_nonCoherentAtomSize;
@@ -101,7 +92,6 @@ void GPUStreamer::transfer(BufferTransfer data) {
         .size   = alignedSize
     };
     vkFlushMappedMemoryRanges(m_device->getDevice(), 1, &stagingRange);
-    SprLog::debug("[GPUStreamer] [transfer<BufferTransfer>] flushed");
 
     // build copy region and perform copy command
     m_bufferCopyCmdQueue.push_function([=]() {
@@ -115,7 +105,6 @@ void GPUStreamer::transfer(BufferTransfer data) {
         };
         vkCmdCopyBuffer(m_transferCommandBuffer->getCommandBuffer(), stageBuffer, dstBuffer, 1, &copyRegion);
     });
-    SprLog::debug("[GPUStreamer] [transfer<BufferTransfer>] vkbuffercopy");
 
     // build barriers (transfer/graphics)
     m_transferBufferBarriers.push_back([=](){
@@ -134,7 +123,6 @@ void GPUStreamer::transfer(BufferTransfer data) {
         };
         return transferBarrier;
     });
-    SprLog::debug("[GPUStreamer] [transfer<BufferTransfer>] barrier");
 
     m_graphicsBufferBarriers.push_back([=](){
         VkBuffer dstBuffer = data.dst->buffer;
@@ -152,18 +140,14 @@ void GPUStreamer::transfer(BufferTransfer data) {
         };
         return graphicsBarrier;
     });
-    SprLog::debug("[GPUStreamer] [transfer<BufferTransfer>] barrier2");
 }
 
 template<>
 void GPUStreamer::transfer(TextureTransfer data) {
-    SprLog::debug("[GPUStreamer] [transfer<TextureTransfer>] Setting up transfer");
     // device local, copy to staging buffer and upload
     Handle<Buffer> stagingBuffer = m_stagingBuffers.getStagingBuffer(data.size);
     Buffer* stage = m_rm->get<Buffer>(stagingBuffer);
-    SprLog::debug("[GPUStreamer] [transfer<TextureTransfer>] got stage");
     std::memcpy(stage->allocInfo.pMappedData, data.pSrc, data.size);
-    SprLog::debug("[GPUStreamer] [transfer<BufferTransTextureTransferfer>] memcopied");
 
     // https://github.com/KhronosGroup/Vulkan-Docs/wiki/Synchronization-Examples
     uint32_t alignedSize = (data.size-1) - ((data.size-1) % m_nonCoherentAtomSize) + m_nonCoherentAtomSize;
@@ -176,7 +160,6 @@ void GPUStreamer::transfer(TextureTransfer data) {
         .size   = alignedSize
     };
     vkFlushMappedMemoryRanges(m_device->getDevice(), 1, &stagingRange);
-    SprLog::debug("[GPUStreamer] [transfer<TextureTransfer>] flushed");
 
     // build buffer image copy and perform copy command
     m_imageCopyCmdQueue.push_function([=](){
@@ -205,7 +188,6 @@ void GPUStreamer::transfer(TextureTransfer data) {
         };
         vkCmdCopyBufferToImage(m_transferCommandBuffer->getCommandBuffer(), stageBuffer, dstImage, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, 1, &imageRegion);
     });
-    SprLog::debug("[GPUStreamer] [transfer<TextureTransfer>] queued copy");
 
     // build barriers (transfer/graphics)
     m_imageLayoutBarriers.push_back([=](){
@@ -263,7 +245,6 @@ void GPUStreamer::transfer(TextureTransfer data) {
         };
         return graphicsImageBarrier;
     });
-    SprLog::debug("[GPUStreamer] [transfer<TextureTransfer>] barriers, done");
 }
 
 template<>
@@ -284,7 +265,6 @@ void GPUStreamer::transferDynamic(BufferTransfer data, uint32 frame) {
             .size   = alignedSize
         };
         vkFlushMappedMemoryRanges(m_device->getDevice(), 1, &stagingRange);
-        SprLog::debug("[GPUStreamer] [transfer<BufferTransfer>] flushed");
         return;
     }
 
@@ -297,11 +277,6 @@ void GPUStreamer::transferDynamic(BufferTransfer data, uint32 frame) {
     // device local, copy to staging buffer and upload
     Handle<Buffer> stagingBuffer = m_stagingBuffers.getStagingBuffer(data.size);
     Buffer* stage = m_rm->get<Buffer>(stagingBuffer);
-    SprLog::debug("[GPUStreamer] [transferDynamic<BufferTransfer>] got stage: ", stage->allocInfo.pMappedData == nullptr);
-    SprLog::debug("[GPUStreamer] [transferDynamic<BufferTransfer>] got ssize: ", stage->allocInfo.size);
-    SprLog::debug("[GPUStreamer] [transferDynamic<BufferTransfer>] got sofst: ", stage->allocInfo.offset);
-    SprLog::debug("[GPUStreamer] [transferDynamic<BufferTransfer>] got datas: ", data.pSrc == nullptr);
-    SprLog::debug("[GPUStreamer] [transferDynamic<BufferTransfer>] got dsize: ", data.size);
     std::memcpy(stage->allocInfo.pMappedData, data.pSrc, data.size);
 
     // https://github.com/KhronosGroup/Vulkan-Docs/wiki/Synchronization-Examples
@@ -425,33 +400,23 @@ void GPUStreamer::flush() {
 
     // perform buffer copy commands
     m_bufferCopyCmdQueue.execute();
-    SprLog::debug("[GPUStreamer] [flush] executed m_bufferCopyCmdQueue");
 
-    SprLog::debug("[GPUStreamer] [flush] bufferTransferDependencies:");
-    SprLog::debug("[GPUStreamer] [flush]     bufferMemoryBarrierCount: ", transferBufferBarriers.size());
-    SprLog::debug("[GPUStreamer] [flush]     pBufferMemoryBarriers: ", transferBufferBarriers.data() == nullptr);
 
     for(VkBufferMemoryBarrier2KHR barrier : transferBufferBarriers){
-        SprLog::debug("[GPUStreamer] [flush]         pBufferMemoryBarriers: ", barrier.size);
     }
 
     // perform buffer transfer queue pipeline barrier
-    SprLog::debug("[GPUStreamer] [flush] abt to vkcmdpipeline2 tq->pb: ", m_transferCommandBuffer->isRecording());
     //SprLog::debug("[GPUStreamer] [flush]     trouble: ", &bufferTransferDependencies == nullptr);
     vkCmdPipelineBarrier2KHR(m_transferCommandBuffer->getCommandBuffer(), &bufferTransferDependencies);
-    SprLog::debug("[GPUStreamer] [flush] executed vkCmdPipelineBarrier2KHR(m_transferCommandBuffer->getCommandBuffer(), &bufferTransferDependencies);");
 
     // // perform image layout pipeline barrier
     vkCmdPipelineBarrier2KHR(m_transferCommandBuffer->getCommandBuffer(), &imageLayoutDependencies);
-    SprLog::debug("[GPUStreamer] [flush] executed vkCmdPipelineBarrier2KHR(m_transferCommandBuffer->getCommandBuffer(), &imageLayoutDependencies);");
 
     // perform buffer->image copy commands
     m_imageCopyCmdQueue.execute();
-    SprLog::debug("[GPUStreamer] [flush] executed m_imageCopyCmdQueue");
 
     // perform image transfer queue pipeline barrier
     vkCmdPipelineBarrier2KHR(m_transferCommandBuffer->getCommandBuffer(), &imageTransferDependencies);
-    SprLog::debug("[GPUStreamer] [flush] executed vkCmdPipelineBarrier2KHR(m_transferCommandBuffer->getCommandBuffer(), &imageTransferDependencies);");
 }
 
 void GPUStreamer::performGraphicsBarriers() {
