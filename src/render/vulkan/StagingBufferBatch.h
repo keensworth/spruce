@@ -1,15 +1,18 @@
 #pragma once
-#include "resource/VulkanResourceManager.h"
 
+#include "resource/VulkanResourceManager.h"
 namespace spr::gfx {
+
+class VulkanResourceManager;
+
 class StagingBuffers {
 public:
     StagingBuffers();
-    StagingBuffers(VulkanResourceManager* rm);
     ~StagingBuffers();
 
     Handle<Buffer> getStagingBuffer(uint32 sizeBytes);
     void reset();
+    void init(VulkanResourceManager* rm);
     void destroy();
 
 private:
@@ -20,10 +23,10 @@ private:
     static const uint32 m_maxCount1MB  = 64;
 
     // size of buffers at each scale
-    static const uint32 m_size64MB = (1u << 25); // 2^26 bytes (64MB)
-    static const uint32 m_size16MB = (1u << 23); // 2^24 bytes (16MB)
-    static const uint32 m_size4MB  = (1u << 21); // 2^22 bytes (4MB)
-    static const uint32 m_size1MB  = (1u << 19); // 2^20 bytes (1MB)
+    static const uint32 m_size64MB = (1u << 26); // 2^26 bytes (64MB)
+    static const uint32 m_size16MB = (1u << 24); // 2^24 bytes (16MB)
+    static const uint32 m_size4MB  = (1u << 22); // 2^22 bytes (4MB)
+    static const uint32 m_size1MB  = (1u << 20); // 2^20 bytes (1MB)
 
 private: // owning
     // 256 MB (total) pre-allocated staging buffers
