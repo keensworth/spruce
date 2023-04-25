@@ -1,5 +1,6 @@
 #include "ResourceLoader.h"
 #include "../debug/SprLog.h"
+#include <cstring>
 
 namespace spr{
 
@@ -192,9 +193,33 @@ Mesh ResourceLoader::loadFromMetadata<Mesh>(ResourceMetadata metadata){
 // ║        - alpha cutoff (4)         ║ 
 // ╠═══════════════════════════════════╣
 // ║     doublesided (4)               ║ // double sided
-// ╚═══════════════════════════════════╝ 
+// ╠═══════════════════════════════════╣ 
+// ║     sentinel (4)                  ║ // terminate
+// ╚═══════════════════════════════════╝
 template <>
 Material ResourceLoader::loadFromMetadata<Material>(ResourceMetadata metadata){
+    uint32 materialFlags = 0;
+
+    uint32 baseColorTexId = 0;
+    glm::vec4 baseColorFactor;
+
+    uint32 metalRoughTexId = 0;
+    float metalFactor;
+    float roughnessFactor;
+
+    uint32 normalTexId = 0;
+    float normalScale;
+
+    uint32 occlusionTexId = 0;
+    float occlusionStrength;
+
+    uint32 emissiveTexId = 0;
+    glm::vec3 emissiveFactor;
+
+    uint32 alphaType;
+    float alphaCutoff;
+
+    bool doubleSided;
     // open file
     std::ifstream f(
         ResourceTypes::getPath(metadata.resourceType)+
@@ -205,34 +230,15 @@ Material ResourceLoader::loadFromMetadata<Material>(ResourceMetadata metadata){
         SprLog::warn("[ResourceLoader] Material not found");
         return Material();
     }
-
-    uint32 materialFlags;
-
-    uint32 baseColorTexId;
-    glm::vec4 baseColorFactor;
-
-    uint32 metalRoughTexId;
-    float metalFactor;
-    float roughnessFactor;
-
-    uint32 normalTexId;
-    float normalScale;
-
-    uint32 occlusionTexId;
-    float occlusionStrength;
-
-    uint32 emissiveTexId;
-    glm::vec3 emissiveFactor;
-
-    uint32 alphaType;
-    float alphaCutoff;
-
-    bool doubleSided;
-
+    bool keepParsing = true;
     while(!f.eof()){
-        uint32 materialType;
-        f.read((char*)&materialType, sizeof(uint32));
-
+        if (!keepParsing)
+            break;
+        uint32 materialType = 0;
+        if(!f.read((char*)&materialType, sizeof(uint32)))
+            break;
+        if (f.eof())
+            continue;
         switch(materialType) {
             case 1 : // base color
                 materialFlags |= 0b1;
@@ -274,12 +280,16 @@ Material ResourceLoader::loadFromMetadata<Material>(ResourceMetadata metadata){
                 materialFlags |= (0b1<<6);
                 doubleSided = true;
                 break;
+            case 0 : 
+                keepParsing = false;
+                break;
             default: // unknown
-                SprLog::warn("[ResourceLoader] Material type not recognized");
                 break;
         }
+        if (doubleSided && ((materialFlags | (0b1<<6)) == (0b1<<6))){
+            break;
+        }
     }
-
     // close file
     f.close();
 
@@ -329,7 +339,7 @@ Material ResourceLoader::loadFromMetadata<Material>(ResourceMetadata metadata){
 // ╠═══════════════════════════════════╣
 // ║     height (4)                    ║ // texture height
 // ╠═══════════════════════════════════╣
-// ║     width  id (4)                 ║ // texture width
+// ║     width  (4)                    ║ // texture width
 // ╠═══════════════════════════════════╣
 // ║     components (4)                ║ // 1 - grey | 2 - grey,red | 3 - rgb | 4 - rgba
 // ╚═══════════════════════════════════╝
@@ -385,9 +395,9 @@ Texture ResourceLoader::loadFromMetadata<Texture>(ResourceMetadata metadata){
 //    Buffer - .sbuf                                                         // 
 // ------------------------------------------------------------------------- //
 // ╔═══════════════════════════════════╗
-// ║     element type (4)              ║ // element type (f,i,s,...)
+// ║     element type (4)              ║ // element type (vec3,...)
 // ╠═══════════════════════════════════╣
-// ║     component type (4)            ║ // component type (vec3,...)
+// ║     component type (4)            ║ // component type (f,i,s,...)
 // ╠═══════════════════════════════════╣
 // ║     byte length (4)               ║ // size of data
 // ╠═══════════════════════════════════╣ 
@@ -404,7 +414,7 @@ Buffer ResourceLoader::loadFromMetadata<Buffer>(ResourceMetadata metadata){
         ResourceTypes::getExtension(metadata.resourceType), 
         std::ios::binary);
     if (!f.is_open()){
-        SprLog::warn("[ResourceLoader] Buffer not found");
+        SprLog::warn("[ResourceLoader] Buffer not found, id: " + std::to_string(metadata.resourceId) + ", name: " + metadata.name);
         return Buffer();
     }
 
@@ -424,7 +434,7 @@ Buffer ResourceLoader::loadFromMetadata<Buffer>(ResourceMetadata metadata){
 
     // read data
     data = std::vector<uint8>(byteLength);
-    f.read((char*)data.data(), byteLength);
+    f.read((char*)data.data(), byteLength);    
 
     // close file
     f.close();

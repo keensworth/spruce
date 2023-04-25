@@ -273,8 +273,11 @@ void GLTFParser::writeMaterialFile(
         uint32_t sentinel = 7;
         f.write((char*)&sentinel, sizeof(uint32_t));
         std::cout << "          w: sentinel: " << sentinel << std::endl;
-        
     }
+
+    // terminate
+    uint32_t terminate = 0;
+    f.write((char*)&terminate, sizeof(uint32_t));
     
     // close file
     f.close();
@@ -327,9 +330,11 @@ void GLTFParser::writeModelFile(uint32_t meshCount, std::vector<uint32_t> meshId
     std::cout << "" << std::endl;
 }
 
-void GLTFParser::writeTextureFile(uint32_t bufferId, uint32_t components, uint32_t texId){
+void GLTFParser::writeTextureFile(uint32_t bufferId, uint32_t height, uint32_t width, uint32_t components, uint32_t texId){
     // buffer id (4)
-    // raw/png/jpg/raw/bmp (4)
+    // height (4)
+    // width (4)
+    // components (4)
 
     std::cout << "      Write Texture File:" << std::endl;
 
@@ -347,7 +352,15 @@ void GLTFParser::writeTextureFile(uint32_t bufferId, uint32_t components, uint32
     f.write((char*)&bufferId, sizeof(uint32_t));
     std::cout << "          w: bufferId: " << bufferId << std::endl;
 
-    // write image type
+    // write image height
+    f.write((char*)&height, sizeof(uint32_t));
+    std::cout << "          w: height: " << height << std::endl;
+
+    // write image width
+    f.write((char*)&width, sizeof(uint32_t));
+    std::cout << "          w: width: " << width << std::endl;
+
+    // write image components
     f.write((char*)&components, sizeof(uint32_t));
     std::cout << "          w: components: " << components << std::endl;
 
@@ -375,6 +388,7 @@ void GLTFParser::handleBuffer(
     std::cout << "" << std::endl;
     // write slice of buffer int32_to new buffer
     const unsigned char* bufferData = buffer.data.data();
+
     unsigned char* data = new unsigned char[byteLength];
     for (int32_t i = 0; i < byteLength; i++){
         data[i] = bufferData[i+byteOffset];
@@ -468,9 +482,9 @@ void GLTFParser::handleBufferView(
 
     // handle buffer
     if (byteStride == bytesPerElement)
-        handleBuffer(buffer, byteOffset, byteLength, elementType, componentType, bufferId, out, writeToFile);
+        handleBuffer(buffer, adjustedByteOffset, byteLength, elementType, componentType, bufferId, out, writeToFile);
     else
-        handleBufferInterleaved(buffer, byteOffset, byteStride*elementCount, byteStride, bytesPerElement, elementType, componentType, bufferId, out, writeToFile);
+        handleBufferInterleaved(buffer, adjustedByteOffset, byteLength, byteStride, bytesPerElement, elementType, componentType, bufferId, out, writeToFile);
     
 }
 
@@ -522,15 +536,15 @@ uint32_t GLTFParser::handleTexture(const tinygltf::Texture& tex){
     }
 
     // create masked id (id + filter)
-    uint32_t maskedTexId = (texId & 0xFFFF) | (minFilter << 16);
-    
+    //uint32_t maskedTexId = (texId & 0xFFFF) | (minFilter << 16);
+    uint32_t maskedTexId = texId;
     // get image
     image = model.images[sourceIndex];
 
     // get image components
     uint32_t components = image.component;
     if (components == 0)
-        components = 3;
+        components = 4;
 
     // tex already written to buffer
     // write tex file but not buffer
@@ -538,7 +552,7 @@ uint32_t GLTFParser::handleTexture(const tinygltf::Texture& tex){
         // write texture to file
         std::cout << "  [exists, skipping]" << std::endl;
         std::cout << "" << std::endl;
-        writeTextureFile(m_sourceIdMap[sourceIndex], components, texId);
+        writeTextureFile(m_sourceIdMap[sourceIndex], image.height, image.width, components, texId);
         return maskedTexId;
     }
 
@@ -572,7 +586,7 @@ uint32_t GLTFParser::handleTexture(const tinygltf::Texture& tex){
     std::cout << "" << std::endl;
 
     // write texture to file
-    writeTextureFile(bufferId, components, texId);
+    writeTextureFile(bufferId, image.height, image.width, components, texId);
     return maskedTexId;
 }
 
@@ -665,6 +679,7 @@ uint32_t GLTFParser::handleMaterial(const tinygltf::Material& material){
 }
 
 uint32_t GLTFParser::interleaveVertexAttributes(
+        uint32_t vertexCount,
         std::vector<uint8_t>& normalBuffer,
         std::vector<uint8_t>& tangentBuffer,
         std::vector<uint8_t>& texCoordBuffer,
@@ -677,13 +692,9 @@ uint32_t GLTFParser::interleaveVertexAttributes(
     uint32_t bytesPerTexCoord = 8;
     uint32_t bytesPerVertex = bytesPerNormal + bytesPerColor + bytesPerTexCoord;
 
-    uint32_t vertexCount = 0;
-    if (normalBuffer.size() != 0){
-        vertexCount = normalBuffer.size() / bytesPerNormal;
-    } else {
-        std::cerr << "Failure: unable to determine mesh vertex count" << std::endl;
+    if (normalBuffer.size() != vertexCount * bytesPerNormal){
+        normalBuffer.resize(vertexCount * bytesPerNormal);
     }
-
     if (colorBuffer.size() != vertexCount * bytesPerColor){
         colorBuffer.resize(vertexCount * bytesPerColor);
     }
@@ -759,12 +770,16 @@ uint32_t GLTFParser::handlePrimitive(const tinygltf::Primitive& primitive){
 
     // handle accessors
     // indices
+    std::cout << "  (indices):" << std::endl;
     int32_t indicesId = handleAccessor(model.accessors[indicesAccessorIndex], tempOut, true);
     assert(indicesId >= 0);
     
     // position
     int32_t positionId = -1;
+    uint32_t vertexCount = 0;
     if (positionAccessorIndex >= 0){
+        std::cout << "  (position):" << std::endl;
+        vertexCount = model.accessors[positionAccessorIndex].count;
         positionId = handleAccessor(model.accessors[positionAccessorIndex], tempOut, true);
     }
     assert(positionId >= 0);
@@ -797,7 +812,8 @@ uint32_t GLTFParser::handlePrimitive(const tinygltf::Primitive& primitive){
         colorId = handleAccessor(model.accessors[colorAccessorIndex], outColor, false);
     }
 
-    uint32_t attributesId = interleaveVertexAttributes(outNormal, outTangent, outTexCoord, outColor);
+    std::cout << "  (attributes):" << std::endl;
+    uint32_t attributesId = interleaveVertexAttributes(vertexCount, outNormal, outTangent, outTexCoord, outColor);
 
     //std::cout << "Primitive:" << std::endl;
     std::cout << "  materialIndex " << materialIndex << std::endl;

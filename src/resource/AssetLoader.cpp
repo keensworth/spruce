@@ -46,6 +46,8 @@ std::vector<ResourceMetadata> AssetLoader::loadMetadata(
         resourceMetadata.push_back(metadata);
     }
 
+    f.close();
+
     return resourceMetadata;
 }
 

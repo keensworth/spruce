@@ -26,10 +26,10 @@ public:
 
     void registerDirectory(std::string dir);
     int loadModel(std::string path);
-    int loadMesh(std::string path);
-    int loadMaterial(std::string path);
-    int loadTexture(std::string path, bool subresource);
-    int loadBuffer(std::string path);
+    int loadMesh(std::string path, uint32& newId);
+    int loadMaterial(std::string path, uint32& newId);
+    int loadTexture(std::string path, bool subresource, uint32& newId);
+    int loadBuffer(std::string path, uint32& newId);
     void writeHeader();
     void writeManifest(int totalBytes);
 private:

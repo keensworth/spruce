@@ -21,21 +21,21 @@ void AssetCreator::createTexture(std::string path){
     m_extension = std::filesystem::path(path).extension();
 
     int x,y,n;
-    unsigned char *data = stbi_load(path.c_str(), &x, &y, &n, 0);
+    unsigned char *data = stbi_load(path.c_str(), &x, &y, &n, 4);
     if (data == NULL){
         std::cerr << "Failed to open image" << std::endl;
     }
 
-    uint32_t elementType = n;
+    uint32_t elementType = 4;
     uint32_t componentType = 5121;
 
-    writeBufferFile(data, x*y*n, elementType, componentType, 1);
-    writeTextureFile(1, n, 0);
+    writeBufferFile(data, x*y*4, elementType, componentType, 1);
+    writeTextureFile(1, y, x, 4, 0);
 
     stbi_image_free(data);
 }
 
-void AssetCreator::writeTextureFile(uint32_t bufferId, uint32_t components, uint32_t texId){
+void AssetCreator::writeTextureFile(uint32_t bufferId, uint32_t height, uint32_t width, uint32_t components, uint32_t texId){
     // buffer id (4)
     // raw/png/jpg/raw/bmp (4)
 
@@ -55,7 +55,15 @@ void AssetCreator::writeTextureFile(uint32_t bufferId, uint32_t components, uint
     f.write((char*)&bufferId, sizeof(uint32_t));
     std::cout << "          w: bufferId: " << bufferId << std::endl;
 
-    // write image type
+    // write height
+    f.write((char*)&height, sizeof(uint32_t));
+    std::cout << "          w: height: " << height << std::endl;
+
+    // write width
+    f.write((char*)&width, sizeof(uint32_t));
+    std::cout << "          w: width: " << width << std::endl;
+
+    // write components
     f.write((char*)&components, sizeof(uint32_t));
     std::cout << "          w: components: " << components << std::endl;
 

@@ -1,18 +1,9 @@
 #include "SprResourceManager.h"
+#include "../debug/SprLog.h"
 
 namespace spr{
 
 SprResourceManager::SprResourceManager(){
-    // m_resourceCaches = std::vector<ResourceCache*>();
-    // m_resourceMap = rmap();
-    // m_resourceIndex = 0;
-
-    // // add resource types and store pointers to caches
-    // addResourceType<Model>(new ModelCache);
-    // addResourceType<Mesh>(new MeshCache);
-    // addResourceType<Material>(new MaterialCache);
-    // addResourceType<Texture>(new TextureCache);
-    // addResourceType<Buffer>(new BufferCache);
     init();
 }
 

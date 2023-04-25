@@ -32,6 +32,7 @@ private:
     void handleMesh(const tinygltf::Mesh& mesh, std::vector<uint32_t> &meshIds);
     uint32_t handlePrimitive(const tinygltf::Primitive& primitive);
     uint32_t interleaveVertexAttributes(
+        uint32_t vertexCount,
         std::vector<uint8_t>& normalBuffer,
         std::vector<uint8_t>& tangentBuffer,
         std::vector<uint8_t>& texCoordBuffer,
@@ -89,6 +90,6 @@ private:
         std::vector<uint32_t> texIds,
         uint32_t materialId);
     void writeModelFile(uint32_t meshCount, std::vector<uint32_t> meshIds, uint32_t modelId);
-    void writeTextureFile(uint32_t bufferId, uint32_t imageType, uint32_t texId);
+    void writeTextureFile(uint32_t bufferId, uint32_t height, uint32_t width, uint32_t imageType, uint32_t texId);
 };
 }
