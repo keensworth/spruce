@@ -1,16 +1,13 @@
 #pragma once
 
 #include <typeindex>
-#include <vulkan/vulkan_core.h>
 #include "VulkanResourceCache.h"
-#include "../VulkanDevice.h"
 #include "util/FunctionQueue.h"
-
-
-typedef ska::flat_hash_map<std::type_index, spr::gfx::VulkanResourceCache*> rmap;
+#include "../debug/SprLog.h"
 
 namespace spr::gfx {
 
+class VulkanDevice;
 
 class BufferCache : public TypedResourceCache<Buffer>{};
 class TextureCache : public TypedResourceCache<Texture>{};
@@ -21,13 +18,14 @@ class RenderPassLayoutCache : public TypedResourceCache<RenderPassLayout>{};
 class RenderPassCache : public TypedResourceCache<RenderPass>{};
 class ShaderCache : public TypedResourceCache<Shader>{};
 
+typedef ska::flat_hash_map<std::type_index, VulkanResourceCache*> rmap;
 
 class VulkanResourceManager {
 public:
     VulkanResourceManager();
     ~VulkanResourceManager();
 
-    void init(VulkanDevice& device);
+    void init(VulkanDevice& device, glm::uvec3 screenDim);
     void destroy();
 
     // U := ResourceType
@@ -35,7 +33,7 @@ public:
     U* get(Handle<U> handle){
         auto resourceCache = m_resourceMap[typeid(U)];
         auto typedCache = dynamic_cast<TypedResourceCache<U>*>(resourceCache);
-        return typedCache->getData(handle);
+        return typedCache->get(handle);
     }
 
     // U := ResourceType
@@ -100,4 +98,28 @@ private: // non-owning
     friend class VulkanRenderer;
     friend class RenderPassRenderer;
 };
+
+
+template<> void VulkanResourceManager::allocate<Buffer>(Handle<Buffer> handle, VkBufferCreateInfo& info);
+template<> void VulkanResourceManager::allocate<Texture>(Handle<Texture> handle, VkImageCreateInfo& info);
+
+template<> Handle<Buffer> VulkanResourceManager::create<Buffer>(BufferDesc desc);
+template<> Handle<Texture> VulkanResourceManager::create<Texture>(TextureDesc desc);
+template<> Handle<TextureAttachment> VulkanResourceManager::create<TextureAttachment>(TextureAttachmentDesc desc);
+template<> Handle<DescriptorSetLayout> VulkanResourceManager::create<DescriptorSetLayout>(DescriptorSetLayoutDesc desc);
+template<> Handle<DescriptorSet> VulkanResourceManager::create<DescriptorSet>(DescriptorSetDesc desc);
+template<> Handle<RenderPassLayout> VulkanResourceManager::create<RenderPassLayout>(RenderPassLayoutDesc desc);
+template<> Handle<RenderPass> VulkanResourceManager::create<RenderPass>(RenderPassDesc desc);
+template<> Handle<Shader> VulkanResourceManager::create<Shader>(ShaderDesc desc);
+
+template<> Handle<RenderPass> VulkanResourceManager::recreate<RenderPass>(Handle<RenderPass> handle, glm::uvec2 newDimensions);
+
+template<> void VulkanResourceManager::remove<Buffer>(Handle<Buffer> handle);
+template<> void VulkanResourceManager::remove<Texture>(Handle<Texture> handle);
+template<> void VulkanResourceManager::remove<TextureAttachment>(Handle<TextureAttachment> handle);
+template<> void VulkanResourceManager::remove<DescriptorSetLayout>(Handle<DescriptorSetLayout> handle);
+template<> void VulkanResourceManager::remove<DescriptorSet>(Handle<DescriptorSet> handle);
+template<> void VulkanResourceManager::remove<RenderPassLayout>(Handle<RenderPassLayout> handle);
+template<> void VulkanResourceManager::remove<RenderPass>(Handle<RenderPass> handle);
+template<> void VulkanResourceManager::remove<Shader>(Handle<Shader> handle);
 }

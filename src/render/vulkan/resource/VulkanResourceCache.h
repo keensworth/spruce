@@ -8,7 +8,8 @@ namespace spr::gfx {
 
 class VulkanResourceCache {
 public:
-    virtual ~VulkanResourceCache();
+    //virtual ~VulkanResourceCache() = 0;
+    virtual void dummy() = 0;
     // get resource's data from handle
     auto get(auto handle);
 
@@ -22,8 +23,7 @@ public:
 template <typename T>
 class TypedResourceCache : public VulkanResourceCache {
 public:
-    TypedResourceCache(){}
-
+    TypedResourceCache() : m_data(1024) {}
     ~TypedResourceCache(){}
 
     // get data from pool with handle
@@ -47,6 +47,8 @@ public:
 private:
     // Resource data
     Pool<T> m_data;
+
+    void dummy(){}
 };
 
 }
