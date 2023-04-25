@@ -4,13 +4,14 @@
 #include <typeindex>
 #include <typeinfo>
 #include <vector>
-#include <vulkan/vulkan_core.h>
+#include "../../external/volk/volk.h"
 #include "ResourceFlags.h"
 #include "../core/spruce_core.h"
 #include "../gfx_vulkan_core.h"
 #include "glm/fwd.hpp"
 #include "memory/Handle.h"
-#include "vk_mem_alloc.h"
+#include <vk_mem_alloc.h>
+#include <span>
 
 namespace spr::gfx {
 
@@ -36,7 +37,7 @@ typedef struct Buffer {
     VkBuffer buffer;
     uint32 memType;
     VmaAllocation alloc;
-    VmaAllocationInfo allocInfo;
+    VmaAllocationInfo allocInfo; // TODO remove
 } Buffer;
 
 
@@ -76,6 +77,7 @@ typedef struct DescriptorSetLayout {
         uint32 binding = 0;
         uint32 stages  = Flags::DescriptorStage::FRAGMENT;
         uint32 type    = Flags::DescriptorType::COMBINED_IMAGE_SAMPLER;
+        uint32 count   = 1; // only != 1 if using array of textures
     } TextureBindingLayout;
 
     typedef struct BufferBindingLayout {
@@ -83,10 +85,10 @@ typedef struct DescriptorSetLayout {
         uint32 stages  = Flags::DescriptorStage::VERTEX  |
                          Flags::DescriptorStage::FRAGMENT;
         uint32 type    = Flags::DescriptorType::UNIFORM_BUFFER;
-    } BufferBindingLayout;
+    } BufferBindingLayout;     
 
-    std::vector<TextureBindingLayout> textureLayouts;
-    std::vector<BufferBindingLayout> bufferLayouts;
+    std::vector<TextureBindingLayout> textureLayouts{};
+    std::vector<BufferBindingLayout> bufferLayouts{};
     VkDescriptorSetLayout descriptorSetLayout;
 } DescriptorSetLayout;
 
@@ -97,7 +99,7 @@ typedef struct DescriptorSetLayout {
 typedef struct DescriptorSet {
     //  global ==> (size == 1)
     // !global ==> (size == MAX_FRAME_COUNT)
-    std::vector<VkDescriptorSet> descriptorSets;
+    std::vector<VkDescriptorSet> descriptorSets{};
     bool global = false;
 } DescriptorSet;
 
@@ -109,7 +111,6 @@ typedef struct RenderPassLayout {
     VkAttachmentReference depthReference;
     std::vector<VkAttachmentReference> colorReferences;
     std::vector<VkAttachmentDescription> attachmentDescriptions;
-    VkSubpassDescription subpassDescription;
     uint32 attachmentCount;
 } RenderPassLayout;
 
@@ -146,10 +147,10 @@ typedef struct RenderPass {
         Handle<TextureAttachment> texture;
         uint32 format         = Flags::Format::UNDEFINED_FORMAT;
         uint32 samples        = Flags::Sample::SAMPLE_1;
-        uint32 loadOp         = Flags::LoadOp::LOAD_DONT_CARE;
-        uint32 storeOp        = Flags::StoreOp::STORE_DONT_CARE;
-        uint32 stencilLoadOp  = Flags::LoadOp::LOAD_CLEAR;
-        uint32 stencilStoreOp = Flags::StoreOp::STORE;
+        uint32 loadOp         = Flags::LoadOp::LOAD_CLEAR;
+        uint32 storeOp        = Flags::StoreOp::STORE;
+        uint32 stencilLoadOp  = Flags::LoadOp::LOAD_DONT_CARE;
+        uint32 stencilStoreOp = Flags::StoreOp::STORE_DONT_CARE;
         uint32 layout         = Flags::ImageLayout::UNDEFINED;
         uint32 finalLayout    = Flags::ImageLayout::DEPTH_READ_ONLY;
     } DepthAttachment;
@@ -212,9 +213,9 @@ typedef struct TextureDesc {
 
     typedef struct View {
         uint32 baseMip    = 0;
-        uint32 mips       = ALL_MIPS;
+        uint32 mips       = 1;//ALL_MIPS;
         uint32 baseLayer  = 0;
-        uint32 layers     = ALL_LAYERS;
+        uint32 layers     = 1;//ALL_LAYERS;
     } View;
 
     glm::uvec3 dimensions {0,0,0};
@@ -238,23 +239,8 @@ typedef struct TextureAttachmentDesc {
 //                 Descriptor Set Layout Desc                // 
 // --------------------------------------------------------- //
 typedef struct DescriptorSetLayoutDesc {
-    /*
-    typedef struct TextureBindingLayout {
-        uint32 binding = 0;
-        uint32 stages  = Flags::DescriptorStage::FRAGMENT;
-        uint32 type    = Flags::DescriptorType::COMBINED_IMAGE_SAMPLER;
-    } TextureBindingLayout;
-
-    typedef struct BufferBindingLayout {
-        uint32 binding = 0;
-        uint32 stages  = Flags::DescriptorStage::VERTEX  |
-                         Flags::DescriptorStage::FRAGMENT;
-        uint32 type    = Flags::DescriptorType::UNIFORM_BUFFER;
-    } BufferBindingLayout;
-    */
-
-    std::vector<DescriptorSetLayout::TextureBindingLayout> textures;
-    std::vector<DescriptorSetLayout::BufferBindingLayout> buffers;
+    std::vector<DescriptorSetLayout::TextureBindingLayout> textures{};
+    std::vector<DescriptorSetLayout::BufferBindingLayout> buffers{};
 } DescriptorSetLayoutDesc;
 
 
@@ -278,9 +264,9 @@ typedef struct DescriptorSetDesc {
         uint32 byteSize   = ALL_BYTES;
     } BufferBinding;
 
-    std::vector<TextureBinding> textures;
-    std::vector<BufferBinding> buffers;
-    Handle<DescriptorSetLayout> layout;
+    std::vector<TextureBinding> textures{};
+    std::vector<BufferBinding> buffers{};
+    Handle<DescriptorSetLayout> layout{};
 } DescriptorSetDesc;
 
 
@@ -305,41 +291,8 @@ typedef struct RenderPassLayoutDesc {
 typedef struct RenderPassDesc { 
     glm::uvec3 dimensions = {0,0,0};
     Handle<RenderPassLayout> layout;
-
-    /*
-    typedef struct ColorAttachment {
-        Handle<TextureAttachment> texture;
-
-        // swapchain image views (optional)
-        // if set, will neglect attachment handle above
-        std::vector<VkImageView> swapchainImageViews;
-
-        // properties
-        uint32 format         = Flags::Format::UNDEFINED_FORMAT;
-        uint32 samples        = Flags::Sample::SAMPLE_1;
-        uint32 loadOp         = Flags::LoadOp::LOAD_CLEAR;
-        uint32 storeOp        = Flags::StoreOp::STORE;
-        uint32 stencilLoadOp  = Flags::LoadOp::LOAD_DONT_CARE;
-        uint32 stencilStoreOp = Flags::StoreOp::STORE_DONT_CARE;
-        uint32 layout         = Flags::ImageLayout::UNDEFINED;
-        uint32 finalLayout    = Flags::ImageLayout::SHADER_READ_ONLY;
-    } ColorAttachment;
-
-    typedef struct DepthAttachment {
-        Handle<TextureAttachment> texture;
-        uint32 format         = Flags::Format::UNDEFINED_FORMAT;
-        uint32 samples        = Flags::Sample::SAMPLE_1;
-        uint32 loadOp         = Flags::LoadOp::LOAD_DONT_CARE;
-        uint32 storeOp        = Flags::StoreOp::STORE_DONT_CARE;
-        uint32 stencilLoadOp  = Flags::LoadOp::LOAD_CLEAR;
-        uint32 stencilStoreOp = Flags::StoreOp::STORE;
-        uint32 layout         = Flags::ImageLayout::UNDEFINED;
-        uint32 finalLayout    = Flags::ImageLayout::DEPTH_READ_ONLY;
-    } DepthAttachment;
-    */
-
     RenderPass::DepthAttachment depthAttachment;
-    std::vector<RenderPass::ColorAttachment> colorAttachments;
+    std::vector<RenderPass::ColorAttachment> colorAttachments{};
 } RenderPassDesc;
 
 
