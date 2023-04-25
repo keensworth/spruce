@@ -1,14 +1,15 @@
 #pragma once
 
-#include <vulkan/vulkan.h>
 #include <spruce_core.h>
-#include <vulkan/vulkan_core.h>
+#include "../../external/volk/volk.h"
 #include "RenderPassRenderer.h"
-#include "../../debug/SprLog.h"
-#include "resource/VulkanResourceManager.h"
-#include "VulkanDevice.h"
 
 namespace spr::gfx{
+
+class VulkanDevice;
+class VulkanResourceManager;
+struct RenderPass;
+struct Buffer;
 
 typedef enum CommandType : uint32 {
     TRANSFER = 0,
@@ -16,11 +17,9 @@ typedef enum CommandType : uint32 {
     MAIN = 2
 } CommandType;
 
-
 class CommandBuffer{
 public:
     CommandBuffer();
-    CommandBuffer(VulkanDevice& device, CommandType commandType, VkCommandBuffer commandBuffer, VulkanResourceManager* rm, VkQueue queue, uint32 frameIndex);
     ~CommandBuffer();
 
     RenderPassRenderer& beginRenderPass(Handle<RenderPass> renderPass, glm::vec4 clearColor);
@@ -36,6 +35,8 @@ public:
     void waitFence();
     void resetFence();
 
+    bool isRecording();
+    
     void setSemaphoreDependencies(std::vector<VkSemaphore> waitSemaphores, std::vector<VkSemaphore> signalSemaphores);
 
 
@@ -57,11 +58,14 @@ private: // non-owning
     uint32 m_frameId;
     uint32 m_frameIndex;
 
+    bool m_initialized = false;
     bool m_destroyed = false;
+    bool m_recording = false;
 
     void setFrameId(uint32 frameId);
     void begin();
     void end();
+    void init(VulkanDevice& device, VulkanResourceManager* rm, uint32 frameIndex, CommandType commandType, VkCommandBuffer commandBuffer, VkQueue queue);
     void destroy();
 
     friend class VulkanRenderer;

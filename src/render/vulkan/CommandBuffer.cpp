@@ -2,26 +2,40 @@
 
 #include "RenderPassRenderer.h"
 #include "UploadHandler.h"
-#include <vulkan/vulkan_core.h>
+#include <bits/ranges_base.h>
+#include "../../external/volk/volk.h"
+#include "../../debug/SprLog.h"
 
 namespace spr::gfx {
 
 CommandBuffer::CommandBuffer() {}
 
-CommandBuffer::CommandBuffer(VulkanDevice& device, CommandType commandType, VkCommandBuffer commandBuffer, VulkanResourceManager* rm, VkQueue queue, uint32 frameIndex){
-    m_type = commandType;
-    m_commandBuffer = commandBuffer;
+CommandBuffer::~CommandBuffer(){
+    if (m_destroyed || !m_initialized)
+        return;
+    
+    SprLog::warn("[CommandBuffer] [~] Calling destroy() in destructor");
+    destroy();
+}
+
+void CommandBuffer::init(VulkanDevice& device, VulkanResourceManager* rm,uint32 frameIndex, CommandType commandType, VkCommandBuffer commandBuffer, VkQueue queue){
     m_rm = rm;
     m_device = &device;
+    m_type = commandType;
+    m_commandBuffer = commandBuffer;
     m_queue = queue;
     m_frameId = 0;
     m_frameIndex = frameIndex;
 
+    m_passRenderer = RenderPassRenderer(m_rm, commandBuffer, frameIndex);
+
     // build semaphore info and create semaphore
     VkSemaphoreCreateInfo semaphoreInfo { 
-        .sType = VK_STRUCTURE_TYPE_SEMAPHORE_CREATE_INFO
+        .sType = VK_STRUCTURE_TYPE_SEMAPHORE_CREATE_INFO,
+        .pNext = NULL,
+        .flags = 0
     };
-    VK_CHECK(vkCreateSemaphore(device.getDevice(), &semaphoreInfo, NULL, &m_semaphore));
+    VK_CHECK(vkCreateSemaphore(m_device->getDevice(), &semaphoreInfo, NULL, &m_semaphore));
 
     // build fence info and create fence
     VkFenceCreateInfo fenceInfo {
@@ -29,18 +43,8 @@ CommandBuffer::CommandBuffer(VulkanDevice& device, CommandType commandType, VkCo
         .pNext = NULL,
         .flags = VK_FENCE_CREATE_SIGNALED_BIT
     };
-    VK_CHECK(vkCreateFence(device.getDevice(), &fenceInfo, NULL, &m_fence));
-
-    // create render pass renderer
-    m_passRenderer = RenderPassRenderer(rm, commandBuffer, frameIndex);
-}
-
-CommandBuffer::~CommandBuffer(){
-    if (m_destroyed)
-        return;
-    
-    SprLog::warn("[CommandBuffer] [~] Calling destroy() in destructor");
-    destroy();
+    VK_CHECK(vkCreateFence(m_device->getDevice(), &fenceInfo, NULL, &m_fence));
+    m_initialized = true;
 }
 
 void CommandBuffer::destroy(){
@@ -48,6 +52,7 @@ void CommandBuffer::destroy(){
     vkDestroyFence(m_device->getDevice(), m_fence, nullptr);
     vkDestroySemaphore(m_device->getDevice(), m_semaphore, nullptr);
     m_destroyed = true;
+    SprLog::info("[CommandBuffer] [destroy] destroyed...");
 }
 
 
@@ -56,10 +61,12 @@ void CommandBuffer::begin(){
         .sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO
     };
     VK_CHECK(vkBeginCommandBuffer(m_commandBuffer, &beginInfo));
+    m_recording = true;
 }
 
 void CommandBuffer::end(){
     VK_CHECK(vkEndCommandBuffer(m_commandBuffer));
+    m_recording = false;
 }
 
 
@@ -108,18 +115,19 @@ void CommandBuffer::endRenderPass(){
 
 void CommandBuffer::bindIndexBuffer(Handle<Buffer> indexBuffer){
     Buffer* buffer = m_rm->get<Buffer>(indexBuffer);
-    vkCmdBindIndexBuffer(m_commandBuffer, buffer->buffer, 0, VK_INDEX_TYPE_UINT32);
+    vkCmdBindIndexBuffer(m_commandBuffer, buffer->buffer, 0, VK_INDEX_TYPE_UINT16);
 }
 
 void CommandBuffer::submit(){
     std::vector<VkPipelineStageFlags> stageFlags;
 
-    if (m_type == CommandType::TRANSFER) {
-        stageFlags = {VK_PIPELINE_STAGE_TRANSFER_BIT};
-    } else {
-        stageFlags = {VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT};
+    for (uint32 i = 0; i < m_waitSemaphores.size(); i++){
+        if (m_type == CommandType::TRANSFER) {
+            stageFlags.push_back(VK_PIPELINE_STAGE_TRANSFER_BIT);
+        } else {
+            stageFlags.push_back(VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT);
+        }
     }
-    stageFlags = {VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT};
 
     end();
 
@@ -150,8 +158,15 @@ VkFence CommandBuffer::getFence(){
     return m_fence;
 }
 
+bool CommandBuffer::isRecording(){
+    return m_recording;
+}
+
 
 void CommandBuffer::waitFence(){
+    if (!m_initialized)
+        SprLog::error("[CommandBuffer] [waitFence] CB not initialized");
+    VkDevice& dev = m_device->getDevice();
     VK_CHECK(vkWaitForFences(m_device->getDevice(), 1, &m_fence, VK_TRUE, UINT64_MAX));
 }
 
