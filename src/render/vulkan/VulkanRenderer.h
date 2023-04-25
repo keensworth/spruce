@@ -4,9 +4,12 @@
 #include "VulkanDisplay.h"
 #include "CommandPool.h"
 #include "RenderFrame.h"
-#include "Window.h"
 #include "gfx_vulkan_core.h"
 #include "UploadHandler.h"
+
+namespace spr {
+    class Window;
+}
 
 namespace spr::gfx{
 
@@ -17,6 +20,7 @@ public:
     ~VulkanRenderer();
 
     void init(VulkanResourceManager* rm);
+    void cleanup();
     void destroy();
 
     RenderFrame& beginFrame(VulkanResourceManager* rm);
@@ -39,7 +43,6 @@ private:
 
     void recreateSwapchain();
     void validateSwapchain(VkResult result, SwapchainStage stage);
-    void cleanup();
 
 private:
     VulkanDevice m_device;
@@ -55,6 +58,7 @@ private:
     uint32 m_currFrameId = 0;
     uint32 m_frameIndex = 0;
 
+    bool m_initialized = false;
     bool m_destroyed = false;
 };
 }
