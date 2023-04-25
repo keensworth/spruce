@@ -4,9 +4,7 @@
 #include <vector>
 #include "Handle.h"
 #include "../spruce_core.h"
-#include <stdio.h>
-#include <string>
-#include "../../debug/SprLog.h"
+#include <cstring>
 
 namespace spr {
 
