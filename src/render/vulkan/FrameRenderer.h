@@ -5,6 +5,7 @@
 #include "resource/VulkanResourceManager.h"
 #include "../scene/BatchManager.h"
 #include "resource/ResourceFlags.h"
+#include "../../debug/SprLog.h"
 
 namespace spr::gfx {
 class FrameRenderer {
@@ -42,17 +43,18 @@ public:
             .colorAttachments = {
                 {
                     .swapchainImageViews = swapchainImageViews,
-                    .finalLayout = VK_IMAGE_LAYOUT_PRESENT_SRC_KHR
+                    .finalLayout = Flags::ImageLayout::PRESENT
                 }
             }
         });
 
-        // descriptor set layout
-        m_descriptorSetLayout = m_rm->create<DescriptorSetLayout>(DescriptorSetLayoutDesc{
-            .textures = {
-                {.binding = 0}
-            }
-        });
+        // SprLog::debug("[FrameRenderer] [init] creating DescriptorSetLayout");
+        // // descriptor set layout
+        // m_descriptorSetLayout = m_rm->create<DescriptorSetLayout>(DescriptorSetLayoutDesc{
+        //     .textures = {
+        //         {.binding = 0}
+        //     }
+        // });
 
         // shader
         m_shader = m_rm->create<Shader>(ShaderDesc{
@@ -61,7 +63,7 @@ public:
             .descriptorSets = {
                 { globalDescSetLayout },
                 { }, // unused
-                { m_descriptorSetLayout },
+                { },//m_descriptorSetLayout },
                 { } // unused
             },
             .graphicsState = {
@@ -69,14 +71,15 @@ public:
             }
         });
 
-        // descriptor set
-        TextureAttachment* attachment = m_rm->get<TextureAttachment>(input);
-        m_descriptorSet = m_rm->create<DescriptorSet>(DescriptorSetDesc{
-            .textures = {
-                {.textures = attachment->textures}
-            },
-            .layout = m_descriptorSetLayout
-        });
+        // SprLog::debug("[FrameRenderer] [init] DescriptorSet");
+        // // descriptor set
+        // m_descriptorSet = m_rm->create<DescriptorSet>(DescriptorSetDesc{
+        //     .textures = {
+        //         {.attachment = input}
+        //     },
+        //     .layout = m_descriptorSetLayout
+        // });
+
     }
 
 
@@ -86,9 +89,9 @@ public:
         passRenderer.drawSubpass({
             .shader = m_shader,
             .set0 =  m_globalDescriptorSet,
-            .set2 = m_descriptorSet}, 
+            },//.set2 = m_descriptorSet}, 
             batchManager.getQuadBatch(),
-            batchManager.getQuadVertexOffset());
+            0);//batchManager.getQuadVertexOffset());
 
         cb.endRenderPass();
     }
@@ -99,18 +102,19 @@ public:
     }
 
     void destroy(){
-        m_rm->remove<DescriptorSet>(m_descriptorSet);
         m_rm->remove<Shader>(m_shader);
-        m_rm->remove<DescriptorSetLayout>(m_descriptorSetLayout);
+        //m_rm->remove<DescriptorSetLayout>(m_descriptorSetLayout);
+        //m_rm->remove<DescriptorSet>(m_descriptorSet);
         m_rm->remove<RenderPass>(m_renderPass);
         m_rm->remove<RenderPassLayout>(m_renderPassLayout);
+        SprLog::info("[FrameRenderer] [destroy] destroyed...");
     }
 
 private: // owning
     Handle<RenderPassLayout> m_renderPassLayout;
     Handle<RenderPass> m_renderPass;
-    Handle<DescriptorSetLayout> m_descriptorSetLayout;
-    Handle<DescriptorSet> m_descriptorSet;
+    //Handle<DescriptorSetLayout> m_descriptorSetLayout;
+    //Handle<DescriptorSet> m_descriptorSet;
     Handle<Shader> m_shader;
 
 private: // non-owning
