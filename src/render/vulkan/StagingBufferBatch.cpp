@@ -1,12 +1,15 @@
 #include "StagingBufferBatch.h"
+
 #include <string>
+#include "resource/VulkanResourceManager.h"
+#include "../../debug/SprLog.h"
 
 
 namespace spr::gfx {
 
 StagingBuffers::StagingBuffers(){}
 
-StagingBuffers::StagingBuffers(VulkanResourceManager* rm) {
+void StagingBuffers::init(VulkanResourceManager* rm) {
     m_rm = rm;
 
     // init staging buffers
@@ -73,6 +76,7 @@ void StagingBuffers::destroy(){
         m_rm->remove(m_stages1MB[i]);
     }
     m_destroyed = true;
+    SprLog::info("[StagingBuffers] [destroy] destroyed...");
 }
 
 
