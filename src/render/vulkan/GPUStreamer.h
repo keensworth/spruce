@@ -56,20 +56,26 @@ private:
     StagingBuffers m_stagingBuffers;
 
     // cmd queues
-    std::vector<VkBufferMemoryBarrier2KHR> m_transferBufferBarriers;
-    std::vector<VkBufferMemoryBarrier2KHR> m_graphicsBufferBarriers;
-    std::vector<VkImageMemoryBarrier2KHR> m_imageLayoutBarriers;
-    std::vector<VkImageMemoryBarrier2KHR> m_transferImageBarriers;
-    std::vector<VkImageMemoryBarrier2KHR> m_graphicsImageBarriers;
+    std::vector<std::function<VkBufferMemoryBarrier2()>> m_transferBufferBarriers;
+    std::vector<std::function<VkBufferMemoryBarrier2()>> m_graphicsBufferBarriers;
+    std::vector<std::function<VkImageMemoryBarrier2()>> m_imageLayoutBarriers;
+    std::vector<std::function<VkImageMemoryBarrier2()>> m_transferImageBarriers;
+    std::vector<std::function<VkImageMemoryBarrier2()>> m_graphicsImageBarriers;
     FunctionQueue m_bufferCopyCmdQueue;
     FunctionQueue m_imageCopyCmdQueue;
 
     bool m_destroyed = false;
 
+    void init(VulkanDevice& device, VulkanResourceManager& rm, CommandBuffer& transferCommandBuffer, CommandBuffer& graphicsCommandBuffer);
     void reset();
     void performGraphicsBarriers();
     void destroy();
 
     friend class UploadHandler;
 };
+
+template<> void GPUStreamer::transfer(BufferTransfer data);
+template<> void GPUStreamer::transfer(TextureTransfer data);
+template<> void GPUStreamer::transferDynamic(BufferTransfer data, uint32 frame);
+
 }
