@@ -16,7 +16,6 @@ GfxAssetLoader::GfxAssetLoader() :
 GfxAssetLoader::~GfxAssetLoader(){
     if (!m_cleared)
         clear();
-    SprLog::info("[GfxAssetLoader] [destroy] destroyed...");
 }
 
 MeshInfoMap GfxAssetLoader::loadAssets(SprResourceManager& rm){
@@ -27,7 +26,6 @@ MeshInfoMap GfxAssetLoader::loadAssets(SprResourceManager& rm){
 
     // built-in assets
     loadBuiltinAssets(rm, map);
-
 
     // iterate over models and load subresources
     for (uint32 modelId : modelIds){
@@ -46,17 +44,14 @@ MeshInfoMap GfxAssetLoader::loadAssets(SprResourceManager& rm){
                 SprLog::warn("[GfxAssetLoader] [loadAssets] invalid mesh");
             }
             spr::Mesh* mesh = rm.getData<spr::Mesh>(meshHandle);
-
             MeshInfo meshInfo;
+
             loadVertexData(rm, mesh, meshInfo);
-
             loadMaterial(rm, mesh, meshInfo);
-
 
             map[meshId] = meshInfo;
         }
     }
-
 
     // iterate over non-subresource textures
     // for (uint32 texId : textureIds){
@@ -114,47 +109,38 @@ void GfxAssetLoader::loadMaterial(SprResourceManager& rm, Mesh* mesh, MeshInfo& 
     }
 
     spr::Material* material = rm.getData(materialHandle);
-
-
-
     MaterialData materialData;
-    if (material->baseColorTexId > 0){
 
+    if (material->baseColorTexId > 0){
         materialData.flags |= MTL_BASE_COLOR;
         materialData.baseColorTexIdx = loadTexture(rm, material->baseColorTexId, true);
         materialData.baseColorFactor = material->baseColorFactor;
     }
     if (material->metalRoughTexId > 0){
-
         materialData.flags |= MTL_METALLIC_ROUGHNESS;
         materialData.metalRoughTexIdx = loadTexture(rm, material->metalRoughTexId, false);
         materialData.metallicFactor = material->metalFactor;
     }
     if (material->normalTexId > 0){
-
         materialData.flags |= MTL_NORMAL;
         materialData.normalTexIdx = loadTexture(rm, material->normalTexId, false);
         materialData.normalScale = material->normalScale;
     }
     if (material->occlusionTexId > 0){
-
         materialData.flags |= MTL_OCCLUSION;
         materialData.occlusionTexIdx = loadTexture(rm, material->occlusionTexId, false);
         materialData.occlusionStrength = material->occlusionStrength;
     }
     if (material->emissiveTexId > 0){
-
         materialData.flags |= MTL_EMISSIVE;
         materialData.emissiveTexIdx = loadTexture(rm, material->emissiveTexId, false);
         materialData.emissiveFactor = material->emissiveFactor;
     }
     if (material->alphaType > 0){
-
         materialData.flags |= MTL_ALPHA;
         materialData.alphaCutoff = material->alphaCutoff;
     }
     if (material->doubleSided){
-
         materialData.flags |= MTL_DOUBLE_SIDED;
     }
 
@@ -170,9 +156,8 @@ uint32 GfxAssetLoader::loadTexture(SprResourceManager& rm, uint32 textureId, boo
         SprLog::warn("[GfxAssetLoader] [loadTexture] invalid texture");
         return 0;
     }
+
     spr::Texture* texture = rm.getData<spr::Texture>(handle);
-
-
     Handle<spr::Buffer> texBufferHandle = rm.getHandle<spr::Buffer>(texture->bufferId);
     if (!texBufferHandle.isValid()){
         SprLog::warn("[GfxAssetLoader] [loadTexture] invalid buffer");
@@ -180,16 +165,8 @@ uint32 GfxAssetLoader::loadTexture(SprResourceManager& rm, uint32 textureId, boo
     }
 
     spr::Buffer* texBuffer = rm.getData<spr::Buffer>(texBufferHandle);
-    if (texBuffer == nullptr){
-
-    }
-
-
-    
     TempBuffer<uint8> textureBuffer(texBuffer->data.size());
-
     textureBuffer.insert(texBuffer->data.data(), texBuffer->data.size());
-    //textureBuffer.insert(texBuffer->data.data(), texBuffer->byteLength);
 
     uint32 texIndex = m_textures.size();
     m_textures.push_back({
@@ -205,7 +182,6 @@ uint32 GfxAssetLoader::loadTexture(SprResourceManager& rm, uint32 textureId, boo
 }
 
 void GfxAssetLoader::loadBuiltinAssets(SprResourceManager& rm, MeshInfoMap& meshes){
-
     // load built-in textures
     loadTexture(rm, spr::data::default_color, true);
     loadTexture(rm, spr::data::default_input_black, false);
@@ -217,7 +193,7 @@ void GfxAssetLoader::loadBuiltinAssets(SprResourceManager& rm, MeshInfoMap& mesh
         SprLog::warn("[GfxAssetLoader] [loadBuiltinAssets] invalid model");
         return;
     }
-    SprLog::info("");
+
     spr::Model* model = rm.getData<spr::Model>(modelHandle);
     Handle<spr::Mesh> meshHandle = rm.getHandle<spr::Mesh>(model->meshIds[0]);
     if (!meshHandle.isValid()){
@@ -226,12 +202,10 @@ void GfxAssetLoader::loadBuiltinAssets(SprResourceManager& rm, MeshInfoMap& mesh
     }
 
     spr::Mesh* mesh = rm.getData<spr::Mesh>(meshHandle);
-
     MeshInfo info;
+
     loadVertexData(rm, mesh, info);
-
     loadMaterial(rm, mesh, info);
-
     meshes[0] = info;
 
     // create built-in quad mesh
@@ -259,8 +233,6 @@ void GfxAssetLoader::loadBuiltinAssets(SprResourceManager& rm, MeshInfoMap& mesh
     m_counts.indexCount += quadInfo.indexCount;
     m_counts.vertexCount += quadPos.size();
     meshes[1] = quadInfo;
-
-
 }
 
 void GfxAssetLoader::clear(){
