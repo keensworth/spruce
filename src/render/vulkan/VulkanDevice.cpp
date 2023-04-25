@@ -1,5 +1,15 @@
 #include "VulkanDevice.h"
-#include <vulkan/vulkan_core.h>
+
+#include "../../external/volk/volk.h"
+
+#define VMA_IMPLEMENTATION
+#include "vk_mem_alloc.h"
+
+#include "../../debug/SprLog.h"
+#include "../../interface/Window.h"
+#include "SDL_vulkan.h"
+#include "gfx_vulkan_core.h"
+#include <cstring>
 
 namespace spr::gfx {
 
@@ -32,7 +42,7 @@ debugCallback(VkDebugUtilsMessageSeverityFlagBitsEXT messageSeverity,
             const VkDebugUtilsMessengerCallbackDataEXT* pCallbackData,
             void* pUserData) {
     
-    SprLog::warn("[VulkanDevice] Validation layer: " + std::string(pCallbackData->pMessage));
+    SprLog::info("[VK VALIDATION LAYERS]: " + std::string(pCallbackData->pMessage));
 
     return VK_FALSE;
 }
@@ -45,7 +55,9 @@ debugCallback(VkDebugUtilsMessageSeverityFlagBitsEXT messageSeverity,
 //  ██║██║ ╚███║██║   ██║   
 //  ╚═╝╚═╝  ╚══╝╚═╝   ╚═╝   
 
-VulkanDevice::VulkanDevice(){}
+VulkanDevice::VulkanDevice(){
+    
+}
 
 VulkanDevice::~VulkanDevice(){
     if (m_destroyed)
@@ -60,7 +72,17 @@ void VulkanDevice::destroy(){
     if (DEBUG)
         DestroyDebugUtilsMessengerEXT(m_instance, m_debugMessenger, nullptr);
     vkDestroyInstance(m_instance, nullptr);
+
+    // for (uint32 i = 0; i < m_extensionCount; i++){
+    //     free((void*)m_extensionNames[i]);
+    // }
+
+    // for (uint32 i = 0; i < m_validationLayerCount; i++){
+    //     free((void*)m_validationLayers[i]);
+    // }
+
     m_destroyed = true;
+    SprLog::info("[VulkanDevice] [destroy] destroyed...");
 }
 
 void VulkanDevice::createInfo(Window& window){
@@ -71,13 +93,14 @@ void VulkanDevice::createInfo(Window& window){
         .applicationVersion = VK_MAKE_VERSION(1, 0, 0),
         .pEngineName = "spruce",
         .engineVersion = VK_MAKE_VERSION(1, 0, 0),
-        .apiVersion = VK_API_VERSION_1_2
+        .apiVersion = VK_MAKE_API_VERSION(0, 1, 2, 170)
     };
 
     m_appInfo = appInfo;
 }
 
 void VulkanDevice::createInstance(Window& window){
+    VK_CHECK(volkInitialize());
     // get extensions required by SDL
     getExtensions(window);
 
@@ -89,14 +112,15 @@ void VulkanDevice::createInstance(Window& window){
     VkInstanceCreateInfo createInfo {
         .sType = VK_STRUCTURE_TYPE_INSTANCE_CREATE_INFO,
         .pNext = DEBUG ? (VkDebugUtilsMessengerCreateInfoEXT*) &debugCreateInfo : NULL,
+        .flags = 0,
         .pApplicationInfo = &m_appInfo,
-        .enabledLayerCount = m_validationLayerCount,
-        .ppEnabledLayerNames = DEBUG ? (const char *const *)m_validationLayers.data() : NULL,
-        .enabledExtensionCount = m_extensionCount,
-        .ppEnabledExtensionNames = (const char *const *)m_extensionNames.data(),
+        .enabledLayerCount = DEBUG ? m_validationLayerCount : 0,
+        .ppEnabledLayerNames = DEBUG ? m_validationLayers.data() : NULL,
+        .enabledExtensionCount = m_instanceExtensionCount,
+        .ppEnabledExtensionNames = m_instanceExtensionNames.data(),
     };
     VK_CHECK(vkCreateInstance(&createInfo, nullptr, &m_instance));
-
+    volkLoadInstanceOnly(m_instance);
     // enable debug messenger if DEBUG
     if (DEBUG)
         CreateDebugUtilsMessengerEXT(m_instance, &debugCreateInfo, nullptr, &m_debugMessenger);
@@ -105,15 +129,20 @@ void VulkanDevice::createInstance(Window& window){
 void VulkanDevice::createPhysicalDevice(){
     // get available physical devices
     vkEnumeratePhysicalDevices(m_instance, &m_deviceCount, nullptr);
-    std::vector<VkPhysicalDevice> devices(m_deviceCount);
+    m_physicalDevices.resize(m_deviceCount);
     vkEnumeratePhysicalDevices(m_instance, &m_deviceCount, m_physicalDevices.data());
 
+
     // iterete over devices, select the ideal device
-    VkPhysicalDevice bestPhysicalDevice = VK_NULL_HANDLE;
-    for (const auto& device : devices){
-        if (isSuperiorDevice(device, bestPhysicalDevice))
+    VkPhysicalDevice bestPhysicalDevice = m_physicalDevices[0];
+    for (VkPhysicalDevice device : m_physicalDevices){
+        if (isSuperiorDevice(device, bestPhysicalDevice)){
             bestPhysicalDevice = device;
+        }
     }
+
+    m_physicalDevice = bestPhysicalDevice;
+    assert(m_physicalDevice != VK_NULL_HANDLE);
 }
 
 void VulkanDevice::createDevice(VkSurfaceKHR surface){
@@ -121,25 +150,42 @@ void VulkanDevice::createDevice(VkSurfaceKHR surface){
     std::vector<VkDeviceQueueCreateInfo> queueCreateInfos = queryQueueFamilies(surface);
     
     // fill info and create logical device
-    VkPhysicalDeviceFeatures deviceFeatures{};
+    VkPhysicalDeviceSynchronization2FeaturesKHR sync2 = {
+        .sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_SYNCHRONIZATION_2_FEATURES_KHR,
+        .pNext = NULL,
+        .synchronization2 = true
+    };
     VkDeviceCreateInfo createInfo {
         .sType = VK_STRUCTURE_TYPE_DEVICE_CREATE_INFO,
+        .pNext = &sync2,
+        .flags = 0,
         .queueCreateInfoCount = static_cast<uint32>(queueCreateInfos.size()),
         .pQueueCreateInfos = queueCreateInfos.data(),
         .enabledLayerCount = DEBUG ? m_validationLayerCount : 0,
-        .ppEnabledLayerNames = DEBUG ? (const char *const *)m_validationLayers.data() : NULL,
-        .enabledExtensionCount = m_extensionCount,
-        .ppEnabledExtensionNames = (const char *const *)m_extensionNames.data(),
-        .pEnabledFeatures = &deviceFeatures,
+        .ppEnabledLayerNames = DEBUG ? m_validationLayers.data() : NULL,
+        .enabledExtensionCount = m_deviceExtensionCount,
+        .ppEnabledExtensionNames = m_deviceExtensionNames.data(),
+        .pEnabledFeatures = NULL,
 
     };
     VK_CHECK(vkCreateDevice(m_physicalDevice, &createInfo, nullptr, &m_device));
+    volkLoadDevice(m_device);
+    //SprLog::error("herererere");
 
     // get device queues
-    vkGetDeviceQueue(m_device, m_queueFamilyIndices.graphicsFamilyIndex.value(), m_queueFamilyIndices.graphicsQueueIndex.value(), &m_graphicsQueue);
-    vkGetDeviceQueue(m_device, m_queueFamilyIndices.presentFamilyIndex.value(), m_queueFamilyIndices.presentQueueIndex.value(), &m_presentQueue);
-    vkGetDeviceQueue(m_device, m_queueFamilyIndices.transferFamilyIndex.value(), m_queueFamilyIndices.transferQueueIndex.value(), &m_transferQueue);
-    vkGetDeviceQueue(m_device, m_queueFamilyIndices.computeFamilyIndex.value(), m_queueFamilyIndices.computeQueueIndex.value(), &m_computeQueue);
+    if (m_queueFamilyIndices.graphicsFamilyIndex.has_value() && m_queueFamilyIndices.graphicsQueueIndex.has_value()){
+        vkGetDeviceQueue(m_device, m_queueFamilyIndices.graphicsFamilyIndex.value(), m_queueFamilyIndices.graphicsQueueIndex.value(), &m_graphicsQueue);
+    }
+    if (m_queueFamilyIndices.presentFamilyIndex.has_value() && m_queueFamilyIndices.presentQueueIndex.has_value()){
+        vkGetDeviceQueue(m_device, m_queueFamilyIndices.presentFamilyIndex.value(), m_queueFamilyIndices.presentQueueIndex.value(), &m_presentQueue);
+    }
+    if (m_queueFamilyIndices.transferFamilyIndex.has_value() && m_queueFamilyIndices.transferQueueIndex.has_value()){
+        vkGetDeviceQueue(m_device, m_queueFamilyIndices.transferFamilyIndex.value(), m_queueFamilyIndices.transferQueueIndex.value(), &m_transferQueue);
+    }
+    if (m_queueFamilyIndices.computeFamilyIndex.has_value() && m_queueFamilyIndices.computeQueueIndex.has_value()){
+        vkGetDeviceQueue(m_device, m_queueFamilyIndices.computeFamilyIndex.value(), m_queueFamilyIndices.computeQueueIndex.value(), &m_computeQueue);
+    }
+    
 }
 
 
@@ -151,9 +197,38 @@ void VulkanDevice::createDevice(VkSurfaceKHR surface){
 //  ╚═╝  ╚═╝╚══════╝╚══════╝╚═╝     ╚══════╝╚═╝  ╚═╝
 
 bool VulkanDevice::isSuperiorDevice(VkPhysicalDevice newPhysicalDevice, VkPhysicalDevice bestPhysicalDevice){
+    // both discrete, determine best by memory
+    // get device memory properties
+    VkPhysicalDeviceMemoryProperties newMemoryProperties1{};  // new
+    vkGetPhysicalDeviceMemoryProperties(newPhysicalDevice, &newMemoryProperties1);
+    VkPhysicalDeviceMemoryProperties bestMemoryProperties1{}; // best
+    vkGetPhysicalDeviceMemoryProperties(bestPhysicalDevice, &bestMemoryProperties1);
+
+    // get heaps for both devices
+    VkMemoryHeap* newHeapsPointer1 = newMemoryProperties1.memoryHeaps;   // new
+    std::vector<VkMemoryHeap> newDeviceHeaps1(newHeapsPointer1, newHeapsPointer1 + newMemoryProperties1.memoryHeapCount);
+    VkMemoryHeap* bestHeapsPointer1 = bestMemoryProperties1.memoryHeaps; // best
+    std::vector<VkMemoryHeap> bestDeviceHeaps1(bestHeapsPointer1, bestHeapsPointer1 + bestMemoryProperties1.memoryHeapCount);
+
+    // determine max new device heap size
+    uint64 newHeapSize1 = 0;
+    for (const auto& heap : newDeviceHeaps1){
+        if (heap.flags & VkMemoryHeapFlagBits::VK_MEMORY_HEAP_DEVICE_LOCAL_BIT && heap.size > newHeapSize1)
+            newHeapSize1 = heap.size;
+    }
+
+
+    // determine max best device heap size
+    uint64 bestHeapSize1 = 0;
+    for (const auto& heap : bestDeviceHeaps1){
+        if (heap.flags & VkMemoryHeapFlagBits::VK_MEMORY_HEAP_DEVICE_LOCAL_BIT && heap.size > bestHeapSize1)
+            bestHeapSize1 = heap.size;
+    }
     // first device
-    if (bestPhysicalDevice == VK_NULL_HANDLE)
+    if (bestPhysicalDevice == VK_NULL_HANDLE){
         return true;
+    }
+
 
     // get device properties
     VkPhysicalDeviceProperties newProperties{};  // new
@@ -173,13 +248,16 @@ bool VulkanDevice::isSuperiorDevice(VkPhysicalDevice newPhysicalDevice, VkPhysic
     if (newIsIntegrated && bestIsIntegrated)
         return false;
 
+
     // new is superior
     if ((newIsDiscrete && bestIsIntegrated) || bestIsOther)
         return true;
 
+
     // new is inferior
     if ((bestIsDiscrete && newIsIntegrated) || newIsOther)
         return false;
+
 
 
     // check queue families
@@ -188,8 +266,11 @@ bool VulkanDevice::isSuperiorDevice(VkPhysicalDevice newPhysicalDevice, VkPhysic
     
     if (!newHasGraphics)
         return false;
+
+    
     if (!bestHasGraphics)
         return true;
+    
     
 
     // both discrete, determine best by memory
@@ -206,18 +287,20 @@ bool VulkanDevice::isSuperiorDevice(VkPhysicalDevice newPhysicalDevice, VkPhysic
     std::vector<VkMemoryHeap> bestDeviceHeaps(bestHeapsPointer, bestHeapsPointer + bestMemoryProperties.memoryHeapCount);
 
     // determine max new device heap size
-    uint32 newHeapSize = 0;
+    uint64 newHeapSize = 0;
     for (const auto& heap : newDeviceHeaps){
-        if (heap.flags & VkMemoryHeapFlagBits::VK_MEMORY_HEAP_DEVICE_LOCAL_BIT)
+        if (heap.flags & VkMemoryHeapFlagBits::VK_MEMORY_HEAP_DEVICE_LOCAL_BIT && heap.size > newHeapSize)
             newHeapSize = heap.size;
     }
 
+
     // determine max best device heap size
-    uint32 bestHeapSize = 0;
+    uint64 bestHeapSize = 0;
     for (const auto& heap : bestDeviceHeaps){
-        if (heap.flags & VkMemoryHeapFlagBits::VK_MEMORY_HEAP_DEVICE_LOCAL_BIT)
+        if (heap.flags & VkMemoryHeapFlagBits::VK_MEMORY_HEAP_DEVICE_LOCAL_BIT && heap.size > bestHeapSize)
             bestHeapSize = heap.size;
     }
+
 
     return (newHeapSize > bestHeapSize);
 }
@@ -225,7 +308,7 @@ bool VulkanDevice::isSuperiorDevice(VkPhysicalDevice newPhysicalDevice, VkPhysic
 bool VulkanDevice::hasGraphicsQueueFamily(VkPhysicalDevice device){
     // get queue families in device
     uint32 queueFamilyCount = 0;
-    vkGetPhysicalDeviceQueueFamilyProperties(device, &queueFamilyCount, nullptr);
+    vkGetPhysicalDeviceQueueFamilyProperties(device, &queueFamilyCount, NULL);
     std::vector<VkQueueFamilyProperties> queueFamilies(queueFamilyCount);
     vkGetPhysicalDeviceQueueFamilyProperties(device, &queueFamilyCount, queueFamilies.data());
 
@@ -241,15 +324,15 @@ bool VulkanDevice::hasGraphicsQueueFamily(VkPhysicalDevice device){
 std::vector<VkDeviceQueueCreateInfo> VulkanDevice::queryQueueFamilies(VkSurfaceKHR surface){
     // get queue families in device
     uint32 queueFamilyCount = 0;
-    vkGetPhysicalDeviceQueueFamilyProperties(m_physicalDevice, &queueFamilyCount, nullptr);
+    vkGetPhysicalDeviceQueueFamilyProperties(m_physicalDevice, &queueFamilyCount, NULL);
     std::vector<VkQueueFamilyProperties> queueFamilies(queueFamilyCount);
     vkGetPhysicalDeviceQueueFamilyProperties(m_physicalDevice, &queueFamilyCount, queueFamilies.data());
 
     // check for transfer only
     int transferIndex = 0;
     for (const auto& queueFamily : queueFamilies) {
-        if ((queueFamily.queueFlags & !VK_QUEUE_GRAPHICS_BIT) &&
-            (queueFamily.queueFlags & !VK_QUEUE_COMPUTE_BIT ) &&
+        if (!(queueFamily.queueFlags & VK_QUEUE_GRAPHICS_BIT) &&
+            !(queueFamily.queueFlags & VK_QUEUE_COMPUTE_BIT ) &&
             (queueFamily.queueFlags &  VK_QUEUE_TRANSFER_BIT)){
             m_queueFamilyIndices.transferFamilyIndex = transferIndex;
             m_queueFamilyIndices.transferQueueIndex = 0;
@@ -261,8 +344,9 @@ std::vector<VkDeviceQueueCreateInfo> VulkanDevice::queryQueueFamilies(VkSurfaceK
     // check for compute only
     int computeIndex = 0;
     for (const auto& queueFamily : queueFamilies) {
-        if ((queueFamily.queueFlags & !VK_QUEUE_GRAPHICS_BIT) &&
-            (queueFamily.queueFlags &  VK_QUEUE_COMPUTE_BIT)){
+        if (!(queueFamily.queueFlags & VK_QUEUE_GRAPHICS_BIT) &&
+            (queueFamily.queueFlags &  VK_QUEUE_COMPUTE_BIT) &&
+            (computeIndex != transferIndex)){
             m_queueFamilyIndices.computeFamilyIndex = computeIndex;
             m_queueFamilyIndices.computeQueueIndex = 0;
             break;
@@ -292,16 +376,12 @@ std::vector<VkDeviceQueueCreateInfo> VulkanDevice::queryQueueFamilies(VkSurfaceK
             familyIndex++;
             continue;
         }
-        // check for graphics
-        if (queueFamily.queueFlags & VK_QUEUE_GRAPHICS_BIT){
-            m_queueFamilyIndices.graphicsFamilyIndex = familyIndex;
-            m_queueFamilyIndices.graphicsQueueIndex = queueIndex;
-            queueIndex++;
-        }
-        // check for present
+        // check for graphics + present
         VkBool32 presentSupported = false;
         vkGetPhysicalDeviceSurfaceSupportKHR(m_physicalDevice, familyIndex, surface, &presentSupported);
-        if (presentSupported){
+        if (presentSupported && (queueFamily.queueFlags & VK_QUEUE_GRAPHICS_BIT)){
+            m_queueFamilyIndices.graphicsFamilyIndex = familyIndex;
+            m_queueFamilyIndices.graphicsQueueIndex = queueIndex;
             m_queueFamilyIndices.graphicsFamilyIndex = familyIndex;
             m_queueFamilyIndices.graphicsQueueIndex = queueIndex;
             queueIndex++;
@@ -311,7 +391,6 @@ std::vector<VkDeviceQueueCreateInfo> VulkanDevice::queryQueueFamilies(VkSurfaceK
     }
 
     // get device queue createinfo
-    float queuePriority = 1.0f;
     std::vector<VkDeviceQueueCreateInfo> queueCreateInfos;
     for (int familyIndex = 0; familyIndex < queueFamilyCount; familyIndex++){
         uint32 queuesInFamily = m_queueFamilyIndices.getUniqueQueueCount(familyIndex);
@@ -322,46 +401,69 @@ std::vector<VkDeviceQueueCreateInfo> VulkanDevice::queryQueueFamilies(VkSurfaceK
         // might be combined queues, or separate
         queueCreateInfos.push_back({
             .sType = VK_STRUCTURE_TYPE_DEVICE_QUEUE_CREATE_INFO,
+            .pNext = NULL,
+            .flags = 0,
             .queueFamilyIndex = (uint32)familyIndex,
             .queueCount = queuesInFamily,
-            .pQueuePriorities = &queuePriority
+            .pQueuePriorities = m_queuePriorities.at(queuesInFamily-1).data()
         });
     }
 
     return queueCreateInfos;
 }
 
+bool VulkanDevice::hasExtension(std::vector<const char*> extensions, const char* requested){
+    for (const char* extension : extensions){
+        if (std::strcmp(extension, requested) == 0){
+            return true;
+        }
+    }
+    return false;
+}
+
 void VulkanDevice::getExtensions(Window& window){
+    m_instanceExtensionCount = 0;
+    m_deviceExtensionCount = 0;
+
+    // [instance]
     // query SDL for required extensions
-    SDL_Vulkan_GetInstanceExtensions(window.getHandle(), &m_extensionCount, (const char **)m_extensionNames.data());
+    if (!SDL_Vulkan_GetInstanceExtensions(window.getHandle(), &m_instanceExtensionCount, NULL)) 
+        SprLog::warn("[VulkanDevice] Failed to find count of SDL instance extensions");
+    const char **extensionNames = static_cast<const char **>(std::malloc(sizeof(const char *) * m_instanceExtensionCount));
+    if (!SDL_Vulkan_GetInstanceExtensions(window.getHandle(), &m_instanceExtensionCount, extensionNames)) 
+        SprLog::warn("[VulkanDevice] Failed to find any SDL instance extensions");
 
+    for (uint32 i = 0; i < m_instanceExtensionCount; i++){
+        m_instanceExtensionNames.push_back(extensionNames[i]);
+    }
+
+    // [device]
+    // add sync2 extension
+    m_deviceExtensionNames.push_back(VK_KHR_SYNCHRONIZATION_2_EXTENSION_NAME);
+    m_deviceExtensionCount++;
     // add swapchain extension
-    bool requestedExtensionsFound = false;
-    for (std::string extension : m_extensionNames){
-        if (extension.compare(VK_KHR_SWAPCHAIN_EXTENSION_NAME) == 0){
-            requestedExtensionsFound = true;
-            break;
-        }
-    }
-    if (!requestedExtensionsFound)
-        m_extensionNames.push_back(VK_KHR_SWAPCHAIN_EXTENSION_NAME);
-
-    // add additional extensions
-    m_extensionNames.push_back(VK_KHR_SYNCHRONIZATION_2_EXTENSION_NAME);
-
+    m_deviceExtensionNames.push_back(VK_KHR_SWAPCHAIN_EXTENSION_NAME);
+    m_deviceExtensionCount++;
+    
+    // [instance]
     // add debug extension (if applicable)
-    if (!DEBUG)
-        return;
-
-    bool debugUtilsFound = false;
-    for (std::string extension : m_extensionNames){
-        if (extension.compare("VK_EXT_debug_utils") == 0){
-            debugUtilsFound = true;
-            break;
+    if (DEBUG){
+        if (!hasExtension(m_instanceExtensionNames, "VK_EXT_debug_utils")){
+            m_instanceExtensionNames.push_back("VK_EXT_debug_utils");
+            m_instanceExtensionCount++;
         }
     }
-    if (!debugUtilsFound)
-        m_extensionNames.push_back("VK_EXT_debug_utils");
+
+    std::free(extensionNames);
+}
+
+bool VulkanDevice::hasLayer(std::vector<VkLayerProperties> layers, const char* requested){
+    for (VkLayerProperties layer : layers){
+        if (std::strcmp(layer.layerName, requested) == 0){
+            return true;
+        }
+    }
+    return false;
 }
 
 void VulkanDevice::enableValidationLayers(VkDebugUtilsMessengerCreateInfoEXT& debugCreateInfo){
@@ -369,38 +471,39 @@ void VulkanDevice::enableValidationLayers(VkDebugUtilsMessengerCreateInfoEXT& de
     if (!DEBUG)
         return;
 
-    // standard validation layer
-    m_validationLayers.push_back("VK_LAYER_KHRONOS_validation");
-
     // get validation layers
-    vkEnumerateInstanceLayerProperties(&m_validationLayerCount, nullptr);
-    std::vector<VkLayerProperties> availableLayers(m_validationLayerCount);
-    vkEnumerateInstanceLayerProperties(&m_validationLayerCount, availableLayers.data());
+    uint32 availableLayersCount = 0;
+    vkEnumerateInstanceLayerProperties(&availableLayersCount, nullptr);
+    std::vector<VkLayerProperties> availableLayers(availableLayersCount);
+    vkEnumerateInstanceLayerProperties(&availableLayersCount, availableLayers.data());
 
-    // match requested validation layers with found
-    for (std::string layerName : m_validationLayers) {
-        bool layerFound = false;
-        for (const auto& layerProperties : availableLayers) {
-            if (layerName.compare(layerProperties.layerName) == 0){
-                layerFound = true;
-                break;
-            }
-        }
-
-        if (!layerFound){
-            // validation layer not found
-            SprLog::warn("[VulkanDevice] Validation layer not found: " + layerName);
-            m_validationLayerCount = 0;
-            m_validationLayers.clear();
-            return;
-        }
+    m_validationLayerCount = 0;
+    // get standard validation layer
+    if (hasLayer(availableLayers, "VK_LAYER_KHRONOS_validation")){
+        m_validationLayers.push_back("VK_LAYER_KHRONOS_validation");
         m_validationLayerCount++;
     }
-
+    // VK_LAYER_LUNARG_api_dump
+    if (hasLayer(availableLayers, "VK_LAYER_LUNARG_api_dump")){
+        m_validationLayers.push_back("VK_LAYER_LUNARG_api_dump");
+        m_validationLayerCount++;
+    }
+    // VK_LAYER_LUNARG_monitor
+    if (hasLayer(availableLayers, "VK_LAYER_LUNARG_monitor")){
+        m_validationLayers.push_back("VK_LAYER_LUNARG_monitor");
+        m_validationLayerCount++;
+    }
+    // VK_LAYER_KHRONOS_synchronization2
+    if (hasLayer(availableLayers, "VK_LAYER_KHRONOS_synchronization2")){
+        m_validationLayers.push_back("VK_LAYER_KHRONOS_synchronization2");
+        m_validationLayerCount++;
+    }
     // setup debug messenger
     debugCreateInfo = {
         .sType = VK_STRUCTURE_TYPE_DEBUG_UTILS_MESSENGER_CREATE_INFO_EXT,
-        .messageSeverity = VK_DEBUG_UTILS_MESSAGE_SEVERITY_VERBOSE_BIT_EXT | VK_DEBUG_UTILS_MESSAGE_SEVERITY_WARNING_BIT_EXT | VK_DEBUG_UTILS_MESSAGE_SEVERITY_ERROR_BIT_EXT,
+        .pNext = NULL,
+        .flags = 0,
+        .messageSeverity = VK_DEBUG_UTILS_MESSAGE_SEVERITY_VERBOSE_BIT_EXT | VK_DEBUG_UTILS_MESSAGE_SEVERITY_INFO_BIT_EXT | VK_DEBUG_UTILS_MESSAGE_SEVERITY_WARNING_BIT_EXT | VK_DEBUG_UTILS_MESSAGE_SEVERITY_ERROR_BIT_EXT,
         .messageType = VK_DEBUG_UTILS_MESSAGE_TYPE_GENERAL_BIT_EXT | VK_DEBUG_UTILS_MESSAGE_TYPE_VALIDATION_BIT_EXT | VK_DEBUG_UTILS_MESSAGE_TYPE_PERFORMANCE_BIT_EXT,
         .pfnUserCallback = debugCallback
     };

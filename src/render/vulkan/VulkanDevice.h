@@ -2,10 +2,12 @@
 
 #include "glm/detail/qualifier.hpp"
 #include "gfx_vulkan_core.h"
-#include "Window.h"
-#include <vulkan/vulkan_core.h>
-#include "../../debug/SprLog.h"
-#include "../../core/util/FunctionStack.h"
+#include <string>
+#include <vector>
+
+namespace spr {
+    class Window;
+}
 
 namespace spr::gfx {
 
@@ -79,22 +81,33 @@ private: // non-owning
     std::string m_appName;
     bool m_destroyed = false;
 
+    std::vector<std::vector<float>> m_queuePriorities{
+        {1.0f},
+        {1.0f,1.0f},
+        {1.0f,1.0f,1.0f},
+        {1.0f,1.0f,1.0f,1.0f}
+    };
     QueueFamilies m_queueFamilyIndices;
     VkQueue m_graphicsQueue;
     VkQueue m_presentQueue;
     VkQueue m_transferQueue;
     VkQueue m_computeQueue;
 
-    uint32 m_extensionCount = 0;
-    std::vector<std::string> m_extensionNames;
+    uint32 m_instanceExtensionCount = 0;
+    std::vector<const char*> m_instanceExtensionNames;
+
+    uint32 m_deviceExtensionCount = 0;
+    std::vector<const char*> m_deviceExtensionNames;
 
     uint32 m_validationLayerCount = 0;
-    std::vector<std::string> m_validationLayers;
+    std::vector<const char*> m_validationLayers;
 
     uint32 m_deviceCount = 0;
     std::vector<VkPhysicalDevice> m_physicalDevices;
 
     void getExtensions(Window& window);
+    bool hasExtension(std::vector<const char*> extensions, const char* requested);
+    bool hasLayer(std::vector<VkLayerProperties> layers, const char* requested);
     void enableValidationLayers(VkDebugUtilsMessengerCreateInfoEXT& debugCreateInfo);
     void setupDebugMessenger();
 
