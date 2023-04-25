@@ -3,21 +3,18 @@
 #include <vector>
 #include "spruce_core.h"
 #include "../../../external/flat_hash_map/flat_hash_map.hpp"
-#include "../vulkan/resource/VulkanResourceManager.h"
-#include "../../core/memory/TempBuffer.h"
 #include "Draw.h"
+#include "../../core/memory/TempBuffer.h"
 
 namespace spr::gfx {
+
+struct MaterialQuery;
 
 class BatchNode {
 public:
     BatchNode();
     BatchNode(uint32 height);
-    ~BatchNode() {
-        for (uint32 i = 0; i < m_nodeData.size(); i++){
-            delete m_nodeData.at(i);
-        }
-    }
+    ~BatchNode();
 
     void add(DrawData draw, Batch batchInfo);
     void remove(uint32 materialFlags);

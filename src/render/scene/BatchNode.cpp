@@ -20,6 +20,11 @@ BatchNode::BatchNode(uint32 height){
         m_leafData = std::vector<ska::flat_hash_map<uint32, DrawBatch>>(16);
     }
 }
+BatchNode::~BatchNode() {
+    for (uint32 i = 0; i < m_nodeData.size(); i++){
+        delete m_nodeData.at(i);
+    }
+}
 
 
 void BatchNode::add(DrawData draw, Batch batchInfo){
