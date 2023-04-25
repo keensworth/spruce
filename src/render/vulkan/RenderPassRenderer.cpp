@@ -1,6 +1,9 @@
 #include "RenderPassRenderer.h"
-#include "DescriptorSetHandler.h"
-#include <vulkan/vulkan_core.h>
+#include "resource/ResourceTypes.h"
+#include "resource/VulkanResourceManager.h"
+#include "../../external/volk/volk.h"
+#include "../scene/Draw.h"
+#include "../../debug/SprLog.h"
 
 
 namespace spr::gfx {
@@ -9,17 +12,14 @@ RenderPassRenderer::RenderPassRenderer(){
 
 }
 
-RenderPassRenderer::RenderPassRenderer(VulkanResourceManager* rm, VkCommandBuffer commandBuffer, uint32 frameIndex){
+RenderPassRenderer::RenderPassRenderer(VulkanResourceManager* rm, VkCommandBuffer commandBuffer, uint32 frameIndex) : m_descSetHandler(rm, commandBuffer){
     m_rm = rm;
     m_commandBuffer = commandBuffer;
     m_frameId = 0;
     m_frameIndex = frameIndex;
-
-    m_descSetHandler = DescriptorSetHandler(rm, commandBuffer);
 }
 
 RenderPassRenderer::~RenderPassRenderer(){
-    
 }
 
 

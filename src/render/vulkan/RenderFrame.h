@@ -1,7 +1,7 @@
 #pragma once
 
 #include "gfx_vulkan_core.h"
-#include <vulkan/vulkan_core.h>
+#include "../../external/volk/volk.h"
 
 namespace spr::gfx{
 

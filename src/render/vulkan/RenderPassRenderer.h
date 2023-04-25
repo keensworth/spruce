@@ -1,12 +1,14 @@
 #pragma once
 
-#include <vulkan/vulkan_core.h>
-#include "resource/ResourceTypes.h"
-#include "../scene/Draw.h"
-#include "resource/VulkanResourceManager.h"
+#include <vector>
+#include "../../external/volk/volk.h"
 #include "DescriptorSetHandler.h"
 
 namespace spr::gfx{
+
+class VulkanResourceManager;
+struct Shader;
+struct Batch;
 
 typedef struct PassContext {
     Handle<Shader> shader;

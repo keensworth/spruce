@@ -1,12 +1,12 @@
 #pragma once
 
 #include "gfx_vulkan_core.h"
-#include "Window.h"
-#include <vulkan/vulkan_core.h>
-#include "../../core/util/FunctionStack.h"
-#include "../../debug/SprLog.h"
+#include "../../external/volk/volk.h"
+#include <vector>
 
-
+namespace spr {
+    class Window;
+}
 
 namespace spr::gfx {
 class VulkanDisplay{
