@@ -1,14 +1,20 @@
 #pragma once
 
-#include "../../resource/SprResourceManager.h"
-#include "../vulkan/resource/VulkanResourceManager.h"
-#include "SceneData.h"
-#include "Mesh.h"
-#include "Material.h"
 #include "../../core/memory/TempBuffer.h"
 #include "../../external/flat_hash_map/flat_hash_map.hpp"
+#include "Mesh.h"
+
+namespace spr {
+    class SprResourceManager;
+    struct Mesh;
+}
 
 namespace spr::gfx {
+
+struct MeshInfo;
+struct VertexPosition;
+struct VertexAttributes;
+struct MaterialData;
 
 typedef ska::flat_hash_map<uint32, MeshInfo> MeshInfoMap;
 
@@ -39,7 +45,7 @@ public:
 
     TempBuffer<VertexPosition>& getVertexPositionData();
     TempBuffer<VertexAttributes>& getVertexAttributeData();
-    TempBuffer<uint32>& getVertexIndicesData();
+    TempBuffer<uint16>& getVertexIndicesData();
     TempBuffer<MaterialData>& getMaterialData();
     std::vector<TextureInfo>& getTextureData();
 
@@ -49,7 +55,7 @@ private:
 
     TempBuffer<VertexPosition> m_vertexPositions;
     TempBuffer<VertexAttributes> m_vertexAttributes;
-    TempBuffer<uint32> m_vertexIndices;
+    TempBuffer<uint16> m_vertexIndices;
     TempBuffer<MaterialData> m_materials;
     std::vector<TextureInfo> m_textures;
     bool m_cleared = false;
