@@ -1,31 +1,40 @@
 #pragma once
 
-#include "glm/fwd.hpp"
-#include "spruce_core.h"
 #include "scene/BatchManager.h"
-#include "vulkan/gfx_vulkan_core.h"
-#include "vulkan/resource/VulkanResourceManager.h"
 #include <vector>
-#include "vulkan/VulkanRenderer.h"
 #include "scene/GfxAssetLoader.h"
+#include "../core/memory/Handle.h"
+#include "scene/SceneData.h"
+#include "vulkan/gfx_vulkan_core.h"
 
+
+namespace spr {
+    class SprResourceManager;
+}
 
 namespace spr::gfx {
 
-
+class VulkanDevice;
+class VulkanResourceManager;
+class UploadHandler;
+struct DescriptorSet;
+struct DescriptorSetLayout;
+struct Buffer;
+struct Texture;
 
 class SceneManager {
 public:
     SceneManager();
-    SceneManager(VulkanResourceManager& rm);
     ~SceneManager();
+
+    void init(VulkanResourceManager& rm);
 
     void insertMesh(uint32 frame, uint32 meshId, uint32 materialFlags, Transform& transform);
     void insertLight(uint32 frame, Light& light);
     void updateCamera(uint32 frame, Camera& camera);
     void reset(uint32 frame);
 
-    void initializeAssets(SprResourceManager& rm);
+    void initializeAssets(SprResourceManager& rm, VulkanDevice* device);
 
     Handle<DescriptorSet> getGlobalDescriptorSet();
     Handle<DescriptorSetLayout> getGlobalDescriptorSetLayout();
@@ -49,9 +58,9 @@ private:
     MeshInfoMap m_meshInfo;
     bool m_destroyed = false;
 
-    void initBuffers(PrimitiveCounts counts);
+    void initBuffers(PrimitiveCounts counts, VulkanDevice* device);
     void initTextures(uint32 textureCount);
-    void initDescriptorSets();
+    void initDescriptorSets(VulkanDevice* device);
 
 private: // owning
     // per frame resource handles

@@ -3,21 +3,30 @@
 #include "scene/Material.h"
 #include "scene/Mesh.h"
 #include "vulkan/gfx_vulkan_core.h"
+#include "vulkan/resource/ResourceFlags.h"
 #include "vulkan/resource/ResourceTypes.h"
 #include "vulkan/resource/VulkanResourceManager.h"
+#include "vulkan/UploadHandler.h"
+#include "../resource/SprResourceManager.h"
 #include <cctype>
+#include "scene/SceneData.h"
+#include "vulkan/resource/ResourceTypes.h"
+#include "../debug/SprLog.h"
 
 namespace spr::gfx {
 
 SceneManager::SceneManager(){}
 
-SceneManager::SceneManager(VulkanResourceManager& rm){  
+SceneManager::~SceneManager(){
+    if (m_destroyed)
+        return;
+
+    SprLog::warn("[SceneManager] [~] Calling destroy() in destructor");
+    destroy();
+}
+
+void SceneManager::init(VulkanResourceManager& rm){
     m_rm = &rm;
-    m_assetLoader = GfxAssetLoader();
-    
-    for (uint32 i = 0; i < MAX_FRAME_COUNT; i++){
-        m_batchManagers[i] = BatchManager();
-    }
 
     // per frame resource temp buffers
     for (uint32 i = 0; i < MAX_FRAME_COUNT; i++){        
@@ -27,14 +36,6 @@ SceneManager::SceneManager(VulkanResourceManager& rm){
         m_cameras[i] = TempBuffer<Camera>(1);
         m_sceneData[i] = TempBuffer<Scene>(1);
     }
-}
-
-SceneManager::~SceneManager(){
-    if (m_destroyed)
-        return;
-
-    SprLog::warn("[SceneManager] [~] Calling destroy() in destructor");
-    destroy();
 }
 
 
@@ -74,17 +75,14 @@ void SceneManager::updateCamera(uint32 frame, Camera& camera){
 
 void SceneManager::uploadGlobalResources(UploadHandler& uploadHandler){
     uploadHandler.uploadBuffer(m_assetLoader.getVertexPositionData(), m_positionsBuffer);
-    uploadHandler.uploadBuffer(m_assetLoader.getVertexPositionData(), m_attributesBuffer);
-    uploadHandler.uploadBuffer(m_assetLoader.getVertexPositionData(), m_materialsBuffer);
-    uploadHandler.uploadBuffer(m_assetLoader.getVertexPositionData(), m_indexBuffer);
+    uploadHandler.uploadBuffer(m_assetLoader.getVertexAttributeData(), m_attributesBuffer);
+    uploadHandler.uploadBuffer(m_assetLoader.getMaterialData(), m_materialsBuffer);
+    uploadHandler.uploadBuffer(m_assetLoader.getVertexIndicesData(), m_indexBuffer);
 
     std::vector<TextureInfo> textures = m_assetLoader.getTextureData();
     for (uint32 i = 0; i < m_assetLoader.getPrimitiveCounts().textureCount; i++){
-        TextureInfo texture = textures[i];
-        uploadHandler.uploadTexture(texture.data, m_textures[i]);
+        uploadHandler.uploadTexture(textures[i].data, m_textures[i]);
     }
-
-    m_assetLoader.clear();
 }
 
 void SceneManager::uploadPerFrameResources(UploadHandler& uploadHandler, uint32 frame){
@@ -121,12 +119,21 @@ BatchManager& SceneManager::getBatchManager(uint32 frame) {
 }
 
 
-void SceneManager::initializeAssets(SprResourceManager &rm){
+void SceneManager::initializeAssets(SprResourceManager &rm, VulkanDevice* device){
+    SprLog::debug("[SceneManager] initializing...");
     m_meshInfo = m_assetLoader.loadAssets(rm);
+    SprLog::debug("[SceneManager] loaded w/ asset loader");
+
     PrimitiveCounts counts = m_assetLoader.getPrimitiveCounts();
-    initBuffers(counts);
+
     initTextures(counts.textureCount);
-    initDescriptorSets();
+    SprLog::debug("[SceneManager] textures initialized");
+
+    initBuffers(counts, device);
+    SprLog::debug("[SceneManager] buffers initialized");
+    
+    initDescriptorSets(device);
+    SprLog::debug("[SceneManager] descriptor sets initialized");
     
     for (uint32 i = 0; i < MAX_FRAME_COUNT; i++){
         m_batchManagers[i].setQuadInfo({
@@ -135,79 +142,90 @@ void SceneManager::initializeAssets(SprResourceManager &rm){
             .drawCount = 1
         }, m_meshInfo[1].vertexOffset);
     }
+    SprLog::debug("[SceneManager] INITIALIZED");
 }
 
-void SceneManager::initBuffers(PrimitiveCounts counts){
+void SceneManager::initBuffers(PrimitiveCounts counts, VulkanDevice* device){
     // per frame resource handles
-    Handle<Buffer> m_lightsBuffer = m_rm->create<Buffer>(BufferDesc{
+    m_lightsBuffer = m_rm->create<Buffer>(BufferDesc{
         .byteSize = (uint32) (MAX_LIGHTS * MAX_FRAME_COUNT * sizeof(Light)),
         .usage = Flags::BufferUsage::BU_STORAGE_BUFFER |
                  Flags::BufferUsage::BU_TRANSFER_DST,
         .memType = DEVICE | HOST
     });
+    SprLog::debug("[SceneManager] [initBuffers] m_lightsBuffer created");
 
-    Handle<Buffer> m_transformBuffer = m_rm->create<Buffer>(BufferDesc{
+    m_transformBuffer = m_rm->create<Buffer>(BufferDesc{
         .byteSize = (uint32) (MAX_DRAWS * MAX_FRAME_COUNT * sizeof(Transform)),
         .usage = Flags::BufferUsage::BU_STORAGE_BUFFER |
                  Flags::BufferUsage::BU_TRANSFER_DST,
         .memType = DEVICE | HOST
     });
+    SprLog::debug("[SceneManager] [initBuffers] m_transformBuffer created");
 
-    Handle<Buffer> m_drawDataBuffer = m_rm->create<Buffer>(BufferDesc{
+    m_drawDataBuffer = m_rm->create<Buffer>(BufferDesc{
         .byteSize = (uint32) (MAX_DRAWS * MAX_FRAME_COUNT * sizeof(DrawData)),
         .usage = Flags::BufferUsage::BU_STORAGE_BUFFER |
                  Flags::BufferUsage::BU_TRANSFER_DST,
         .memType = DEVICE | HOST
     });
+    SprLog::debug("[SceneManager] [initBuffers] m_drawDataBuffer created");
 
-    Handle<Buffer> m_cameraBuffer = m_rm->create<Buffer>(BufferDesc{
+    m_cameraBuffer = m_rm->create<Buffer>(BufferDesc{
         .byteSize = (uint32) (MAX_FRAME_COUNT * sizeof(Camera)),
         .usage = Flags::BufferUsage::BU_STORAGE_BUFFER |
                  Flags::BufferUsage::BU_TRANSFER_DST,
         .memType = DEVICE | HOST
     });
+    SprLog::debug("[SceneManager] [initBuffers] m_cameraBuffer created");
 
-    Handle<Buffer> m_sceneBuffer = m_rm->create<Buffer>(BufferDesc{
+    m_sceneBuffer = m_rm->create<Buffer>(BufferDesc{
         .byteSize = (uint32) (MAX_FRAME_COUNT * sizeof(Scene)),
         .usage = Flags::BufferUsage::BU_STORAGE_BUFFER |
                  Flags::BufferUsage::BU_TRANSFER_DST,
         .memType = DEVICE | HOST
     });
+    SprLog::debug("[SceneManager] [initBuffers] m_sceneBuffer created");
 
     // global resource handles
-    Handle<Buffer> m_positionsBuffer = m_rm->create<Buffer>(BufferDesc{
+    m_positionsBuffer = m_rm->create<Buffer>(BufferDesc{
         .byteSize = (uint32) (counts.vertexCount * sizeof(VertexPosition)),
         .usage = Flags::BufferUsage::BU_STORAGE_BUFFER |
                  Flags::BufferUsage::BU_TRANSFER_DST,
-        .memType = DEVICE | HOST
+        .memType = DEVICE
     });
+    SprLog::debug("[SceneManager] [initBuffers] m_positionsBuffer created");
 
-    Handle<Buffer> m_attributesBuffer = m_rm->create<Buffer>(BufferDesc{
+    m_attributesBuffer = m_rm->create<Buffer>(BufferDesc{
         .byteSize = (uint32) (counts.vertexCount * sizeof(VertexAttributes)),
         .usage = Flags::BufferUsage::BU_STORAGE_BUFFER |
                  Flags::BufferUsage::BU_TRANSFER_DST,
-        .memType = DEVICE | HOST
+        .memType = DEVICE
     });
-
-    Handle<Buffer> m_indexBuffer = m_rm->create<Buffer>(BufferDesc{
-        .byteSize = (uint32) (counts.indexCount * sizeof(uint32)),
-        .usage = Flags::BufferUsage::BU_STORAGE_BUFFER |
+    SprLog::debug("[SceneManager] [initBuffers] m_attributesBuffer created");
+    
+    m_indexBuffer = m_rm->create<Buffer>(BufferDesc{
+        .byteSize = (uint32) (counts.indexCount * sizeof(uint16)),
+        .usage = Flags::BufferUsage::BU_INDEX_BUFFER   |
                  Flags::BufferUsage::BU_TRANSFER_DST,
-        .memType = DEVICE | HOST
+        .memType = DEVICE
     });
+    SprLog::debug("[SceneManager] [initBuffers] m_indexBuffer created");
 
-    Handle<Buffer> m_materialsBuffer = m_rm->create<Buffer>(BufferDesc{
+    m_materialsBuffer = m_rm->create<Buffer>(BufferDesc{
         .byteSize = (uint32) (counts.materialCount * sizeof(MaterialData)),
         .usage = Flags::BufferUsage::BU_STORAGE_BUFFER |
                  Flags::BufferUsage::BU_TRANSFER_DST,
-        .memType = DEVICE | HOST
+        .memType = DEVICE
     });
+    SprLog::debug("[SceneManager] [initBuffers] m_materialsBuffer created");
 }
 
 void SceneManager::initTextures(uint32 textureCount){
     m_textures.resize(textureCount);
     
     std::vector<TextureInfo>& textureData = m_assetLoader.getTextureData();
+    SprLog::debug("[SceneManager] [initTextures] creating textures, count: " + std::to_string(textureData.size()));
 
     for (uint32 i = 0; i < textureCount; i++){
         TextureInfo& info = textureData[i];
@@ -226,7 +244,10 @@ void SceneManager::initTextures(uint32 textureCount){
             format = info.srgb ? Flags::Format::RGBA8_SRGB
                                : Flags::Format::RGBA8_UNORM;
         }
-
+        
+        SprLog::debug("[SceneManager] [initTextures] creating texture, srgb: " + std::to_string(info.srgb));
+        SprLog::debug("[SceneManager] [initTextures]                  width: " + std::to_string(info.width));
+        SprLog::debug("[SceneManager] [initTextures]                 height: " + std::to_string(info.height));
         m_textures[i] = m_rm->create<Texture>(TextureDesc{
             .dimensions = {
                 info.width,
@@ -237,21 +258,28 @@ void SceneManager::initTextures(uint32 textureCount){
             .usage = Flags::ImageUsage::IU_SAMPLED |
                      Flags::ImageUsage::IU_TRANSFER_DST
         });
+        SprLog::debug("[SceneManager] [initTextures] texture created");
     }
 }
 
-void SceneManager::initDescriptorSets(){
+void SceneManager::initDescriptorSets(VulkanDevice* device){
+    SprLog::debug("[SceneManager] [initDescriptorSets] Beginning initialization");
+    Buffer* buffffffer = m_rm->get<Buffer>(m_positionsBuffer);
+    VkMemoryRequirements memRequirements;
+    vkGetBufferMemoryRequirements(device->getDevice(), buffffffer->buffer, &memRequirements);
+    SprLog::debug("[SceneManager] [initDescriptorSets]         memreq: " + std::to_string(memRequirements.alignment));
     // global (set = 0)
     m_globalDescriptorSetLayout = m_rm->create<DescriptorSetLayout>(DescriptorSetLayoutDesc{
         .textures = {
-            {.binding = 3},
+            {.binding = 3, .count = (uint32)m_textures.size()},
         },
         .buffers = {
-            {.binding = 0},
-            {.binding = 1},
-            {.binding = 2}
+            {.binding = 0, .type = Flags::DescriptorType::STORAGE_BUFFER},
+            {.binding = 1, .type = Flags::DescriptorType::STORAGE_BUFFER},
+            {.binding = 2, .type = Flags::DescriptorType::STORAGE_BUFFER}
         }
     });
+    SprLog::debug("[SceneManager] [initDescriptorSets] global desc set layout created");
     m_globalDescriptorSet = m_rm->create<DescriptorSet>(DescriptorSetDesc{
         .textures = {
             {.textures = m_textures}
@@ -263,32 +291,48 @@ void SceneManager::initDescriptorSets(){
         },
         .layout = m_globalDescriptorSetLayout
     });
-    
+    SprLog::debug("[SceneManager] [initDescriptorSets] global desc set created");
     // per-frame (set = 1)
     for (uint32 i = 0; i < MAX_FRAME_COUNT; i++){
         m_frameDescriptorSetLayouts[i] = m_rm->create<DescriptorSetLayout>(DescriptorSetLayoutDesc{
             .buffers = {
-                {.binding = 0},
-                {.binding = 1},
-                {.binding = 2},
-                {.binding = 3},
-                {.binding = 4}
+                {.binding = 0, .type = Flags::DescriptorType::STORAGE_BUFFER},
+                {.binding = 1, .type = Flags::DescriptorType::STORAGE_BUFFER},
+                {.binding = 2, .type = Flags::DescriptorType::STORAGE_BUFFER},
+                {.binding = 3, .type = Flags::DescriptorType::STORAGE_BUFFER},
+                {.binding = 4, .type = Flags::DescriptorType::STORAGE_BUFFER}
             }
         });
+        SprLog::debug("[SceneManager] [initDescriptorSets] frame desc set layout created");
         Buffer* scene = m_rm->get<Buffer>(m_sceneBuffer);
-        Buffer* cameras = m_rm->get<Buffer>(m_sceneBuffer);
-        Buffer* lights = m_rm->get<Buffer>(m_sceneBuffer);
-        Buffer* transforms = m_rm->get<Buffer>(m_sceneBuffer);
-        Buffer* draws = m_rm->get<Buffer>(m_sceneBuffer);
+        Buffer* cameras = m_rm->get<Buffer>(m_cameraBuffer);
+        Buffer* lights = m_rm->get<Buffer>(m_lightsBuffer);
+        Buffer* transforms = m_rm->get<Buffer>(m_transformBuffer);
+        Buffer* draws = m_rm->get<Buffer>(m_drawDataBuffer);
+        SprLog::debug("[SceneManager] [initDescriptorSets] got buffers");
+        uint32 sceneFrameSize = ((scene->byteSize)/MAX_FRAME_COUNT);
+        uint32 camerasFrameSize = ((cameras->byteSize)/MAX_FRAME_COUNT);
+        uint32 lightsFrameSize = ((lights->byteSize)/MAX_FRAME_COUNT);
+        uint32 transformsFrameSize = ((transforms->byteSize)/MAX_FRAME_COUNT);
+        uint32 drawsFrameSize = ((draws->byteSize)/MAX_FRAME_COUNT);
+        SprLog::debug("[SceneManager] [initDescriptorSets] got framed sizes");
+        uint32 sceneOffset = i*sceneFrameSize;
+        uint32 camerasOffset = i*camerasFrameSize;
+        uint32 lightsOffset = i*lightsFrameSize;
+        uint32 transformsOffset = i*transformsFrameSize;
+        uint32 drawsOffset = i*drawsFrameSize;
+        SprLog::debug("[SceneManager] [initDescriptorSets] got offsets");
         m_frameDescriptorSets[i] = m_rm->create<DescriptorSet>(DescriptorSetDesc{
             .buffers = {
-                {.buffer = m_sceneBuffer, .byteOffset = i*(scene->byteSize/MAX_FRAME_COUNT)},
-                {.buffer = m_cameraBuffer, .byteOffset = i*(cameras->byteSize/MAX_FRAME_COUNT)},
-                {.buffer = m_lightsBuffer, .byteOffset = i*(lights->byteSize/MAX_FRAME_COUNT)},
-                {.buffer = m_transformBuffer, .byteOffset = i*(transforms->byteSize/MAX_FRAME_COUNT)},
-                {.buffer = m_drawDataBuffer, .byteOffset = i*(draws->byteSize/MAX_FRAME_COUNT)}
-            }
+                {.buffer = m_sceneBuffer, .byteOffset = sceneOffset, .byteSize = sceneFrameSize},
+                {.buffer = m_cameraBuffer, .byteOffset = camerasOffset, .byteSize = camerasFrameSize},
+                {.buffer = m_lightsBuffer, .byteOffset = lightsOffset, .byteSize = lightsFrameSize},
+                {.buffer = m_transformBuffer, .byteOffset = transformsOffset, .byteSize = transformsFrameSize},
+                {.buffer = m_drawDataBuffer, .byteOffset = drawsOffset, .byteSize = drawsFrameSize}
+            },
+            .layout = m_frameDescriptorSetLayouts[i]
         });
+        SprLog::debug("[SceneManager] [initDescriptorSets] frame desc set created");
     }
 }
 
@@ -300,6 +344,8 @@ void SceneManager::reset(uint32 frame) {
     m_lights[frame % MAX_FRAME_COUNT].reset();
     m_drawData[frame % MAX_FRAME_COUNT].reset();
     m_sceneData[frame % MAX_FRAME_COUNT].reset();
+
+    // m_assetLoader.clear(); TODO
 }
 
 void SceneManager::destroy(){
@@ -340,6 +386,7 @@ void SceneManager::destroy(){
 
 
     m_destroyed = true;
+    SprLog::info("[SceneManager] [destroy] destroyed...");
 }
 
 }
