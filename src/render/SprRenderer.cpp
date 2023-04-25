@@ -1,22 +1,24 @@
 #include "SprRenderer.h"
-#include "vulkan/resource/VulkanResourceManager.h"
 
+#include "../interface/Window.h"
+#include "../debug/SprLog.h"
+
+namespace spr {
+    class SprResourceManager;
+}
 
 namespace spr::gfx {
 
-SprRenderer::SprRenderer(Window* window){
+SprRenderer::SprRenderer(Window* window) : m_renderer(window), m_renderCoordinator(window){
     m_window = window;
     m_frameId = 0;
-
     // init renderer and resource manager
-    m_rm = VulkanResourceManager();
-    m_renderer = VulkanRenderer(window);
-    m_rm.init(m_renderer.getDevice());
+    m_rm.init(m_renderer.getDevice(), {window->width(), window->height(),1});
     m_renderer.init(&m_rm);
 
     // init render coordinator and scene manager
-    m_renderCoordinator = RenderCoordinator(window, &m_renderer, &m_rm);
-    m_sceneManager = SceneManager(m_rm);
+    m_renderCoordinator.init(&m_renderer, &m_rm);
+    m_sceneManager.init(m_rm);
 }
 
 SprRenderer::~SprRenderer(){
@@ -26,8 +28,10 @@ SprRenderer::~SprRenderer(){
     // begin teardown
     m_sceneManager.destroy();
     m_renderCoordinator.destroy();
-    m_renderer.destroy();
+    m_renderer.cleanup();
     m_rm.destroy();
+    m_renderer.destroy();
+    SprLog::info("[SprRenderer] [destroy] destroyed...");
 }
 
 
@@ -62,7 +66,7 @@ void SprRenderer::updateCamera(Camera& camera){
 
 
 void SprRenderer::loadAssets(SprResourceManager& rm){
-    m_sceneManager.initializeAssets(rm);
+    m_sceneManager.initializeAssets(rm, &m_renderer.getDevice());
     m_renderCoordinator.initRenderers(m_sceneManager);
 }
 

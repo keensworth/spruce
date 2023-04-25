@@ -1,13 +1,21 @@
 #pragma once
 
-#include "SceneManager.h"
 #include "spruce_core.h"
-#include "RenderCoordinator.h"
+#include "vulkan/resource/VulkanResourceManager.h"
 #include "vulkan/VulkanRenderer.h"
-#include "../interface/Window.h"
-#include "../resource/SprResourceManager.h"
+#include "SceneManager.h"
+#include "RenderCoordinator.h"
+
+namespace spr {
+    class Window;
+}
 
 namespace spr::gfx {
+    
+struct Transform;
+struct Light;
+struct Camera;
+
 class SprRenderer {
 public:
     SprRenderer(Window* window);
