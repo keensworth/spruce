@@ -1,5 +1,9 @@
 #include "DescriptorSetHandler.h"
-#include <vulkan/vulkan_core.h>
+#include "../../external/volk/volk.h"
+#include "resource/ResourceTypes.h"
+#include "../scene/Draw.h"
+#include "resource/VulkanResourceManager.h"
+#include "../../debug/SprLog.h"
 
 namespace spr::gfx {
 
@@ -15,7 +19,7 @@ DescriptorSetHandler::DescriptorSetHandler(VulkanResourceManager* rm, VkCommandB
 }
 
 DescriptorSetHandler::~DescriptorSetHandler(){
-
+    SprLog::info("[DescriptorSetHandler] [destroy] destroyed...");
 }
 
 void DescriptorSetHandler::set(uint32 set, Handle<DescriptorSet> handle){

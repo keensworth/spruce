@@ -1,11 +1,15 @@
 #pragma once
 
-#include <vulkan/vulkan_core.h>
-#include "resource/ResourceTypes.h"
-#include "../scene/Draw.h"
-#include "resource/VulkanResourceManager.h"
+#include "../../external/volk/volk.h"
+#include "../core/memory/Handle.h"
+
+namespace spr {
+}
 
 namespace spr::gfx{
+
+class VulkanResourceManager;
+struct DescriptorSet;
 
 class DescriptorSetHandler{
 public:
