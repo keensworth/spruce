@@ -1,13 +1,24 @@
 #include "CommandPool.h"
 #include "CommandBuffer.h"
-#include <vulkan/vulkan_core.h>
+#include "../../external/volk/volk.h"
+#include "RenderFrame.h"
+#include "VulkanDevice.h"
+#include "../../debug/SprLog.h"
 
 
 namespace spr::gfx {
 
 CommandPool::CommandPool(){}
 
-CommandPool::CommandPool(VulkanDevice& device, uint32 familyIndex, VulkanResourceManager* rm, RenderFrame& frame, uint32 frameIndex){
+CommandPool::~CommandPool(){
+    if (m_destroyed || !m_initialized)
+        return;
+    
+    SprLog::warn("[CommandPool] [~] Calling destroy() in destructor");
+    destroy();
+}
+
+void CommandPool::init(VulkanDevice& device, VulkanResourceManager* rm, uint32 familyIndex, uint32 frameIndex, RenderFrame &frame){
     m_device = &device;
     m_rm = rm;
     m_frameId = 0;
@@ -16,6 +27,7 @@ CommandPool::CommandPool(VulkanDevice& device, uint32 familyIndex, VulkanResourc
     // build command pool info and create command pool
     VkCommandPoolCreateInfo commandPoolInfo = {
         .sType            = VK_STRUCTURE_TYPE_COMMAND_POOL_CREATE_INFO,
+        .pNext            = NULL,
         .flags            = 0,
         .queueFamilyIndex = familyIndex
     };
@@ -32,65 +44,11 @@ CommandPool::CommandPool(VulkanDevice& device, uint32 familyIndex, VulkanResourc
     VK_CHECK(vkAllocateCommandBuffers(m_device->getDevice(), &cbAllocInfo, m_commandBuffers.data()));
 
     // distribute command buffers
-    m_transferCommandBuffer  = CommandBuffer(
-                                            device, 
-                                            CommandType::TRANSFER, 
-                                            m_commandBuffers[0], 
-                                            rm, 
-                                            m_device->getQueue(VulkanDevice::QueueType::TRANSFER),
-                                            frameIndex);
-    m_offscreenCommandBuffer = CommandBuffer(
-                                            device, 
-                                            CommandType::OFFSCREEN, 
-                                            m_commandBuffers[1], 
-                                            rm, 
-                                            m_device->getQueue(VulkanDevice::QueueType::GRAPHICS),
-                                            frameIndex);
-    m_mainCommandBuffer      = CommandBuffer(
-                                            device, 
-                                            CommandType::MAIN, 
-                                            m_commandBuffers[2], 
-                                            rm, 
-                                            m_device->getQueue(VulkanDevice::QueueType::GRAPHICS),
-                                            frameIndex);
+    m_transferCommandBuffer.init(device, rm, frameIndex, CommandType::TRANSFER, m_commandBuffers[0], m_device->getQueue(VulkanDevice::QueueType::TRANSFER));
+    m_offscreenCommandBuffer.init(device, rm, frameIndex, CommandType::OFFSCREEN, m_commandBuffers[1], m_device->getQueue(VulkanDevice::QueueType::GRAPHICS));
+    m_mainCommandBuffer.init(device, rm, frameIndex, CommandType::MAIN, m_commandBuffers[2], m_device->getQueue(VulkanDevice::QueueType::GRAPHICS));
     
-    // transfer wait/signal dependencies
-    std::vector<VkSemaphore> transferWaitSem = {
-        
-    };
-    std::vector<VkSemaphore> transferSignalSem = {
-        m_offscreenCommandBuffer.getSemaphore() 
-    };
-    
-    // offscreen wait/signal dependencies
-    std::vector<VkSemaphore> offscreenWaitSem = {
-        m_offscreenCommandBuffer.getSemaphore(), 
-        frame.acquiredSem 
-    };
-    std::vector<VkSemaphore> offscreenSignalSem = {
-        m_mainCommandBuffer.getSemaphore() 
-    };
-    
-    // main wait/signal dependencies
-    std::vector<VkSemaphore> mainWaitSem = {
-        m_mainCommandBuffer.getSemaphore() 
-    };
-    std::vector<VkSemaphore> mainSignalSem = {
-        frame.renderedSem
-    };
-
-    // set semaphore dependencies 
-    m_transferCommandBuffer.setSemaphoreDependencies(transferWaitSem, transferSignalSem);
-    m_offscreenCommandBuffer.setSemaphoreDependencies(offscreenWaitSem, offscreenSignalSem);
-    m_mainCommandBuffer.setSemaphoreDependencies(mainWaitSem, mainSignalSem);
-}
-
-CommandPool::~CommandPool(){
-    if (m_destroyed)
-        return;
-    
-    SprLog::warn("[CommandPool] [~] Calling destroy() in destructor");
-    destroy();
+    m_initialized = true;
 }
 
 void CommandPool::destroy(){
@@ -101,8 +59,8 @@ void CommandPool::destroy(){
 
     // teardown command pool (and VkCommandBuffers with it)
     vkDestroyCommandPool(m_device->getDevice(), m_commandPool, nullptr);
-
     m_destroyed = true;
+    SprLog::info("[CommandPool] [destroy] destroyed...");
 }
 
 CommandBuffer& CommandPool::getCommandBuffer(CommandType commandType){
