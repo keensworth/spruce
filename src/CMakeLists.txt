@@ -1,5 +1,5 @@
 
-find_package(Vulkan REQUIRED)
+
 add_library(srcFiles)
 
 
@@ -7,7 +7,10 @@ target_sources(srcFiles PRIVATE
   core/spruce_core.h
   core/memory/Handle.h
   core/memory/Pool.h
+  core/memory/TempBuffer.h
   core/util/Container.h
+  core/util/FunctionStack.h
+  core/util/FunctionQueue.h
   core/util/node/EntityNode.h
   core/util/node/EntityNode.cpp
   core/util/node/IndexNode.h
@@ -49,30 +52,54 @@ target_sources(srcFiles PRIVATE
   resource/ResourceCache.h
   resource/ResourceLoader.h
   resource/ResourceLoader.cpp
-  resource/ResourceManager.h
-  resource/ResourceManager.cpp
+  resource/SprResourceManager.h
+  resource/SprResourceManager.cpp
 
-  # render/util/BatchManager.cpp
-  # render/util/BatchManager.h
-  # render/RenderCoordinator.h
-  # render/SprRenderer.h
-  # render/util/BatchNode.cpp
-  # render/util/BatchNode.h
-  # render/vulkan/CommandBuffer.h
-  # render/vulkan/PipelineManager.h
-  # render/vulkan/RenderPassRenderer.h
-  # render/vulkan/SwapChain.h
-  # render/vulkan/VulkanDevice.cpp
-  # render/vulkan/VulkanDevice.h
-  # render/vulkan/VulkanDisplay.h
-  # render/vulkan/VulkanRenderer.h
-  # render/vulkan/resource/ResourceTypes.h
-  # render/vulkan/resource/VulkanResourceCache.h
-  # render/vulkan/resource/VulkanResourceManager.cpp
-  # render/vulkan/resource/VulkanResourceManager.h
-  # render/vulkan/vulkan_core.h
+  render/vulkan/gfx_vulkan_core.h
+  render/vulkan/VulkanDevice.h
+  render/vulkan/VulkanDevice.cpp
+  render/vulkan/VulkanDisplay.h
+  render/vulkan/VulkanDisplay.cpp
+  render/vulkan/CommandBuffer.h
+  render/vulkan/CommandBuffer.cpp
+  render/vulkan/CommandPool.h
+  render/vulkan/CommandPool.cpp
+  render/vulkan/resource/ResourceTypes.h
+  render/vulkan/resource/ResourceFlags.h
+  render/vulkan/resource/VulkanResourceCache.h
+  render/vulkan/resource/VulkanResourceManager.cpp
+  render/vulkan/resource/VulkanResourceManager.h
+  render/vulkan/RenderFrame.h
+  render/vulkan/VulkanRenderer.h
+  render/vulkan/VulkanRenderer.cpp
+  render/vulkan/StagingBufferBatch.h
+  render/vulkan/StagingBufferBatch.cpp
+  render/vulkan/GPUStreamer.h
+  render/vulkan/GPUStreamer.cpp
+  render/vulkan/UploadHandler.h
+  render/vulkan/UploadHandler.cpp
+  render/vulkan/DescriptorSetHandler.cpp
+  render/vulkan/DescriptorSetHandler.h
+  render/vulkan/RenderPassRenderer.h
+  render/vulkan/RenderPassRenderer.cpp
+  render/vulkan/FrameRenderer.h
+  render/scene/Material.h
+  render/scene/GfxAssetLoader.cpp
+  render/scene/Draw.h
+  render/scene/BatchNode.cpp
+  render/scene/GfxAssetLoader.h
+  render/scene/BatchNode.h
+  render/scene/SceneData.h
+  render/scene/BatchManager.h
+  render/scene/BatchManager.cpp
+  render/scene/Mesh.h
+  render/SceneManager.h
+  render/SceneManager.cpp
+  render/RenderCoordinator.h
+  render/RenderCoordinator.cpp
+  render/SprRenderer.h
+  render/SprRenderer.cpp
 )
-
 
 
 target_include_directories(srcFiles 
@@ -81,11 +108,12 @@ target_include_directories(srcFiles
   PUBLIC debug
   PUBLIC interface
   PUBLIC resource
+  PUBLIC render
+  PUBLIC external
 )
 
-
-target_link_libraries(srcFiles vkbootstrap vma glm tinyobjloader imgui stb_image oof)
-target_link_libraries(srcFiles Vulkan::Vulkan sdl2)
+target_link_libraries(srcFiles PUBLIC vkbootstrap vma glm volk tinyobjloader imgui stb_image oof)
+target_link_libraries(srcFiles PUBLIC  sdl2)
 target_compile_options(srcFiles PUBLIC)
 
 

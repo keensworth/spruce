@@ -13,7 +13,7 @@ endif()
 
 set(CMAKE_BUILD_TYPE_INIT "Release")
 
-set(CMAKE_CXX_FLAGS  "${CMAKE_CXX_FLAGS} -Wno-deprecated-volatile -Wno-unused-command-line-argument")
+set(CMAKE_CXX_FLAGS  "${CMAKE_CXX_FLAGS} -Wno-deprecated-volatile -Wno-unused-command-line-argument -Wno-nullability-completeness")
 
 # project command is required to come after cmake_minimum_required command.
 project(Spruce VERSION 0.0.1 LANGUAGES C CXX)
@@ -45,6 +45,13 @@ set(CMAKE_CXX_STANDARD 20)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
 
+
+# ------------------------------------------------------------------
+# third party
+# ------------------------------------------------------------------
+add_subdirectory(external)
+
+
 # ------------------------------------------------------------------
 # spruce library itself, including spruce-common
 # ------------------------------------------------------------------
@@ -53,13 +60,7 @@ set(BUILD_SHARED_LIBS ${SPRUCE_BUILD_SHARED}) # use 'SPRUCE_' naming convention
 add_subdirectory(src)
 add_executable(spruce main.cpp)
 target_link_libraries(spruce PUBLIC srcFiles)
-target_compile_options(spruce PUBLIC -lSDL2 -lSDL -std=c++20 -I/usr/include/SDL2)
-
-
-# ------------------------------------------------------------------
-# third party
-# ------------------------------------------------------------------
-add_subdirectory(external)
+target_compile_options(spruce PUBLIC -g -lSDL2 -lSDL -std=c++20 -I/usr/include/SDL2)
 
 
 # ------------------------------------------------------------------

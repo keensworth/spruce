@@ -1,20 +1,21 @@
-find_package(Vulkan REQUIRED)
+# find_package(Vulkan REQUIRED)
 
 add_library(vkbootstrap STATIC)
 add_library(glm INTERFACE)
 add_library(vma INTERFACE)
-
 add_library(stb_image INTERFACE)
-
 add_library(tinyobjloader STATIC)
-
 add_library(flathashmap INTERFACE)
-
 add_library(json INTERFACE)
-
 add_library(tinygltf STATIC)
-
 add_library(oof INTERFACE)
+
+if(UNIX)
+  set(VOLK_STATIC_DEFINES "VK_USE_PLATFORM_XLIB_KHR")
+elseif(WIN32)
+  set(VOLK_STATIC_DEFINES "VK_USE_PLATFORM_WIN32_KHR")
+endif()
+add_subdirectory(volk)
 
 target_sources(vkbootstrap PRIVATE 
   vkbootstrap/VkBootstrap.h
@@ -27,17 +28,19 @@ target_sources(tinygltf PRIVATE
   )
 
 target_include_directories(vkbootstrap PUBLIC vkbootstrap)
-target_link_libraries(vkbootstrap PUBLIC Vulkan::Vulkan $<$<BOOL:UNIX>:${CMAKE_DL_LIBS}>)
+target_link_libraries(vkbootstrap PUBLIC volk $<$<BOOL:UNIX>:${CMAKE_DL_LIBS}>)
 
 target_include_directories(flathashmap INTERFACE flathashmap)
 target_include_directories(json INTERFACE json)
 target_include_directories(oof INTERFACE oof)
-
+target_include_directories(vma INTERFACE vma)
 target_include_directories(tinygltf PUBLIC tinygltf)
 target_link_libraries(tinygltf PUBLIC json stb_image)
 
+
+
 #both vma and glm and header only libs so we only need the include path
-target_include_directories(vma INTERFACE vma)
+# target_include_directories(vma INTERFACE vma)
 target_include_directories(glm INTERFACE glm)
 target_compile_options(glm INTERFACE)
 
@@ -78,6 +81,6 @@ target_sources(imgui PRIVATE
   imgui/imgui_impl_sdl.cpp
   )
 
-target_link_libraries(imgui PUBLIC Vulkan::Vulkan -lSDL2 sdl2)
+target_link_libraries(imgui PUBLIC volk -lSDL2 sdl2)
 
 target_include_directories(stb_image INTERFACE stb_image)
