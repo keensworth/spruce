@@ -1,18 +1,24 @@
 #pragma once
 
-#include "SceneManager.h"
-#include "vulkan/VulkanRenderer.h"
-#include "vulkan/resource/VulkanResourceManager.h"
 #include "vulkan/FrameRenderer.h"
 
+namespace spr {
+    class Window;
+}
 
 namespace spr::gfx{
+
+class VulkanResourceManager;
+class VulkanRenderer;
+class SceneManager;
 
 class RenderCoordinator{
 public:
     RenderCoordinator();
-    RenderCoordinator(Window* window, VulkanRenderer* renderer, VulkanResourceManager* rm);
+    RenderCoordinator(Window* window);
     ~RenderCoordinator();
+
+    void init(VulkanRenderer* renderer, VulkanResourceManager* rm);
 
     void initRenderers(SceneManager& sceneManager);
     void render(SceneManager& sceneManager);

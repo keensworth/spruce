@@ -1,19 +1,24 @@
 #include "RenderCoordinator.h"
 #include "vulkan/FrameRenderer.h"
 #include "vulkan/resource/ResourceTypes.h"
+#include "SceneManager.h"
+#include "../interface/Window.h"
 
 namespace spr::gfx {
 
 RenderCoordinator::RenderCoordinator(){}
-RenderCoordinator::RenderCoordinator(Window* window, VulkanRenderer* renderer, VulkanResourceManager* rm){
+RenderCoordinator::RenderCoordinator(Window* window){
     m_window = window;
-    m_rm = rm;
-    m_renderer = renderer;
     m_frameId = 0;
 }
 
 RenderCoordinator::~RenderCoordinator(){
+    SprLog::info("[RenderCoordinator] [destroy] destroyed...");
+}
 
+void RenderCoordinator::init(VulkanRenderer* renderer, VulkanResourceManager* rm){
+    m_rm = rm;
+    m_renderer = renderer;
 }
 
 
@@ -21,8 +26,6 @@ void RenderCoordinator::render(SceneManager& sceneManager){
     // begin frame
     RenderFrame& frame = m_renderer->beginFrame(m_rm);
     BatchManager& batchManager = sceneManager.getBatchManager(m_frameId);
-
-    // upload scene data
     uploadSceneData(sceneManager);
 
     // offscreen renderpasses
@@ -39,6 +42,7 @@ void RenderCoordinator::render(SceneManager& sceneManager){
 
     // render to swapchain image
     CommandBuffer& mainCB = m_renderer->beginGraphicsCommands(CommandType::MAIN);
+    mainCB.bindIndexBuffer(sceneManager.getIndexBuffer());
     {
         m_frameRenderer.render(mainCB, batchManager);
     }
@@ -53,13 +57,13 @@ void RenderCoordinator::render(SceneManager& sceneManager){
 void RenderCoordinator::uploadSceneData(SceneManager& sceneManager){
     UploadHandler& uploadHandler = m_renderer->beginTransferCommands();
 
-    // global frame resources
+    // global
     if (!m_sceneInitialized){
-        m_sceneInitialized = true;   
+        m_sceneInitialized = true;
         sceneManager.uploadGlobalResources(uploadHandler);
     }
 
-    // per-frame scene resources
+    // per-frame
     sceneManager.uploadPerFrameResources(uploadHandler, m_frameId);
 
     uploadHandler.submit();
@@ -67,13 +71,13 @@ void RenderCoordinator::uploadSceneData(SceneManager& sceneManager){
 
 void RenderCoordinator::initRenderers(SceneManager& sceneManager){
     // setup renderers
-    glm::uvec3 windowDim = {m_window->height(), m_window->width(), 1};
+    glm::uvec3 windowDim = {m_window->width(), m_window->height(), 1};
 
     // swapchain renderer
     m_frameRenderer = FrameRenderer(*m_rm, *m_renderer, windowDim);
     m_frameRenderer.init(
         m_renderer->getDisplay().getImageViews(), 
-        Handle<TextureAttachment>(), 
+        Handle<TextureAttachment>(),
         sceneManager.getGlobalDescriptorSet(),
         sceneManager.getGlobalDescriptorSetLayout());
 }
