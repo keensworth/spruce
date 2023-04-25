@@ -2,6 +2,11 @@
 #include "SDL_stdinc.h"
 #include <string>
 
+#include "../../external/volk/volk.h"
+
+#define VK_NO_PROTOTYPES
+#include <SDL2/SDL_vulkan.h>
+
 namespace spr {
 Window::Window(){
     m_title = "Spruce Application";
