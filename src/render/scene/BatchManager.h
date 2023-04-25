@@ -3,8 +3,6 @@
 #include <vector>
 #include "spruce_core.h"
 #include "BatchNode.h"
-#include "Material.h"
-#include "Draw.h"
 
 namespace spr::gfx {
 

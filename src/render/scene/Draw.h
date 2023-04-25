@@ -6,14 +6,14 @@
 
 namespace spr::gfx {
 
-typedef struct {
+typedef struct DrawData {
     uint32 vertexOffset;
     uint32 materialIndex;
     uint32 transformIndex;
     uint32 padding;
 } DrawData;
 
-typedef struct {
+typedef struct Batch {
     uint32 meshId;
     uint32 materialFlags;
     uint32 indexCount;
@@ -22,7 +22,7 @@ typedef struct {
     uint32 drawCount;
 } Batch;
 
-typedef struct {
+typedef struct DrawBatch {
     Batch batch;
     std::vector<DrawData> draws;
 } DrawBatch;

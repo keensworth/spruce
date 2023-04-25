@@ -1,6 +1,7 @@
 #include "BatchManager.h"
 #include "BatchNode.h"
 #include "Draw.h"
+#include "Material.h"
 
 namespace spr::gfx {
 
@@ -43,13 +44,11 @@ void BatchManager::setQuadInfo(Batch quadBatch, uint32 quadVertexOffset){
 }
 
 void BatchManager::reset(){
-    m_batches.~BatchNode();
     m_batches = BatchNode();
     m_drawCount = 0;
 }
 
 void BatchManager::destroy(){
-    m_batches.~BatchNode();
 }
 
 }
