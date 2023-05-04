@@ -1,5 +1,5 @@
 {
-    "date": "14-03-2023 23:15:35",
+    "date": "15-04-2023 06:28:16",
     "modelCount": 3,
     "models": [
         {
@@ -11,32 +11,44 @@
         {
             "id": 9,
             "name": "Triangle",
-            "sizeBytes": 42,
+            "sizeBytes": 138,
             "type": "SPR_MODEL"
         },
         {
             "id": 1,
             "name": "Duck",
-            "sizeBytes": 1284960,
+            "sizeBytes": 1208192,
             "type": "SPR_MODEL"
         }
     ],
-    "nonSubresourceTextureCount": 1,
+    "nonSubresourceTextureCount": 3,
     "nonSubresourceTextures": [
         {
+            "id": 24,
+            "name": "default_input_white",
+            "sizeBytes": 4,
+            "type": "SPR_TEXTURE"
+        },
+        {
             "id": 20,
-            "name": "default_texture",
-            "sizeBytes": 3145728,
+            "name": "default_color",
+            "sizeBytes": 4194304,
+            "type": "SPR_TEXTURE"
+        },
+        {
+            "id": 22,
+            "name": "default_input_black",
+            "sizeBytes": 4,
             "type": "SPR_TEXTURE"
         }
     ],
-    "sizeBytes": 4462778,
-    "subresourceCount": 17,
+    "sizeBytes": 5434690,
+    "subresourceCount": 19,
     "subresources": [
         {
             "id": 8,
             "name": "Duck_6",
-            "sizeBytes": 153536,
+            "sizeBytes": 76768,
             "type": "SPR_BUFFER"
         },
         {
@@ -48,7 +60,7 @@
         {
             "id": 2,
             "name": "Duck_1",
-            "sizeBytes": 1284960,
+            "sizeBytes": 1208192,
             "type": "SPR_MESH"
         },
         {
@@ -58,9 +70,15 @@
             "type": "SPR_BUFFER"
         },
         {
+            "id": 23,
+            "name": "default_input_black_1",
+            "sizeBytes": 4,
+            "type": "SPR_BUFFER"
+        },
+        {
             "id": 10,
             "name": "Triangle_1",
-            "sizeBytes": 42,
+            "sizeBytes": 138,
             "type": "SPR_MESH"
         },
         {
@@ -68,12 +86,6 @@
             "name": "default_model_1",
             "sizeBytes": 32048,
             "type": "SPR_MESH"
-        },
-        {
-            "id": 21,
-            "name": "default_texture_1",
-            "sizeBytes": 3145728,
-            "type": "SPR_BUFFER"
         },
         {
             "id": 18,
@@ -96,7 +108,7 @@
         {
             "id": 13,
             "name": "Triangle_4",
-            "sizeBytes": 0,
+            "sizeBytes": 96,
             "type": "SPR_BUFFER"
         },
         {
@@ -118,9 +130,21 @@
             "type": "SPR_BUFFER"
         },
         {
+            "id": 21,
+            "name": "default_color_1",
+            "sizeBytes": 4194304,
+            "type": "SPR_BUFFER"
+        },
+        {
             "id": 19,
             "name": "default_model_6",
             "sizeBytes": 21440,
+            "type": "SPR_BUFFER"
+        },
+        {
+            "id": 25,
+            "name": "default_input_white_1",
+            "sizeBytes": 4,
             "type": "SPR_BUFFER"
         },
         {
