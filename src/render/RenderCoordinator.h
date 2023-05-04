@@ -1,6 +1,7 @@
 #pragma once
 
 #include "vulkan/FrameRenderer.h"
+#include "renderers/TestRenderer.h"
 
 namespace spr {
     class Window;
@@ -42,5 +43,6 @@ private:
     FrameRenderer m_frameRenderer;
 
     // OFFSCREEN renderers
+    TestRenderer m_testRenderer;
 };
 }

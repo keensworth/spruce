@@ -48,22 +48,21 @@ public:
             }
         });
 
-        // SprLog::debug("[FrameRenderer] [init] creating DescriptorSetLayout");
-        // // descriptor set layout
-        // m_descriptorSetLayout = m_rm->create<DescriptorSetLayout>(DescriptorSetLayoutDesc{
-        //     .textures = {
-        //         {.binding = 0}
-        //     }
-        // });
+        // descriptor set layout
+        m_descriptorSetLayout = m_rm->create<DescriptorSetLayout>(DescriptorSetLayoutDesc{
+            .textures = {
+                {.binding = 0}
+            }
+        });
 
         // shader
         m_shader = m_rm->create<Shader>(ShaderDesc{
-            .vertexShader = {.path = "../data/shaders/test.vert.spv"},
-            .fragmentShader = {.path = "../data/shaders/test.frag.spv"},
+            .vertexShader = {.path = "../data/shaders/copy.vert.spv"},
+            .fragmentShader = {.path = "../data/shaders/copy.frag.spv"},
             .descriptorSets = {
                 { globalDescSetLayout },
                 { }, // unused
-                { },//m_descriptorSetLayout },
+                { m_descriptorSetLayout },
                 { } // unused
             },
             .graphicsState = {
@@ -71,14 +70,13 @@ public:
             }
         });
 
-        // SprLog::debug("[FrameRenderer] [init] DescriptorSet");
-        // // descriptor set
-        // m_descriptorSet = m_rm->create<DescriptorSet>(DescriptorSetDesc{
-        //     .textures = {
-        //         {.attachment = input}
-        //     },
-        //     .layout = m_descriptorSetLayout
-        // });
+        // descriptor set
+        m_descriptorSet = m_rm->create<DescriptorSet>(DescriptorSetDesc{
+            .textures = {
+                {.attachment = input}
+            },
+            .layout = m_descriptorSetLayout
+        });
 
     }
 
@@ -89,9 +87,8 @@ public:
         passRenderer.drawSubpass({
             .shader = m_shader,
             .set0 =  m_globalDescriptorSet,
-            },//.set2 = m_descriptorSet}, 
-            batchManager.getQuadBatch(),
-            0);//batchManager.getQuadVertexOffset());
+            .set2 = m_descriptorSet}, 
+            batchManager.getQuadBatch(), 0);
 
         cb.endRenderPass();
     }
@@ -103,8 +100,8 @@ public:
 
     void destroy(){
         m_rm->remove<Shader>(m_shader);
-        //m_rm->remove<DescriptorSetLayout>(m_descriptorSetLayout);
-        //m_rm->remove<DescriptorSet>(m_descriptorSet);
+        m_rm->remove<DescriptorSetLayout>(m_descriptorSetLayout);
+        m_rm->remove<DescriptorSet>(m_descriptorSet);
         m_rm->remove<RenderPass>(m_renderPass);
         m_rm->remove<RenderPassLayout>(m_renderPassLayout);
         SprLog::info("[FrameRenderer] [destroy] destroyed...");
@@ -113,8 +110,8 @@ public:
 private: // owning
     Handle<RenderPassLayout> m_renderPassLayout;
     Handle<RenderPass> m_renderPass;
-    //Handle<DescriptorSetLayout> m_descriptorSetLayout;
-    //Handle<DescriptorSet> m_descriptorSet;
+    Handle<DescriptorSetLayout> m_descriptorSetLayout;
+    Handle<DescriptorSet> m_descriptorSet;
     Handle<Shader> m_shader;
 
 private: // non-owning

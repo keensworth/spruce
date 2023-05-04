@@ -32,11 +32,7 @@ void RenderCoordinator::render(SceneManager& sceneManager){
     CommandBuffer& offscreenCB = m_renderer->beginGraphicsCommands(CommandType::OFFSCREEN);
     offscreenCB.bindIndexBuffer(sceneManager.getIndexBuffer());
     {
-        // PASS 1
-        // PASS 2
-        // PASS 3
-        // ...
-        // PASS N
+        m_testRenderer.render(offscreenCB, batchManager);
     }
     offscreenCB.submit();
 
@@ -73,13 +69,22 @@ void RenderCoordinator::initRenderers(SceneManager& sceneManager){
     // setup renderers
     glm::uvec3 windowDim = {m_window->width(), m_window->height(), 1};
 
+    m_testRenderer = TestRenderer(*m_rm, *m_renderer, windowDim);
+    m_testRenderer.init(
+        sceneManager.getGlobalDescriptorSet(),
+        sceneManager.getGlobalDescriptorSetLayout(),
+        sceneManager.getPerFrameDescriptorSets(),
+        sceneManager.getPerFrameDescriptorSetLayout());
+
     // swapchain renderer
     m_frameRenderer = FrameRenderer(*m_rm, *m_renderer, windowDim);
     m_frameRenderer.init(
         m_renderer->getDisplay().getImageViews(), 
-        Handle<TextureAttachment>(),
+        m_testRenderer.getAttachment(),
         sceneManager.getGlobalDescriptorSet(),
         sceneManager.getGlobalDescriptorSetLayout());
+
+    
 }
 
 
@@ -96,6 +101,7 @@ void RenderCoordinator::onResize(){
 void RenderCoordinator::destroy(){
     // teardown renderers
     m_frameRenderer.destroy();
+    m_testRenderer.destroy();
 }
 
 }

@@ -106,8 +106,12 @@ Handle<DescriptorSet> SceneManager::getPerFrameDescriptorSet(uint32 frame){
     return m_frameDescriptorSets[frame % MAX_FRAME_COUNT];
 }
 
-Handle<DescriptorSetLayout> SceneManager::getPerFrameDescriptorSetLayout(uint32 frame){
-    return m_frameDescriptorSetLayouts[frame % MAX_FRAME_COUNT];
+Handle<DescriptorSet>* SceneManager::getPerFrameDescriptorSets(){
+    return m_frameDescriptorSets;
+}
+
+Handle<DescriptorSetLayout> SceneManager::getPerFrameDescriptorSetLayout(){
+    return m_frameDescriptorSetLayout;
 }
 
 Handle<Buffer> SceneManager::getIndexBuffer(){
@@ -120,20 +124,13 @@ BatchManager& SceneManager::getBatchManager(uint32 frame) {
 
 
 void SceneManager::initializeAssets(SprResourceManager &rm, VulkanDevice* device){
-    SprLog::debug("[SceneManager] initializing...");
     m_meshInfo = m_assetLoader.loadAssets(rm);
-    SprLog::debug("[SceneManager] loaded w/ asset loader");
 
     PrimitiveCounts counts = m_assetLoader.getPrimitiveCounts();
 
     initTextures(counts.textureCount);
-    SprLog::debug("[SceneManager] textures initialized");
-
     initBuffers(counts, device);
-    SprLog::debug("[SceneManager] buffers initialized");
-    
     initDescriptorSets(device);
-    SprLog::debug("[SceneManager] descriptor sets initialized");
     
     for (uint32 i = 0; i < MAX_FRAME_COUNT; i++){
         m_batchManagers[i].setQuadInfo({
@@ -142,7 +139,6 @@ void SceneManager::initializeAssets(SprResourceManager &rm, VulkanDevice* device
             .drawCount = 1
         }, m_meshInfo[1].vertexOffset);
     }
-    SprLog::debug("[SceneManager] INITIALIZED");
 }
 
 void SceneManager::initBuffers(PrimitiveCounts counts, VulkanDevice* device){
@@ -153,7 +149,6 @@ void SceneManager::initBuffers(PrimitiveCounts counts, VulkanDevice* device){
                  Flags::BufferUsage::BU_TRANSFER_DST,
         .memType = DEVICE | HOST
     });
-    SprLog::debug("[SceneManager] [initBuffers] m_lightsBuffer created");
 
     m_transformBuffer = m_rm->create<Buffer>(BufferDesc{
         .byteSize = (uint32) (MAX_DRAWS * MAX_FRAME_COUNT * sizeof(Transform)),
@@ -161,7 +156,6 @@ void SceneManager::initBuffers(PrimitiveCounts counts, VulkanDevice* device){
                  Flags::BufferUsage::BU_TRANSFER_DST,
         .memType = DEVICE | HOST
     });
-    SprLog::debug("[SceneManager] [initBuffers] m_transformBuffer created");
 
     m_drawDataBuffer = m_rm->create<Buffer>(BufferDesc{
         .byteSize = (uint32) (MAX_DRAWS * MAX_FRAME_COUNT * sizeof(DrawData)),
@@ -169,7 +163,6 @@ void SceneManager::initBuffers(PrimitiveCounts counts, VulkanDevice* device){
                  Flags::BufferUsage::BU_TRANSFER_DST,
         .memType = DEVICE | HOST
     });
-    SprLog::debug("[SceneManager] [initBuffers] m_drawDataBuffer created");
 
     m_cameraBuffer = m_rm->create<Buffer>(BufferDesc{
         .byteSize = (uint32) (MAX_FRAME_COUNT * sizeof(Camera)),
@@ -177,7 +170,6 @@ void SceneManager::initBuffers(PrimitiveCounts counts, VulkanDevice* device){
                  Flags::BufferUsage::BU_TRANSFER_DST,
         .memType = DEVICE | HOST
     });
-    SprLog::debug("[SceneManager] [initBuffers] m_cameraBuffer created");
 
     m_sceneBuffer = m_rm->create<Buffer>(BufferDesc{
         .byteSize = (uint32) (MAX_FRAME_COUNT * sizeof(Scene)),
@@ -185,7 +177,6 @@ void SceneManager::initBuffers(PrimitiveCounts counts, VulkanDevice* device){
                  Flags::BufferUsage::BU_TRANSFER_DST,
         .memType = DEVICE | HOST
     });
-    SprLog::debug("[SceneManager] [initBuffers] m_sceneBuffer created");
 
     // global resource handles
     m_positionsBuffer = m_rm->create<Buffer>(BufferDesc{
@@ -194,7 +185,6 @@ void SceneManager::initBuffers(PrimitiveCounts counts, VulkanDevice* device){
                  Flags::BufferUsage::BU_TRANSFER_DST,
         .memType = DEVICE
     });
-    SprLog::debug("[SceneManager] [initBuffers] m_positionsBuffer created");
 
     m_attributesBuffer = m_rm->create<Buffer>(BufferDesc{
         .byteSize = (uint32) (counts.vertexCount * sizeof(VertexAttributes)),
@@ -202,7 +192,6 @@ void SceneManager::initBuffers(PrimitiveCounts counts, VulkanDevice* device){
                  Flags::BufferUsage::BU_TRANSFER_DST,
         .memType = DEVICE
     });
-    SprLog::debug("[SceneManager] [initBuffers] m_attributesBuffer created");
     
     m_indexBuffer = m_rm->create<Buffer>(BufferDesc{
         .byteSize = (uint32) (counts.indexCount * sizeof(uint16)),
@@ -210,7 +199,6 @@ void SceneManager::initBuffers(PrimitiveCounts counts, VulkanDevice* device){
                  Flags::BufferUsage::BU_TRANSFER_DST,
         .memType = DEVICE
     });
-    SprLog::debug("[SceneManager] [initBuffers] m_indexBuffer created");
 
     m_materialsBuffer = m_rm->create<Buffer>(BufferDesc{
         .byteSize = (uint32) (counts.materialCount * sizeof(MaterialData)),
@@ -218,14 +206,12 @@ void SceneManager::initBuffers(PrimitiveCounts counts, VulkanDevice* device){
                  Flags::BufferUsage::BU_TRANSFER_DST,
         .memType = DEVICE
     });
-    SprLog::debug("[SceneManager] [initBuffers] m_materialsBuffer created");
 }
 
 void SceneManager::initTextures(uint32 textureCount){
     m_textures.resize(textureCount);
     
     std::vector<TextureInfo>& textureData = m_assetLoader.getTextureData();
-    SprLog::debug("[SceneManager] [initTextures] creating textures, count: " + std::to_string(textureData.size()));
 
     for (uint32 i = 0; i < textureCount; i++){
         TextureInfo& info = textureData[i];
@@ -245,9 +231,6 @@ void SceneManager::initTextures(uint32 textureCount){
                                : Flags::Format::RGBA8_UNORM;
         }
         
-        SprLog::debug("[SceneManager] [initTextures] creating texture, srgb: " + std::to_string(info.srgb));
-        SprLog::debug("[SceneManager] [initTextures]                  width: " + std::to_string(info.width));
-        SprLog::debug("[SceneManager] [initTextures]                 height: " + std::to_string(info.height));
         m_textures[i] = m_rm->create<Texture>(TextureDesc{
             .dimensions = {
                 info.width,
@@ -258,16 +241,10 @@ void SceneManager::initTextures(uint32 textureCount){
             .usage = Flags::ImageUsage::IU_SAMPLED |
                      Flags::ImageUsage::IU_TRANSFER_DST
         });
-        SprLog::debug("[SceneManager] [initTextures] texture created");
     }
 }
 
 void SceneManager::initDescriptorSets(VulkanDevice* device){
-    SprLog::debug("[SceneManager] [initDescriptorSets] Beginning initialization");
-    Buffer* buffffffer = m_rm->get<Buffer>(m_positionsBuffer);
-    VkMemoryRequirements memRequirements;
-    vkGetBufferMemoryRequirements(device->getDevice(), buffffffer->buffer, &memRequirements);
-    SprLog::debug("[SceneManager] [initDescriptorSets]         memreq: " + std::to_string(memRequirements.alignment));
     // global (set = 0)
     m_globalDescriptorSetLayout = m_rm->create<DescriptorSetLayout>(DescriptorSetLayoutDesc{
         .textures = {
@@ -279,7 +256,6 @@ void SceneManager::initDescriptorSets(VulkanDevice* device){
             {.binding = 2, .type = Flags::DescriptorType::STORAGE_BUFFER}
         }
     });
-    SprLog::debug("[SceneManager] [initDescriptorSets] global desc set layout created");
     m_globalDescriptorSet = m_rm->create<DescriptorSet>(DescriptorSetDesc{
         .textures = {
             {.textures = m_textures}
@@ -291,37 +267,33 @@ void SceneManager::initDescriptorSets(VulkanDevice* device){
         },
         .layout = m_globalDescriptorSetLayout
     });
-    SprLog::debug("[SceneManager] [initDescriptorSets] global desc set created");
     // per-frame (set = 1)
+    m_frameDescriptorSetLayout = m_rm->create<DescriptorSetLayout>(DescriptorSetLayoutDesc{
+        .buffers = {
+            {.binding = 0, .type = Flags::DescriptorType::STORAGE_BUFFER},
+            {.binding = 1, .type = Flags::DescriptorType::STORAGE_BUFFER},
+            {.binding = 2, .type = Flags::DescriptorType::STORAGE_BUFFER},
+            {.binding = 3, .type = Flags::DescriptorType::STORAGE_BUFFER},
+            {.binding = 4, .type = Flags::DescriptorType::STORAGE_BUFFER}
+        }
+    });
     for (uint32 i = 0; i < MAX_FRAME_COUNT; i++){
-        m_frameDescriptorSetLayouts[i] = m_rm->create<DescriptorSetLayout>(DescriptorSetLayoutDesc{
-            .buffers = {
-                {.binding = 0, .type = Flags::DescriptorType::STORAGE_BUFFER},
-                {.binding = 1, .type = Flags::DescriptorType::STORAGE_BUFFER},
-                {.binding = 2, .type = Flags::DescriptorType::STORAGE_BUFFER},
-                {.binding = 3, .type = Flags::DescriptorType::STORAGE_BUFFER},
-                {.binding = 4, .type = Flags::DescriptorType::STORAGE_BUFFER}
-            }
-        });
-        SprLog::debug("[SceneManager] [initDescriptorSets] frame desc set layout created");
+        
         Buffer* scene = m_rm->get<Buffer>(m_sceneBuffer);
         Buffer* cameras = m_rm->get<Buffer>(m_cameraBuffer);
         Buffer* lights = m_rm->get<Buffer>(m_lightsBuffer);
         Buffer* transforms = m_rm->get<Buffer>(m_transformBuffer);
         Buffer* draws = m_rm->get<Buffer>(m_drawDataBuffer);
-        SprLog::debug("[SceneManager] [initDescriptorSets] got buffers");
         uint32 sceneFrameSize = ((scene->byteSize)/MAX_FRAME_COUNT);
         uint32 camerasFrameSize = ((cameras->byteSize)/MAX_FRAME_COUNT);
         uint32 lightsFrameSize = ((lights->byteSize)/MAX_FRAME_COUNT);
         uint32 transformsFrameSize = ((transforms->byteSize)/MAX_FRAME_COUNT);
         uint32 drawsFrameSize = ((draws->byteSize)/MAX_FRAME_COUNT);
-        SprLog::debug("[SceneManager] [initDescriptorSets] got framed sizes");
         uint32 sceneOffset = i*sceneFrameSize;
         uint32 camerasOffset = i*camerasFrameSize;
         uint32 lightsOffset = i*lightsFrameSize;
         uint32 transformsOffset = i*transformsFrameSize;
         uint32 drawsOffset = i*drawsFrameSize;
-        SprLog::debug("[SceneManager] [initDescriptorSets] got offsets");
         m_frameDescriptorSets[i] = m_rm->create<DescriptorSet>(DescriptorSetDesc{
             .buffers = {
                 {.buffer = m_sceneBuffer, .byteOffset = sceneOffset, .byteSize = sceneFrameSize},
@@ -330,9 +302,8 @@ void SceneManager::initDescriptorSets(VulkanDevice* device){
                 {.buffer = m_transformBuffer, .byteOffset = transformsOffset, .byteSize = transformsFrameSize},
                 {.buffer = m_drawDataBuffer, .byteOffset = drawsOffset, .byteSize = drawsFrameSize}
             },
-            .layout = m_frameDescriptorSetLayouts[i]
+            .layout = m_frameDescriptorSetLayout
         });
-        SprLog::debug("[SceneManager] [initDescriptorSets] frame desc set created");
     }
 }
 
@@ -350,9 +321,8 @@ void SceneManager::reset(uint32 frame) {
 
 void SceneManager::destroy(){
     // destroy per-frame batch managers
-    for (uint32 i = 0; i < MAX_FRAME_COUNT; i++){
+    for (uint32 i = 0; i < MAX_FRAME_COUNT; i++)
         m_batchManagers[i].destroy();
-    }
 
     // destroy per-frame tempbuffers
     for (uint32 i = 0; i < MAX_FRAME_COUNT; i++){
@@ -369,11 +339,10 @@ void SceneManager::destroy(){
     m_rm->remove<Buffer>(m_drawDataBuffer);
     m_rm->remove<Buffer>(m_cameraBuffer);
     m_rm->remove<Buffer>(m_sceneBuffer);
-    for (uint32 i = 0; i < MAX_FRAME_COUNT; i++){
-        m_rm->remove<DescriptorSetLayout>(m_frameDescriptorSetLayouts[i]);
+    for (uint32 i = 0; i < MAX_FRAME_COUNT; i++)
         m_rm->remove<DescriptorSet>(m_frameDescriptorSets[i]);
-    }
-
+    m_rm->remove<DescriptorSetLayout>(m_frameDescriptorSetLayout);
+    
     // destroy global resources
     m_rm->remove<Buffer>(m_positionsBuffer);
     m_rm->remove<Buffer>(m_attributesBuffer);
@@ -381,10 +350,9 @@ void SceneManager::destroy(){
     m_rm->remove<Buffer>(m_materialsBuffer);
     for (Handle<Texture> texture : m_textures)
         m_rm->remove<Texture>(texture);
-    m_rm->remove<DescriptorSetLayout>(m_globalDescriptorSetLayout);
     m_rm->remove<DescriptorSet>(m_globalDescriptorSet);
-
-
+    m_rm->remove<DescriptorSetLayout>(m_globalDescriptorSetLayout);
+    
     m_destroyed = true;
     SprLog::info("[SceneManager] [destroy] destroyed...");
 }

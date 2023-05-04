@@ -39,8 +39,8 @@ public:
     Handle<DescriptorSet> getGlobalDescriptorSet();
     Handle<DescriptorSetLayout> getGlobalDescriptorSetLayout();
     Handle<DescriptorSet> getPerFrameDescriptorSet(uint32 frame);
-    Handle<DescriptorSetLayout> getPerFrameDescriptorSetLayout(uint32 frame);
-
+    Handle<DescriptorSet>* getPerFrameDescriptorSets();
+    Handle<DescriptorSetLayout> getPerFrameDescriptorSetLayout();
     Handle<Buffer> getIndexBuffer();
 
     void uploadGlobalResources(UploadHandler& uploadHandler);
@@ -69,7 +69,7 @@ private: // owning
     Handle<Buffer> m_drawDataBuffer;
     Handle<Buffer> m_cameraBuffer;
     Handle<Buffer> m_sceneBuffer;
-    Handle<DescriptorSetLayout> m_frameDescriptorSetLayouts[MAX_FRAME_COUNT];
+    Handle<DescriptorSetLayout> m_frameDescriptorSetLayout;
     Handle<DescriptorSet> m_frameDescriptorSets[MAX_FRAME_COUNT];
 
     // global resource handles
