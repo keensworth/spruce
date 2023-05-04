@@ -62,58 +62,42 @@ VulkanRenderer::~VulkanRenderer(){
 }
 
 void VulkanRenderer::init(VulkanResourceManager *rm){
-    // create command pools (1/frame/queue family)
     QueueFamilies queueFamilies = m_device.getQueueFamilies();
     uint32 graphicsFamilyIndex = queueFamilies.graphicsFamilyIndex.has_value() ? queueFamilies.graphicsFamilyIndex.value() : 0;
     uint32 transferFamilyIndex = queueFamilies.transferFamilyIndex.has_value() ? queueFamilies.transferFamilyIndex.value() : 0;
+
+    // create command pools (1 for each queue family, per frame)
     for (uint32 frameIndex = 0; frameIndex < MAX_FRAME_COUNT; frameIndex++){
         // graphics queue command pools
-        m_commandPools[frameIndex].init(m_device, rm, graphicsFamilyIndex, frameIndex, m_frames[frameIndex]);
+        m_gfxCommandPools[frameIndex].init(m_device, rm, graphicsFamilyIndex, frameIndex, m_frames[frameIndex]);
 
         // additional transfer queue command pools (if applicable)
         m_transferCommandPools[frameIndex].init(m_device, rm, transferFamilyIndex, frameIndex, m_frames[frameIndex]);
 
         // setup semaphore dependencies between them
-        CommandBuffer& offscreenCB = m_commandPools[frameIndex].getCommandBuffer(CommandType::OFFSCREEN);
-        CommandBuffer& mainCB = m_commandPools[frameIndex].getCommandBuffer(CommandType::MAIN);
+        CommandBuffer& offscreenCB = m_gfxCommandPools[frameIndex].getCommandBuffer(CommandType::OFFSCREEN);
+        CommandBuffer& mainCB = m_gfxCommandPools[frameIndex].getCommandBuffer(CommandType::MAIN);
         CommandBuffer& transferCB = m_transferCommandPools[frameIndex].getCommandBuffer(CommandType::TRANSFER);
 
-        // transfer wait/signal dependencies
-        std::vector<VkSemaphore> transferWaitSem = {
-            
-        };
-        std::vector<VkSemaphore> transferSignalSem = {
-            offscreenCB.getSemaphore() 
-        };
-        
-        // offscreen wait/signal dependencies
-        std::vector<VkSemaphore> offscreenWaitSem = {
-            offscreenCB.getSemaphore(), 
-            
-        };
-        std::vector<VkSemaphore> offscreenSignalSem = {
-            mainCB.getSemaphore() 
-        };
-        
-        // main wait/signal dependencies
-        std::vector<VkSemaphore> mainWaitSem = {
-            mainCB.getSemaphore(),
-            m_frames[frameIndex].acquiredSem 
-        };
-        std::vector<VkSemaphore> mainSignalSem = {
-            m_frames[frameIndex].renderedSem
-        };
-
-        // set semaphore dependencies 
-        transferCB.setSemaphoreDependencies(transferWaitSem, transferSignalSem);
-        offscreenCB.setSemaphoreDependencies(offscreenWaitSem, offscreenSignalSem);
-        mainCB.setSemaphoreDependencies(mainWaitSem, mainSignalSem);
+        // set semaphore dependencies ({wait}, {signal})
+        transferCB.setSemaphoreDependencies(
+            { },
+            { offscreenCB.getSemaphore() }
+        );
+        offscreenCB.setSemaphoreDependencies(
+            { offscreenCB.getSemaphore() },
+            { mainCB.getSemaphore() }
+        );
+        mainCB.setSemaphoreDependencies(
+            { mainCB.getSemaphore(), m_frames[frameIndex].acquiredSem },
+            { m_frames[frameIndex].renderedSem}
+        );
     }
 
     // create upload handlers
     for (uint32 frameIndex = 0; frameIndex < MAX_FRAME_COUNT; frameIndex++){
         CommandBuffer& transferCommandBuffer = m_transferCommandPools[frameIndex].getCommandBuffer(CommandType::TRANSFER);
-        CommandBuffer& graphicsCommandBuffer = m_commandPools[frameIndex].getCommandBuffer(CommandType::OFFSCREEN);
+        CommandBuffer& graphicsCommandBuffer = m_gfxCommandPools[frameIndex].getCommandBuffer(CommandType::OFFSCREEN);
         m_uploadHandlers[frameIndex].init(m_device, *rm, transferCommandBuffer, graphicsCommandBuffer);
     }
 
@@ -128,7 +112,7 @@ void VulkanRenderer::cleanup(){
 
     // command pools
     for (uint32 i = 0; i < MAX_FRAME_COUNT; i++){
-        m_commandPools[i].destroy();
+        m_gfxCommandPools[i].destroy();
         m_transferCommandPools[i].destroy();
     }
 
@@ -155,12 +139,12 @@ void VulkanRenderer::destroy(){
 
 RenderFrame& VulkanRenderer::beginFrame(VulkanResourceManager* rm){
     m_frameIndex = m_currFrameId % MAX_FRAME_COUNT;
-    CommandPool& gfxCommandPool = m_commandPools[m_frameIndex];
+    CommandPool& gfxCommandPool = m_gfxCommandPools[m_frameIndex];
     CommandPool& transferCommandPool = m_transferCommandPools[m_frameIndex];
     RenderFrame& renderFrame = m_frames[m_frameIndex];
     renderFrame.frameIndex = m_frameIndex;
 
-    // // wait for fences, so we can reset pools
+    // wait for fences, so we can reset pools
     CommandBuffer& transferCB = transferCommandPool.getCommandBuffer(CommandType::TRANSFER);
     CommandBuffer& offscreenCB = gfxCommandPool.getCommandBuffer(CommandType::OFFSCREEN);
     CommandBuffer& mainCB = gfxCommandPool.getCommandBuffer(CommandType::MAIN);
@@ -172,7 +156,13 @@ RenderFrame& VulkanRenderer::beginFrame(VulkanResourceManager* rm){
     mainCB.resetFence();
     
     // acquire swapchain image index
-    VkResult result = vkAcquireNextImageKHR(m_device.getDevice(), m_display.getSwapchain(), UINT64_MAX, renderFrame.acquiredSem, renderFrame.acquiredFence, &(renderFrame.imageIndex));
+    VkResult result = vkAcquireNextImageKHR(
+                            m_device.getDevice(), 
+                            m_display.getSwapchain(), 
+                            UINT64_MAX, 
+                            renderFrame.acquiredSem, 
+                            renderFrame.acquiredFence, 
+                            &(renderFrame.imageIndex));
     validateSwapchain(result, ACQUIRE);
 
     // reset command pools before use
@@ -212,25 +202,24 @@ void VulkanRenderer::present(RenderFrame& frame){
 }
 
 
-CommandBuffer& VulkanRenderer::beginGraphicsCommands(CommandType commandBufferType){
-    if (commandBufferType == TRANSFER) {
-        SprLog::error("[VulkanRenderer] Not a graphics command buffer");
-    }
+CommandBuffer& VulkanRenderer::beginGraphicsCommands(CommandType commandType){
+    if (commandType == TRANSFER)
+        SprLog::error("[VulkanRenderer] [beginGraphicsCommands] Not a graphics command buffer");
 
-    CommandBuffer& commandBuffer = m_commandPools[m_frameIndex].getCommandBuffer(commandBufferType);
+    CommandBuffer& commandBuffer = m_gfxCommandPools[m_frameIndex].getCommandBuffer(commandType);
     commandBuffer.begin();
 
-    // need to make sure we have an image to write to
-    if (commandBufferType == MAIN) {
+    // need to make sure we have a swapchain image to write to
+    if (commandType == MAIN) {
         RenderFrame& renderFrame = m_frames[m_frameIndex];
         VK_CHECK(vkWaitForFences(m_device.getDevice(), 1, &(renderFrame.acquiredFence), VK_TRUE, UINT64_MAX));
         VK_CHECK(vkResetFences(m_device.getDevice(), 1, &(renderFrame.acquiredFence)));
     }
     
-    // cleanup gfx barriers from upload
-    if (commandBufferType == OFFSCREEN) {
+    // need to execute gfx barriers from any potential
+    // transfer queue uploads
+    if (commandType == OFFSCREEN)
         m_uploadHandlers[m_frameIndex].performGraphicsBarriers();
-    }
 
     return commandBuffer;
 }
@@ -271,9 +260,7 @@ void VulkanRenderer::validateSwapchain(VkResult result, SwapchainStage stage){
     
     // abnormal swapchain result, return error
     if (result != VK_ERROR_OUT_OF_DATE_KHR && result != VK_SUBOPTIMAL_KHR){
-        std::string message = "[VulkanRenderer] Swapchain invalid, code: ";
-        message += std::to_string((uint32)result);
-        SprLog::error(message);
+        SprLog::error("[VulkanRenderer] [validateSwapchain] Swapchain invalid, code: ", (uint32)result);
         return;
     }
 

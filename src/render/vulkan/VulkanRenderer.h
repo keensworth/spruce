@@ -48,7 +48,7 @@ private:
     VulkanDevice m_device;
     VulkanDisplay m_display;
 
-    CommandPool m_commandPools[MAX_FRAME_COUNT];
+    CommandPool m_gfxCommandPools[MAX_FRAME_COUNT];
     CommandPool m_transferCommandPools[MAX_FRAME_COUNT];
 
     UploadHandler m_uploadHandlers[MAX_FRAME_COUNT];
