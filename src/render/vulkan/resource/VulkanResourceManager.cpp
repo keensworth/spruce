@@ -115,13 +115,13 @@ void VulkanResourceManager::destroy(){
     TextureCache* textureCache = ((TextureCache*) m_resourceMap[typeid(Texture)]);
     delete textureCache;
 
+    // delete descriptor set cache
+    DescriptorSetCache* descriptorSetCache = ((DescriptorSetCache*) m_resourceMap[typeid(DescriptorSet)]);
+    delete descriptorSetCache;
+
     // delete descriptor set layout cache
     DescriptorSetLayoutCache* descriptorSetLayoutCache = ((DescriptorSetLayoutCache*) m_resourceMap[typeid(DescriptorSetLayout)]);
     delete descriptorSetLayoutCache;
-
-    // delete descriptor set cache
-    DescriptorSetCache* descriptorSet = ((DescriptorSetCache*) m_resourceMap[typeid(DescriptorSet)]);
-    delete descriptorSet;
 
     // delete render pass layout cache
     RenderPassLayoutCache* renderPassLayoutCache = ((RenderPassLayoutCache*) m_resourceMap[typeid(RenderPassLayout)]);
@@ -134,6 +134,10 @@ void VulkanResourceManager::destroy(){
     // delete shader cache
     ShaderCache* shaderCache = ((ShaderCache*) m_resourceMap[typeid(Shader)]);
     delete shaderCache;
+
+    // delete texture attachment cache
+    TextureAttachmentCache* textureAttachmentCache = ((TextureAttachmentCache*) m_resourceMap[typeid(TextureAttachment)]);
+    delete textureAttachmentCache;
 
     // destroy descriptor pools
     vkDestroyDescriptorPool(m_device, m_globalDescriptorPool, nullptr);
@@ -372,7 +376,7 @@ Handle<TextureAttachment> VulkanResourceManager::create<TextureAttachment>(Textu
 
     // create per-frame textures
     for (uint32 frame = 0; frame < MAX_FRAME_COUNT; frame++){
-        textureAttachment.textures[frame] = create<Texture>(desc.textureLayout);
+        textureAttachment.textures.push_back(create<Texture>(desc.textureLayout));
     }
 
     // return handle to attachment
@@ -445,14 +449,9 @@ Handle<DescriptorSetLayout> VulkanResourceManager::create<DescriptorSetLayout>(D
 template<>
 Handle<DescriptorSet> VulkanResourceManager::create<DescriptorSet>(DescriptorSetDesc desc){
     DescriptorSetCache* descriptorSetCache = ((DescriptorSetCache*) m_resourceMap[typeid(DescriptorSet)]);
-    Handle<Buffer>& trueHandle = desc.buffers[0].buffer;
-    Buffer* buffvaluetest = get<Buffer>(trueHandle);
-    VkMemoryRequirements memRequirements;
-    vkGetBufferMemoryRequirements(m_device, buffvaluetest->buffer, &memRequirements);
 
     // descriptor set layout from handle in desc
     DescriptorSetLayout* layout = get<DescriptorSetLayout>(desc.layout);
-
     // get descriptor counts
     uint32 globalDescriptorCount = 0;
     uint32 perFrameDescriptorCount = 0;
@@ -487,7 +486,6 @@ Handle<DescriptorSet> VulkanResourceManager::create<DescriptorSet>(DescriptorSet
     // allocate and write descriptor set(s)
     //      will run once if using global descriptors (shared over frames)
     //      will run MAX_FRAME_COUNT if using per-frame descriptors (frame buffered sets)
-    
     std::vector<VkDescriptorSet> vulkanDescriptorSets;
     uint32 descriptorSetCount = globalDescriptors ? 1 : MAX_FRAME_COUNT;
 
@@ -496,7 +494,7 @@ Handle<DescriptorSet> VulkanResourceManager::create<DescriptorSet>(DescriptorSet
         VkDescriptorPool descriptorPool = globalDescriptors ? m_globalDescriptorPool 
                                                             : m_dynamicDescriptorPools[frame];
         VkDescriptorSetAllocateInfo descriptorSetAllocInfo {
-            .sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_ALLOCATE_INFO, // TODO! too many, why here, per frame? #frame * #frame?
+            .sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_ALLOCATE_INFO,
             .pNext = NULL,
             .descriptorPool = descriptorPool,
             .descriptorSetCount = 1,
@@ -515,8 +513,7 @@ Handle<DescriptorSet> VulkanResourceManager::create<DescriptorSet>(DescriptorSet
                                                       : binding.buffers[frame];
             Buffer* buffer = get<Buffer>(handle);
             VkBuffer buffResource = buffer->buffer;
-            VkMemoryRequirements memRequirements;
-            vkGetBufferMemoryRequirements(m_device, buffResource, &memRequirements);
+
             VkDescriptorBufferInfo bufferInfo {
                 .buffer = buffResource,
                 .offset = (VkDeviceSize)binding.byteOffset,
@@ -654,9 +651,6 @@ Handle<RenderPassLayout> VulkanResourceManager::create<RenderPassLayout>(RenderP
                 .layout = (VkImageLayout)Flags::ImageLayout::DEPTH_STENCIL_ATTACHMENT
             };
         }
-    }
-
-    for (VkAttachmentReference ref : colorReferences){
     }
 
     // create render pass layout resource, return handle
@@ -799,7 +793,6 @@ Handle<RenderPass> VulkanResourceManager::create<RenderPass>(RenderPassDesc desc
         .dependencyCount = 2,
         .pDependencies   = dependencies
     };
-    //SprLog::debug("[VulkanResourceManager] [create<RenderPass>]     depth initial layout: ", desc.depthAttachment.layout);
     // create vulkan render pass
     VkRenderPass vulkanRenderPass;
     VK_CHECK(vkCreateRenderPass(m_device, &createInfo, NULL, &vulkanRenderPass));
