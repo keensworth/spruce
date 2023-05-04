@@ -33,7 +33,6 @@ void InputHandler::handleKeyPress(bool keyDown){
         keyboard->keyDownTicks[key] = SDL_GetTicks();
     else 
         keyboard->keyUpTicks[key] = SDL_GetTicks();
-    SprLog::debug(std::string(SDL_GetKeyName(keycode))+(keyDown?": Down":": Up"));
 }
 
 void InputHandler::handleButtonPress(bool buttonDown){
