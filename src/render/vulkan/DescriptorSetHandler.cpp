@@ -14,12 +14,14 @@ DescriptorSetHandler::DescriptorSetHandler(){
 DescriptorSetHandler::DescriptorSetHandler(VulkanResourceManager* rm, VkCommandBuffer commandBuffer){
     m_rm = rm;
     m_commandBuffer = commandBuffer;
+    m_initialized = true;
 
     reset();
 }
 
 DescriptorSetHandler::~DescriptorSetHandler(){
-    SprLog::info("[DescriptorSetHandler] [destroy] destroyed...");
+    if (m_initialized)
+        SprLog::info("[DescriptorSetHandler] [destroy] destroyed...");
 }
 
 void DescriptorSetHandler::set(uint32 set, Handle<DescriptorSet> handle){

@@ -26,5 +26,7 @@ private: // non-owning
     VkCommandBuffer m_commandBuffer;
     
     Handle<DescriptorSet> m_sets[4];
+
+    bool m_initialized = false;
 };
 }
