@@ -5,6 +5,7 @@
 #include "Handle.h"
 #include "../spruce_core.h"
 #include <cstring>
+#include "../../debug/SprLog.h"
 
 namespace spr {
 
@@ -43,10 +44,12 @@ public:
                 (m_data + i)->~T();
         }
         free(m_data);
+        m_data = nullptr;
     }
 
 private:
     void resize(){
+        assert(false);
         // allocate new memory
         uint32 newCapacity = m_capacity * 2;
         T* newData = static_cast<T*>(malloc(newCapacity * sizeof(T)));
@@ -62,7 +65,8 @@ private:
 
         // delete old mem
         for (int i = 0 ; i < m_size; i++){
-            (m_data + i)->~T();
+            if (m_data + i)
+                (m_data + i)->~T();
         }
         free(m_data);
 
@@ -73,16 +77,15 @@ private:
     template <typename... Args>
     Handle<T> emplace(Args&&... args){
         // out of room, resize
-        if (m_freeListIndex >= m_capacity){
+        if (m_freeListIndex >= m_capacity)
             resize();
-        }
-
+        
         Handle<T> handle;
         handle.m_index = m_freeList[m_freeListIndex];
         handle.m_generation = m_generations[handle.m_index];
         m_freeListIndex++;
 
-        // place element in array
+        // place element in data array
         new (m_data + handle.m_index) T(std::forward<Args>(args)...);
         m_size++;
 
@@ -95,20 +98,29 @@ public:
     }
 
     Handle<T> remove(Handle<T> handle){
-        // verify that data exists at handle, otherwise return
-        if (!(m_data + handle.m_index))
+        // return early if data is null or handle isn't valid
+        if (!(m_data + handle.m_index)){
+            SprLog::warn("[Pool] [remove] null address");
             return Handle<T>();
+        }
+        if (!isValidHandle(handle)){
+            SprLog::warn("[Pool] [remove] invalid handle");
+            return Handle<T>();
+        }
         
         // delete data at handle
         (m_data + handle.m_index)->~T();
+        T** ptr = (T**)(m_data + handle.m_index);
+        *ptr = nullptr;
 
-        // increase generation at that index
-        m_generations[handle.m_index] += 1;
+        // increase generation at handle's index
+        m_generations[handle.m_index] += 1;        
 
-        // increase freelistindex
-        m_freeListIndex++;
-
-        // add index to freelist at freelistindex
+        // add index to freelist at freelistindex - this will
+        // allow for prioritizing recycled indices before 
+        // placing objects into the data array
+        if(m_freeListIndex > 0)
+            m_freeListIndex--;
         m_freeList[m_freeListIndex] = handle.m_index;
         m_size--;
 
@@ -131,9 +143,18 @@ private:
     uint32 m_capacity;
     uint32 m_size = 0;
 
+    // freelist allows us to recycle 
+    // indices in the data array 
     uint32 m_freeListIndex;
     std::vector<uint32> m_freeList;
 
+    // generation tells us how many times
+    // an object has been placed into a 
+    // position in the data array
+    //
+    // it can allow us to verify that a
+    // given handle belongs to the most
+    // recently placed object (handle valid)
     std::vector<uint32> m_generations;
 };
 
