@@ -1,5 +1,6 @@
 #pragma once
 
+#include <cmath>
 #include <string>
 #include <typeindex>
 #include <typeinfo>
@@ -166,11 +167,11 @@ typedef struct RenderPass {
 //                 Shader                                    // 
 // --------------------------------------------------------- //
 typedef struct Shader {
-    VkPipelineLayout layout;
-    VkPipeline pipeline;
+    VkPipelineLayout layout = VK_NULL_HANDLE;
+    VkPipeline pipeline = VK_NULL_HANDLE;
     std::vector<VkDescriptorSetLayout> emptyDescSetLayouts;
-    VkShaderModule vertexModule;
-    VkShaderModule fragmentModule;
+    VkShaderModule vertexModule = VK_NULL_HANDLE;
+    VkShaderModule fragmentModule = VK_NULL_HANDLE;
 } Shader;
 
 
