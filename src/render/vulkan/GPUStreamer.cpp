@@ -401,12 +401,7 @@ void GPUStreamer::flush() {
     // perform buffer copy commands
     m_bufferCopyCmdQueue.execute();
 
-
-    for(VkBufferMemoryBarrier2KHR barrier : transferBufferBarriers){
-    }
-
     // perform buffer transfer queue pipeline barrier
-    //SprLog::debug("[GPUStreamer] [flush]     trouble: ", &bufferTransferDependencies == nullptr);
     vkCmdPipelineBarrier2KHR(m_transferCommandBuffer->getCommandBuffer(), &bufferTransferDependencies);
 
     // // perform image layout pipeline barrier
