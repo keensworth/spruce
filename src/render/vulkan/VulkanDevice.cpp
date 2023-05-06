@@ -149,15 +149,27 @@ void VulkanDevice::createDevice(VkSurfaceKHR surface){
     // get all queue families
     std::vector<VkDeviceQueueCreateInfo> queueCreateInfos = queryQueueFamilies(surface);
     
-    // fill info and create logical device
+    // create physical device feature chain
     VkPhysicalDeviceSynchronization2FeaturesKHR sync2 = {
         .sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_SYNCHRONIZATION_2_FEATURES_KHR,
         .pNext = NULL,
         .synchronization2 = true
     };
+
+    VkPhysicalDeviceFeatures deviceFeatures = {
+        .geometryShader = VK_TRUE
+    };
+
+    VkPhysicalDeviceFeatures2 features2 = {
+        .sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_FEATURES_2,
+        .pNext = &sync2,
+        .features = deviceFeatures
+    };
+
+    // create device
     VkDeviceCreateInfo createInfo {
         .sType = VK_STRUCTURE_TYPE_DEVICE_CREATE_INFO,
-        .pNext = &sync2,
+        .pNext = &features2,
         .flags = 0,
         .queueCreateInfoCount = static_cast<uint32>(queueCreateInfos.size()),
         .pQueueCreateInfos = queueCreateInfos.data(),
@@ -484,10 +496,10 @@ void VulkanDevice::enableValidationLayers(VkDebugUtilsMessengerCreateInfoEXT& de
         m_validationLayerCount++;
     }
     // VK_LAYER_LUNARG_api_dump
-    if (hasLayer(availableLayers, "VK_LAYER_LUNARG_api_dump")){
-        m_validationLayers.push_back("VK_LAYER_LUNARG_api_dump");
-        m_validationLayerCount++;
-    }
+    // if (hasLayer(availableLayers, "VK_LAYER_LUNARG_api_dump")){
+    //     m_validationLayers.push_back("VK_LAYER_LUNARG_api_dump");
+    //     m_validationLayerCount++;
+    // }
     // VK_LAYER_LUNARG_monitor
     if (hasLayer(availableLayers, "VK_LAYER_LUNARG_monitor")){
         m_validationLayers.push_back("VK_LAYER_LUNARG_monitor");
