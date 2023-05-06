@@ -65,7 +65,7 @@ public:
     //      uint32 size - number of T to be inserted
     // Output: 
     //      uint32 ofst - offset (T) of data in buffer
-    inline uint32 insert(T* data, uint32 size){
+    inline uint32 insert(const T* data, uint32 size){
         // current offset
         uint32 offset = m_size;
         
@@ -85,7 +85,7 @@ public:
         return offset;
     }
 
-    inline uint32 insert(T& data){
+    inline uint32 insert(const T& data){
         // current offset
         uint32 offset = m_size;
         
