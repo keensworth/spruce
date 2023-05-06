@@ -62,7 +62,7 @@ MeshInfoMap GfxAssetLoader::loadAssets(SprResourceManager& rm){
 }
 
 void GfxAssetLoader::loadVertexData(SprResourceManager& rm, Mesh* mesh, MeshInfo& info){
-    // process the mesh's vertex data
+    // indices
     if (mesh->indexBufferId > 0){
         Handle<spr::Buffer> indicesHandle = rm.getHandle<spr::Buffer>(mesh->indexBufferId);
         if (!indicesHandle.isValid()){
@@ -75,6 +75,8 @@ void GfxAssetLoader::loadVertexData(SprResourceManager& rm, Mesh* mesh, MeshInfo
         info.firstIndex = m_vertexIndices.insert((uint16*)(indicesBuffer->data.data()), typedSize); 
         m_counts.indexCount += info.indexCount;
     }
+
+    // position
     if (mesh->positionBufferId > 0){
         Handle<spr::Buffer> positionHandle = rm.getHandle<spr::Buffer>(mesh->positionBufferId);
         if (!positionHandle.isValid()){
@@ -86,6 +88,8 @@ void GfxAssetLoader::loadVertexData(SprResourceManager& rm, Mesh* mesh, MeshInfo
         info.vertexOffset = m_vertexPositions.insert((VertexPosition*)(positionBuffer->data.data()), typedSize);
         m_counts.vertexCount += typedSize;
     }
+
+    // attributes
     if (mesh->attributesBufferId > 0){
         Handle<spr::Buffer> attributesHandle = rm.getHandle<spr::Buffer>(mesh->positionBufferId);
         if (!attributesHandle.isValid()){
@@ -96,7 +100,6 @@ void GfxAssetLoader::loadVertexData(SprResourceManager& rm, Mesh* mesh, MeshInfo
         uint32 typedSize = (attributesBuffer->byteLength)/sizeof(VertexAttributes);
         m_vertexAttributes.insert((VertexAttributes*)(attributesBuffer->data.data()), typedSize);
     }
-
 }
 
 void GfxAssetLoader::loadMaterial(SprResourceManager& rm, Mesh* mesh, MeshInfo& info){
@@ -210,10 +213,10 @@ void GfxAssetLoader::loadBuiltinAssets(SprResourceManager& rm, MeshInfoMap& mesh
 
     // create built-in quad mesh
     std::vector<VertexPosition> quadPos = {
-        {{-1.0f, -1.0f, 0.0f}},
-        {{ 1.0f, -1.0f, 0.0f}},
-        {{ 1.0f,  1.0f, 0.0f}},
-        {{-1.0f,  1.0f, 0.0f}}
+        {{-1.0f,  1.0f, 0.0f, 1.0f}},
+        {{-1.0f, -1.0f, 0.0f, 1.0f}},
+        {{ 1.0f, -1.0f, 0.0f, 1.0f}},
+        {{ 1.0f,  1.0f, 0.0f, 1.0f}}
     };
     std::vector<VertexAttributes> quadAttr = {
         {{0.0f, 0.0f, 1.0f, 0.0f},{1.0f, 1.0f, 1.0f, 1.0f}},
@@ -222,7 +225,7 @@ void GfxAssetLoader::loadBuiltinAssets(SprResourceManager& rm, MeshInfoMap& mesh
         {{0.0f, 0.0f, 1.0f, 0.0f},{1.0f, 1.0f, 1.0f, 1.0f}}
     };
     std::vector<uint16> quadIndices = {
-        0,3,2,2,1,0
+        0,1,3,3,1,2
     };
 
     MeshInfo quadInfo;

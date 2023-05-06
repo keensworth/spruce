@@ -29,9 +29,9 @@ void RenderPassRenderer::drawSubpass(PassContext context, std::vector<Batch>& ba
     // viewport
     VkViewport viewport {
         .x = 0.0f,
-        .y = 0.0f,
+        .y = (float)screenDim.y,
         .width  = (float)screenDim.x,
-        .height = (float)screenDim.y,
+        .height = -(float)screenDim.y, // avoid manual y-flip in shader
         .minDepth = 0.0f,
         .maxDepth = 1.0f
     };
@@ -69,9 +69,9 @@ void RenderPassRenderer::drawSubpass(PassContext context, Batch batch, uint32 ve
     // viewport
     VkViewport viewport {
         .x = 0.0f,
-        .y = 0.0f,
+        .y = (float)screenDim.y,
         .width  = (float)screenDim.x,
-        .height = (float)screenDim.y,
+        .height = -(float)screenDim.y, // avoid manual y-flip in shader
         .minDepth = 0.0f,
         .maxDepth = 1.0f
     };
