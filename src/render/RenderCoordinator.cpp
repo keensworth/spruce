@@ -1,5 +1,5 @@
 #include "RenderCoordinator.h"
-#include "vulkan/FrameRenderer.h"
+#include "renderers/DebugMeshRenderer.h"
 #include "vulkan/resource/ResourceTypes.h"
 #include "SceneManager.h"
 #include "../interface/Window.h"
@@ -33,6 +33,7 @@ void RenderCoordinator::render(SceneManager& sceneManager){
     offscreenCB.bindIndexBuffer(sceneManager.getIndexBuffer());
     {
         m_testRenderer.render(offscreenCB, batchManager);
+        //m_debugMeshRenderer.render(offscreenCB, batchManager);
     }
     offscreenCB.submit();
 
@@ -66,11 +67,16 @@ void RenderCoordinator::uploadSceneData(SceneManager& sceneManager){
 }
 
 void RenderCoordinator::initRenderers(SceneManager& sceneManager){
-    // setup renderers
     glm::uvec3 windowDim = {m_window->width(), m_window->height(), 1};
 
+    // offscreen renderers
     m_testRenderer = TestRenderer(*m_rm, *m_renderer, windowDim);
     m_testRenderer.init(
+        sceneManager.getGlobalDescriptorSet(),
+        sceneManager.getGlobalDescriptorSetLayout());
+
+    m_debugMeshRenderer = DebugMeshRenderer(*m_rm, *m_renderer, windowDim);
+    m_debugMeshRenderer.init(
         sceneManager.getGlobalDescriptorSet(),
         sceneManager.getGlobalDescriptorSetLayout(),
         sceneManager.getPerFrameDescriptorSets(),
@@ -80,9 +86,10 @@ void RenderCoordinator::initRenderers(SceneManager& sceneManager){
     m_frameRenderer = FrameRenderer(*m_rm, *m_renderer, windowDim);
     m_frameRenderer.init(
         m_renderer->getDisplay().getImageViews(), 
-        m_testRenderer.getAttachment(),
         sceneManager.getGlobalDescriptorSet(),
         sceneManager.getGlobalDescriptorSetLayout());
+    m_frameRenderer.setInput(m_testRenderer.getAttachment());
+    //m_frameRenderer.setInput(m_debugMeshRenderer.getAttachment());
 
     
 }
@@ -102,6 +109,7 @@ void RenderCoordinator::destroy(){
     // teardown renderers
     m_frameRenderer.destroy();
     m_testRenderer.destroy();
+    m_debugMeshRenderer.destroy();
 }
 
 }

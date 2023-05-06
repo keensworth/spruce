@@ -2,6 +2,7 @@
 
 #include "vulkan/FrameRenderer.h"
 #include "renderers/TestRenderer.h"
+#include "renderers/DebugMeshRenderer.h"
 
 namespace spr {
     class Window;
@@ -44,5 +45,6 @@ private:
 
     // OFFSCREEN renderers
     TestRenderer m_testRenderer;
+    DebugMeshRenderer m_debugMeshRenderer;
 };
 }
