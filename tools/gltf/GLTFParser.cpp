@@ -378,7 +378,8 @@ void GLTFParser::handleBuffer(
         uint32_t componentType,
         uint32_t bufferId,
         std::vector<uint8_t>& out,
-        bool writeToFile){
+        bool writeToFile,
+        bool isPosition){    
     std::cout << "Buffer:" << std::endl;
     std::cout << "  byteOffset " << byteOffset << std::endl;
     std::cout << "  byteLength " << byteLength << std::endl;
@@ -386,12 +387,48 @@ void GLTFParser::handleBuffer(
     std::cout << "  componentType " << componentType << std::endl;
     std::cout << "  bufferId " << bufferId << std::endl;
     std::cout << "" << std::endl;
-    // write slice of buffer int32_to new buffer
-    const unsigned char* bufferData = buffer.data.data();
 
+    // pad position to vec4, if it isn't already
+    bool needsPadding = false;
+    if (isPosition){
+        assert (elementType == TINYGLTF_TYPE_VEC3 || elementType == TINYGLTF_TYPE_VEC4);
+        if (elementType == TINYGLTF_TYPE_VEC3){
+            byteLength = (4/3)*byteLength;
+            elementType = TINYGLTF_TYPE_VEC4;
+            needsPadding = true;
+        }
+    }
+
+    // write slice of buffer into new buffer
+    const unsigned char* bufferData = buffer.data.data();
     unsigned char* data = new unsigned char[byteLength];
-    for (int32_t i = 0; i < byteLength; i++){
-        data[i] = bufferData[i+byteOffset];
+    if (needsPadding){
+        std::cout << "  position padding: true" << std::endl;
+        // get 1.0f as byte array
+        char float1fByteArray[4];
+        union {
+            float f;
+            unsigned char bytes[4];
+        } floatToBytes;
+        floatToBytes.f = 1.0f;
+        memcpy(float1fByteArray, floatToBytes.bytes, 4);
+
+        // copy data, padding with 1.0f
+        uint32_t index = 0;
+        for (int32_t i = 0; i < byteLength; i++){
+            if (i%16 >= 12){ 
+                // write 1.0f to pos.w
+                data[i] = float1fByteArray[3 - (i%16 - 12)];
+            } else {
+                // write buffer data to pos.xyz
+                data[i] = bufferData[index+byteOffset];
+                index++;
+            }
+        }
+    } else {
+        for (int32_t i = 0; i < byteLength; i++){
+            data[i] = bufferData[i+byteOffset];
+        }
     }
     
     if (writeToFile){
@@ -456,7 +493,8 @@ void GLTFParser::handleBufferView(
         uint32_t componentType,
         uint32_t bufferId,
         std::vector<uint8_t>& out,
-        bool writeToFile){
+        bool writeToFile,
+        bool isPosition){
     std::cout << "BufferView:" << std::endl;
     std::cout << "  byteOffset " << byteOffset << std::endl;
     std::cout << "  bytesPerElement " << bytesPerElement << std::endl;
@@ -482,13 +520,13 @@ void GLTFParser::handleBufferView(
 
     // handle buffer
     if (byteStride == bytesPerElement)
-        handleBuffer(buffer, adjustedByteOffset, byteLength, elementType, componentType, bufferId, out, writeToFile);
+        handleBuffer(buffer, adjustedByteOffset, byteLength, elementType, componentType, bufferId, out, writeToFile, isPosition);
     else
         handleBufferInterleaved(buffer, adjustedByteOffset, byteLength, byteStride, bytesPerElement, elementType, componentType, bufferId, out, writeToFile);
     
 }
 
-uint32_t GLTFParser::handleAccessor(const tinygltf::Accessor& accessor, std::vector<uint8_t>& out, bool writeToFile){
+uint32_t GLTFParser::handleAccessor(const tinygltf::Accessor& accessor, std::vector<uint8_t>& out, bool writeToFile, bool isPosition){
     uint32_t accessorId = m_id++;
 
     // properties
@@ -509,7 +547,7 @@ uint32_t GLTFParser::handleAccessor(const tinygltf::Accessor& accessor, std::vec
     const tinygltf::BufferView& bufferView = model.bufferViews[accessor.bufferView];
 
     // handle bufer view
-    handleBufferView(bufferView, byteOffset, bytesPerElement, elementCount, elementType, componentType, accessorId, out, writeToFile);
+    handleBufferView(bufferView, byteOffset, bytesPerElement, elementCount, elementType, componentType, accessorId, out, writeToFile, isPosition);
     return accessorId;
 }
 
@@ -571,7 +609,7 @@ uint32_t GLTFParser::handleTexture(const tinygltf::Texture& tex){
         std::cout << "  elementType " << elementType << std::endl;
         std::cout << "  componentType " << componentType << std::endl;
         std::cout << "  elementCount " << elementCount << std::endl;
-        handleBufferView(model.bufferViews[image.bufferView], 0, 1, elementCount, elementType, componentType, bufferId, out, true);
+        handleBufferView(model.bufferViews[image.bufferView], 0, 1, elementCount, elementType, componentType, bufferId, out, true, false);
     } else { // direct buffer
         tinygltf::Buffer buffer;
         int32_t elementCount = image.image.size();
@@ -581,7 +619,7 @@ uint32_t GLTFParser::handleTexture(const tinygltf::Texture& tex){
         std::cout << "  elementType " << elementType << std::endl;
         std::cout << "  componentType " << componentType << std::endl;
         std::cout << "  elementCount " << elementCount << std::endl;
-        handleBuffer(buffer, 0, elementCount, elementType, componentType, bufferId, out, true);
+        handleBuffer(buffer, 0, elementCount, elementType, componentType, bufferId, out, true, false);
     }
     std::cout << "" << std::endl;
 
@@ -771,7 +809,7 @@ uint32_t GLTFParser::handlePrimitive(const tinygltf::Primitive& primitive){
     // handle accessors
     // indices
     std::cout << "  (indices):" << std::endl;
-    int32_t indicesId = handleAccessor(model.accessors[indicesAccessorIndex], tempOut, true);
+    int32_t indicesId = handleAccessor(model.accessors[indicesAccessorIndex], tempOut, true, false);
     assert(indicesId >= 0);
     
     // position
@@ -780,7 +818,7 @@ uint32_t GLTFParser::handlePrimitive(const tinygltf::Primitive& primitive){
     if (positionAccessorIndex >= 0){
         std::cout << "  (position):" << std::endl;
         vertexCount = model.accessors[positionAccessorIndex].count;
-        positionId = handleAccessor(model.accessors[positionAccessorIndex], tempOut, true);
+        positionId = handleAccessor(model.accessors[positionAccessorIndex], tempOut, true, true);
     }
     assert(positionId >= 0);
 
@@ -788,28 +826,28 @@ uint32_t GLTFParser::handlePrimitive(const tinygltf::Primitive& primitive){
     int32_t normalId = -1;
     std::vector<uint8_t> outNormal;
     if (normalAccessorIndex >= 0){
-        normalId = handleAccessor(model.accessors[normalAccessorIndex], outNormal, false);
+        normalId = handleAccessor(model.accessors[normalAccessorIndex], outNormal, false, false);
     }
 
     // tangent
     int32_t tangentId = -1;
     std::vector<uint8_t> outTangent;
     if (tangentAccessorIndex >= 0){
-        tangentId = handleAccessor(model.accessors[tangentAccessorIndex], outTangent, false);
+        tangentId = handleAccessor(model.accessors[tangentAccessorIndex], outTangent, false, false);
     }
 
     // texcoords
     int32_t texCoordId = -1;
     std::vector<uint8_t> outTexCoord;
     if (texcoordAccessorIndex >= 0) {
-        texCoordId = handleAccessor(model.accessors[texcoordAccessorIndex], outTexCoord, false);
+        texCoordId = handleAccessor(model.accessors[texcoordAccessorIndex], outTexCoord, false, false);
     }
 
     // colors
     int32_t colorId = -1;
     std::vector<uint8_t> outColor;
     if (colorAccessorIndex >= 0) {
-        colorId = handleAccessor(model.accessors[colorAccessorIndex], outColor, false);
+        colorId = handleAccessor(model.accessors[colorAccessorIndex], outColor, false, false);
     }
 
     std::cout << "  (attributes):" << std::endl;

@@ -42,7 +42,7 @@ private:
     uint32_t handleTexture(const tinygltf::NormalTextureInfo& texInfo);
     uint32_t handleTexture(const tinygltf::OcclusionTextureInfo& texInfo);
     uint32_t handleTexture(const tinygltf::Texture& tex);
-    uint32_t handleAccessor(const tinygltf::Accessor& accessor, std::vector<uint8_t>& out, bool writeToFile);
+    uint32_t handleAccessor(const tinygltf::Accessor& accessor, std::vector<uint8_t>& out, bool writeToFile, bool isPosition);
     void handleBufferView(const tinygltf::BufferView& bufferView, 
         uint32_t byteOffset, 
         uint32_t calcByteStride,
@@ -51,7 +51,8 @@ private:
         uint32_t componentType,
         uint32_t bufferId,
         std::vector<uint8_t>& out,
-        bool writeToFile);
+        bool writeToFile,
+        bool isPosition);
     void handleBuffer(
         const tinygltf::Buffer& buffer, 
         uint32_t byteOffset, 
@@ -60,7 +61,8 @@ private:
         uint32_t componentType,
         uint32_t bufferId,
         std::vector<uint8_t>& out,
-        bool writeToFile);
+        bool writeToFile,
+        bool isPosition);
     void handleBufferInterleaved(
         const tinygltf::Buffer& buffer, 
         uint32_t byteOffset, 

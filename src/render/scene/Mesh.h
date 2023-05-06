@@ -12,7 +12,7 @@ typedef struct MeshInfo {
 } MeshInfo;
 
 typedef struct VertexPosition {
-    glm::vec3 vertexPos;
+    glm::vec4 vertexPos;
 } VertexPosition;
 
 typedef struct VertexAttributes {
