@@ -21,7 +21,6 @@ public:
 
     void init(
         std::vector<VkImageView>& swapchainImageViews, 
-        Handle<TextureAttachment> input, 
         Handle<DescriptorSet> globalDescriptorSet, 
         Handle<DescriptorSetLayout> globalDescSetLayout)
     {
@@ -30,14 +29,14 @@ public:
 
         // render pass
         VkFormat displayFormat = m_renderer->getDisplay().getSwapchainFormat();
-        m_renderPassLayout = m_rm->create<RenderPassLayout>(RenderPassLayoutDesc{
+        m_renderPassLayout = m_rm->create<RenderPassLayout>({
             .colorAttatchmentFormats = {displayFormat},
             .subpass = {
                 .colorAttachments = {0}
             }
         });
 
-        m_renderPass = m_rm->create<RenderPass>(RenderPassDesc{
+        m_renderPass = m_rm->create<RenderPass>({
             .dimensions = m_dim,
             .layout = m_renderPassLayout,
             .colorAttachments = {
@@ -49,16 +48,16 @@ public:
         });
 
         // descriptor set layout
-        m_descriptorSetLayout = m_rm->create<DescriptorSetLayout>(DescriptorSetLayoutDesc{
+        m_descriptorSetLayout = m_rm->create<DescriptorSetLayout>({
             .textures = {
                 {.binding = 0}
             }
         });
 
         // shader
-        m_shader = m_rm->create<Shader>(ShaderDesc{
-            .vertexShader = {.path = "../data/shaders/copy.vert.spv"},
-            .fragmentShader = {.path = "../data/shaders/copy.frag.spv"},
+        m_shader = m_rm->create<Shader>({
+            .vertexShader = {.path = "../data/shaders/spv/copy.vert.spv"},
+            .fragmentShader = {.path = "../data/shaders/spv/copy.frag.spv"},
             .descriptorSets = {
                 { globalDescSetLayout },
                 { }, // unused
@@ -69,20 +68,29 @@ public:
                 .renderPass = m_renderPass,
             }
         });
+    }
 
-        // descriptor set
-        m_descriptorSet = m_rm->create<DescriptorSet>(DescriptorSetDesc{
+
+    void setInput(Handle<TextureAttachment> input){
+        if (input == m_input)
+            return;
+
+        m_descriptorSet = m_rm->create<DescriptorSet>({
             .textures = {
                 {.attachment = input}
             },
             .layout = m_descriptorSetLayout
         });
 
+        m_hasInput = true;
     }
 
 
     void render(CommandBuffer& cb, BatchManager& batchManager){
-        RenderPassRenderer& passRenderer = cb.beginRenderPass(m_renderPass, glm::vec4(1.0f,0.f,0.f,1.f));
+        if (!m_hasInput)
+            SprLog::error("[FrameRenderer] [render] no input TextureAttachment specified");
+
+        RenderPassRenderer& passRenderer = cb.beginRenderPass(m_renderPass, glm::vec4(0.0f,0.f,1.f,1.f));
         
         passRenderer.drawSubpass({
             .shader = m_shader,
@@ -98,10 +106,11 @@ public:
         return m_renderPass;
     }
 
+
     void destroy(){
+        m_rm->remove<DescriptorSet>(m_descriptorSet);
         m_rm->remove<Shader>(m_shader);
         m_rm->remove<DescriptorSetLayout>(m_descriptorSetLayout);
-        m_rm->remove<DescriptorSet>(m_descriptorSet);
         m_rm->remove<RenderPass>(m_renderPass);
         m_rm->remove<RenderPassLayout>(m_renderPassLayout);
         SprLog::info("[FrameRenderer] [destroy] destroyed...");
@@ -118,6 +127,9 @@ private: // non-owning
     VulkanResourceManager* m_rm;
     VulkanRenderer* m_renderer;
     glm::uvec3 m_dim;
+
+    Handle<TextureAttachment> m_input;
+    bool m_hasInput = false;
 
     Handle<DescriptorSet> m_globalDescriptorSet;
     Handle<DescriptorSetLayout> m_globalDescriptorSetLayout;
