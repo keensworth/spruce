@@ -39,8 +39,10 @@ typedef struct Light {
     glm::vec3 dir   = {0.f, 1.f, 0.f};
     float range     = 16.f;
     glm::vec3 color = {1.f, 1.f, 1.f};
-    SpotProperties spotProps;
     LightType type  = POINT;
+    SpotProperties spotProps;
+    uint32 pad1;
+    uint32 pad2;
 } Light;
 
 
@@ -58,8 +60,7 @@ typedef struct Camera {
 } Camera;
 
 typedef struct Scene {
-    glm::mat4x4 view;
-    glm::mat4x4 proj;
+    glm::mat4x4 viewProj;
 } Scene;
 
 }
