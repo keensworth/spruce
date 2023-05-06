@@ -1,4 +1,6 @@
 #include "SceneManager.h"
+#include "glm/ext/matrix_clip_space.hpp"
+#include "glm/ext/matrix_transform.hpp"
 #include "scene/GfxAssetLoader.h"
 #include "scene/Material.h"
 #include "scene/Mesh.h"
@@ -10,7 +12,6 @@
 #include "../resource/SprResourceManager.h"
 #include <cctype>
 #include "scene/SceneData.h"
-#include "vulkan/resource/ResourceTypes.h"
 #include "../debug/SprLog.h"
 
 namespace spr::gfx {
@@ -39,37 +40,46 @@ void SceneManager::init(VulkanResourceManager& rm){
 }
 
 
-void SceneManager::insertMesh(uint32 frame, uint32 meshId, uint32 materialFlags, Transform& transform){
-    // get mesh data and fill draw
-    MeshInfo& meshInfo = m_meshInfo[meshId];
-    DrawData draw = {
-        .vertexOffset   = meshInfo.vertexOffset,  
-        .materialIndex  = meshInfo.materialIndex, 
-        .transformIndex = m_transforms[frame % MAX_FRAME_COUNT].insert(transform)
-    };
+void SceneManager::insertMeshes(uint32 frame, spr::Span<uint32> meshIds, spr::Span<uint32> materialsFlags, spr::Span<const Transform> transforms){
+    bool sharedMaterial = (meshIds.size() != materialsFlags.size() && materialsFlags.size() == 1);
 
-    // fill out batch info, which will either initialize
-    // a new batch or update an existing one
-    Batch batchInfo = {
-        .meshId         = meshId,
-        .materialFlags  = materialFlags,
-        .indexCount     = meshInfo.indexCount,
-        .firstIndex     = meshInfo.firstIndex,
-        .drawDataOffset = 0,
-        .drawCount      = 1
-    };
+    for (uint32 i = 0; i < meshIds.size(); i++){
+        // get mesh data and fill draw
+        MeshInfo& meshInfo = m_meshInfo[meshIds[i]];
+        DrawData draw = {
+            .vertexOffset   = meshInfo.vertexOffset,  
+            .materialIndex  = meshInfo.materialIndex, 
+            .transformIndex = m_transforms[frame % MAX_FRAME_COUNT].insert(transforms[i])
+        };
 
-    m_batchManagers[frame % MAX_FRAME_COUNT].addDraw(draw, batchInfo);
+        // fill out batch info, which will either initialize
+        // a new batch or update an existing one
+        Batch batchInfo = {
+            .meshId         = meshIds[i],
+            .materialFlags  = !sharedMaterial ? materialsFlags[i] : materialsFlags[0],
+            .indexCount     = meshInfo.indexCount,
+            .firstIndex     = meshInfo.firstIndex,
+            .drawDataOffset = 0,
+            .drawCount      = 1
+        };
+
+        m_batchManagers[frame % MAX_FRAME_COUNT].addDraw(draw, batchInfo);
+    }
 }
 
 
-void SceneManager::insertLight(uint32 frame, Light& light){
-    m_lights[frame % MAX_FRAME_COUNT].insert(light);
+void SceneManager::insertLights(uint32 frame, spr::Span<const Light> lights){
+    m_lights[frame % MAX_FRAME_COUNT].insert(lights.data(), lights.size());
 }
 
 
-void SceneManager::updateCamera(uint32 frame, Camera& camera){
+void SceneManager::updateCamera(uint32 frame, glm::vec2 screenDim, const Camera& camera){
     m_cameras[frame % MAX_FRAME_COUNT].insert(camera);
+
+    // pre-compute viewProjection matrix
+    glm::mat4 view = glm::lookAt(camera.pos, camera.dir, camera.up);
+    glm::mat4 proj = glm::perspective(camera.fov, (screenDim.x/screenDim.y), camera.near, camera.far);
+    m_sceneData[frame % MAX_FRAME_COUNT].insert({proj * view});
 }
 
 
@@ -143,64 +153,64 @@ void SceneManager::initializeAssets(SprResourceManager &rm, VulkanDevice* device
 
 void SceneManager::initBuffers(PrimitiveCounts counts, VulkanDevice* device){
     // per frame resource handles
-    m_lightsBuffer = m_rm->create<Buffer>(BufferDesc{
+    m_lightsBuffer = m_rm->create<Buffer>({
         .byteSize = (uint32) (MAX_LIGHTS * MAX_FRAME_COUNT * sizeof(Light)),
         .usage = Flags::BufferUsage::BU_STORAGE_BUFFER |
                  Flags::BufferUsage::BU_TRANSFER_DST,
         .memType = DEVICE | HOST
     });
 
-    m_transformBuffer = m_rm->create<Buffer>(BufferDesc{
+    m_transformBuffer = m_rm->create<Buffer>({
         .byteSize = (uint32) (MAX_DRAWS * MAX_FRAME_COUNT * sizeof(Transform)),
         .usage = Flags::BufferUsage::BU_STORAGE_BUFFER |
                  Flags::BufferUsage::BU_TRANSFER_DST,
         .memType = DEVICE | HOST
     });
 
-    m_drawDataBuffer = m_rm->create<Buffer>(BufferDesc{
+    m_drawDataBuffer = m_rm->create<Buffer>({
         .byteSize = (uint32) (MAX_DRAWS * MAX_FRAME_COUNT * sizeof(DrawData)),
         .usage = Flags::BufferUsage::BU_STORAGE_BUFFER |
                  Flags::BufferUsage::BU_TRANSFER_DST,
         .memType = DEVICE | HOST
     });
 
-    m_cameraBuffer = m_rm->create<Buffer>(BufferDesc{
-        .byteSize = (uint32) (MAX_FRAME_COUNT * sizeof(Camera)),
-        .usage = Flags::BufferUsage::BU_STORAGE_BUFFER |
+    m_cameraBuffer = m_rm->create<Buffer>({
+        .byteSize = (uint32) (MAX_FRAME_COUNT * m_rm->alignedSize(sizeof(Camera))),
+        .usage = Flags::BufferUsage::BU_UNIFORM_BUFFER |
                  Flags::BufferUsage::BU_TRANSFER_DST,
         .memType = DEVICE | HOST
     });
 
-    m_sceneBuffer = m_rm->create<Buffer>(BufferDesc{
-        .byteSize = (uint32) (MAX_FRAME_COUNT * sizeof(Scene)),
-        .usage = Flags::BufferUsage::BU_STORAGE_BUFFER |
+    m_sceneBuffer = m_rm->create<Buffer>({
+        .byteSize = (uint32) (MAX_FRAME_COUNT * m_rm->alignedSize(sizeof(Scene))),
+        .usage = Flags::BufferUsage::BU_UNIFORM_BUFFER |
                  Flags::BufferUsage::BU_TRANSFER_DST,
         .memType = DEVICE | HOST
     });
 
     // global resource handles
-    m_positionsBuffer = m_rm->create<Buffer>(BufferDesc{
+    m_positionsBuffer = m_rm->create<Buffer>({
         .byteSize = (uint32) (counts.vertexCount * sizeof(VertexPosition)),
         .usage = Flags::BufferUsage::BU_STORAGE_BUFFER |
                  Flags::BufferUsage::BU_TRANSFER_DST,
         .memType = DEVICE
     });
 
-    m_attributesBuffer = m_rm->create<Buffer>(BufferDesc{
+    m_attributesBuffer = m_rm->create<Buffer>({
         .byteSize = (uint32) (counts.vertexCount * sizeof(VertexAttributes)),
         .usage = Flags::BufferUsage::BU_STORAGE_BUFFER |
                  Flags::BufferUsage::BU_TRANSFER_DST,
         .memType = DEVICE
     });
     
-    m_indexBuffer = m_rm->create<Buffer>(BufferDesc{
+    m_indexBuffer = m_rm->create<Buffer>({
         .byteSize = (uint32) (counts.indexCount * sizeof(uint16)),
         .usage = Flags::BufferUsage::BU_INDEX_BUFFER   |
                  Flags::BufferUsage::BU_TRANSFER_DST,
         .memType = DEVICE
     });
 
-    m_materialsBuffer = m_rm->create<Buffer>(BufferDesc{
+    m_materialsBuffer = m_rm->create<Buffer>({
         .byteSize = (uint32) (counts.materialCount * sizeof(MaterialData)),
         .usage = Flags::BufferUsage::BU_STORAGE_BUFFER |
                  Flags::BufferUsage::BU_TRANSFER_DST,
@@ -231,7 +241,7 @@ void SceneManager::initTextures(uint32 textureCount){
                                : Flags::Format::RGBA8_UNORM;
         }
         
-        m_textures[i] = m_rm->create<Texture>(TextureDesc{
+        m_textures[i] = m_rm->create<Texture>({
             .dimensions = {
                 info.width,
                 info.height,
@@ -246,7 +256,7 @@ void SceneManager::initTextures(uint32 textureCount){
 
 void SceneManager::initDescriptorSets(VulkanDevice* device){
     // global (set = 0)
-    m_globalDescriptorSetLayout = m_rm->create<DescriptorSetLayout>(DescriptorSetLayoutDesc{
+    m_globalDescriptorSetLayout = m_rm->create<DescriptorSetLayout>({
         .textures = {
             {.binding = 3, .count = (uint32)m_textures.size()},
         },
@@ -256,7 +266,7 @@ void SceneManager::initDescriptorSets(VulkanDevice* device){
             {.binding = 2, .type = Flags::DescriptorType::STORAGE_BUFFER}
         }
     });
-    m_globalDescriptorSet = m_rm->create<DescriptorSet>(DescriptorSetDesc{
+    m_globalDescriptorSet = m_rm->create<DescriptorSet>({
         .textures = {
             {.textures = m_textures}
         },
@@ -268,10 +278,10 @@ void SceneManager::initDescriptorSets(VulkanDevice* device){
         .layout = m_globalDescriptorSetLayout
     });
     // per-frame (set = 1)
-    m_frameDescriptorSetLayout = m_rm->create<DescriptorSetLayout>(DescriptorSetLayoutDesc{
+    m_frameDescriptorSetLayout = m_rm->create<DescriptorSetLayout>({
         .buffers = {
-            {.binding = 0, .type = Flags::DescriptorType::STORAGE_BUFFER},
-            {.binding = 1, .type = Flags::DescriptorType::STORAGE_BUFFER},
+            {.binding = 0, .type = Flags::DescriptorType::UNIFORM_BUFFER},
+            {.binding = 1, .type = Flags::DescriptorType::UNIFORM_BUFFER},
             {.binding = 2, .type = Flags::DescriptorType::STORAGE_BUFFER},
             {.binding = 3, .type = Flags::DescriptorType::STORAGE_BUFFER},
             {.binding = 4, .type = Flags::DescriptorType::STORAGE_BUFFER}
@@ -294,7 +304,7 @@ void SceneManager::initDescriptorSets(VulkanDevice* device){
         uint32 lightsOffset = i*lightsFrameSize;
         uint32 transformsOffset = i*transformsFrameSize;
         uint32 drawsOffset = i*drawsFrameSize;
-        m_frameDescriptorSets[i] = m_rm->create<DescriptorSet>(DescriptorSetDesc{
+        m_frameDescriptorSets[i] = m_rm->create<DescriptorSet>({
             .buffers = {
                 {.buffer = m_sceneBuffer, .byteOffset = sceneOffset, .byteSize = sceneFrameSize},
                 {.buffer = m_cameraBuffer, .byteOffset = camerasOffset, .byteSize = camerasFrameSize},

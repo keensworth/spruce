@@ -2,6 +2,7 @@
 
 #include <cstdint>
 #include <glm/glm.hpp>
+#include <glm/gtx/quaternion.hpp>
 
 
 // integer types

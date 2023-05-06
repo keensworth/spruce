@@ -4,6 +4,7 @@
 #include <vector>
 #include "scene/GfxAssetLoader.h"
 #include "../core/memory/Handle.h"
+#include "../core/util/Span.h"
 #include "scene/SceneData.h"
 #include "vulkan/gfx_vulkan_core.h"
 
@@ -29,9 +30,9 @@ public:
 
     void init(VulkanResourceManager& rm);
 
-    void insertMesh(uint32 frame, uint32 meshId, uint32 materialFlags, Transform& transform);
-    void insertLight(uint32 frame, Light& light);
-    void updateCamera(uint32 frame, Camera& camera);
+    void insertMeshes(uint32 frame, spr::Span<uint32> meshIds, spr::Span<uint32> materialsFlags, spr::Span<const Transform> transforms);
+    void insertLights(uint32 frame, spr::Span<const Light> lights);
+    void updateCamera(uint32 frame, glm::vec2 screenDim, const Camera& camera);
     void reset(uint32 frame);
 
     void initializeAssets(SprResourceManager& rm, VulkanDevice* device);

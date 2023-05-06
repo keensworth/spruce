@@ -2,6 +2,9 @@
 
 #include "../interface/Window.h"
 #include "../debug/SprLog.h"
+#include "glm/ext/matrix_transform.hpp"
+#include "glm/gtx/quaternion.hpp"
+#include <glm/gtc/matrix_inverse.hpp>
 
 namespace spr {
     class SprResourceManager;
@@ -52,16 +55,61 @@ void SprRenderer::render(){
 }
 
 
-void SprRenderer::insertMesh(uint32 meshId, uint32 materialFlags, Transform& transform){
-    m_sceneManager.insertMesh(m_frameId, meshId, materialFlags, transform);
+void SprRenderer::insertMesh(uint32 meshId, uint32 materialFlags, const Transform& transform){
+    m_sceneManager.insertMeshes(m_frameId, {meshId}, {materialFlags}, {transform});
 }
 
-void SprRenderer::insertLight(Light& light){
-    m_sceneManager.insertLight(m_frameId, light);
+void SprRenderer::insertMeshes(spr::Span<uint32> meshIds, spr::Span<uint32> materialsFlags, spr::Span<const Transform> transforms){
+    if (!meshIds.size() || !materialsFlags.size() || !transforms.size())
+        SprLog::error("[SprRenderer] [insertMeshes] must provide at least 1 of each parameter");
+
+    if (meshIds.size() != transforms.size())
+        SprLog::error("[SprRenderer] [insertMeshes] size mismatch between meshIds and transforms");
+
+    m_sceneManager.insertMeshes(m_frameId, meshIds, materialsFlags, transforms);
 }
 
-void SprRenderer::updateCamera(Camera& camera){
-    m_sceneManager.updateCamera(m_frameId, camera);
+void SprRenderer::insertMesh(uint32 meshId, uint32 materialFlags, const TransformInfo& transformInfo){
+    glm::mat4 translation = glm::translate(glm::mat4(1.f), transformInfo.position);
+    glm::mat4 rotation = glm::toMat4(transformInfo.rotation);
+    glm::mat4 scale = glm::scale(glm::mat4(1.f), glm::vec3(transformInfo.scale));
+
+    glm::mat4 model = translation * rotation * scale;
+    glm::mat4 modelInvTranspose = glm::inverseTranspose(model);
+
+    m_sceneManager.insertMeshes(m_frameId, {meshId}, {materialFlags}, {{model, modelInvTranspose}});
+}
+
+void SprRenderer::insertMeshes(spr::Span<uint32> meshIds, spr::Span<uint32> materialsFlags, spr::Span<const TransformInfo> transformInfos){
+    if (!meshIds.size() || !materialsFlags.size() || !transformInfos.size())
+        SprLog::error("[SprRenderer] [insertMeshes] must provide at least 1 of each parameter");
+
+    if (meshIds.size() != transformInfos.size())
+        SprLog::error("[SprRenderer] [insertMeshes] size mismatch between meshIds and transforms");
+    
+    Transform transforms[meshIds.size()];
+    for (uint32 i = 0; i < meshIds.size(); i++){
+        glm::mat4 translation = glm::translate(glm::mat4(1.f), transformInfos[i].position);
+        glm::mat4 rotation = glm::toMat4(transformInfos[i].rotation);
+        glm::mat4 scale = glm::scale(glm::mat4(1.f), glm::vec3(transformInfos[i].scale));
+
+        transforms[i].model = translation * rotation * scale;
+        transforms[i].modelInvTranspose = glm::inverseTranspose(transforms[i].model);
+    }
+
+    m_sceneManager.insertMeshes(m_frameId, meshIds, materialsFlags, {transforms, meshIds.size()});
+}
+
+void SprRenderer::insertLight(const Light& light){
+    m_sceneManager.insertLights(m_frameId, {light});
+}
+
+void SprRenderer::insertLights(spr::Span<const Light> lights){
+    m_sceneManager.insertLights(m_frameId, lights);
+}
+
+void SprRenderer::updateCamera(const Camera& camera){
+    m_sceneManager.updateCamera(m_frameId, {m_window->width(), m_window->height()}, camera);
 }
 
 
