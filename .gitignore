@@ -33,5 +33,5 @@
 
 # Directories
 build/
-data/
+data/shaders/spv
 .*/
