@@ -11,6 +11,7 @@ target_sources(srcFiles PRIVATE
   core/util/Container.h
   core/util/FunctionStack.h
   core/util/FunctionQueue.h
+  core/util/Span.h
   core/util/node/EntityNode.h
   core/util/node/EntityNode.cpp
   core/util/node/IndexNode.h
