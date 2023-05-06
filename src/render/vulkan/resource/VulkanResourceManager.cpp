@@ -36,8 +36,11 @@ VulkanResourceManager::~VulkanResourceManager(){
 
 void VulkanResourceManager::init(VulkanDevice& device, glm::uvec3 screenDim){
     m_screenDim = screenDim;
-    // set device and allocator
     m_device = device.getDevice();
+    
+    VkPhysicalDeviceProperties properties;
+    vkGetPhysicalDeviceProperties(device.getPhysicalDevice(), &properties);
+    m_minUBOAlignment = properties.limits.minUniformBufferOffsetAlignment;
     
     // create allocator
     VmaVulkanFunctions pFunctions = {

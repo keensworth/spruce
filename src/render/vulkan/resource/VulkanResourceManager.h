@@ -47,8 +47,8 @@ public:
 
     // U := ResourceType
     // V := ResourceDesc
-    template <typename U, typename V>
-    Handle<U> create(V desc){
+    template <typename U>
+    Handle<U> create(typename U::Desc desc){
         SprLog::warn("[VulkanResourceManager] [CREATE] Resource not recognized");
         return Handle<U>();
     }
@@ -59,6 +59,14 @@ public:
     Handle<U> recreate(Handle<U> handle, V arg){
         SprLog::warn("[VulkanResourceManager] [RECREATE] Resource recreation not available for this type, excplicit specialization required");
         return Handle<U>();
+    }
+
+    uint32 alignedSize(size_t typeSize){
+        size_t alignedSize = typeSize;
+        if (m_minUBOAlignment > 0) {
+            alignedSize = (alignedSize + m_minUBOAlignment - 1) & ~(m_minUBOAlignment - 1);
+        }
+        return alignedSize;
     }
 
 
@@ -91,6 +99,7 @@ private: // owning
 
 private: // non-owning
     VkDevice m_device;
+    uint32 m_minUBOAlignment;
     glm::uvec3 m_screenDim;
     bool m_destroyed = false;
     uint32 m_frameId = 0;
