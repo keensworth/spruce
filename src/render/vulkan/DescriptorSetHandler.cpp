@@ -19,10 +19,7 @@ DescriptorSetHandler::DescriptorSetHandler(VulkanResourceManager* rm, VkCommandB
     reset();
 }
 
-DescriptorSetHandler::~DescriptorSetHandler(){
-    if (m_initialized)
-        SprLog::info("[DescriptorSetHandler] [destroy] destroyed...");
-}
+DescriptorSetHandler::~DescriptorSetHandler(){}
 
 void DescriptorSetHandler::set(uint32 set, Handle<DescriptorSet> handle){
     if (set >= 4){
