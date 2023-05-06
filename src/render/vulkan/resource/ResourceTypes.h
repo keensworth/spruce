@@ -39,6 +39,7 @@ typedef struct Buffer {
     uint32 memType;
     VmaAllocation alloc;
     VmaAllocationInfo allocInfo; // TODO remove
+    struct Desc;
 } Buffer;
 
 
@@ -59,6 +60,7 @@ typedef struct Texture {
     VkImageUsageFlags usage;
     VkImageSubresourceRange subresourceRange;
     bool defaultRes = true;
+    struct Desc;
 } Texture;
 
 
@@ -67,6 +69,7 @@ typedef struct Texture {
 // --------------------------------------------------------- //
 typedef struct TextureAttachment {
     std::vector<Handle<Texture>> textures;
+    struct Desc;
 } TextureAttachment;
 
 
@@ -91,6 +94,7 @@ typedef struct DescriptorSetLayout {
     std::vector<TextureBindingLayout> textureLayouts{};
     std::vector<BufferBindingLayout> bufferLayouts{};
     VkDescriptorSetLayout descriptorSetLayout;
+    struct Desc;
 } DescriptorSetLayout;
 
 
@@ -102,6 +106,7 @@ typedef struct DescriptorSet {
     // !global ==> (size == MAX_FRAME_COUNT)
     std::vector<VkDescriptorSet> descriptorSets{};
     bool global = false;
+    struct Desc;
 } DescriptorSet;
 
 
@@ -113,6 +118,7 @@ typedef struct RenderPassLayout {
     std::vector<VkAttachmentReference> colorReferences;
     std::vector<VkAttachmentDescription> attachmentDescriptions;
     uint32 attachmentCount;
+    struct Desc;
 } RenderPassLayout;
 
 
@@ -160,6 +166,7 @@ typedef struct RenderPass {
     DepthAttachment depthAttachment;
     std::vector<ColorAttachment> colorAttachments;
     bool swapchainOverride = false;
+    struct Desc;
 } RenderPass;
 
 
@@ -172,6 +179,7 @@ typedef struct Shader {
     std::vector<VkDescriptorSetLayout> emptyDescSetLayouts;
     VkShaderModule vertexModule = VK_NULL_HANDLE;
     VkShaderModule fragmentModule = VK_NULL_HANDLE;
+    struct Desc;
 } Shader;
 
 
@@ -188,7 +196,7 @@ typedef struct Shader {
 // --------------------------------------------------------- //
 //                 Buffer Desc                               // 
 // --------------------------------------------------------- //
-typedef struct BufferDesc {
+typedef struct Buffer::Desc {
     uint32 byteOffset  = 0;
     uint32 byteSize    = 0;
     uint32 usage       = Flags::BufferUsage::BU_UNIFORM_BUFFER;
@@ -199,7 +207,7 @@ typedef struct BufferDesc {
 // --------------------------------------------------------- //
 //                 Texture Desc                              // 
 // --------------------------------------------------------- //
-typedef struct TextureDesc {
+typedef struct Texture::Desc {
     static const uint32 ALL_MIPS = 16;
     static const uint32 ALL_LAYERS = 16;
 
@@ -231,7 +239,7 @@ typedef struct TextureDesc {
 // --------------------------------------------------------- //
 //                 Texture Attachment Desc                   // 
 // --------------------------------------------------------- //
-typedef struct TextureAttachmentDesc {
+typedef struct TextureAttachment::Desc {
     TextureDesc textureLayout;
 } TextureAttachmentDesc;
 
@@ -239,7 +247,7 @@ typedef struct TextureAttachmentDesc {
 // --------------------------------------------------------- //
 //                 Descriptor Set Layout Desc                // 
 // --------------------------------------------------------- //
-typedef struct DescriptorSetLayoutDesc {
+typedef struct DescriptorSetLayout::Desc {
     std::vector<DescriptorSetLayout::TextureBindingLayout> textures{};
     std::vector<DescriptorSetLayout::BufferBindingLayout> buffers{};
 } DescriptorSetLayoutDesc;
@@ -248,7 +256,7 @@ typedef struct DescriptorSetLayoutDesc {
 // --------------------------------------------------------- //
 //                 Descriptor Set Desc                       // 
 // --------------------------------------------------------- //
-typedef struct DescriptorSetDesc {
+typedef struct DescriptorSet::Desc {
     static const uint32 ALL_BYTES = 0xFFFFFFFF;
     
     typedef struct TextureBinding {            // [mutually exclusive]
@@ -274,7 +282,7 @@ typedef struct DescriptorSetDesc {
 // --------------------------------------------------------- //
 //                 Render Pass Layout Desc                   // 
 // --------------------------------------------------------- //
-typedef struct RenderPassLayoutDesc { 
+typedef struct RenderPassLayout::Desc { 
     typedef struct SubpassLayout {
         bool depthAttachment = false;
         std::vector<uint32> colorAttachments;
@@ -289,7 +297,7 @@ typedef struct RenderPassLayoutDesc {
 // --------------------------------------------------------- //
 //                 Render Pass Desc                          // 
 // --------------------------------------------------------- //
-typedef struct RenderPassDesc { 
+typedef struct RenderPass::Desc { 
     glm::uvec3 dimensions = {0,0,0};
     Handle<RenderPassLayout> layout;
     RenderPass::DepthAttachment depthAttachment;
@@ -300,7 +308,7 @@ typedef struct RenderPassDesc {
 // --------------------------------------------------------- //
 //                 Shader Desc                               // 
 // --------------------------------------------------------- //
-typedef struct ShaderDesc {
+typedef struct Shader::Desc {
     typedef struct Shader{
         std::string path = "";
     } Shader;

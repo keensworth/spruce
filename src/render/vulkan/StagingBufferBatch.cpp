@@ -13,14 +13,14 @@ void StagingBuffers::init(VulkanResourceManager* rm) {
     m_rm = rm;
 
     // init staging buffers
-    m_stage64MB = rm->create<Buffer>(BufferDesc{
+    m_stage64MB = rm->create<Buffer>({
         .byteSize = m_size64MB, 
         .usage = Flags::BufferUsage::BU_TRANSFER_SRC,
         .memType = (HOST)
     });
 
     for (uint32 i = 0; i < m_maxCount16MB; i++) {
-        m_stages16MB[i] = rm->create<Buffer>(BufferDesc{
+        m_stages16MB[i] = rm->create<Buffer>({
             .byteSize = m_size16MB, 
             .usage = Flags::BufferUsage::BU_TRANSFER_SRC,
             .memType = (HOST)
@@ -28,7 +28,7 @@ void StagingBuffers::init(VulkanResourceManager* rm) {
     }
 
     for (uint32 i = 0; i < m_maxCount4MB; i++) {
-        m_stages4MB[i] = rm->create<Buffer>(BufferDesc{
+        m_stages4MB[i] = rm->create<Buffer>({
             .byteSize = m_size4MB, 
             .usage = Flags::BufferUsage::BU_TRANSFER_SRC,
             .memType = (HOST)
@@ -36,7 +36,7 @@ void StagingBuffers::init(VulkanResourceManager* rm) {
     }
 
     for (uint32 i = 0; i < m_maxCount1MB; i++) {
-        m_stages1MB[i] = rm->create<Buffer>(BufferDesc{
+        m_stages1MB[i] = rm->create<Buffer>({
             .byteSize = m_size1MB, 
             .usage = Flags::BufferUsage::BU_TRANSFER_SRC,
             .memType = (HOST)
@@ -111,7 +111,7 @@ Handle<Buffer> StagingBuffers::getStagingBuffer(uint32 sizeBytes) {
 
     // none available
     // create new staging buffer
-    Handle<Buffer> overflowStage = m_rm->create<Buffer>(BufferDesc{
+    Handle<Buffer> overflowStage = m_rm->create<Buffer>({
         .byteSize = sizeBytes, 
         .usage = Flags::BufferUsage::BU_TRANSFER_SRC,
         .memType = (HOST)
