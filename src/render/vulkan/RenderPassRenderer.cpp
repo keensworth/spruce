@@ -59,7 +59,7 @@ void RenderPassRenderer::drawSubpass(PassContext context, std::vector<Batch>& ba
     // here, a batch is a collection of mesh draws that
     // share a material (or subset of material flags)
     for (Batch& batch : batches){
-        vkCmdDrawIndexed(m_commandBuffer, batch.indexCount, batch.drawCount, batch.firstIndex, 0, 0);
+        vkCmdDrawIndexed(m_commandBuffer, batch.indexCount, batch.drawCount, batch.firstIndex, 0, batch.drawDataOffset);
     }
 }
 
