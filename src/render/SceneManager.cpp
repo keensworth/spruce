@@ -67,6 +67,87 @@ void SceneManager::insertMeshes(uint32 frame, spr::Span<uint32> meshIds, spr::Sp
     }
 }
 
+void SceneManager::insertMeshes(uint32 frame, spr::Span<uint32> meshIds, spr::Span<uint32> materialsFlags, const Transform& transform ){
+    bool sharedMaterial = (meshIds.size() != materialsFlags.size() && materialsFlags.size() == 1);
+
+    uint32 transformIndex = m_transforms[frame % MAX_FRAME_COUNT].insert(transform);
+
+    for (uint32 i = 0; i < meshIds.size(); i++){
+        // get mesh data and fill draw
+        MeshInfo& meshInfo = m_meshInfo[meshIds[i]];
+        DrawData draw = {
+            .vertexOffset   = meshInfo.vertexOffset,  
+            .materialIndex  = meshInfo.materialIndex, 
+            .transformIndex = transformIndex
+        };
+
+        // fill out batch info, which will either initialize
+        // a new batch or update an existing one
+        Batch batchInfo = {
+            .meshId         = meshIds[i],
+            .materialFlags  = !sharedMaterial ? materialsFlags[i] : materialsFlags[0],
+            .indexCount     = meshInfo.indexCount,
+            .firstIndex     = meshInfo.firstIndex,
+            .drawDataOffset = 0,
+            .drawCount      = 1
+        };
+
+        m_batchManagers[frame % MAX_FRAME_COUNT].addDraw(draw, batchInfo);
+    }
+}
+
+void SceneManager::insertMeshes(uint32 frame, spr::Span<uint32> meshIds, uint32 materialFlags , spr::Span<const Transform> transforms){
+    for (uint32 i = 0; i < meshIds.size(); i++){
+        // get mesh data and fill draw
+        MeshInfo& meshInfo = m_meshInfo[meshIds[i]];
+        DrawData draw = {
+            .vertexOffset   = meshInfo.vertexOffset,  
+            .materialIndex  = meshInfo.materialIndex, 
+            .transformIndex = m_transforms[frame % MAX_FRAME_COUNT].insert(transforms[i])
+        };
+
+        // fill out batch info, which will either initialize
+        // a new batch or update an existing one
+        Batch batchInfo = {
+            .meshId         = meshIds[i],
+            .materialFlags  = materialFlags,
+            .indexCount     = meshInfo.indexCount,
+            .firstIndex     = meshInfo.firstIndex,
+            .drawDataOffset = 0,
+            .drawCount      = 1
+        };
+
+        m_batchManagers[frame % MAX_FRAME_COUNT].addDraw(draw, batchInfo);
+    }
+}
+
+void SceneManager::insertMeshes(uint32 frame, spr::Span<uint32> meshIds, uint32 materialFlags , const Transform& transform){
+    uint32 transformIndex = m_transforms[frame % MAX_FRAME_COUNT].insert(transform);
+
+    for (uint32 i = 0; i < meshIds.size(); i++){
+        // get mesh data and fill draw
+        MeshInfo& meshInfo = m_meshInfo[meshIds[i]];
+        DrawData draw = {
+            .vertexOffset   = meshInfo.vertexOffset,  
+            .materialIndex  = meshInfo.materialIndex, 
+            .transformIndex = transformIndex
+        };
+
+        // fill out batch info, which will either initialize
+        // a new batch or update an existing one
+        Batch batchInfo = {
+            .meshId         = meshIds[i],
+            .materialFlags  = materialFlags,
+            .indexCount     = meshInfo.indexCount,
+            .firstIndex     = meshInfo.firstIndex,
+            .drawDataOffset = 0,
+            .drawCount      = 1
+        };
+
+        m_batchManagers[frame % MAX_FRAME_COUNT].addDraw(draw, batchInfo);
+    }
+}
+
 
 void SceneManager::insertLights(uint32 frame, spr::Span<const Light> lights){
     m_lights[frame % MAX_FRAME_COUNT].insert(lights.data(), lights.size());
@@ -77,7 +158,7 @@ void SceneManager::updateCamera(uint32 frame, glm::vec2 screenDim, const Camera&
     m_cameras[frame % MAX_FRAME_COUNT].insert(camera);
 
     // pre-compute viewProjection matrix
-    glm::mat4 view = glm::lookAt(camera.pos, camera.dir, camera.up);
+    glm::mat4 view = glm::lookAt(camera.pos, camera.pos + camera.dir, camera.up);
     glm::mat4 proj = glm::perspective(camera.fov, (screenDim.x/screenDim.y), camera.near, camera.far);
     m_sceneData[frame % MAX_FRAME_COUNT].insert({proj * view});
 }
@@ -89,7 +170,7 @@ void SceneManager::uploadGlobalResources(UploadHandler& uploadHandler){
     uploadHandler.uploadBuffer(m_assetLoader.getMaterialData(), m_materialsBuffer);
     uploadHandler.uploadBuffer(m_assetLoader.getVertexIndicesData(), m_indexBuffer);
 
-    std::vector<TextureInfo> textures = m_assetLoader.getTextureData();
+    std::vector<TextureInfo>& textures = m_assetLoader.getTextureData();
     for (uint32 i = 0; i < m_assetLoader.getPrimitiveCounts().textureCount; i++){
         uploadHandler.uploadTexture(textures[i].data, m_textures[i]);
     }
@@ -100,6 +181,8 @@ void SceneManager::uploadPerFrameResources(UploadHandler& uploadHandler, uint32 
     uploadHandler.uploadDyanmicBuffer(m_cameras[frame % MAX_FRAME_COUNT], m_cameraBuffer);
     uploadHandler.uploadDyanmicBuffer(m_lights[frame % MAX_FRAME_COUNT], m_lightsBuffer);
     uploadHandler.uploadDyanmicBuffer(m_transforms[frame % MAX_FRAME_COUNT], m_transformBuffer);
+    
+    m_batchManagers[frame % MAX_FRAME_COUNT].getDrawData(m_drawData[frame % MAX_FRAME_COUNT]);
     uploadHandler.uploadDyanmicBuffer(m_drawData[frame % MAX_FRAME_COUNT], m_drawDataBuffer);
 }
 

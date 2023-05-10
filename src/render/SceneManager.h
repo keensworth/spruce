@@ -30,9 +30,14 @@ public:
 
     void init(VulkanResourceManager& rm);
 
-    void insertMeshes(uint32 frame, spr::Span<uint32> meshIds, spr::Span<uint32> materialsFlags, spr::Span<const Transform> transforms);
     void insertLights(uint32 frame, spr::Span<const Light> lights);
     void updateCamera(uint32 frame, glm::vec2 screenDim, const Camera& camera);
+
+    void insertMeshes(uint32 frame, spr::Span<uint32> meshIds, spr::Span<uint32> materialsFlags, spr::Span<const Transform> transforms);
+    void insertMeshes(uint32 frame, spr::Span<uint32> meshIds, spr::Span<uint32> materialsFlags,           const Transform& transform );
+    void insertMeshes(uint32 frame, spr::Span<uint32> meshIds,            uint32 materialFlags , spr::Span<const Transform> transforms);
+    void insertMeshes(uint32 frame, spr::Span<uint32> meshIds,            uint32 materialFlags ,           const Transform& transform );
+    
     void reset(uint32 frame);
 
     void initializeAssets(SprResourceManager& rm, VulkanDevice* device);
