@@ -19,10 +19,8 @@ T ResourceLoader::loadFromMetadata(ResourceMetadata metadata){
 //    Model - .smdl                                                          // 
 // ------------------------------------------------------------------------- //
 // ╔═══════════════════════════════════╗
-// ║     name length (4)               ║ // # characters in name
-// ╠═══════════════════════════════════╣
 // ║                 ...               ║
-// ╠     name (name-length)            ╣ // name characters
+// ╠     model name (32)               ╣ // name characters
 // ║                 ...               ║
 // ╠═══════════════════════════════════╣
 // ║     mesh count (4)                ║ // # meshes that make up model
@@ -44,16 +42,10 @@ Model ResourceLoader::loadFromMetadata<Model>(ResourceMetadata metadata){
         return Model();
     }
 
-    uint32 nameLength;
-    std::vector<uint8> name;
     uint32 meshCount;
 
-    // read name length
-    f.read((char*)&nameLength, sizeof(uint32));
-
-    // read name
-    name = std::vector<uint8>(nameLength);
-    f.read((char*)name.data(), nameLength);
+    // read name (ignore)
+    f.ignore(32);
 
     // read mesh count
     f.read((char*)&meshCount, sizeof(uint32));
@@ -395,6 +387,8 @@ Texture ResourceLoader::loadFromMetadata<Texture>(ResourceMetadata metadata){
 //    Buffer - .sbuf                                                         // 
 // ------------------------------------------------------------------------- //
 // ╔═══════════════════════════════════╗
+// ║     association (4)               ║ // parent type ('smtl', 'stex',..)
+// ╠═══════════════════════════════════╣
 // ║     element type (4)              ║ // element type (vec3,...)
 // ╠═══════════════════════════════════╣
 // ║     component type (4)            ║ // component type (f,i,s,...)
@@ -418,10 +412,14 @@ Buffer ResourceLoader::loadFromMetadata<Buffer>(ResourceMetadata metadata){
         return Buffer();
     }
 
+    unsigned char association[4];
     uint32 elementType;
     uint32 componentType;
     uint32 byteLength;
     std::vector<uint8> data;
+
+    // read association
+    f.read((char*)&association, sizeof(uint32));
 
     // read element type
     f.read((char*)&elementType, sizeof(uint32));
