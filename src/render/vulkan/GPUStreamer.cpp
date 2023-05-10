@@ -4,6 +4,7 @@
 #include "VulkanDevice.h"
 #include "resource/VulkanResourceManager.h"
 #include <cstddef>
+#include <vulkan/vulkan_core.h>
 #include "../../external/volk/volk.h"
 #include "../../debug/SprLog.h"
 //extern struct VkBufferMemoryBarrier2;
@@ -218,7 +219,7 @@ void GPUStreamer::transfer(TextureTransfer data) {
             .srcStageMask = VK_PIPELINE_STAGE_2_TRANSFER_BIT_KHR,
             .srcAccessMask = VK_ACCESS_2_TRANSFER_WRITE_BIT_KHR,
             .oldLayout = VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL,
-            .newLayout = VK_IMAGE_LAYOUT_READ_ONLY_OPTIMAL,
+            .newLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL,
             .srcQueueFamilyIndex = m_transferFamilyIndex,
             .dstQueueFamilyIndex = m_graphicsFamilyIndex,
             .image = dstImage,
@@ -237,7 +238,7 @@ void GPUStreamer::transfer(TextureTransfer data) {
             .dstStageMask = VK_PIPELINE_STAGE_2_FRAGMENT_SHADER_BIT_KHR,
             .dstAccessMask = VK_ACCESS_2_SHADER_READ_BIT_KHR,
             .oldLayout = VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL,
-            .newLayout = VK_IMAGE_LAYOUT_READ_ONLY_OPTIMAL,
+            .newLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL,
             .srcQueueFamilyIndex = m_transferFamilyIndex,
             .dstQueueFamilyIndex = m_graphicsFamilyIndex,
             .image = dstImage,
