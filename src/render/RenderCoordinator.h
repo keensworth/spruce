@@ -1,5 +1,6 @@
 #pragma once
 
+#include "renderers/UnlitMeshRenderer.h"
 #include "vulkan/FrameRenderer.h"
 #include "renderers/TestRenderer.h"
 #include "renderers/DebugMeshRenderer.h"
@@ -46,5 +47,6 @@ private:
     // OFFSCREEN renderers
     TestRenderer m_testRenderer;
     DebugMeshRenderer m_debugMeshRenderer;
+    UnlitMeshRenderer m_unlitMeshRenderer;
 };
 }
