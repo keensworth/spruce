@@ -21,7 +21,7 @@ void AssetCreator::createTexture(std::string path){
     m_extension = std::filesystem::path(path).extension();
 
     int x,y,n;
-    unsigned char *data = stbi_load(path.c_str(), &x, &y, &n, 4);
+    unsigned char *data = stbi_load(path.c_str(), &x, &y, &n, STBI_rgb_alpha);
     if (data == NULL){
         std::cerr << "Failed to open image" << std::endl;
     }
@@ -37,7 +37,9 @@ void AssetCreator::createTexture(std::string path){
 
 void AssetCreator::writeTextureFile(uint32_t bufferId, uint32_t height, uint32_t width, uint32_t components, uint32_t texId){
     // buffer id (4)
-    // raw/png/jpg/raw/bmp (4)
+    // height (4)
+    // width (4)
+    // components (4)
 
     std::cout << "      Write Texture File:" << std::endl;
 
@@ -74,6 +76,7 @@ void AssetCreator::writeTextureFile(uint32_t bufferId, uint32_t height, uint32_t
 }
 
 void AssetCreator::writeBufferFile(const unsigned char* data, uint32_t byteLength, uint32_t elementType, uint32_t componentType, uint32_t bufferId){
+    // association (4)
     // element type (4)
     // component type (4)
     // byte length (4)
@@ -89,6 +92,10 @@ void AssetCreator::writeBufferFile(const unsigned char* data, uint32_t byteLengt
         return ;
     }
     std::cout << "          f: created" << std::endl;
+
+    // write association
+    f.write("stex", sizeof(uint32_t));
+    std::cout << "          w: association: " << "stex" << std::endl;
 
     // write element type
     f.write((char*)&elementType, sizeof(uint32_t));
