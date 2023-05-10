@@ -1,4 +1,5 @@
 #include "VulkanResourceManager.h"
+#include <vulkan/vulkan_core.h>
 
 #define VMA_STATIC_VULKAN_FUNCTIONS 0
 #define VMA_DYNAMIC_VULKAN_FUNCTIONS 1
@@ -290,7 +291,8 @@ Handle<Texture> VulkanResourceManager::create<Texture>(TextureDesc desc){
         .samples     = (VkSampleCountFlagBits)desc.samples,
         .tiling      = VK_IMAGE_TILING_OPTIMAL,
         .usage       = (VkImageUsageFlags)desc.usage,
-        .sharingMode = VK_SHARING_MODE_EXCLUSIVE
+        .sharingMode = VK_SHARING_MODE_EXCLUSIVE,
+        .initialLayout = VK_IMAGE_LAYOUT_UNDEFINED
     };
 
     // create texture resource
@@ -335,7 +337,7 @@ Handle<Texture> VulkanResourceManager::create<Texture>(TextureDesc desc){
 
     // create image view (default)
     VkImageSubresourceRange subresourceRange {
-        .aspectMask     = (desc.usage == Flags::ImageUsage::IU_DEPTH_STENCIL_ATTACHMENT)
+        .aspectMask     = (desc.usage & Flags::ImageUsage::IU_DEPTH_STENCIL_ATTACHMENT)
                             ? VK_IMAGE_ASPECT_DEPTH_BIT : VK_IMAGE_ASPECT_COLOR_BIT,
         .baseMipLevel   = desc.view.baseMip,
         .levelCount     = desc.view.mips,
@@ -772,12 +774,14 @@ Handle<RenderPass> VulkanResourceManager::create<RenderPass>(RenderPassDesc desc
     };
 
     // build subpass description
+    int32 colorAttachmentCount = hasDepthAttachment ? attachmentCount - 1 : attachmentCount;
+    colorAttachmentCount = colorAttachmentCount > 0 ? colorAttachmentCount : 0;
     VkSubpassDescription subpassDescription = {
         .pipelineBindPoint       = (VkPipelineBindPoint)Flags::BindPoint::BP_GRAPHICS,
         .inputAttachmentCount    = 0,
         .pInputAttachments       = NULL,
-        .colorAttachmentCount    = layout->attachmentCount,
-        .pColorAttachments       = layout->attachmentCount > 0 ? layout->colorReferences.data() : NULL,
+        .colorAttachmentCount    = (uint32)colorAttachmentCount,
+        .pColorAttachments       = colorAttachmentCount > 0 ? layout->colorReferences.data() : NULL,
         .pResolveAttachments     = NULL,
         .pDepthStencilAttachment = hasDepthAttachment ? &(layout->depthReference) : NULL,
         .preserveAttachmentCount = 0,
@@ -986,7 +990,7 @@ Handle<Shader> VulkanResourceManager::create<Shader>(ShaderDesc desc){
     VK_CHECK(vkCreatePipelineLayout(m_device, &pipelineLayoutInfo, NULL, &pipelineLayout));
 
     // graphics state meta
-    std::vector<VkPipelineColorBlendAttachmentState> colorBlendAttachments(renderPassLayout->attachmentCount);
+    std::vector<VkPipelineColorBlendAttachmentState> colorBlendAttachments(renderPassLayout->colorReferences.size());
     std::vector<VkDynamicState> dynamicStates = {
             VK_DYNAMIC_STATE_VIEWPORT,
             VK_DYNAMIC_STATE_SCISSOR
@@ -1060,7 +1064,7 @@ Handle<Shader> VulkanResourceManager::create<Shader>(ShaderDesc desc){
         };
 
         // build color blend attachments
-        for (int i = 0; i < renderPassLayout->attachmentCount; i++){
+        for (int i = 0; i < renderPassLayout->colorReferences.size(); i++){
             colorBlendAttachments[i] = {
                 .blendEnable         = VK_TRUE,
                 .srcColorBlendFactor = VK_BLEND_FACTOR_SRC_ALPHA,
@@ -1080,7 +1084,7 @@ Handle<Shader> VulkanResourceManager::create<Shader>(ShaderDesc desc){
         colorBlendState = {
             .sType           = VK_STRUCTURE_TYPE_PIPELINE_COLOR_BLEND_STATE_CREATE_INFO,
             .logicOpEnable   = VK_FALSE,
-            .attachmentCount = renderPassLayout->attachmentCount,
+            .attachmentCount = (uint32)renderPassLayout->colorReferences.size(),
             .pAttachments    = colorBlendAttachments.data(),
             .blendConstants  = {
                 1.f,1.f,1.f,1.f
