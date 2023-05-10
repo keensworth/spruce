@@ -36,6 +36,15 @@ public:
         return typedCache->getData(handle);
     }
 
+    // U := ResourceType
+    template <typename U>
+    U* getData(uint32 id){
+        auto resourceCache = m_resourceMap[typeid(U)];
+        auto typedCache = dynamic_cast<TypedResourceCache<U>*>(resourceCache);
+        auto handle = typedCache->getHandle(id);
+        return typedCache->getData(handle);
+    }
+
     std::vector<uint32>& getModelIds();
     std::vector<uint32>& getTextureIds();
     
