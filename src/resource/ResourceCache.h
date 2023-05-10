@@ -24,7 +24,7 @@ public:
 template <typename T>
 class TypedResourceCache : public ResourceCache {
 public:
-    TypedResourceCache(){}
+    TypedResourceCache() : m_data(4096){}
 
     ~TypedResourceCache(){
         // clear hashmaps
