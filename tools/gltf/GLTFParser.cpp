@@ -3,11 +3,14 @@
 #include "GLTFParser.h"
 #include "FileWriter.h"
 
+#include "stb_image.h"
+
 namespace spr::tools{
 
 GLTFParser::GLTFParser(){}
 
-void GLTFParser::writeBufferFile(const unsigned char* data, uint32_t byteLength, uint32_t elementType, uint32_t componentType, uint32_t bufferId){
+void GLTFParser::writeBufferFile(const unsigned char* data, std::string association, uint32_t byteLength, uint32_t elementType, uint32_t componentType, uint32_t bufferId){
+    // association (4)
     // element type (4)
     // component type (4)
     // byte length (4)
@@ -23,6 +26,10 @@ void GLTFParser::writeBufferFile(const unsigned char* data, uint32_t byteLength,
         return ;
     }
     std::cout << "          f: created" << std::endl;
+
+    // write association
+    f.write(association.data(), sizeof(uint32_t));
+    std::cout << "          w: association: " << association << std::endl;
 
     // write element type
     f.write((char*)&elementType, sizeof(uint32_t));
@@ -288,8 +295,7 @@ void GLTFParser::writeMaterialFile(
 void GLTFParser::writeModelFile(uint32_t meshCount, std::vector<uint32_t> meshIds, uint32_t modelId){
     // assuming no animations
 
-    // name length (4)
-    // name (nameLength)
+    // name (32)
     // mesh count (4)
     // mesh ids (4*count) 
     uint32_t nameLength = m_name.size();
@@ -305,13 +311,10 @@ void GLTFParser::writeModelFile(uint32_t meshCount, std::vector<uint32_t> meshId
         return ;
     }
     std::cout << "          f: created" << std::endl;
-    
-    // write name length
-    f.write((char*)&nameLength, sizeof(uint32_t));
-    std::cout << "          w: nameLength: " << nameLength << std::endl;
 
     // write name
-    f.write(m_name.c_str(), nameLength);
+    m_name.resize(32);
+    f.write(m_name.c_str(), 32);
     std::cout << "          w: name: " << m_name << std::endl;
 
     // write mesh count
@@ -372,8 +375,11 @@ void GLTFParser::writeTextureFile(uint32_t bufferId, uint32_t height, uint32_t w
 
 void GLTFParser::handleBuffer(
         const tinygltf::Buffer& buffer, 
+        std::string association,
         uint32_t byteOffset, 
         uint32_t byteLength, 
+        uint32_t bytesPerElement,
+        uint32_t elementCount,
         uint32_t elementType, 
         uint32_t componentType,
         uint32_t bufferId,
@@ -388,12 +394,14 @@ void GLTFParser::handleBuffer(
     std::cout << "  bufferId " << bufferId << std::endl;
     std::cout << "" << std::endl;
 
-    // pad position to vec4, if it isn't already
+    
+
+    // check if we need to pad position to vec4, if it isn't already
     bool needsPadding = false;
     if (isPosition){
         assert (elementType == TINYGLTF_TYPE_VEC3 || elementType == TINYGLTF_TYPE_VEC4);
         if (elementType == TINYGLTF_TYPE_VEC3){
-            byteLength = (4/3)*byteLength;
+            byteLength = (4.f/3.f)*byteLength;
             elementType = TINYGLTF_TYPE_VEC4;
             needsPadding = true;
         }
@@ -402,8 +410,13 @@ void GLTFParser::handleBuffer(
     // write slice of buffer into new buffer
     const unsigned char* bufferData = buffer.data.data();
     unsigned char* data = new unsigned char[byteLength];
-    if (needsPadding){
+    if (!needsPadding) {
+        for (int32_t i = 0; i < byteLength; i++){
+            data[i] = bufferData[i+byteOffset];
+        }
+    } else { // pad vec3 to vec4
         std::cout << "  position padding: true" << std::endl;
+
         // get 1.0f as byte array
         char float1fByteArray[4];
         union {
@@ -418,22 +431,18 @@ void GLTFParser::handleBuffer(
         for (int32_t i = 0; i < byteLength; i++){
             if (i%16 >= 12){ 
                 // write 1.0f to pos.w
-                data[i] = float1fByteArray[3 - (i%16 - 12)];
+                data[i] = float1fByteArray[i%16 - 12];
             } else {
                 // write buffer data to pos.xyz
                 data[i] = bufferData[index+byteOffset];
                 index++;
             }
         }
-    } else {
-        for (int32_t i = 0; i < byteLength; i++){
-            data[i] = bufferData[i+byteOffset];
-        }
     }
-    
+
     if (writeToFile){
         // write slice to file
-        writeBufferFile(data, byteLength, elementType, componentType, bufferId);
+        writeBufferFile(data, association.data(), byteLength, elementType, componentType, bufferId);
     } else {
         // write slice to 'out'
         out.resize(byteLength);
@@ -443,8 +452,60 @@ void GLTFParser::handleBuffer(
     delete[] data;
 }
 
+void GLTFParser::handleMIMEImageBuffer(
+        const tinygltf::Buffer& buffer, 
+        std::string association,
+        uint32_t byteOffset, 
+        uint32_t byteLength, 
+        uint32_t bytesPerElement,
+        uint32_t elementCount,
+        uint32_t elementType, 
+        uint32_t componentType,
+        uint32_t bufferId){
+    std::cout << "MIME Image Buffer:" << std::endl;
+    std::cout << "  byteOffset " << byteOffset << std::endl;
+    std::cout << "  byteLength " << byteLength << std::endl;
+    std::cout << "  elementType " << elementType << std::endl;
+    std::cout << "  componentType " << componentType << std::endl;
+    std::cout << "  bufferId " << bufferId << std::endl;
+    std::cout << "" << std::endl;
+
+    // buffer data
+    const unsigned char* bufferData = buffer.data.data();
+
+    // check if we need to load image data ourselves
+    bool loadImage = (!association.compare("stex") && ((elementCount * bytesPerElement) != byteLength));
+
+    if (loadImage) {
+        int width, height, numChannels;
+        unsigned char* pixels = stbi_load_from_memory(
+            reinterpret_cast<const stbi_uc*>(bufferData + byteOffset),
+            byteLength,
+            &width,
+            &height,
+            &numChannels,
+            STBI_rgb_alpha
+        );
+
+        byteLength = width * height * STBI_rgb_alpha;
+        
+        unsigned char* data = new unsigned char[byteLength];
+        for (int32_t i = 0; i < byteLength; i++)
+            data[i] = pixels[i];
+        writeBufferFile(data, association.data(), byteLength, elementType, componentType, bufferId);
+        free(pixels);
+        return;
+    }
+
+    unsigned char* data = new unsigned char[byteLength];
+    for (int32_t i = 0; i < byteLength; i++)
+        data[i] = bufferData[i+byteOffset];
+    writeBufferFile(data, association.data(), byteLength, elementType, componentType, bufferId);
+}
+
 void GLTFParser::handleBufferInterleaved(
         const tinygltf::Buffer& buffer, 
+        std::string association,
         uint32_t byteOffset, 
         uint32_t byteLength, 
         uint32_t byteStride,
@@ -475,7 +536,7 @@ void GLTFParser::handleBufferInterleaved(
 
     if (writeToFile){
         // write data to file
-        writeBufferFile(data.data(), byteLength, elementType, componentType, bufferId);
+        writeBufferFile(data.data(), association.data(), byteLength, elementType, componentType, bufferId);
     } else {
         // write data to 'out'
         out.resize(byteLength);
@@ -486,6 +547,7 @@ void GLTFParser::handleBufferInterleaved(
 
 void GLTFParser::handleBufferView(
         const tinygltf::BufferView& bufferView, 
+        std::string association,
         uint32_t byteOffset,
         uint32_t bytesPerElement, 
         uint32_t elementCount, 
@@ -504,7 +566,7 @@ void GLTFParser::handleBufferView(
     std::cout << "  bufferId " << bufferId << std::endl;
     // properties
     uint32_t adjustedByteOffset = bufferView.byteOffset + byteOffset;
-    uint32_t byteLength = bufferView.byteLength;
+    uint32_t byteLength = bufferView.byteLength - byteOffset;
     uint32_t byteStride = bufferView.byteStride;
     if (byteStride == 0)
         byteStride = bytesPerElement;
@@ -519,10 +581,13 @@ void GLTFParser::handleBufferView(
     const tinygltf::Buffer& buffer = model.buffers[bufferView.buffer];
 
     // handle buffer
-    if (byteStride == bytesPerElement)
-        handleBuffer(buffer, adjustedByteOffset, byteLength, elementType, componentType, bufferId, out, writeToFile, isPosition);
-    else
-        handleBufferInterleaved(buffer, adjustedByteOffset, byteLength, byteStride, bytesPerElement, elementType, componentType, bufferId, out, writeToFile);
+    if (byteStride == bytesPerElement){
+        if (!association.compare("sbuf")) // normal case
+            handleBuffer(buffer, association, adjustedByteOffset, byteLength, bytesPerElement, elementCount, elementType, componentType, bufferId, out, writeToFile, isPosition);
+        else  // handle buffer that contains MIME image data
+            handleMIMEImageBuffer(buffer, association, adjustedByteOffset, byteLength, bytesPerElement, elementCount, elementType, componentType, bufferId);
+    } else
+        handleBufferInterleaved(buffer, association, adjustedByteOffset, byteLength, byteStride, bytesPerElement, elementType, componentType, bufferId, out, writeToFile);
     
 }
 
@@ -547,12 +612,11 @@ uint32_t GLTFParser::handleAccessor(const tinygltf::Accessor& accessor, std::vec
     const tinygltf::BufferView& bufferView = model.bufferViews[accessor.bufferView];
 
     // handle bufer view
-    handleBufferView(bufferView, byteOffset, bytesPerElement, elementCount, elementType, componentType, accessorId, out, writeToFile, isPosition);
+    handleBufferView(bufferView, std::string("sbuf"), byteOffset, bytesPerElement, elementCount, elementType, componentType, accessorId, out, writeToFile, isPosition);
     return accessorId;
 }
 
 uint32_t GLTFParser::handleTexture(const tinygltf::Texture& tex){
-    int32_t texId = m_id++;
     std::vector<uint8_t> out;
     
     // get image and sampler
@@ -575,7 +639,7 @@ uint32_t GLTFParser::handleTexture(const tinygltf::Texture& tex){
 
     // create masked id (id + filter)
     //uint32_t maskedTexId = (texId & 0xFFFF) | (minFilter << 16);
-    uint32_t maskedTexId = texId;
+
     // get image
     image = model.images[sourceIndex];
 
@@ -586,22 +650,23 @@ uint32_t GLTFParser::handleTexture(const tinygltf::Texture& tex){
 
     // tex already written to buffer
     // write tex file but not buffer
-    if (m_sourceIdMap.count(sourceIndex) > 0){
+    if (m_sourceBuffIdMap.count(sourceIndex) > 0){
         // write texture to file
         std::cout << "  [exists, skipping]" << std::endl;
         std::cout << "" << std::endl;
-        writeTextureFile(m_sourceIdMap[sourceIndex], image.height, image.width, components, texId);
-        return maskedTexId;
+        return m_sourceTexIdMap[sourceIndex]; 
     }
 
     // get min filter
     minFilter = sampler.minFilter;
 
     // get data and write to buffer
-    int32_t elementType = TINYGLTF_TYPE_SCALAR;
-    int32_t componentType = TINYGLTF_COMPONENT_TYPE_UNSIGNED_BYTE;
+    int32_t elementType = TINYGLTF_TYPE_VEC4;
+    int32_t componentType = TINYGLTF_COMPONENT_TYPE_UNSIGNED_INT;
+    int32_t texId = m_id++;
     int32_t bufferId = m_id++;
-    m_sourceIdMap[sourceIndex] = bufferId;
+    m_sourceTexIdMap[sourceIndex] = texId;
+    m_sourceBuffIdMap[sourceIndex] = bufferId;
     if (image.bufferView >= 0){ // bufferview
         int32_t elementCount = image.width * image.height * image.component;
         std::cout << "  [bufferview] " << std::endl;
@@ -609,23 +674,26 @@ uint32_t GLTFParser::handleTexture(const tinygltf::Texture& tex){
         std::cout << "  elementType " << elementType << std::endl;
         std::cout << "  componentType " << componentType << std::endl;
         std::cout << "  elementCount " << elementCount << std::endl;
-        handleBufferView(model.bufferViews[image.bufferView], 0, 1, elementCount, elementType, componentType, bufferId, out, true, false);
+        handleBufferView(model.bufferViews[image.bufferView], std::string("stex"), 0, 1, elementCount, elementType, componentType, bufferId, out, true, false);
     } else { // direct buffer
         tinygltf::Buffer buffer;
         int32_t elementCount = image.image.size();
+        int32_t elementType = TINYGLTF_TYPE_SCALAR;
+        int32_t componentType = TINYGLTF_COMPONENT_TYPE_UNSIGNED_BYTE;
         buffer.data = image.image;
         std::cout << "  [buffer uri] " << std::endl;
         std::cout << "  minFilter " << minFilter << std::endl;
         std::cout << "  elementType " << elementType << std::endl;
         std::cout << "  componentType " << componentType << std::endl;
         std::cout << "  elementCount " << elementCount << std::endl;
-        handleBuffer(buffer, 0, elementCount, elementType, componentType, bufferId, out, true, false);
+        uint32_t bytesPerElement = tinygltf::GetNumComponentsInType(elementType) * tinygltf::GetComponentSizeInBytes(componentType);
+        handleBuffer(buffer, std::string("stex"), 0, bytesPerElement*elementCount, bytesPerElement, elementCount, elementType, componentType, bufferId, out, true, false);
     }
     std::cout << "" << std::endl;
 
     // write texture to file
     writeTextureFile(bufferId, image.height, image.width, components, texId);
-    return maskedTexId;
+    return texId;
 }
 
 uint32_t GLTFParser::handleTexture(const tinygltf::TextureInfo& texInfo){
@@ -730,6 +798,13 @@ uint32_t GLTFParser::interleaveVertexAttributes(
     uint32_t bytesPerTexCoord = 8;
     uint32_t bytesPerVertex = bytesPerNormal + bytesPerColor + bytesPerTexCoord;
 
+    std::cout << "INTERLEAVING____________________" << std::endl;
+    std::cout << "    vertices: " << vertexCount << std::endl;
+    std::cout << "    bytesper: " << bytesPerVertex << std::endl;
+    std::cout << "    nsize: " << normalBuffer.size()  << std::endl;
+    std::cout << "    csize: " << colorBuffer.size()  << std::endl;
+    std::cout << "    tsize: " << texCoordBuffer.size()  << std::endl;
+
     if (normalBuffer.size() != vertexCount * bytesPerNormal){
         normalBuffer.resize(vertexCount * bytesPerNormal);
     }
@@ -748,29 +823,83 @@ uint32_t GLTFParser::interleaveVertexAttributes(
     //      [ vec3 | vec2.y ]          [ color  | texCoord.V ]
     //
     for (uint32_t vertex = 0; vertex < vertexCount; vertex++){
-        // copy normal 
-        for(uint32_t normal = 0; normal < bytesPerNormal; normal++){
-            result[vertex*bytesPerVertex + normal] = normalBuffer[vertex*bytesPerNormal + normal];
-        }
+        if (vertex < 0) {
+            std::cout << "      VERT: " << vertex << std::endl;
+            uint32_t offset = vertex*bytesPerVertex;
+            std::cout << "        offset: " << offset << std::endl;
+            // copy normal 
+            for(uint32_t normal = 0; normal < bytesPerNormal; normal++){
+                result[offset + normal] = normalBuffer[vertex*bytesPerNormal + normal];
+                if (vertex < 16){
+                    std::cout << "        ri: " << offset + normal << std::endl;
+                    std::cout << "        ni: " << vertex*bytesPerNormal + normal << std::endl;
+                }
+            }
+            offset += bytesPerNormal;
+            std::cout << "        offset+n: " << offset << std::endl;
 
-        // copy texCoord.U
-        for(uint32_t tex = 0; tex < bytesPerTexCoord/2; tex++){
-            result[vertex*bytesPerVertex + bytesPerNormal + tex] = texCoordBuffer[vertex*bytesPerTexCoord + tex];
-        }
-        
-        // copy color
-        for(uint32_t color = 0; color < bytesPerColor; color++){
-            result[vertex*bytesPerVertex + bytesPerNormal + bytesPerTexCoord/2 + color] = colorBuffer[vertex*bytesPerColor + color];
-        }
-        
-        // copy texCoord.V
-        for(uint32_t tex = bytesPerTexCoord/2; tex < bytesPerTexCoord; tex++){
-            result[vertex*bytesPerVertex + bytesPerNormal + bytesPerTexCoord/2 + bytesPerColor + tex] = texCoordBuffer[vertex*bytesPerTexCoord + tex];
+            // copy texCoord.U
+            for(uint32_t tex = 0; tex < bytesPerTexCoord/2; tex++){
+                result[offset + tex] = texCoordBuffer[vertex*bytesPerTexCoord + tex];
+                if (vertex < 16){
+                    std::cout << "        ri: " << offset + tex << std::endl;
+                    std::cout << "        ti: " << vertex*bytesPerTexCoord + tex << std::endl;
+                }
+            }
+            offset += bytesPerTexCoord/2;
+            std::cout << "        offset+tc/2: " << offset << std::endl;
+
+            // copy color
+            for(uint32_t color = 0; color < bytesPerColor; color++){
+                result[offset + color] = colorBuffer[vertex*bytesPerColor + color];
+                if (vertex < 16){
+                    std::cout << "        ri: " << offset + color << std::endl;
+                    std::cout << "        ci: " << vertex*bytesPerColor + color << std::endl;
+                }
+            }
+            offset += bytesPerColor;
+            std::cout << "        offset+c: " << offset << std::endl;
+            
+            // copy texCoord.V
+            for(uint32_t tex = 0; tex < bytesPerTexCoord/2; tex++){
+                result[offset + tex] = texCoordBuffer[vertex*bytesPerTexCoord + tex];
+                if (vertex < 16){
+                    std::cout << "        ri: " << offset + tex << std::endl;
+                    std::cout << "        ti: " << vertex*bytesPerTexCoord + tex << std::endl;
+                }
+            }
+            offset += bytesPerTexCoord/2;
+            std::cout << "        offset+tc: " << offset << std::endl;
+        } else {
+            uint32_t offset = vertex*bytesPerVertex;
+            // copy normal 
+            for(uint32_t normal = 0; normal < bytesPerNormal; normal++){
+                result[offset + normal] = normalBuffer[vertex*bytesPerNormal + normal];
+            }
+            offset += bytesPerNormal;
+
+            // copy texCoord.U
+            for(uint32_t tex = 0; tex < bytesPerTexCoord/2; tex++){
+                result[offset + tex] = texCoordBuffer[vertex*bytesPerTexCoord + tex];
+            }
+            offset += bytesPerTexCoord/2;
+
+            // copy color
+            for(uint32_t color = 0; color < bytesPerColor; color++){
+                result[offset + color] = colorBuffer[vertex*bytesPerColor + color];
+            }
+            offset += bytesPerColor;
+            
+            // copy texCoord.V
+            for(uint32_t tex = 0; tex < bytesPerTexCoord/2; tex++){
+                result[offset + tex] = texCoordBuffer[vertex*bytesPerTexCoord + tex + bytesPerTexCoord/2];
+            }
+            offset += bytesPerTexCoord/2;
         }
     }
 
     // write to buffer
-    writeBufferFile(result.data(), vertexCount*bytesPerVertex, TINYGLTF_TYPE_VEC4, TINYGLTF_COMPONENT_TYPE_FLOAT, attributesId);
+    writeBufferFile(result.data(), std::string("sbuf"), vertexCount*bytesPerVertex, TINYGLTF_TYPE_VEC4, TINYGLTF_COMPONENT_TYPE_FLOAT, attributesId);
 
     return attributesId;
 }
@@ -854,6 +983,7 @@ uint32_t GLTFParser::handlePrimitive(const tinygltf::Primitive& primitive){
     uint32_t attributesId = interleaveVertexAttributes(vertexCount, outNormal, outTangent, outTexCoord, outColor);
 
     //std::cout << "Primitive:" << std::endl;
+    std::cout << "  vertexCount " << vertexCount << std::endl;
     std::cout << "  materialIndex " << materialIndex << std::endl;
     std::cout << "  indicesAccessorIndex " << indicesAccessorIndex << std::endl;
     std::cout << "  positionAccessorIndex " << positionAccessorIndex << std::endl;
@@ -939,6 +1069,8 @@ void GLTFParser::parseJson(std::string path){
     m_name = std::filesystem::path(path).stem();
     m_extension = std::filesystem::path(path).extension();
 
+    std::cout << "[        Parsing: " << m_name << m_extension << "        ]" << std::endl;
+
     parse();
 }
 
@@ -962,6 +1094,8 @@ void GLTFParser::parseBinary(std::string path){
     m_path = std::filesystem::path(path).parent_path().concat("/");
     m_name = std::filesystem::path(path).stem();
     m_extension = std::filesystem::path(path).extension();
+
+    std::cout << "[        Parsing: " << m_name << m_extension << "        ]" << std::endl;
 
     parse();
 }

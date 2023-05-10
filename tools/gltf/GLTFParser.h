@@ -24,7 +24,8 @@ private:
     std::string m_name;
     std::string m_extension;
     uint32_t m_id = 0;
-    IdMap m_sourceIdMap;
+    IdMap m_sourceBuffIdMap;
+    IdMap m_sourceTexIdMap;
 
     void parse();
     void parseNode(const tinygltf::Node& node, std::vector<uint32_t> &meshIds);
@@ -44,6 +45,7 @@ private:
     uint32_t handleTexture(const tinygltf::Texture& tex);
     uint32_t handleAccessor(const tinygltf::Accessor& accessor, std::vector<uint8_t>& out, bool writeToFile, bool isPosition);
     void handleBufferView(const tinygltf::BufferView& bufferView, 
+        std::string association,
         uint32_t byteOffset, 
         uint32_t calcByteStride,
         uint32_t elementCount, 
@@ -55,16 +57,30 @@ private:
         bool isPosition);
     void handleBuffer(
         const tinygltf::Buffer& buffer, 
+        std::string association,
         uint32_t byteOffset, 
         uint32_t byteLength, 
+        uint32_t bytesPerElement,
+        uint32_t elementCount,
         uint32_t elementType, 
         uint32_t componentType,
         uint32_t bufferId,
         std::vector<uint8_t>& out,
         bool writeToFile,
         bool isPosition);
+    void handleMIMEImageBuffer(
+        const tinygltf::Buffer& buffer, 
+        std::string association,
+        uint32_t byteOffset, 
+        uint32_t byteLength, 
+        uint32_t bytesPerElement,
+        uint32_t elementCount,
+        uint32_t elementType, 
+        uint32_t componentType,
+        uint32_t bufferId);
     void handleBufferInterleaved(
         const tinygltf::Buffer& buffer, 
+        std::string association,
         uint32_t byteOffset, 
         uint32_t byteLength, 
         uint32_t byteStride,
@@ -75,7 +91,8 @@ private:
         std::vector<uint8_t>& out,
         bool writeToFile);
     void writeBufferFile(
-        const unsigned char* data, 
+        const unsigned char* data,
+        std::string association,
         uint32_t byteLength, 
         uint32_t elementType, 
         uint32_t componentType, 
