@@ -9,5 +9,5 @@ void main()
 {
     vec2 texCoords = vec2(gl_FragCoord.xy / textureSize(tex, 0));
     vec4 color = texture(tex, texCoords);
-    FragColor = color;
+    FragColor = pow(color, vec4(2.2));
 }
