@@ -7,9 +7,9 @@
 namespace spr::gfx {
 
 GfxAssetLoader::GfxAssetLoader() : 
-    m_vertexPositions(500000),
-    m_vertexAttributes(500000),
-    m_vertexIndices(500000),
+    m_vertexPositions(10000000),
+    m_vertexAttributes(10000000),
+    m_vertexIndices(10000000),
     m_materials(2048){
 }
 
@@ -29,23 +29,19 @@ MeshInfoMap GfxAssetLoader::loadAssets(SprResourceManager& rm){
 
     // iterate over models and load subresources
     for (uint32 modelId : modelIds){
-
         Handle<spr::Model> modelHandle = rm.getHandle<spr::Model>(modelId);
         if (!modelHandle.isValid()){
             SprLog::warn("[GfxAssetLoader] [loadAssets] invalid model");
         }
         spr::Model* model = rm.getData<spr::Model>(modelHandle);
-
         // model's meshes
         for (uint32 meshId : model->meshIds){
-
             Handle<spr::Mesh> meshHandle = rm.getHandle<spr::Mesh>(meshId);
             if (!meshHandle.isValid()){
                 SprLog::warn("[GfxAssetLoader] [loadAssets] invalid mesh");
             }
             spr::Mesh* mesh = rm.getData<spr::Mesh>(meshHandle);
             MeshInfo meshInfo;
-
             loadVertexData(rm, mesh, meshInfo);
             loadMaterial(rm, mesh, meshInfo);
 
@@ -77,6 +73,7 @@ void GfxAssetLoader::loadVertexData(SprResourceManager& rm, Mesh* mesh, MeshInfo
     }
 
     // position
+    uint32 vertexCount = 0;
     if (mesh->positionBufferId > 0){
         Handle<spr::Buffer> positionHandle = rm.getHandle<spr::Buffer>(mesh->positionBufferId);
         if (!positionHandle.isValid()){
@@ -87,23 +84,23 @@ void GfxAssetLoader::loadVertexData(SprResourceManager& rm, Mesh* mesh, MeshInfo
         uint32 typedSize = (positionBuffer->byteLength)/sizeof(VertexPosition);
         info.vertexOffset = m_vertexPositions.insert((VertexPosition*)(positionBuffer->data.data()), typedSize);
         m_counts.vertexCount += typedSize;
+        vertexCount = typedSize;
     }
 
     // attributes
     if (mesh->attributesBufferId > 0){
-        Handle<spr::Buffer> attributesHandle = rm.getHandle<spr::Buffer>(mesh->positionBufferId);
+        Handle<spr::Buffer> attributesHandle = rm.getHandle<spr::Buffer>(mesh->attributesBufferId);
         if (!attributesHandle.isValid()){
             SprLog::warn("[GfxAssetLoader] [loadVertexData] invalid attributes");
             return;
         }
         spr::Buffer* attributesBuffer = rm.getData<spr::Buffer>(attributesHandle);
         uint32 typedSize = (attributesBuffer->byteLength)/sizeof(VertexAttributes);
-        m_vertexAttributes.insert((VertexAttributes*)(attributesBuffer->data.data()), typedSize);
-    }
+        uint32 offset = m_vertexAttributes.insert((VertexAttributes*)(attributesBuffer->data.data()), typedSize);
+    } 
 }
 
 void GfxAssetLoader::loadMaterial(SprResourceManager& rm, Mesh* mesh, MeshInfo& info){
-
     // process the mesh's material
     Handle<spr::Material> materialHandle = rm.getHandle<spr::Material>((mesh->materialId));
     if (!materialHandle.isValid()){
@@ -112,6 +109,8 @@ void GfxAssetLoader::loadMaterial(SprResourceManager& rm, Mesh* mesh, MeshInfo& 
     }
 
     spr::Material* material = rm.getData(materialHandle);
+    mesh->materialFlags = material->materialFlags;
+
     MaterialData materialData;
 
     if (material->baseColorTexId > 0){
@@ -153,7 +152,6 @@ void GfxAssetLoader::loadMaterial(SprResourceManager& rm, Mesh* mesh, MeshInfo& 
 }
 
 uint32 GfxAssetLoader::loadTexture(SprResourceManager& rm, uint32 textureId, bool srgb){
-
     Handle<spr::Texture> handle = rm.getHandle<spr::Texture>(textureId);
     if (!handle.isValid()){
         SprLog::warn("[GfxAssetLoader] [loadTexture] invalid texture");
