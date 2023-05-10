@@ -159,7 +159,7 @@ typedef struct RenderPass {
         uint32 stencilLoadOp  = Flags::LoadOp::LOAD_DONT_CARE;
         uint32 stencilStoreOp = Flags::StoreOp::STORE_DONT_CARE;
         uint32 layout         = Flags::ImageLayout::UNDEFINED;
-        uint32 finalLayout    = Flags::ImageLayout::DEPTH_READ_ONLY;
+        uint32 finalLayout    = Flags::ImageLayout::DEPTH_STENCIL_ATTACHMENT;
     } DepthAttachment;
 
     bool hasDepthAttachment = false;
