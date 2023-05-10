@@ -90,7 +90,7 @@ public:
         if (!m_hasInput)
             SprLog::error("[FrameRenderer] [render] no input TextureAttachment specified");
 
-        RenderPassRenderer& passRenderer = cb.beginRenderPass(m_renderPass, glm::vec4(0.0f,0.f,1.f,1.f));
+        RenderPassRenderer& passRenderer = cb.beginRenderPass(m_renderPass, glm::vec4(1.f,0.f,1.f,1.f));
         
         passRenderer.drawSubpass({
             .shader = m_shader,

@@ -6,6 +6,7 @@
 #include "../../interface/Window.h"
 #include "SDL_vulkan.h"
 #include <algorithm>
+#include <vulkan/vulkan_core.h>
 
 namespace spr::gfx{
 
@@ -199,6 +200,7 @@ VkPresentModeKHR VulkanDisplay::chooseSwapPresentMode() {
     }
     // return gauranteed fifo
     return VK_PRESENT_MODE_FIFO_KHR;
+    //return PRESENT_MODE_IMMEDIATE_KHR;
 }
 
 VkExtent2D VulkanDisplay::chooseSwapExtent() {

@@ -182,7 +182,6 @@ void VulkanDevice::createDevice(VkSurfaceKHR surface){
     };
     VK_CHECK(vkCreateDevice(m_physicalDevice, &createInfo, nullptr, &m_device));
     volkLoadDevice(m_device);
-    //SprLog::error("herererere");
 
     // get device queues
     if (m_queueFamilyIndices.graphicsFamilyIndex.has_value() && m_queueFamilyIndices.graphicsQueueIndex.has_value()){
