@@ -5,7 +5,7 @@
 namespace spr::gfx {
 
 BatchNode::BatchNode(){
-    m_height = 8;
+    m_height = 7;
     m_nodeData = std::vector<BatchNode*>(16);
     m_initialized = true;
     m_mask = 0;
@@ -30,11 +30,10 @@ BatchNode::~BatchNode() {
 void BatchNode::add(DrawData draw, Batch batchInfo){
     uint32 currIndex;
     BatchNode* currNode = this;
-
     for (uint32 height = m_height; height > 0; height--){
         currIndex = subIndex(batchInfo.materialFlags, height);
 
-        if (!branchInitialized(currIndex)){
+        if (!currNode->branchInitialized(currIndex)){
             currNode->buildBranch(currIndex, height);
         }
 
@@ -53,7 +52,7 @@ void BatchNode::remove(uint32 materialFlags){
     for (uint32 height = m_height; height > 0; height--){
         currIndex = subIndex(materialFlags, height);
 
-        if (!branchInitialized(currIndex)){
+        if (!currNode->branchInitialized(currIndex)){
             return;
         }
 
@@ -173,6 +172,7 @@ void BatchNode::getDrawsRec(MaterialQuery query, TempBuffer<DrawData>& result, Q
 
 void BatchNode::addLeafData(uint32 branchIndex, DrawData draw, Batch batchInfo){
     ska::flat_hash_map<uint32, DrawBatch>& leafNode = m_leafData.at(branchIndex);
+    setBit(branchIndex, 1);
 
     // insert a new drawbatch if none exists for this material/mesh pair
     if (!leafNode.count(batchInfo.meshId)) {
@@ -187,6 +187,7 @@ void BatchNode::addLeafData(uint32 branchIndex, DrawData draw, Batch batchInfo){
 }
 
 void BatchNode::removeLeafData(uint32 branchIndex){
+    setBit(branchIndex, 0);
     m_leafData.at(branchIndex) = ska::flat_hash_map<uint32, DrawBatch>();
 }
 
@@ -201,7 +202,7 @@ void BatchNode::getLeafDraws(uint32 branchIndex, TempBuffer<DrawData>& dst){
     // iterate over every materialFlags/DrawBatch pair
     // at the given branch and store every set of draws
     // in dst, storing the offset in the batch
-    for(auto item : m_leafData.at(branchIndex)){
+    for(auto& item : m_leafData.at(branchIndex)){
         DrawBatch& drawBatch = item.second;
         uint32 drawDataOffset = dst.insert(drawBatch.draws.data(), drawBatch.draws.size());
         drawBatch.batch.drawDataOffset = drawDataOffset;

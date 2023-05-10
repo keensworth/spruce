@@ -6,7 +6,7 @@
 namespace spr::gfx {
 
 BatchManager::BatchManager(){
-    m_batches = BatchNode();
+    
 }
 
 BatchManager::~BatchManager(){
