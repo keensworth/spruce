@@ -9,7 +9,7 @@
         VertexPosition positions[];
     };
 
-    layout(set = 0, binding = 1) readonly buffer Attributes {
+    layout(std430,set = 0, binding = 1) readonly buffer Attributes {
         VertexAttributes attributes[];
     };
 
@@ -17,7 +17,7 @@
         MaterialData materials[];
     };
 
-    layout(set = 0, binding = 3) uniform texture2D textures[1024];
+    layout(set = 0, binding = 3) uniform sampler2D textures[9];
 #endif // SPR_GLOBAL_BINDINGS
 
 

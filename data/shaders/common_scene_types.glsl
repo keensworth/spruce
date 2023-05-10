@@ -91,5 +91,5 @@ struct Camera {
 };
 
 struct Scene {
-    mat4x4 viewProj; // precomputed camera view
+    mat4 viewProj; // precomputed camera view
 };
