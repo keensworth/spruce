@@ -1,163 +1,4255 @@
 {
-    "date": "06-05-2023 05:35:01",
-    "modelCount": 3,
+    "date": "09-05-2023 12:03:03",
+    "modelCount": 6,
     "models": [
         {
-            "id": 14,
+            "id": 697,
             "name": "default_model",
-            "sizeBytes": 32048,
+            "sizeBytes": 34728,
             "type": "SPR_MODEL"
         },
         {
-            "id": 9,
+            "id": 45,
+            "name": "sponza",
+            "sizeBytes": 296026082,
+            "type": "SPR_MODEL"
+        },
+        {
+            "id": 29,
+            "name": "helmet",
+            "sizeBytes": 84677480,
+            "type": "SPR_MODEL"
+        },
+        {
+            "id": 10,
             "name": "Triangle",
-            "sizeBytes": 138,
+            "sizeBytes": 150,
             "type": "SPR_MODEL"
         },
         {
-            "id": 1,
+            "id": 2,
             "name": "Duck",
-            "sizeBytes": 1208192,
+            "sizeBytes": 1189000,
+            "type": "SPR_MODEL"
+        },
+        {
+            "id": 15,
+            "name": "WaterBottle",
+            "sizeBytes": 67258276,
             "type": "SPR_MODEL"
         }
     ],
     "nonSubresourceTextureCount": 3,
     "nonSubresourceTextures": [
         {
-            "id": 24,
+            "id": 707,
             "name": "default_input_white",
             "sizeBytes": 4,
             "type": "SPR_TEXTURE"
         },
         {
-            "id": 20,
+            "id": 703,
             "name": "default_color",
             "sizeBytes": 4194304,
             "type": "SPR_TEXTURE"
         },
         {
-            "id": 22,
+            "id": 705,
             "name": "default_input_black",
             "sizeBytes": 4,
             "type": "SPR_TEXTURE"
         }
     ],
-    "sizeBytes": 5434690,
-    "subresourceCount": 19,
+    "sizeBytes": 453380028,
+    "subresourceCount": 698,
     "subresources": [
         {
-            "id": 8,
+            "id": 134,
+            "name": "sponza_113",
+            "sizeBytes": 170592,
+            "type": "SPR_MESH"
+        },
+        {
+            "id": 297,
+            "name": "sponza_372",
+            "sizeBytes": 12582912,
+            "type": "SPR_MATERIAL"
+        },
+        {
+            "id": 679,
+            "name": "sponza_932",
+            "sizeBytes": 800,
+            "type": "SPR_BUFFER"
+        },
+        {
+            "id": 25,
+            "name": "WaterBottle_16",
+            "sizeBytes": 16777216,
+            "type": "SPR_BUFFER"
+        },
+        {
+            "id": 544,
+            "name": "sponza_726",
+            "sizeBytes": 171678,
+            "type": "SPR_MESH"
+        },
+        {
+            "id": 75,
+            "name": "sponza_42",
+            "sizeBytes": 4194304,
+            "type": "SPR_BUFFER"
+        },
+        {
+            "id": 258,
+            "name": "sponza_302",
+            "sizeBytes": 960,
+            "type": "SPR_BUFFER"
+        },
+        {
+            "id": 463,
+            "name": "sponza_602",
+            "sizeBytes": 83680,
+            "type": "SPR_BUFFER"
+        },
+        {
+            "id": 675,
+            "name": "sponza_928",
+            "sizeBytes": 24096,
+            "type": "SPR_BUFFER"
+        },
+        {
+            "id": 538,
+            "name": "sponza_710",
+            "sizeBytes": 94624,
+            "type": "SPR_BUFFER"
+        },
+        {
+            "id": 289,
+            "name": "sponza_351",
+            "sizeBytes": 8960,
+            "type": "SPR_BUFFER"
+        },
+        {
+            "id": 281,
+            "name": "sponza_341",
+            "sizeBytes": 2880,
+            "type": "SPR_MESH"
+        },
+        {
+            "id": 440,
+            "name": "sponza_573",
+            "sizeBytes": 33024,
+            "type": "SPR_BUFFER"
+        },
+        {
+            "id": 596,
+            "name": "sponza_807",
+            "sizeBytes": 13266,
+            "type": "SPR_BUFFER"
+        },
+        {
+            "id": 677,
+            "name": "sponza_937",
+            "sizeBytes": 0,
+            "type": "SPR_MATERIAL"
+        },
+        {
+            "id": 368,
+            "name": "sponza_473",
+            "sizeBytes": 1836,
+            "type": "SPR_MESH"
+        },
+        {
+            "id": 322,
+            "name": "sponza_403",
+            "sizeBytes": 36360,
+            "type": "SPR_MESH"
+        },
+        {
+            "id": 365,
+            "name": "sponza_460",
+            "sizeBytes": 139248,
+            "type": "SPR_BUFFER"
+        },
+        {
+            "id": 656,
+            "name": "sponza_904",
+            "sizeBytes": 4194304,
+            "type": "SPR_TEXTURE"
+        },
+        {
+            "id": 194,
+            "name": "sponza_199",
+            "sizeBytes": 1952,
+            "type": "SPR_BUFFER"
+        },
+        {
+            "id": 136,
+            "name": "sponza_114",
+            "sizeBytes": 17376,
+            "type": "SPR_BUFFER"
+        },
+        {
+            "id": 344,
+            "name": "sponza_436",
+            "sizeBytes": 30,
+            "type": "SPR_BUFFER"
+        },
+        {
+            "id": 570,
+            "name": "sponza_773",
+            "sizeBytes": 0,
+            "type": "SPR_MATERIAL"
+        },
+        {
+            "id": 119,
+            "name": "sponza_98",
+            "sizeBytes": 4194304,
+            "type": "SPR_BUFFER"
+        },
+        {
+            "id": 182,
+            "name": "sponza_188",
+            "sizeBytes": 0,
+            "type": "SPR_MATERIAL"
+        },
+        {
+            "id": 483,
+            "name": "sponza_641",
+            "sizeBytes": 0,
+            "type": "SPR_MATERIAL"
+        },
+        {
+            "id": 442,
+            "name": "sponza_578",
+            "sizeBytes": 104320,
+            "type": "SPR_BUFFER"
+        },
+        {
+            "id": 693,
+            "name": "sponza_959",
+            "sizeBytes": 0,
+            "type": "SPR_MATERIAL"
+        },
+        {
+            "id": 213,
+            "name": "sponza_230",
+            "sizeBytes": 672,
+            "type": "SPR_BUFFER"
+        },
+        {
+            "id": 285,
+            "name": "sponza_347",
+            "sizeBytes": 1792,
+            "type": "SPR_BUFFER"
+        },
+        {
+            "id": 644,
+            "name": "sponza_889",
+            "sizeBytes": 4194304,
+            "type": "SPR_BUFFER"
+        },
+        {
+            "id": 143,
+            "name": "sponza_131",
+            "sizeBytes": 4194304,
+            "type": "SPR_TEXTURE"
+        },
+        {
+            "id": 250,
+            "name": "sponza_291",
+            "sizeBytes": 4032,
+            "type": "SPR_BUFFER"
+        },
+        {
+            "id": 284,
+            "name": "sponza_343",
+            "sizeBytes": 896,
+            "type": "SPR_BUFFER"
+        },
+        {
+            "id": 72,
+            "name": "sponza_39",
+            "sizeBytes": 4194304,
+            "type": "SPR_TEXTURE"
+        },
+        {
+            "id": 471,
+            "name": "sponza_612",
+            "sizeBytes": 40144,
+            "type": "SPR_BUFFER"
+        },
+        {
+            "id": 57,
+            "name": "sponza_15",
+            "sizeBytes": 12611304,
+            "type": "SPR_MESH"
+        },
+        {
+            "id": 616,
+            "name": "sponza_839",
+            "sizeBytes": 13266,
+            "type": "SPR_BUFFER"
+        },
+        {
+            "id": 613,
+            "name": "sponza_836",
+            "sizeBytes": 14400,
+            "type": "SPR_BUFFER"
+        },
+        {
+            "id": 191,
+            "name": "sponza_197",
+            "sizeBytes": 6528,
+            "type": "SPR_MESH"
+        },
+        {
+            "id": 339,
+            "name": "sponza_428",
+            "sizeBytes": 300,
+            "type": "SPR_BUFFER"
+        },
+        {
+            "id": 53,
+            "name": "sponza_14",
+            "sizeBytes": 4194304,
+            "type": "SPR_BUFFER"
+        },
+        {
+            "id": 40,
+            "name": "helmet_16",
+            "sizeBytes": 16777216,
+            "type": "SPR_TEXTURE"
+        },
+        {
+            "id": 254,
+            "name": "sponza_295",
+            "sizeBytes": 1952,
+            "type": "SPR_BUFFER"
+        },
+        {
+            "id": 371,
+            "name": "sponza_475",
+            "sizeBytes": 576,
+            "type": "SPR_BUFFER"
+        },
+        {
+            "id": 273,
+            "name": "sponza_326",
+            "sizeBytes": 672,
+            "type": "SPR_BUFFER"
+        },
+        {
+            "id": 178,
+            "name": "sponza_174",
+            "sizeBytes": 1224,
+            "type": "SPR_BUFFER"
+        },
+        {
+            "id": 133,
+            "name": "sponza_105",
+            "sizeBytes": 54656,
+            "type": "SPR_BUFFER"
+        },
+        {
+            "id": 689,
+            "name": "sponza_939",
+            "sizeBytes": 86904,
+            "type": "SPR_BUFFER"
+        },
+        {
+            "id": 60,
+            "name": "sponza_24",
+            "sizeBytes": 4194304,
+            "type": "SPR_BUFFER"
+        },
+        {
+            "id": 508,
+            "name": "sponza_681",
+            "sizeBytes": 0,
+            "type": "SPR_MATERIAL"
+        },
+        {
+            "id": 198,
+            "name": "sponza_206",
+            "sizeBytes": 960,
+            "type": "SPR_BUFFER"
+        },
+        {
+            "id": 403,
+            "name": "sponza_512",
+            "sizeBytes": 52160,
+            "type": "SPR_BUFFER"
+        },
+        {
+            "id": 610,
+            "name": "sponza_837",
+            "sizeBytes": 0,
+            "type": "SPR_MATERIAL"
+        },
+        {
+            "id": 345,
+            "name": "sponza_437",
+            "sizeBytes": 112,
+            "type": "SPR_BUFFER"
+        },
+        {
+            "id": 294,
+            "name": "sponza_359",
+            "sizeBytes": 1056,
+            "type": "SPR_BUFFER"
+        },
+        {
+            "id": 300,
+            "name": "sponza_375",
+            "sizeBytes": 4194304,
+            "type": "SPR_TEXTURE"
+        },
+        {
+            "id": 9,
             "name": "Duck_6",
             "sizeBytes": 76768,
             "type": "SPR_BUFFER"
         },
         {
-            "id": 6,
+            "id": 681,
+            "name": "sponza_938",
+            "sizeBytes": 13240536,
+            "type": "SPR_MESH"
+        },
+        {
+            "id": 122,
+            "name": "sponza_91",
+            "sizeBytes": 59648,
+            "type": "SPR_BUFFER"
+        },
+        {
+            "id": 628,
+            "name": "sponza_860",
+            "sizeBytes": 39392,
+            "type": "SPR_BUFFER"
+        },
+        {
+            "id": 438,
+            "name": "sponza_572",
+            "sizeBytes": 189504,
+            "type": "SPR_MESH"
+        },
+        {
+            "id": 315,
+            "name": "sponza_389",
+            "sizeBytes": 1568,
+            "type": "SPR_BUFFER"
+        },
+        {
+            "id": 649,
+            "name": "sponza_884",
+            "sizeBytes": 169856,
+            "type": "SPR_BUFFER"
+        },
+        {
+            "id": 34,
+            "name": "helmet_10",
+            "sizeBytes": 16777216,
+            "type": "SPR_TEXTURE"
+        },
+        {
+            "id": 539,
+            "name": "sponza_718",
+            "sizeBytes": 816,
+            "type": "SPR_MESH"
+        },
+        {
+            "id": 646,
+            "name": "sponza_891",
+            "sizeBytes": 4194304,
+            "type": "SPR_BUFFER"
+        },
+        {
+            "id": 568,
+            "name": "sponza_764",
+            "sizeBytes": 94624,
+            "type": "SPR_BUFFER"
+        },
+        {
+            "id": 451,
+            "name": "sponza_590",
+            "sizeBytes": 133440,
+            "type": "SPR_BUFFER"
+        },
+        {
+            "id": 32,
+            "name": "helmet_8",
+            "sizeBytes": 16777216,
+            "type": "SPR_TEXTURE"
+        },
+        {
+            "id": 201,
+            "name": "sponza_213",
+            "sizeBytes": 6528,
+            "type": "SPR_MESH"
+        },
+        {
+            "id": 621,
+            "name": "sponza_847",
+            "sizeBytes": 2400,
+            "type": "SPR_BUFFER"
+        },
+        {
+            "id": 286,
+            "name": "sponza_349",
+            "sizeBytes": 28560,
+            "type": "SPR_MESH"
+        },
+        {
+            "id": 343,
+            "name": "sponza_442",
+            "sizeBytes": 0,
+            "type": "SPR_MATERIAL"
+        },
+        {
+            "id": 373,
+            "name": "sponza_480",
+            "sizeBytes": 6144,
+            "type": "SPR_MESH"
+        },
+        {
+            "id": 424,
+            "name": "sponza_555",
+            "sizeBytes": 0,
+            "type": "SPR_MATERIAL"
+        },
+        {
+            "id": 171,
+            "name": "sponza_165",
+            "sizeBytes": 11592,
+            "type": "SPR_MESH"
+        },
+        {
+            "id": 408,
+            "name": "sponza_533",
+            "sizeBytes": 4194304,
+            "type": "SPR_BUFFER"
+        },
+        {
+            "id": 634,
+            "name": "sponza_870",
+            "sizeBytes": 72354,
+            "type": "SPR_MESH"
+        },
+        {
+            "id": 664,
+            "name": "sponza_908",
+            "sizeBytes": 12048,
+            "type": "SPR_BUFFER"
+        },
+        {
+            "id": 355,
+            "name": "sponza_453",
+            "sizeBytes": 60224,
+            "type": "SPR_BUFFER"
+        },
+        {
+            "id": 567,
+            "name": "sponza_760",
+            "sizeBytes": 47312,
+            "type": "SPR_BUFFER"
+        },
+        {
+            "id": 575,
+            "name": "sponza_781",
+            "sizeBytes": 0,
+            "type": "SPR_MATERIAL"
+        },
+        {
+            "id": 551,
+            "name": "sponza_735",
+            "sizeBytes": 48,
+            "type": "SPR_BUFFER"
+        },
+        {
+            "id": 536,
+            "name": "sponza_705",
+            "sizeBytes": 29742,
+            "type": "SPR_BUFFER"
+        },
+        {
+            "id": 503,
+            "name": "sponza_673",
+            "sizeBytes": 0,
+            "type": "SPR_MATERIAL"
+        },
+        {
+            "id": 359,
+            "name": "sponza_467",
+            "sizeBytes": 4194304,
+            "type": "SPR_TEXTURE"
+        },
+        {
+            "id": 459,
+            "name": "sponza_608",
+            "sizeBytes": 4194304,
+            "type": "SPR_TEXTURE"
+        },
+        {
+            "id": 672,
+            "name": "sponza_929",
+            "sizeBytes": 0,
+            "type": "SPR_MATERIAL"
+        },
+        {
+            "id": 598,
+            "name": "sponza_812",
+            "sizeBytes": 39392,
+            "type": "SPR_BUFFER"
+        },
+        {
+            "id": 476,
+            "name": "sponza_631",
+            "sizeBytes": 4194304,
+            "type": "SPR_BUFFER"
+        },
+        {
+            "id": 238,
+            "name": "sponza_270",
+            "sizeBytes": 960,
+            "type": "SPR_BUFFER"
+        },
+        {
+            "id": 447,
+            "name": "sponza_586",
+            "sizeBytes": 104320,
+            "type": "SPR_BUFFER"
+        },
+        {
+            "id": 652,
+            "name": "sponza_900",
+            "sizeBytes": 4194304,
+            "type": "SPR_TEXTURE"
+        },
+        {
+            "id": 16,
+            "name": "WaterBottle_1",
+            "sizeBytes": 67258276,
+            "type": "SPR_MESH"
+        },
+        {
+            "id": 7,
             "name": "Duck_2",
             "sizeBytes": 25272,
             "type": "SPR_BUFFER"
         },
         {
-            "id": 2,
+            "id": 148,
+            "name": "sponza_123",
+            "sizeBytes": 256,
+            "type": "SPR_BUFFER"
+        },
+        {
+            "id": 84,
+            "name": "sponza_54",
+            "sizeBytes": 4194304,
+            "type": "SPR_BUFFER"
+        },
+        {
+            "id": 104,
+            "name": "sponza_80",
+            "sizeBytes": 4194304,
+            "type": "SPR_BUFFER"
+        },
+        {
+            "id": 195,
+            "name": "sponza_203",
+            "sizeBytes": 3904,
+            "type": "SPR_BUFFER"
+        },
+        {
+            "id": 606,
+            "name": "sponza_823",
+            "sizeBytes": 13266,
+            "type": "SPR_BUFFER"
+        },
+        {
+            "id": 3,
             "name": "Duck_1",
-            "sizeBytes": 1208192,
+            "sizeBytes": 1189000,
             "type": "SPR_MESH"
         },
         {
-            "id": 17,
+            "id": 597,
+            "name": "sponza_808",
+            "sizeBytes": 19696,
+            "type": "SPR_BUFFER"
+        },
+        {
+            "id": 686,
+            "name": "sponza_949",
+            "sizeBytes": 4194304,
+            "type": "SPR_BUFFER"
+        },
+        {
+            "id": 306,
+            "name": "sponza_371",
+            "sizeBytes": 10048,
+            "type": "SPR_BUFFER"
+        },
+        {
+            "id": 37,
+            "name": "helmet_13",
+            "sizeBytes": 16777216,
+            "type": "SPR_BUFFER"
+        },
+        {
+            "id": 668,
+            "name": "sponza_915",
+            "sizeBytes": 9126,
+            "type": "SPR_BUFFER"
+        },
+        {
+            "id": 158,
+            "name": "sponza_145",
+            "sizeBytes": 18752,
+            "type": "SPR_BUFFER"
+        },
+        {
+            "id": 555,
+            "name": "sponza_749",
+            "sizeBytes": 0,
+            "type": "SPR_MATERIAL"
+        },
+        {
+            "id": 700,
             "name": "default_model_2",
             "sizeBytes": 2568,
             "type": "SPR_BUFFER"
         },
         {
-            "id": 23,
+            "id": 247,
+            "name": "sponza_292",
+            "sizeBytes": 0,
+            "type": "SPR_MATERIAL"
+        },
+        {
+            "id": 437,
+            "name": "sponza_570",
+            "sizeBytes": 104320,
+            "type": "SPR_BUFFER"
+        },
+        {
+            "id": 299,
+            "name": "sponza_374",
+            "sizeBytes": 4194304,
+            "type": "SPR_BUFFER"
+        },
+        {
+            "id": 33,
+            "name": "helmet_9",
+            "sizeBytes": 16777216,
+            "type": "SPR_BUFFER"
+        },
+        {
+            "id": 277,
+            "name": "sponza_340",
+            "sizeBytes": 0,
+            "type": "SPR_MATERIAL"
+        },
+        {
+            "id": 422,
+            "name": "sponza_542",
+            "sizeBytes": 104320,
+            "type": "SPR_BUFFER"
+        },
+        {
+            "id": 706,
             "name": "default_input_black_1",
             "sizeBytes": 4,
             "type": "SPR_BUFFER"
         },
         {
-            "id": 10,
-            "name": "Triangle_1",
-            "sizeBytes": 138,
-            "type": "SPR_MESH"
-        },
-        {
-            "id": 15,
-            "name": "default_model_1",
-            "sizeBytes": 32048,
-            "type": "SPR_MESH"
-        },
-        {
-            "id": 18,
-            "name": "default_model_3",
-            "sizeBytes": 8040,
+            "id": 260,
+            "name": "sponza_307",
+            "sizeBytes": 4032,
             "type": "SPR_BUFFER"
         },
         {
-            "id": 3,
+            "id": 290,
+            "name": "sponza_355",
+            "sizeBytes": 17920,
+            "type": "SPR_BUFFER"
+        },
+        {
+            "id": 518,
+            "name": "sponza_697",
+            "sizeBytes": 12582912,
+            "type": "SPR_MATERIAL"
+        },
+        {
+            "id": 208,
+            "name": "sponza_222",
+            "sizeBytes": 960,
+            "type": "SPR_BUFFER"
+        },
+        {
+            "id": 405,
+            "name": "sponza_524",
+            "sizeBytes": 8578112,
+            "type": "SPR_MESH"
+        },
+        {
+            "id": 514,
+            "name": "sponza_683",
+            "sizeBytes": 29184,
+            "type": "SPR_BUFFER"
+        },
+        {
+            "id": 608,
+            "name": "sponza_828",
+            "sizeBytes": 39392,
+            "type": "SPR_BUFFER"
+        },
+        {
+            "id": 288,
+            "name": "sponza_350",
+            "sizeBytes": 1680,
+            "type": "SPR_BUFFER"
+        },
+        {
+            "id": 454,
+            "name": "sponza_603",
+            "sizeBytes": 12582912,
+            "type": "SPR_MATERIAL"
+        },
+        {
+            "id": 205,
+            "name": "sponza_219",
+            "sizeBytes": 3904,
+            "type": "SPR_BUFFER"
+        },
+        {
+            "id": 48,
+            "name": "sponza_9",
+            "sizeBytes": 4194304,
+            "type": "SPR_TEXTURE"
+        },
+        {
+            "id": 446,
+            "name": "sponza_582",
+            "sizeBytes": 52160,
+            "type": "SPR_BUFFER"
+        },
+        {
+            "id": 584,
+            "name": "sponza_790",
+            "sizeBytes": 72354,
+            "type": "SPR_MESH"
+        },
+        {
+            "id": 193,
+            "name": "sponza_198",
+            "sizeBytes": 672,
+            "type": "SPR_BUFFER"
+        },
+        {
+            "id": 546,
+            "name": "sponza_727",
+            "sizeBytes": 29742,
+            "type": "SPR_BUFFER"
+        },
+        {
+            "id": 673,
+            "name": "sponza_923",
+            "sizeBytes": 8172,
+            "type": "SPR_BUFFER"
+        },
+        {
+            "id": 20,
+            "name": "WaterBottle_11",
+            "sizeBytes": 16777216,
+            "type": "SPR_TEXTURE"
+        },
+        {
+            "id": 124,
+            "name": "sponza_106",
+            "sizeBytes": 12582912,
+            "type": "SPR_MATERIAL"
+        },
+        {
+            "id": 267,
+            "name": "sponza_324",
+            "sizeBytes": 0,
+            "type": "SPR_MATERIAL"
+        },
+        {
+            "id": 220,
+            "name": "sponza_243",
+            "sizeBytes": 4032,
+            "type": "SPR_BUFFER"
+        },
+        {
+            "id": 235,
+            "name": "sponza_267",
+            "sizeBytes": 3904,
+            "type": "SPR_BUFFER"
+        },
+        {
+            "id": 532,
+            "name": "sponza_714",
+            "sizeBytes": 4194304,
+            "type": "SPR_TEXTURE"
+        },
+        {
+            "id": 336,
+            "name": "sponza_425",
+            "sizeBytes": 188928,
+            "type": "SPR_BUFFER"
+        },
+        {
+            "id": 450,
+            "name": "sponza_589",
+            "sizeBytes": 66240,
+            "type": "SPR_BUFFER"
+        },
+        {
+            "id": 71,
+            "name": "sponza_38",
+            "sizeBytes": 4194304,
+            "type": "SPR_BUFFER"
+        },
+        {
+            "id": 181,
+            "name": "sponza_181",
+            "sizeBytes": 7512,
+            "type": "SPR_MESH"
+        },
+        {
+            "id": 283,
+            "name": "sponza_342",
+            "sizeBytes": 192,
+            "type": "SPR_BUFFER"
+        },
+        {
+            "id": 573,
+            "name": "sponza_772",
+            "sizeBytes": 17056,
+            "type": "SPR_BUFFER"
+        },
+        {
+            "id": 65,
+            "name": "sponza_16",
+            "sizeBytes": 2808,
+            "type": "SPR_BUFFER"
+        },
+        {
+            "id": 87,
+            "name": "sponza_44",
+            "sizeBytes": 8172,
+            "type": "SPR_BUFFER"
+        },
+        {
+            "id": 130,
+            "name": "sponza_112",
+            "sizeBytes": 4194304,
+            "type": "SPR_BUFFER"
+        },
+        {
+            "id": 542,
+            "name": "sponza_720",
+            "sizeBytes": 256,
+            "type": "SPR_BUFFER"
+        },
+        {
+            "id": 175,
+            "name": "sponza_171",
+            "sizeBytes": 6912,
+            "type": "SPR_BUFFER"
+        },
+        {
+            "id": 527,
+            "name": "sponza_696",
+            "sizeBytes": 512,
+            "type": "SPR_BUFFER"
+        },
+        {
+            "id": 153,
+            "name": "sponza_137",
+            "sizeBytes": 29824,
+            "type": "SPR_BUFFER"
+        },
+        {
+            "id": 11,
+            "name": "Triangle_1",
+            "sizeBytes": 150,
+            "type": "SPR_MESH"
+        },
+        {
+            "id": 589,
+            "name": "sponza_798",
+            "sizeBytes": 28392,
+            "type": "SPR_MESH"
+        },
+        {
+            "id": 448,
+            "name": "sponza_588",
+            "sizeBytes": 466560,
+            "type": "SPR_MESH"
+        },
+        {
+            "id": 154,
+            "name": "sponza_141",
+            "sizeBytes": 59648,
+            "type": "SPR_BUFFER"
+        },
+        {
+            "id": 41,
+            "name": "helmet_17",
+            "sizeBytes": 16777216,
+            "type": "SPR_BUFFER"
+        },
+        {
+            "id": 147,
+            "name": "sponza_122",
+            "sizeBytes": 96,
+            "type": "SPR_BUFFER"
+        },
+        {
+            "id": 641,
+            "name": "sponza_886",
+            "sizeBytes": 4194304,
+            "type": "SPR_TEXTURE"
+        },
+        {
+            "id": 83,
+            "name": "sponza_53",
+            "sizeBytes": 4194304,
+            "type": "SPR_TEXTURE"
+        },
+        {
+            "id": 80,
+            "name": "sponza_50",
+            "sizeBytes": 12582912,
+            "type": "SPR_MATERIAL"
+        },
+        {
+            "id": 558,
+            "name": "sponza_748",
+            "sizeBytes": 94624,
+            "type": "SPR_BUFFER"
+        },
+        {
+            "id": 409,
+            "name": "sponza_534",
+            "sizeBytes": 4194304,
+            "type": "SPR_TEXTURE"
+        },
+        {
+            "id": 330,
+            "name": "sponza_413",
+            "sizeBytes": 1472,
+            "type": "SPR_BUFFER"
+        },
+        {
+            "id": 67,
+            "name": "sponza_21",
+            "sizeBytes": 17056,
+            "type": "SPR_BUFFER"
+        },
+        {
+            "id": 68,
+            "name": "sponza_29",
+            "sizeBytes": 12655266,
+            "type": "SPR_MESH"
+        },
+        {
+            "id": 640,
+            "name": "sponza_885",
+            "sizeBytes": 12582912,
+            "type": "SPR_MATERIAL"
+        },
+        {
+            "id": 162,
+            "name": "sponza_159",
+            "sizeBytes": 4194304,
+            "type": "SPR_TEXTURE"
+        },
+        {
+            "id": 632,
+            "name": "sponza_864",
+            "sizeBytes": 7200,
+            "type": "SPR_BUFFER"
+        },
+        {
+            "id": 338,
+            "name": "sponza_434",
+            "sizeBytes": 0,
+            "type": "SPR_MATERIAL"
+        },
+        {
+            "id": 698,
+            "name": "default_model_1",
+            "sizeBytes": 34728,
+            "type": "SPR_MESH"
+        },
+        {
+            "id": 292,
+            "name": "sponza_364",
+            "sizeBytes": 0,
+            "type": "SPR_MATERIAL"
+        },
+        {
+            "id": 489,
+            "name": "sponza_643",
+            "sizeBytes": 27648,
+            "type": "SPR_BUFFER"
+        },
+        {
+            "id": 126,
+            "name": "sponza_108",
+            "sizeBytes": 4194304,
+            "type": "SPR_BUFFER"
+        },
+        {
+            "id": 85,
+            "name": "sponza_55",
+            "sizeBytes": 4194304,
+            "type": "SPR_TEXTURE"
+        },
+        {
+            "id": 113,
+            "name": "sponza_92",
+            "sizeBytes": 12582912,
+            "type": "SPR_MATERIAL"
+        },
+        {
+            "id": 444,
+            "name": "sponza_587",
+            "sizeBytes": 0,
+            "type": "SPR_MATERIAL"
+        },
+        {
+            "id": 186,
+            "name": "sponza_189",
+            "sizeBytes": 7008,
+            "type": "SPR_MESH"
+        },
+        {
+            "id": 206,
+            "name": "sponza_221",
+            "sizeBytes": 7008,
+            "type": "SPR_MESH"
+        },
+        {
+            "id": 347,
+            "name": "sponza_443",
+            "sizeBytes": 95712,
+            "type": "SPR_MESH"
+        },
+        {
+            "id": 434,
+            "name": "sponza_571",
+            "sizeBytes": 0,
+            "type": "SPR_MATERIAL"
+        },
+        {
+            "id": 475,
+            "name": "sponza_630",
+            "sizeBytes": 4194304,
+            "type": "SPR_TEXTURE"
+        },
+        {
+            "id": 629,
+            "name": "sponza_862",
+            "sizeBytes": 24000,
+            "type": "SPR_MESH"
+        },
+        {
+            "id": 22,
+            "name": "WaterBottle_13",
+            "sizeBytes": 16777216,
+            "type": "SPR_TEXTURE"
+        },
+        {
+            "id": 441,
+            "name": "sponza_574",
+            "sizeBytes": 52160,
+            "type": "SPR_BUFFER"
+        },
+        {
+            "id": 413,
+            "name": "sponza_530",
+            "sizeBytes": 104320,
+            "type": "SPR_BUFFER"
+        },
+        {
+            "id": 55,
+            "name": "sponza_3",
+            "sizeBytes": 50800,
+            "type": "SPR_BUFFER"
+        },
+        {
+            "id": 624,
+            "name": "sponza_854",
+            "sizeBytes": 72354,
+            "type": "SPR_MESH"
+        },
+        {
+            "id": 242,
+            "name": "sponza_284",
+            "sizeBytes": 0,
+            "type": "SPR_MATERIAL"
+        },
+        {
+            "id": 676,
+            "name": "sponza_930",
+            "sizeBytes": 2568,
+            "type": "SPR_MESH"
+        },
+        {
+            "id": 17,
+            "name": "WaterBottle_8",
+            "sizeBytes": 67108864,
+            "type": "SPR_MATERIAL"
+        },
+        {
+            "id": 317,
+            "name": "sponza_395",
+            "sizeBytes": 2448,
+            "type": "SPR_MESH"
+        },
+        {
+            "id": 465,
+            "name": "sponza_617",
+            "sizeBytes": 8388608,
+            "type": "SPR_MATERIAL"
+        },
+        {
+            "id": 400,
+            "name": "sponza_522",
+            "sizeBytes": 4194304,
+            "type": "SPR_TEXTURE"
+        },
+        {
+            "id": 411,
+            "name": "sponza_525",
+            "sizeBytes": 33024,
+            "type": "SPR_BUFFER"
+        },
+        {
+            "id": 100,
+            "name": "sponza_63",
+            "sizeBytes": 4096,
+            "type": "SPR_BUFFER"
+        },
+        {
+            "id": 433,
+            "name": "sponza_564",
+            "sizeBytes": 189504,
+            "type": "SPR_MESH"
+        },
+        {
+            "id": 534,
+            "name": "sponza_716",
+            "sizeBytes": 4194304,
+            "type": "SPR_TEXTURE"
+        },
+        {
+            "id": 310,
+            "name": "sponza_381",
+            "sizeBytes": 768,
+            "type": "SPR_BUFFER"
+        },
+        {
+            "id": 556,
+            "name": "sponza_743",
+            "sizeBytes": 29742,
+            "type": "SPR_BUFFER"
+        },
+        {
+            "id": 493,
+            "name": "sponza_657",
+            "sizeBytes": 0,
+            "type": "SPR_MATERIAL"
+        },
+        {
+            "id": 496,
+            "name": "sponza_656",
+            "sizeBytes": 83680,
+            "type": "SPR_BUFFER"
+        },
+        {
+            "id": 484,
+            "name": "sponza_635",
+            "sizeBytes": 29184,
+            "type": "SPR_BUFFER"
+        },
+        {
+            "id": 159,
+            "name": "sponza_149",
+            "sizeBytes": 37504,
+            "type": "SPR_BUFFER"
+        },
+        {
+            "id": 659,
+            "name": "sponza_894",
+            "sizeBytes": 13856,
+            "type": "SPR_BUFFER"
+        },
+        {
+            "id": 531,
+            "name": "sponza_713",
+            "sizeBytes": 4194304,
+            "type": "SPR_BUFFER"
+        },
+        {
+            "id": 565,
+            "name": "sponza_765",
+            "sizeBytes": 0,
+            "type": "SPR_MATERIAL"
+        },
+        {
+            "id": 214,
+            "name": "sponza_231",
+            "sizeBytes": 1952,
+            "type": "SPR_BUFFER"
+        },
+        {
+            "id": 350,
+            "name": "sponza_445",
+            "sizeBytes": 29184,
+            "type": "SPR_BUFFER"
+        },
+        {
+            "id": 574,
+            "name": "sponza_774",
+            "sizeBytes": 72354,
+            "type": "SPR_MESH"
+        },
+        {
+            "id": 657,
+            "name": "sponza_905",
+            "sizeBytes": 4194304,
+            "type": "SPR_BUFFER"
+        },
+        {
+            "id": 633,
+            "name": "sponza_868",
+            "sizeBytes": 14400,
+            "type": "SPR_BUFFER"
+        },
+        {
+            "id": 577,
+            "name": "sponza_776",
+            "sizeBytes": 19696,
+            "type": "SPR_BUFFER"
+        },
+        {
+            "id": 671,
+            "name": "sponza_922",
+            "sizeBytes": 44316,
+            "type": "SPR_MESH"
+        },
+        {
+            "id": 28,
+            "name": "WaterBottle_7",
+            "sizeBytes": 81568,
+            "type": "SPR_BUFFER"
+        },
+        {
+            "id": 472,
+            "name": "sponza_616",
+            "sizeBytes": 80288,
+            "type": "SPR_BUFFER"
+        },
+        {
+            "id": 513,
+            "name": "sponza_689",
+            "sizeBytes": 0,
+            "type": "SPR_MATERIAL"
+        },
+        {
+            "id": 636,
+            "name": "sponza_871",
+            "sizeBytes": 13266,
+            "type": "SPR_BUFFER"
+        },
+        {
+            "id": 30,
+            "name": "helmet_1",
+            "sizeBytes": 84677480,
+            "type": "SPR_MESH"
+        },
+        {
+            "id": 239,
+            "name": "sponza_271",
+            "sizeBytes": 2016,
+            "type": "SPR_BUFFER"
+        },
+        {
+            "id": 316,
+            "name": "sponza_393",
+            "sizeBytes": 3136,
+            "type": "SPR_BUFFER"
+        },
+        {
+            "id": 262,
+            "name": "sponza_316",
+            "sizeBytes": 0,
+            "type": "SPR_MATERIAL"
+        },
+        {
+            "id": 511,
+            "name": "sponza_680",
+            "sizeBytes": 80288,
+            "type": "SPR_BUFFER"
+        },
+        {
+            "id": 564,
+            "name": "sponza_758",
+            "sizeBytes": 171678,
+            "type": "SPR_MESH"
+        },
+        {
+            "id": 370,
+            "name": "sponza_474",
+            "sizeBytes": 108,
+            "type": "SPR_BUFFER"
+        },
+        {
+            "id": 658,
+            "name": "sponza_893",
+            "sizeBytes": 9126,
+            "type": "SPR_BUFFER"
+        },
+        {
+            "id": 601,
+            "name": "sponza_815",
+            "sizeBytes": 2400,
+            "type": "SPR_BUFFER"
+        },
+        {
+            "id": 603,
+            "name": "sponza_820",
+            "sizeBytes": 14400,
+            "type": "SPR_BUFFER"
+        },
+        {
+            "id": 196,
+            "name": "sponza_205",
+            "sizeBytes": 7008,
+            "type": "SPR_MESH"
+        },
+        {
+            "id": 49,
+            "name": "sponza_10",
+            "sizeBytes": 4194304,
+            "type": "SPR_BUFFER"
+        },
+        {
+            "id": 428,
+            "name": "sponza_556",
+            "sizeBytes": 189504,
+            "type": "SPR_MESH"
+        },
+        {
+            "id": 602,
+            "name": "sponza_816",
+            "sizeBytes": 7200,
+            "type": "SPR_BUFFER"
+        },
+        {
+            "id": 550,
+            "name": "sponza_741",
+            "sizeBytes": 0,
+            "type": "SPR_MATERIAL"
+        },
+        {
+            "id": 263,
+            "name": "sponza_310",
+            "sizeBytes": 672,
+            "type": "SPR_BUFFER"
+        },
+        {
+            "id": 197,
+            "name": "sponza_212",
+            "sizeBytes": 0,
+            "type": "SPR_MATERIAL"
+        },
+        {
+            "id": 662,
+            "name": "sponza_913",
+            "sizeBytes": 0,
+            "type": "SPR_MATERIAL"
+        },
+        {
+            "id": 593,
+            "name": "sponza_804",
+            "sizeBytes": 17056,
+            "type": "SPR_BUFFER"
+        },
+        {
+            "id": 625,
+            "name": "sponza_861",
+            "sizeBytes": 0,
+            "type": "SPR_MATERIAL"
+        },
+        {
+            "id": 639,
+            "name": "sponza_878",
+            "sizeBytes": 12892800,
+            "type": "SPR_MESH"
+        },
+        {
+            "id": 482,
+            "name": "sponza_634",
+            "sizeBytes": 154704,
+            "type": "SPR_MESH"
+        },
+        {
+            "id": 374,
+            "name": "sponza_487",
+            "sizeBytes": 0,
+            "type": "SPR_MATERIAL"
+        },
+        {
+            "id": 348,
+            "name": "sponza_450",
+            "sizeBytes": 0,
+            "type": "SPR_MATERIAL"
+        },
+        {
+            "id": 18,
+            "name": "WaterBottle_9",
+            "sizeBytes": 16777216,
+            "type": "SPR_TEXTURE"
+        },
+        {
+            "id": 256,
+            "name": "sponza_301",
+            "sizeBytes": 7008,
+            "type": "SPR_MESH"
+        },
+        {
+            "id": 101,
+            "name": "sponza_71",
+            "sizeBytes": 12611472,
+            "type": "SPR_MESH"
+        },
+        {
+            "id": 519,
+            "name": "sponza_698",
+            "sizeBytes": 4194304,
+            "type": "SPR_TEXTURE"
+        },
+        {
+            "id": 311,
+            "name": "sponza_385",
+            "sizeBytes": 1536,
+            "type": "SPR_BUFFER"
+        },
+        {
+            "id": 478,
+            "name": "sponza_633",
+            "sizeBytes": 4194304,
+            "type": "SPR_BUFFER"
+        },
+        {
+            "id": 112,
+            "name": "sponza_85",
+            "sizeBytes": 12686376,
+            "type": "SPR_MESH"
+        },
+        {
+            "id": 99,
+            "name": "sponza_59",
+            "sizeBytes": 2048,
+            "type": "SPR_BUFFER"
+        },
+        {
+            "id": 506,
+            "name": "sponza_672",
+            "sizeBytes": 83680,
+            "type": "SPR_BUFFER"
+        },
+        {
+            "id": 642,
+            "name": "sponza_887",
+            "sizeBytes": 4194304,
+            "type": "SPR_BUFFER"
+        },
+        {
+            "id": 547,
+            "name": "sponza_728",
+            "sizeBytes": 47312,
+            "type": "SPR_BUFFER"
+        },
+        {
+            "id": 123,
+            "name": "sponza_99",
+            "sizeBytes": 12673632,
+            "type": "SPR_MESH"
+        },
+        {
+            "id": 226,
+            "name": "sponza_253",
+            "sizeBytes": 7008,
+            "type": "SPR_MESH"
+        },
+        {
+            "id": 259,
+            "name": "sponza_303",
+            "sizeBytes": 2016,
+            "type": "SPR_BUFFER"
+        },
+        {
+            "id": 312,
+            "name": "sponza_387",
+            "sizeBytes": 5196,
+            "type": "SPR_MESH"
+        },
+        {
+            "id": 587,
+            "name": "sponza_792",
+            "sizeBytes": 19696,
+            "type": "SPR_BUFFER"
+        },
+        {
+            "id": 232,
+            "name": "sponza_268",
+            "sizeBytes": 0,
+            "type": "SPR_MATERIAL"
+        },
+        {
+            "id": 604,
+            "name": "sponza_822",
+            "sizeBytes": 72354,
+            "type": "SPR_MESH"
+        },
+        {
+            "id": 497,
+            "name": "sponza_658",
+            "sizeBytes": 148080,
+            "type": "SPR_MESH"
+        },
+        {
+            "id": 416,
+            "name": "sponza_544",
+            "sizeBytes": 4194304,
+            "type": "SPR_TEXTURE"
+        },
+        {
+            "id": 395,
+            "name": "sponza_517",
+            "sizeBytes": 12582912,
+            "type": "SPR_MATERIAL"
+        },
+        {
+            "id": 468,
+            "name": "sponza_620",
+            "sizeBytes": 4194304,
+            "type": "SPR_TEXTURE"
+        },
+        {
+            "id": 318,
+            "name": "sponza_402",
+            "sizeBytes": 0,
+            "type": "SPR_MATERIAL"
+        },
+        {
+            "id": 648,
+            "name": "sponza_880",
+            "sizeBytes": 84928,
+            "type": "SPR_BUFFER"
+        },
+        {
+            "id": 93,
+            "name": "sponza_66",
+            "sizeBytes": 4194304,
+            "type": "SPR_BUFFER"
+        },
+        {
+            "id": 110,
+            "name": "sponza_73",
+            "sizeBytes": 8960,
+            "type": "SPR_BUFFER"
+        },
+        {
+            "id": 329,
+            "name": "sponza_412",
+            "sizeBytes": 300,
+            "type": "SPR_BUFFER"
+        },
+        {
+            "id": 701,
+            "name": "default_model_3",
+            "sizeBytes": 10720,
+            "type": "SPR_BUFFER"
+        },
+        {
+            "id": 96,
+            "name": "sponza_69",
+            "sizeBytes": 4194304,
+            "type": "SPR_TEXTURE"
+        },
+        {
+            "id": 236,
+            "name": "sponza_269",
+            "sizeBytes": 7008,
+            "type": "SPR_MESH"
+        },
+        {
+            "id": 98,
+            "name": "sponza_58",
+            "sizeBytes": 648,
+            "type": "SPR_BUFFER"
+        },
+        {
+            "id": 342,
+            "name": "sponza_435",
+            "sizeBytes": 366,
+            "type": "SPR_MESH"
+        },
+        {
+            "id": 270,
+            "name": "sponza_323",
+            "sizeBytes": 4032,
+            "type": "SPR_BUFFER"
+        },
+        {
+            "id": 47,
+            "name": "sponza_8",
+            "sizeBytes": 12582912,
+            "type": "SPR_MATERIAL"
+        },
+        {
+            "id": 352,
+            "name": "sponza_451",
+            "sizeBytes": 203088,
+            "type": "SPR_MESH"
+        },
+        {
+            "id": 383,
+            "name": "sponza_499",
+            "sizeBytes": 4194304,
+            "type": "SPR_BUFFER"
+        },
+        {
+            "id": 61,
+            "name": "sponza_25",
+            "sizeBytes": 4194304,
+            "type": "SPR_TEXTURE"
+        },
+        {
+            "id": 380,
+            "name": "sponza_496",
+            "sizeBytes": 4194304,
+            "type": "SPR_TEXTURE"
+        },
+        {
+            "id": 619,
+            "name": "sponza_846",
+            "sizeBytes": 24000,
+            "type": "SPR_MESH"
+        },
+        {
+            "id": 245,
+            "name": "sponza_283",
+            "sizeBytes": 3904,
+            "type": "SPR_BUFFER"
+        },
+        {
+            "id": 222,
+            "name": "sponza_252",
+            "sizeBytes": 0,
+            "type": "SPR_MATERIAL"
+        },
+        {
+            "id": 647,
+            "name": "sponza_879",
+            "sizeBytes": 55104,
+            "type": "SPR_BUFFER"
+        },
+        {
+            "id": 553,
+            "name": "sponza_740",
+            "sizeBytes": 512,
+            "type": "SPR_BUFFER"
+        },
+        {
+            "id": 618,
+            "name": "sponza_844",
+            "sizeBytes": 39392,
+            "type": "SPR_BUFFER"
+        },
+        {
+            "id": 82,
+            "name": "sponza_52",
+            "sizeBytes": 4194304,
+            "type": "SPR_BUFFER"
+        },
+        {
+            "id": 142,
+            "name": "sponza_130",
+            "sizeBytes": 4194304,
+            "type": "SPR_BUFFER"
+        },
+        {
+            "id": 663,
+            "name": "sponza_907",
+            "sizeBytes": 8172,
+            "type": "SPR_BUFFER"
+        },
+        {
+            "id": 64,
+            "name": "sponza_28",
+            "sizeBytes": 4194304,
+            "type": "SPR_BUFFER"
+        },
+        {
+            "id": 376,
+            "name": "sponza_482",
+            "sizeBytes": 1920,
+            "type": "SPR_BUFFER"
+        },
+        {
+            "id": 687,
+            "name": "sponza_950",
+            "sizeBytes": 4194304,
+            "type": "SPR_TEXTURE"
+        },
+        {
+            "id": 524,
+            "name": "sponza_703",
+            "sizeBytes": 4194304,
+            "type": "SPR_BUFFER"
+        },
+        {
+            "id": 369,
+            "name": "sponza_479",
+            "sizeBytes": 0,
+            "type": "SPR_MATERIAL"
+        },
+        {
+            "id": 74,
+            "name": "sponza_41",
+            "sizeBytes": 4194304,
+            "type": "SPR_TEXTURE"
+        },
+        {
+            "id": 470,
+            "name": "sponza_611",
+            "sizeBytes": 27648,
+            "type": "SPR_BUFFER"
+        },
+        {
+            "id": 523,
+            "name": "sponza_702",
+            "sizeBytes": 4194304,
+            "type": "SPR_TEXTURE"
+        },
+        {
+            "id": 654,
+            "name": "sponza_902",
+            "sizeBytes": 4194304,
+            "type": "SPR_TEXTURE"
+        },
+        {
+            "id": 161,
+            "name": "sponza_158",
+            "sizeBytes": 12582912,
+            "type": "SPR_MATERIAL"
+        },
+        {
+            "id": 46,
+            "name": "sponza_1",
+            "sizeBytes": 12757152,
+            "type": "SPR_MESH"
+        },
+        {
+            "id": 301,
+            "name": "sponza_376",
+            "sizeBytes": 4194304,
+            "type": "SPR_BUFFER"
+        },
+        {
+            "id": 402,
+            "name": "sponza_511",
+            "sizeBytes": 33024,
+            "type": "SPR_BUFFER"
+        },
+        {
+            "id": 485,
+            "name": "sponza_636",
+            "sizeBytes": 41840,
+            "type": "SPR_BUFFER"
+        },
+        {
+            "id": 566,
+            "name": "sponza_759",
+            "sizeBytes": 29742,
+            "type": "SPR_BUFFER"
+        },
+        {
+            "id": 103,
+            "name": "sponza_79",
+            "sizeBytes": 4194304,
+            "type": "SPR_TEXTURE"
+        },
+        {
+            "id": 582,
+            "name": "sponza_784",
+            "sizeBytes": 8528,
+            "type": "SPR_BUFFER"
+        },
+        {
+            "id": 114,
+            "name": "sponza_93",
+            "sizeBytes": 4194304,
+            "type": "SPR_TEXTURE"
+        },
+        {
+            "id": 418,
+            "name": "sponza_546",
+            "sizeBytes": 4194304,
+            "type": "SPR_TEXTURE"
+        },
+        {
+            "id": 169,
+            "name": "sponza_153",
+            "sizeBytes": 101888,
+            "type": "SPR_BUFFER"
+        },
+        {
+            "id": 580,
+            "name": "sponza_789",
+            "sizeBytes": 0,
+            "type": "SPR_MATERIAL"
+        },
+        {
+            "id": 379,
+            "name": "sponza_495",
+            "sizeBytes": 12582912,
+            "type": "SPR_MATERIAL"
+        },
+        {
+            "id": 579,
+            "name": "sponza_782",
+            "sizeBytes": 28392,
+            "type": "SPR_MESH"
+        },
+        {
+            "id": 626,
+            "name": "sponza_855",
+            "sizeBytes": 13266,
+            "type": "SPR_BUFFER"
+        },
+        {
+            "id": 385,
+            "name": "sponza_501",
+            "sizeBytes": 4194304,
+            "type": "SPR_BUFFER"
+        },
+        {
+            "id": 157,
+            "name": "sponza_144",
+            "sizeBytes": 6576,
+            "type": "SPR_BUFFER"
+        },
+        {
+            "id": 4,
             "name": "Duck_7",
             "sizeBytes": 1048576,
             "type": "SPR_MATERIAL"
         },
         {
-            "id": 12,
-            "name": "Triangle_3",
-            "sizeBytes": 36,
+            "id": 38,
+            "name": "helmet_14",
+            "sizeBytes": 16777216,
+            "type": "SPR_TEXTURE"
+        },
+        {
+            "id": 139,
+            "name": "sponza_121",
+            "sizeBytes": 12583776,
+            "type": "SPR_MESH"
+        },
+        {
+            "id": 548,
+            "name": "sponza_732",
+            "sizeBytes": 94624,
+            "type": "SPR_BUFFER"
+        },
+        {
+            "id": 328,
+            "name": "sponza_418",
+            "sizeBytes": 0,
+            "type": "SPR_MATERIAL"
+        },
+        {
+            "id": 152,
+            "name": "sponza_136",
+            "sizeBytes": 13992,
+            "type": "SPR_BUFFER"
+        },
+        {
+            "id": 264,
+            "name": "sponza_311",
+            "sizeBytes": 1952,
+            "type": "SPR_BUFFER"
+        },
+        {
+            "id": 177,
+            "name": "sponza_180",
+            "sizeBytes": 0,
+            "type": "SPR_MATERIAL"
+        },
+        {
+            "id": 223,
+            "name": "sponza_246",
+            "sizeBytes": 672,
+            "type": "SPR_BUFFER"
+        },
+        {
+            "id": 533,
+            "name": "sponza_715",
+            "sizeBytes": 4194304,
+            "type": "SPR_BUFFER"
+        },
+        {
+            "id": 42,
+            "name": "helmet_2",
+            "sizeBytes": 92712,
+            "type": "SPR_BUFFER"
+        },
+        {
+            "id": 678,
+            "name": "sponza_931",
+            "sizeBytes": 168,
+            "type": "SPR_BUFFER"
+        },
+        {
+            "id": 611,
+            "name": "sponza_831",
+            "sizeBytes": 2400,
+            "type": "SPR_BUFFER"
+        },
+        {
+            "id": 423,
+            "name": "sponza_548",
+            "sizeBytes": 189504,
+            "type": "SPR_MESH"
+        },
+        {
+            "id": 414,
+            "name": "sponza_536",
+            "sizeBytes": 8578112,
+            "type": "SPR_MESH"
+        },
+        {
+            "id": 50,
+            "name": "sponza_11",
+            "sizeBytes": 4194304,
+            "type": "SPR_TEXTURE"
+        },
+        {
+            "id": 578,
+            "name": "sponza_780",
+            "sizeBytes": 39392,
+            "type": "SPR_BUFFER"
+        },
+        {
+            "id": 73,
+            "name": "sponza_40",
+            "sizeBytes": 4194304,
+            "type": "SPR_BUFFER"
+        },
+        {
+            "id": 131,
+            "name": "sponza_100",
+            "sizeBytes": 8736,
+            "type": "SPR_BUFFER"
+        },
+        {
+            "id": 583,
+            "name": "sponza_788",
+            "sizeBytes": 17056,
+            "type": "SPR_BUFFER"
+        },
+        {
+            "id": 392,
+            "name": "sponza_504",
+            "sizeBytes": 335792,
+            "type": "SPR_BUFFER"
+        },
+        {
+            "id": 163,
+            "name": "sponza_160",
+            "sizeBytes": 4194304,
+            "type": "SPR_BUFFER"
+        },
+        {
+            "id": 404,
+            "name": "sponza_516",
+            "sizeBytes": 104320,
+            "type": "SPR_BUFFER"
+        },
+        {
+            "id": 460,
+            "name": "sponza_609",
+            "sizeBytes": 4194304,
+            "type": "SPR_BUFFER"
+        },
+        {
+            "id": 137,
+            "name": "sponza_115",
+            "sizeBytes": 51072,
+            "type": "SPR_BUFFER"
+        },
+        {
+            "id": 66,
+            "name": "sponza_17",
+            "sizeBytes": 8528,
+            "type": "SPR_BUFFER"
+        },
+        {
+            "id": 354,
+            "name": "sponza_452",
+            "sizeBytes": 22416,
+            "type": "SPR_BUFFER"
+        },
+        {
+            "id": 617,
+            "name": "sponza_840",
+            "sizeBytes": 19696,
             "type": "SPR_BUFFER"
         },
         {
             "id": 13,
+            "name": "Triangle_3",
+            "sizeBytes": 48,
+            "type": "SPR_BUFFER"
+        },
+        {
+            "id": 521,
+            "name": "sponza_700",
+            "sizeBytes": 4194304,
+            "type": "SPR_TEXTURE"
+        },
+        {
+            "id": 135,
+            "name": "sponza_120",
+            "sizeBytes": 0,
+            "type": "SPR_MATERIAL"
+        },
+        {
+            "id": 144,
+            "name": "sponza_132",
+            "sizeBytes": 4194304,
+            "type": "SPR_BUFFER"
+        },
+        {
+            "id": 665,
+            "name": "sponza_912",
+            "sizeBytes": 24096,
+            "type": "SPR_BUFFER"
+        },
+        {
+            "id": 325,
+            "name": "sponza_405",
+            "sizeBytes": 11008,
+            "type": "SPR_BUFFER"
+        },
+        {
+            "id": 265,
+            "name": "sponza_315",
+            "sizeBytes": 3904,
+            "type": "SPR_BUFFER"
+        },
+        {
+            "id": 212,
+            "name": "sponza_236",
+            "sizeBytes": 0,
+            "type": "SPR_MATERIAL"
+        },
+        {
+            "id": 467,
+            "name": "sponza_619",
+            "sizeBytes": 4194304,
+            "type": "SPR_BUFFER"
+        },
+        {
+            "id": 449,
+            "name": "sponza_595",
+            "sizeBytes": 0,
+            "type": "SPR_MATERIAL"
+        },
+        {
+            "id": 692,
+            "name": "sponza_952",
+            "sizeBytes": 1020,
+            "type": "SPR_MESH"
+        },
+        {
+            "id": 398,
+            "name": "sponza_520",
+            "sizeBytes": 4194304,
+            "type": "SPR_TEXTURE"
+        },
+        {
+            "id": 623,
+            "name": "sponza_852",
+            "sizeBytes": 14400,
+            "type": "SPR_BUFFER"
+        },
+        {
+            "id": 690,
+            "name": "sponza_940",
+            "sizeBytes": 190240,
+            "type": "SPR_BUFFER"
+        },
+        {
+            "id": 257,
+            "name": "sponza_308",
+            "sizeBytes": 0,
+            "type": "SPR_MATERIAL"
+        },
+        {
+            "id": 525,
+            "name": "sponza_691",
+            "sizeBytes": 48,
+            "type": "SPR_BUFFER"
+        },
+        {
+            "id": 599,
+            "name": "sponza_814",
+            "sizeBytes": 24000,
+            "type": "SPR_MESH"
+        },
+        {
+            "id": 427,
+            "name": "sponza_554",
+            "sizeBytes": 104320,
+            "type": "SPR_BUFFER"
+        },
+        {
+            "id": 415,
+            "name": "sponza_543",
+            "sizeBytes": 8388608,
+            "type": "SPR_MATERIAL"
+        },
+        {
+            "id": 509,
+            "name": "sponza_675",
+            "sizeBytes": 27648,
+            "type": "SPR_BUFFER"
+        },
+        {
+            "id": 203,
+            "name": "sponza_214",
+            "sizeBytes": 672,
+            "type": "SPR_BUFFER"
+        },
+        {
+            "id": 487,
+            "name": "sponza_642",
+            "sizeBytes": 148080,
+            "type": "SPR_MESH"
+        },
+        {
+            "id": 498,
+            "name": "sponza_665",
+            "sizeBytes": 0,
+            "type": "SPR_MATERIAL"
+        },
+        {
+            "id": 307,
+            "name": "sponza_379",
+            "sizeBytes": 2448,
+            "type": "SPR_MESH"
+        },
+        {
+            "id": 388,
+            "name": "sponza_494",
+            "sizeBytes": 126464,
+            "type": "SPR_BUFFER"
+        },
+        {
+            "id": 335,
+            "name": "sponza_421",
+            "sizeBytes": 94464,
+            "type": "SPR_BUFFER"
+        },
+        {
+            "id": 129,
+            "name": "sponza_111",
+            "sizeBytes": 4194304,
+            "type": "SPR_TEXTURE"
+        },
+        {
+            "id": 228,
+            "name": "sponza_254",
+            "sizeBytes": 960,
+            "type": "SPR_BUFFER"
+        },
+        {
+            "id": 340,
+            "name": "sponza_429",
+            "sizeBytes": 1472,
+            "type": "SPR_BUFFER"
+        },
+        {
+            "id": 105,
+            "name": "sponza_81",
+            "sizeBytes": 4194304,
+            "type": "SPR_TEXTURE"
+        },
+        {
+            "id": 224,
+            "name": "sponza_247",
+            "sizeBytes": 1952,
+            "type": "SPR_BUFFER"
+        },
+        {
+            "id": 595,
+            "name": "sponza_813",
+            "sizeBytes": 0,
+            "type": "SPR_MATERIAL"
+        },
+        {
+            "id": 35,
+            "name": "helmet_11",
+            "sizeBytes": 16777216,
+            "type": "SPR_BUFFER"
+        },
+        {
+            "id": 227,
+            "name": "sponza_260",
+            "sizeBytes": 0,
+            "type": "SPR_MATERIAL"
+        },
+        {
+            "id": 179,
+            "name": "sponza_175",
+            "sizeBytes": 3392,
+            "type": "SPR_BUFFER"
+        },
+        {
+            "id": 128,
+            "name": "sponza_110",
+            "sizeBytes": 4194304,
+            "type": "SPR_BUFFER"
+        },
+        {
+            "id": 219,
+            "name": "sponza_239",
+            "sizeBytes": 2016,
+            "type": "SPR_BUFFER"
+        },
+        {
+            "id": 426,
+            "name": "sponza_550",
+            "sizeBytes": 52160,
+            "type": "SPR_BUFFER"
+        },
+        {
+            "id": 643,
+            "name": "sponza_888",
+            "sizeBytes": 4194304,
+            "type": "SPR_TEXTURE"
+        },
+        {
+            "id": 682,
+            "name": "sponza_945",
+            "sizeBytes": 12582912,
+            "type": "SPR_MATERIAL"
+        },
+        {
+            "id": 14,
             "name": "Triangle_4",
             "sizeBytes": 96,
             "type": "SPR_BUFFER"
         },
         {
-            "id": 5,
+            "id": 170,
+            "name": "sponza_157",
+            "sizeBytes": 203776,
+            "type": "SPR_BUFFER"
+        },
+        {
+            "id": 282,
+            "name": "sponza_348",
+            "sizeBytes": 0,
+            "type": "SPR_MATERIAL"
+        },
+        {
+            "id": 320,
+            "name": "sponza_397",
+            "sizeBytes": 768,
+            "type": "SPR_BUFFER"
+        },
+        {
+            "id": 298,
+            "name": "sponza_373",
+            "sizeBytes": 4194304,
+            "type": "SPR_TEXTURE"
+        },
+        {
+            "id": 185,
+            "name": "sponza_187",
+            "sizeBytes": 4416,
+            "type": "SPR_BUFFER"
+        },
+        {
+            "id": 19,
+            "name": "WaterBottle_10",
+            "sizeBytes": 16777216,
+            "type": "SPR_BUFFER"
+        },
+        {
+            "id": 31,
+            "name": "helmet_7",
+            "sizeBytes": 83886080,
+            "type": "SPR_MATERIAL"
+        },
+        {
+            "id": 321,
+            "name": "sponza_401",
+            "sizeBytes": 1536,
+            "type": "SPR_BUFFER"
+        },
+        {
+            "id": 680,
+            "name": "sponza_936",
+            "sizeBytes": 1600,
+            "type": "SPR_BUFFER"
+        },
+        {
+            "id": 362,
+            "name": "sponza_470",
+            "sizeBytes": 4194304,
+            "type": "SPR_BUFFER"
+        },
+        {
+            "id": 251,
+            "name": "sponza_293",
+            "sizeBytes": 6528,
+            "type": "SPR_MESH"
+        },
+        {
+            "id": 377,
+            "name": "sponza_486",
+            "sizeBytes": 3840,
+            "type": "SPR_BUFFER"
+        },
+        {
+            "id": 516,
+            "name": "sponza_688",
+            "sizeBytes": 83680,
+            "type": "SPR_BUFFER"
+        },
+        {
+            "id": 243,
+            "name": "sponza_278",
+            "sizeBytes": 672,
+            "type": "SPR_BUFFER"
+        },
+        {
+            "id": 389,
+            "name": "sponza_502",
+            "sizeBytes": 1174152,
+            "type": "SPR_MESH"
+        },
+        {
+            "id": 121,
+            "name": "sponza_87",
+            "sizeBytes": 29824,
+            "type": "SPR_BUFFER"
+        },
+        {
+            "id": 397,
+            "name": "sponza_519",
+            "sizeBytes": 4194304,
+            "type": "SPR_BUFFER"
+        },
+        {
+            "id": 381,
+            "name": "sponza_497",
+            "sizeBytes": 4194304,
+            "type": "SPR_BUFFER"
+        },
+        {
+            "id": 637,
+            "name": "sponza_872",
+            "sizeBytes": 19696,
+            "type": "SPR_BUFFER"
+        },
+        {
+            "id": 552,
+            "name": "sponza_736",
+            "sizeBytes": 256,
+            "type": "SPR_BUFFER"
+        },
+        {
+            "id": 314,
+            "name": "sponza_388",
+            "sizeBytes": 492,
+            "type": "SPR_BUFFER"
+        },
+        {
+            "id": 431,
+            "name": "sponza_558",
+            "sizeBytes": 52160,
+            "type": "SPR_BUFFER"
+        },
+        {
+            "id": 453,
+            "name": "sponza_596",
+            "sizeBytes": 12737616,
+            "type": "SPR_MESH"
+        },
+        {
+            "id": 528,
+            "name": "sponza_704",
+            "sizeBytes": 12754590,
+            "type": "SPR_MESH"
+        },
+        {
+            "id": 456,
+            "name": "sponza_605",
+            "sizeBytes": 4194304,
+            "type": "SPR_BUFFER"
+        },
+        {
+            "id": 515,
+            "name": "sponza_684",
+            "sizeBytes": 41840,
+            "type": "SPR_BUFFER"
+        },
+        {
+            "id": 189,
+            "name": "sponza_191",
+            "sizeBytes": 2016,
+            "type": "SPR_BUFFER"
+        },
+        {
+            "id": 469,
+            "name": "sponza_621",
+            "sizeBytes": 4194304,
+            "type": "SPR_BUFFER"
+        },
+        {
+            "id": 631,
+            "name": "sponza_863",
+            "sizeBytes": 2400,
+            "type": "SPR_BUFFER"
+        },
+        {
+            "id": 615,
+            "name": "sponza_845",
+            "sizeBytes": 0,
+            "type": "SPR_MATERIAL"
+        },
+        {
+            "id": 63,
+            "name": "sponza_27",
+            "sizeBytes": 4194304,
+            "type": "SPR_TEXTURE"
+        },
+        {
+            "id": 140,
+            "name": "sponza_128",
+            "sizeBytes": 12582912,
+            "type": "SPR_MATERIAL"
+        },
+        {
+            "id": 309,
+            "name": "sponza_380",
+            "sizeBytes": 144,
+            "type": "SPR_BUFFER"
+        },
+        {
+            "id": 366,
+            "name": "sponza_461",
+            "sizeBytes": 368608,
+            "type": "SPR_BUFFER"
+        },
+        {
+            "id": 429,
+            "name": "sponza_563",
+            "sizeBytes": 0,
+            "type": "SPR_MATERIAL"
+        },
+        {
+            "id": 358,
+            "name": "sponza_466",
+            "sizeBytes": 12582912,
+            "type": "SPR_MATERIAL"
+        },
+        {
+            "id": 115,
+            "name": "sponza_94",
+            "sizeBytes": 4194304,
+            "type": "SPR_BUFFER"
+        },
+        {
+            "id": 190,
+            "name": "sponza_195",
+            "sizeBytes": 4032,
+            "type": "SPR_BUFFER"
+        },
+        {
+            "id": 333,
+            "name": "sponza_426",
+            "sizeBytes": 0,
+            "type": "SPR_MATERIAL"
+        },
+        {
+            "id": 176,
+            "name": "sponza_173",
+            "sizeBytes": 11400,
+            "type": "SPR_MESH"
+        },
+        {
+            "id": 241,
+            "name": "sponza_277",
+            "sizeBytes": 6528,
+            "type": "SPR_MESH"
+        },
+        {
+            "id": 269,
+            "name": "sponza_319",
+            "sizeBytes": 2016,
+            "type": "SPR_BUFFER"
+        },
+        {
+            "id": 59,
+            "name": "sponza_23",
+            "sizeBytes": 4194304,
+            "type": "SPR_TEXTURE"
+        },
+        {
+            "id": 167,
+            "name": "sponza_164",
+            "sizeBytes": 4194304,
+            "type": "SPR_BUFFER"
+        },
+        {
+            "id": 209,
+            "name": "sponza_223",
+            "sizeBytes": 2016,
+            "type": "SPR_BUFFER"
+        },
+        {
+            "id": 466,
+            "name": "sponza_618",
+            "sizeBytes": 4194304,
+            "type": "SPR_TEXTURE"
+        },
+        {
+            "id": 655,
+            "name": "sponza_903",
+            "sizeBytes": 4194304,
+            "type": "SPR_BUFFER"
+        },
+        {
+            "id": 685,
+            "name": "sponza_948",
+            "sizeBytes": 4194304,
+            "type": "SPR_TEXTURE"
+        },
+        {
+            "id": 419,
+            "name": "sponza_547",
+            "sizeBytes": 4194304,
+            "type": "SPR_BUFFER"
+        },
+        {
+            "id": 54,
+            "name": "sponza_2",
+            "sizeBytes": 21840,
+            "type": "SPR_BUFFER"
+        },
+        {
+            "id": 268,
+            "name": "sponza_318",
+            "sizeBytes": 960,
+            "type": "SPR_BUFFER"
+        },
+        {
+            "id": 488,
+            "name": "sponza_649",
+            "sizeBytes": 0,
+            "type": "SPR_MATERIAL"
+        },
+        {
+            "id": 495,
+            "name": "sponza_652",
+            "sizeBytes": 41840,
+            "type": "SPR_BUFFER"
+        },
+        {
+            "id": 327,
+            "name": "sponza_411",
+            "sizeBytes": 4716,
+            "type": "SPR_MESH"
+        },
+        {
+            "id": 571,
+            "name": "sponza_767",
+            "sizeBytes": 2808,
+            "type": "SPR_BUFFER"
+        },
+        {
+            "id": 164,
+            "name": "sponza_161",
+            "sizeBytes": 4194304,
+            "type": "SPR_TEXTURE"
+        },
+        {
+            "id": 183,
+            "name": "sponza_182",
+            "sizeBytes": 888,
+            "type": "SPR_BUFFER"
+        },
+        {
+            "id": 58,
+            "name": "sponza_22",
+            "sizeBytes": 12582912,
+            "type": "SPR_MATERIAL"
+        },
+        {
+            "id": 26,
+            "name": "WaterBottle_2",
+            "sizeBytes": 27060,
+            "type": "SPR_BUFFER"
+        },
+        {
+            "id": 172,
+            "name": "sponza_172",
+            "sizeBytes": 0,
+            "type": "SPR_MATERIAL"
+        },
+        {
+            "id": 211,
+            "name": "sponza_229",
+            "sizeBytes": 6528,
+            "type": "SPR_MESH"
+        },
+        {
+            "id": 78,
+            "name": "sponza_35",
+            "sizeBytes": 39392,
+            "type": "SPR_BUFFER"
+        },
+        {
+            "id": 76,
+            "name": "sponza_30",
+            "sizeBytes": 13266,
+            "type": "SPR_BUFFER"
+        },
+        {
+            "id": 425,
+            "name": "sponza_549",
+            "sizeBytes": 33024,
+            "type": "SPR_BUFFER"
+        },
+        {
+            "id": 6,
             "name": "Duck_9",
             "sizeBytes": 1048576,
             "type": "SPR_BUFFER"
         },
         {
-            "id": 4,
+            "id": 97,
+            "name": "sponza_70",
+            "sizeBytes": 4194304,
+            "type": "SPR_BUFFER"
+        },
+        {
+            "id": 69,
+            "name": "sponza_36",
+            "sizeBytes": 12582912,
+            "type": "SPR_MATERIAL"
+        },
+        {
+            "id": 5,
             "name": "Duck_8",
             "sizeBytes": 1048576,
             "type": "SPR_TEXTURE"
         },
         {
-            "id": 7,
-            "name": "Duck_3",
-            "sizeBytes": 57576,
+            "id": 490,
+            "name": "sponza_644",
+            "sizeBytes": 40144,
             "type": "SPR_BUFFER"
         },
         {
-            "id": 21,
+            "id": 517,
+            "name": "sponza_690",
+            "sizeBytes": 12583728,
+            "type": "SPR_MESH"
+        },
+        {
+            "id": 384,
+            "name": "sponza_500",
+            "sizeBytes": 4194304,
+            "type": "SPR_TEXTURE"
+        },
+        {
+            "id": 420,
+            "name": "sponza_537",
+            "sizeBytes": 33024,
+            "type": "SPR_BUFFER"
+        },
+        {
+            "id": 435,
+            "name": "sponza_565",
+            "sizeBytes": 33024,
+            "type": "SPR_BUFFER"
+        },
+        {
+            "id": 23,
+            "name": "WaterBottle_14",
+            "sizeBytes": 16777216,
+            "type": "SPR_BUFFER"
+        },
+        {
+            "id": 581,
+            "name": "sponza_783",
+            "sizeBytes": 2808,
+            "type": "SPR_BUFFER"
+        },
+        {
+            "id": 56,
+            "name": "sponza_7",
+            "sizeBytes": 101600,
+            "type": "SPR_BUFFER"
+        },
+        {
+            "id": 240,
+            "name": "sponza_275",
+            "sizeBytes": 4032,
+            "type": "SPR_BUFFER"
+        },
+        {
+            "id": 401,
+            "name": "sponza_523",
+            "sizeBytes": 4194304,
+            "type": "SPR_BUFFER"
+        },
+        {
+            "id": 155,
+            "name": "sponza_143",
+            "sizeBytes": 62832,
+            "type": "SPR_MESH"
+        },
+        {
+            "id": 683,
+            "name": "sponza_946",
+            "sizeBytes": 4194304,
+            "type": "SPR_TEXTURE"
+        },
+        {
+            "id": 44,
+            "name": "helmet_6",
+            "sizeBytes": 465792,
+            "type": "SPR_BUFFER"
+        },
+        {
+            "id": 543,
+            "name": "sponza_724",
+            "sizeBytes": 512,
+            "type": "SPR_BUFFER"
+        },
+        {
+            "id": 274,
+            "name": "sponza_327",
+            "sizeBytes": 1952,
+            "type": "SPR_BUFFER"
+        },
+        {
+            "id": 145,
+            "name": "sponza_133",
+            "sizeBytes": 4194304,
+            "type": "SPR_TEXTURE"
+        },
+        {
+            "id": 650,
+            "name": "sponza_892",
+            "sizeBytes": 12633606,
+            "type": "SPR_MESH"
+        },
+        {
+            "id": 351,
+            "name": "sponza_449",
+            "sizeBytes": 58368,
+            "type": "SPR_BUFFER"
+        },
+        {
+            "id": 150,
+            "name": "sponza_135",
+            "sizeBytes": 103464,
+            "type": "SPR_MESH"
+        },
+        {
+            "id": 600,
+            "name": "sponza_821",
+            "sizeBytes": 0,
+            "type": "SPR_MATERIAL"
+        },
+        {
+            "id": 494,
+            "name": "sponza_651",
+            "sizeBytes": 29184,
+            "type": "SPR_BUFFER"
+        },
+        {
+            "id": 406,
+            "name": "sponza_531",
+            "sizeBytes": 8388608,
+            "type": "SPR_MATERIAL"
+        },
+        {
+            "id": 669,
+            "name": "sponza_916",
+            "sizeBytes": 13856,
+            "type": "SPR_BUFFER"
+        },
+        {
+            "id": 165,
+            "name": "sponza_162",
+            "sizeBytes": 4194304,
+            "type": "SPR_BUFFER"
+        },
+        {
+            "id": 346,
+            "name": "sponza_441",
+            "sizeBytes": 224,
+            "type": "SPR_BUFFER"
+        },
+        {
+            "id": 216,
+            "name": "sponza_237",
+            "sizeBytes": 7008,
+            "type": "SPR_MESH"
+        },
+        {
+            "id": 684,
+            "name": "sponza_947",
+            "sizeBytes": 4194304,
+            "type": "SPR_BUFFER"
+        },
+        {
+            "id": 109,
+            "name": "sponza_72",
+            "sizeBytes": 1680,
+            "type": "SPR_BUFFER"
+        },
+        {
+            "id": 174,
+            "name": "sponza_167",
+            "sizeBytes": 3456,
+            "type": "SPR_BUFFER"
+        },
+        {
+            "id": 417,
+            "name": "sponza_545",
+            "sizeBytes": 4194304,
+            "type": "SPR_BUFFER"
+        },
+        {
+            "id": 89,
+            "name": "sponza_49",
+            "sizeBytes": 24096,
+            "type": "SPR_BUFFER"
+        },
+        {
+            "id": 394,
+            "name": "sponza_510",
+            "sizeBytes": 12772416,
+            "type": "SPR_MESH"
+        },
+        {
+            "id": 249,
+            "name": "sponza_287",
+            "sizeBytes": 2016,
+            "type": "SPR_BUFFER"
+        },
+        {
+            "id": 540,
+            "name": "sponza_725",
+            "sizeBytes": 0,
+            "type": "SPR_MATERIAL"
+        },
+        {
+            "id": 229,
+            "name": "sponza_255",
+            "sizeBytes": 2016,
+            "type": "SPR_BUFFER"
+        },
+        {
+            "id": 337,
+            "name": "sponza_427",
+            "sizeBytes": 4716,
+            "type": "SPR_MESH"
+        },
+        {
+            "id": 234,
+            "name": "sponza_263",
+            "sizeBytes": 1952,
+            "type": "SPR_BUFFER"
+        },
+        {
+            "id": 120,
+            "name": "sponza_86",
+            "sizeBytes": 13992,
+            "type": "SPR_BUFFER"
+        },
+        {
+            "id": 667,
+            "name": "sponza_921",
+            "sizeBytes": 0,
+            "type": "SPR_MATERIAL"
+        },
+        {
+            "id": 324,
+            "name": "sponza_404",
+            "sizeBytes": 3336,
+            "type": "SPR_BUFFER"
+        },
+        {
+            "id": 280,
+            "name": "sponza_339",
+            "sizeBytes": 28160,
+            "type": "SPR_BUFFER"
+        },
+        {
+            "id": 549,
+            "name": "sponza_734",
+            "sizeBytes": 816,
+            "type": "SPR_MESH"
+        },
+        {
+            "id": 594,
+            "name": "sponza_806",
+            "sizeBytes": 72354,
+            "type": "SPR_MESH"
+        },
+        {
+            "id": 278,
+            "name": "sponza_334",
+            "sizeBytes": 2640,
+            "type": "SPR_BUFFER"
+        },
+        {
+            "id": 39,
+            "name": "helmet_15",
+            "sizeBytes": 16777216,
+            "type": "SPR_BUFFER"
+        },
+        {
+            "id": 576,
+            "name": "sponza_775",
+            "sizeBytes": 13266,
+            "type": "SPR_BUFFER"
+        },
+        {
+            "id": 569,
+            "name": "sponza_766",
+            "sizeBytes": 28392,
+            "type": "SPR_MESH"
+        },
+        {
+            "id": 272,
+            "name": "sponza_332",
+            "sizeBytes": 0,
+            "type": "SPR_MATERIAL"
+        },
+        {
+            "id": 590,
+            "name": "sponza_805",
+            "sizeBytes": 0,
+            "type": "SPR_MATERIAL"
+        },
+        {
+            "id": 572,
+            "name": "sponza_768",
+            "sizeBytes": 8528,
+            "type": "SPR_BUFFER"
+        },
+        {
+            "id": 510,
+            "name": "sponza_676",
+            "sizeBytes": 40144,
+            "type": "SPR_BUFFER"
+        },
+        {
+            "id": 279,
+            "name": "sponza_335",
+            "sizeBytes": 14080,
+            "type": "SPR_BUFFER"
+        },
+        {
+            "id": 184,
+            "name": "sponza_183",
+            "sizeBytes": 2208,
+            "type": "SPR_BUFFER"
+        },
+        {
+            "id": 522,
+            "name": "sponza_701",
+            "sizeBytes": 4194304,
+            "type": "SPR_BUFFER"
+        },
+        {
+            "id": 541,
+            "name": "sponza_719",
+            "sizeBytes": 48,
+            "type": "SPR_BUFFER"
+        },
+        {
+            "id": 230,
+            "name": "sponza_259",
+            "sizeBytes": 4032,
+            "type": "SPR_BUFFER"
+        },
+        {
+            "id": 319,
+            "name": "sponza_396",
+            "sizeBytes": 144,
+            "type": "SPR_BUFFER"
+        },
+        {
+            "id": 36,
+            "name": "helmet_12",
+            "sizeBytes": 16777216,
+            "type": "SPR_TEXTURE"
+        },
+        {
+            "id": 70,
+            "name": "sponza_37",
+            "sizeBytes": 4194304,
+            "type": "SPR_TEXTURE"
+        },
+        {
+            "id": 586,
+            "name": "sponza_791",
+            "sizeBytes": 13266,
+            "type": "SPR_BUFFER"
+        },
+        {
+            "id": 86,
+            "name": "sponza_56",
+            "sizeBytes": 4194304,
+            "type": "SPR_BUFFER"
+        },
+        {
+            "id": 357,
+            "name": "sponza_459",
+            "sizeBytes": 13827984,
+            "type": "SPR_MESH"
+        },
+        {
+            "id": 88,
+            "name": "sponza_45",
+            "sizeBytes": 12048,
+            "type": "SPR_BUFFER"
+        },
+        {
+            "id": 378,
+            "name": "sponza_488",
+            "sizeBytes": 12805344,
+            "type": "SPR_MESH"
+        },
+        {
+            "id": 146,
+            "name": "sponza_134",
+            "sizeBytes": 4194304,
+            "type": "SPR_BUFFER"
+        },
+        {
+            "id": 187,
+            "name": "sponza_196",
+            "sizeBytes": 0,
+            "type": "SPR_MATERIAL"
+        },
+        {
+            "id": 430,
+            "name": "sponza_557",
+            "sizeBytes": 33024,
+            "type": "SPR_BUFFER"
+        },
+        {
+            "id": 462,
+            "name": "sponza_598",
+            "sizeBytes": 41840,
+            "type": "SPR_BUFFER"
+        },
+        {
+            "id": 559,
+            "name": "sponza_750",
+            "sizeBytes": 816,
+            "type": "SPR_MESH"
+        },
+        {
+            "id": 501,
+            "name": "sponza_664",
+            "sizeBytes": 80288,
+            "type": "SPR_BUFFER"
+        },
+        {
+            "id": 390,
+            "name": "sponza_509",
+            "sizeBytes": 0,
+            "type": "SPR_MATERIAL"
+        },
+        {
+            "id": 275,
+            "name": "sponza_331",
+            "sizeBytes": 3904,
+            "type": "SPR_BUFFER"
+        },
+        {
+            "id": 479,
+            "name": "sponza_623",
+            "sizeBytes": 29184,
+            "type": "SPR_BUFFER"
+        },
+        {
+            "id": 62,
+            "name": "sponza_26",
+            "sizeBytes": 4194304,
+            "type": "SPR_BUFFER"
+        },
+        {
+            "id": 458,
+            "name": "sponza_607",
+            "sizeBytes": 4194304,
+            "type": "SPR_BUFFER"
+        },
+        {
+            "id": 704,
             "name": "default_color_1",
             "sizeBytes": 4194304,
             "type": "SPR_BUFFER"
         },
         {
-            "id": 19,
+            "id": 387,
+            "name": "sponza_490",
+            "sizeBytes": 63232,
+            "type": "SPR_BUFFER"
+        },
+        {
+            "id": 8,
+            "name": "Duck_3",
+            "sizeBytes": 38384,
+            "type": "SPR_BUFFER"
+        },
+        {
+            "id": 248,
+            "name": "sponza_286",
+            "sizeBytes": 960,
+            "type": "SPR_BUFFER"
+        },
+        {
+            "id": 661,
+            "name": "sponza_906",
+            "sizeBytes": 44316,
+            "type": "SPR_MESH"
+        },
+        {
+            "id": 217,
+            "name": "sponza_244",
+            "sizeBytes": 0,
+            "type": "SPR_MATERIAL"
+        },
+        {
+            "id": 694,
+            "name": "sponza_953",
+            "sizeBytes": 60,
+            "type": "SPR_BUFFER"
+        },
+        {
+            "id": 410,
+            "name": "sponza_535",
+            "sizeBytes": 4194304,
+            "type": "SPR_BUFFER"
+        },
+        {
+            "id": 436,
+            "name": "sponza_566",
+            "sizeBytes": 52160,
+            "type": "SPR_BUFFER"
+        },
+        {
+            "id": 452,
+            "name": "sponza_594",
+            "sizeBytes": 266880,
+            "type": "SPR_BUFFER"
+        },
+        {
+            "id": 77,
+            "name": "sponza_31",
+            "sizeBytes": 19696,
+            "type": "SPR_BUFFER"
+        },
+        {
+            "id": 127,
+            "name": "sponza_109",
+            "sizeBytes": 4194304,
+            "type": "SPR_TEXTURE"
+        },
+        {
+            "id": 173,
+            "name": "sponza_166",
+            "sizeBytes": 1224,
+            "type": "SPR_BUFFER"
+        },
+        {
+            "id": 21,
+            "name": "WaterBottle_12",
+            "sizeBytes": 16777216,
+            "type": "SPR_BUFFER"
+        },
+        {
+            "id": 609,
+            "name": "sponza_830",
+            "sizeBytes": 24000,
+            "type": "SPR_MESH"
+        },
+        {
+            "id": 111,
+            "name": "sponza_77",
+            "sizeBytes": 17920,
+            "type": "SPR_BUFFER"
+        },
+        {
+            "id": 562,
+            "name": "sponza_752",
+            "sizeBytes": 256,
+            "type": "SPR_BUFFER"
+        },
+        {
+            "id": 207,
+            "name": "sponza_228",
+            "sizeBytes": 0,
+            "type": "SPR_MATERIAL"
+        },
+        {
+            "id": 526,
+            "name": "sponza_692",
+            "sizeBytes": 256,
+            "type": "SPR_BUFFER"
+        },
+        {
+            "id": 323,
+            "name": "sponza_410",
+            "sizeBytes": 0,
+            "type": "SPR_MATERIAL"
+        },
+        {
+            "id": 331,
+            "name": "sponza_417",
+            "sizeBytes": 2944,
+            "type": "SPR_BUFFER"
+        },
+        {
+            "id": 491,
+            "name": "sponza_648",
+            "sizeBytes": 80288,
+            "type": "SPR_BUFFER"
+        },
+        {
+            "id": 638,
+            "name": "sponza_876",
+            "sizeBytes": 39392,
+            "type": "SPR_BUFFER"
+        },
+        {
+            "id": 233,
+            "name": "sponza_262",
+            "sizeBytes": 672,
+            "type": "SPR_BUFFER"
+        },
+        {
+            "id": 356,
+            "name": "sponza_457",
+            "sizeBytes": 120448,
+            "type": "SPR_BUFFER"
+        },
+        {
+            "id": 132,
+            "name": "sponza_101",
+            "sizeBytes": 27328,
+            "type": "SPR_BUFFER"
+        },
+        {
+            "id": 255,
+            "name": "sponza_299",
+            "sizeBytes": 3904,
+            "type": "SPR_BUFFER"
+        },
+        {
+            "id": 326,
+            "name": "sponza_409",
+            "sizeBytes": 22016,
+            "type": "SPR_BUFFER"
+        },
+        {
+            "id": 287,
+            "name": "sponza_356",
+            "sizeBytes": 0,
+            "type": "SPR_MATERIAL"
+        },
+        {
+            "id": 51,
+            "name": "sponza_12",
+            "sizeBytes": 4194304,
+            "type": "SPR_BUFFER"
+        },
+        {
+            "id": 160,
+            "name": "sponza_151",
+            "sizeBytes": 12910656,
+            "type": "SPR_MESH"
+        },
+        {
+            "id": 382,
+            "name": "sponza_498",
+            "sizeBytes": 4194304,
+            "type": "SPR_TEXTURE"
+        },
+        {
+            "id": 125,
+            "name": "sponza_107",
+            "sizeBytes": 4194304,
+            "type": "SPR_TEXTURE"
+        },
+        {
+            "id": 192,
+            "name": "sponza_204",
+            "sizeBytes": 0,
+            "type": "SPR_MATERIAL"
+        },
+        {
+            "id": 622,
+            "name": "sponza_848",
+            "sizeBytes": 7200,
+            "type": "SPR_BUFFER"
+        },
+        {
+            "id": 702,
             "name": "default_model_6",
             "sizeBytes": 21440,
             "type": "SPR_BUFFER"
         },
         {
-            "id": 25,
+            "id": 561,
+            "name": "sponza_751",
+            "sizeBytes": 48,
+            "type": "SPR_BUFFER"
+        },
+        {
+            "id": 266,
+            "name": "sponza_317",
+            "sizeBytes": 7008,
+            "type": "SPR_MESH"
+        },
+        {
+            "id": 393,
+            "name": "sponza_508",
+            "sizeBytes": 671584,
+            "type": "SPR_BUFFER"
+        },
+        {
+            "id": 180,
+            "name": "sponza_179",
+            "sizeBytes": 6784,
+            "type": "SPR_BUFFER"
+        },
+        {
+            "id": 486,
+            "name": "sponza_640",
+            "sizeBytes": 83680,
+            "type": "SPR_BUFFER"
+        },
+        {
+            "id": 231,
+            "name": "sponza_261",
+            "sizeBytes": 6528,
+            "type": "SPR_MESH"
+        },
+        {
+            "id": 666,
+            "name": "sponza_914",
+            "sizeBytes": 50694,
+            "type": "SPR_MESH"
+        },
+        {
+            "id": 271,
+            "name": "sponza_325",
+            "sizeBytes": 6528,
+            "type": "SPR_MESH"
+        },
+        {
+            "id": 293,
+            "name": "sponza_358",
+            "sizeBytes": 324,
+            "type": "SPR_BUFFER"
+        },
+        {
+            "id": 399,
+            "name": "sponza_521",
+            "sizeBytes": 4194304,
+            "type": "SPR_BUFFER"
+        },
+        {
+            "id": 27,
+            "name": "WaterBottle_3",
+            "sizeBytes": 40784,
+            "type": "SPR_BUFFER"
+        },
+        {
+            "id": 149,
+            "name": "sponza_127",
+            "sizeBytes": 512,
+            "type": "SPR_BUFFER"
+        },
+        {
+            "id": 304,
+            "name": "sponza_366",
+            "sizeBytes": 1452,
+            "type": "SPR_BUFFER"
+        },
+        {
+            "id": 360,
+            "name": "sponza_468",
+            "sizeBytes": 4194304,
+            "type": "SPR_BUFFER"
+        },
+        {
+            "id": 708,
             "name": "default_input_white_1",
             "sizeBytes": 4,
             "type": "SPR_BUFFER"
         },
         {
-            "id": 16,
+            "id": 512,
+            "name": "sponza_682",
+            "sizeBytes": 154704,
+            "type": "SPR_MESH"
+        },
+        {
+            "id": 261,
+            "name": "sponza_309",
+            "sizeBytes": 6528,
+            "type": "SPR_MESH"
+        },
+        {
+            "id": 334,
+            "name": "sponza_420",
+            "sizeBytes": 20448,
+            "type": "SPR_BUFFER"
+        },
+        {
+            "id": 473,
+            "name": "sponza_622",
+            "sizeBytes": 8543312,
+            "type": "SPR_MESH"
+        },
+        {
+            "id": 591,
+            "name": "sponza_799",
+            "sizeBytes": 2808,
+            "type": "SPR_BUFFER"
+        },
+        {
+            "id": 386,
+            "name": "sponza_489",
+            "sizeBytes": 32736,
+            "type": "SPR_BUFFER"
+        },
+        {
+            "id": 107,
+            "name": "sponza_83",
+            "sizeBytes": 4194304,
+            "type": "SPR_TEXTURE"
+        },
+        {
+            "id": 225,
+            "name": "sponza_251",
+            "sizeBytes": 3904,
+            "type": "SPR_BUFFER"
+        },
+        {
+            "id": 445,
+            "name": "sponza_581",
+            "sizeBytes": 33024,
+            "type": "SPR_BUFFER"
+        },
+        {
+            "id": 253,
+            "name": "sponza_294",
+            "sizeBytes": 672,
+            "type": "SPR_BUFFER"
+        },
+        {
+            "id": 412,
+            "name": "sponza_526",
+            "sizeBytes": 52160,
+            "type": "SPR_BUFFER"
+        },
+        {
+            "id": 215,
+            "name": "sponza_235",
+            "sizeBytes": 3904,
+            "type": "SPR_BUFFER"
+        },
+        {
+            "id": 605,
+            "name": "sponza_829",
+            "sizeBytes": 0,
+            "type": "SPR_MATERIAL"
+        },
+        {
+            "id": 585,
+            "name": "sponza_797",
+            "sizeBytes": 0,
+            "type": "SPR_MATERIAL"
+        },
+        {
+            "id": 554,
+            "name": "sponza_742",
+            "sizeBytes": 171678,
+            "type": "SPR_MESH"
+        },
+        {
+            "id": 530,
+            "name": "sponza_712",
+            "sizeBytes": 4194304,
+            "type": "SPR_TEXTURE"
+        },
+        {
+            "id": 372,
+            "name": "sponza_478",
+            "sizeBytes": 1152,
+            "type": "SPR_BUFFER"
+        },
+        {
+            "id": 699,
             "name": "default_model_7",
             "sizeBytes": 0,
             "type": "SPR_MATERIAL"
         },
         {
-            "id": 11,
+            "id": 477,
+            "name": "sponza_632",
+            "sizeBytes": 4194304,
+            "type": "SPR_TEXTURE"
+        },
+        {
+            "id": 474,
+            "name": "sponza_629",
+            "sizeBytes": 8388608,
+            "type": "SPR_MATERIAL"
+        },
+        {
+            "id": 375,
+            "name": "sponza_481",
+            "sizeBytes": 384,
+            "type": "SPR_BUFFER"
+        },
+        {
+            "id": 118,
+            "name": "sponza_97",
+            "sizeBytes": 4194304,
+            "type": "SPR_TEXTURE"
+        },
+        {
+            "id": 645,
+            "name": "sponza_890",
+            "sizeBytes": 4194304,
+            "type": "SPR_TEXTURE"
+        },
+        {
+            "id": 520,
+            "name": "sponza_699",
+            "sizeBytes": 4194304,
+            "type": "SPR_BUFFER"
+        },
+        {
+            "id": 529,
+            "name": "sponza_711",
+            "sizeBytes": 12582912,
+            "type": "SPR_MATERIAL"
+        },
+        {
+            "id": 612,
+            "name": "sponza_832",
+            "sizeBytes": 7200,
+            "type": "SPR_BUFFER"
+        },
+        {
+            "id": 141,
+            "name": "sponza_129",
+            "sizeBytes": 4194304,
+            "type": "SPR_TEXTURE"
+        },
+        {
+            "id": 653,
+            "name": "sponza_901",
+            "sizeBytes": 4194304,
+            "type": "SPR_BUFFER"
+        },
+        {
+            "id": 95,
+            "name": "sponza_68",
+            "sizeBytes": 4194304,
+            "type": "SPR_BUFFER"
+        },
+        {
+            "id": 204,
+            "name": "sponza_215",
+            "sizeBytes": 1952,
+            "type": "SPR_BUFFER"
+        },
+        {
+            "id": 620,
+            "name": "sponza_853",
+            "sizeBytes": 0,
+            "type": "SPR_MATERIAL"
+        },
+        {
+            "id": 12,
             "name": "Triangle_2",
             "sizeBytes": 6,
             "type": "SPR_BUFFER"
+        },
+        {
+            "id": 341,
+            "name": "sponza_433",
+            "sizeBytes": 2944,
+            "type": "SPR_BUFFER"
+        },
+        {
+            "id": 108,
+            "name": "sponza_84",
+            "sizeBytes": 4194304,
+            "type": "SPR_BUFFER"
+        },
+        {
+            "id": 635,
+            "name": "sponza_877",
+            "sizeBytes": 0,
+            "type": "SPR_MATERIAL"
+        },
+        {
+            "id": 202,
+            "name": "sponza_220",
+            "sizeBytes": 0,
+            "type": "SPR_MATERIAL"
+        },
+        {
+            "id": 303,
+            "name": "sponza_378",
+            "sizeBytes": 4194304,
+            "type": "SPR_BUFFER"
+        },
+        {
+            "id": 537,
+            "name": "sponza_706",
+            "sizeBytes": 47312,
+            "type": "SPR_BUFFER"
+        },
+        {
+            "id": 367,
+            "name": "sponza_465",
+            "sizeBytes": 737216,
+            "type": "SPR_BUFFER"
+        },
+        {
+            "id": 670,
+            "name": "sponza_920",
+            "sizeBytes": 27712,
+            "type": "SPR_BUFFER"
+        },
+        {
+            "id": 218,
+            "name": "sponza_238",
+            "sizeBytes": 960,
+            "type": "SPR_BUFFER"
+        },
+        {
+            "id": 592,
+            "name": "sponza_800",
+            "sizeBytes": 8528,
+            "type": "SPR_BUFFER"
+        },
+        {
+            "id": 43,
+            "name": "helmet_3",
+            "sizeBytes": 232896,
+            "type": "SPR_BUFFER"
+        },
+        {
+            "id": 557,
+            "name": "sponza_744",
+            "sizeBytes": 47312,
+            "type": "SPR_BUFFER"
+        },
+        {
+            "id": 439,
+            "name": "sponza_579",
+            "sizeBytes": 0,
+            "type": "SPR_MATERIAL"
+        },
+        {
+            "id": 432,
+            "name": "sponza_562",
+            "sizeBytes": 104320,
+            "type": "SPR_BUFFER"
+        },
+        {
+            "id": 505,
+            "name": "sponza_668",
+            "sizeBytes": 41840,
+            "type": "SPR_BUFFER"
+        },
+        {
+            "id": 688,
+            "name": "sponza_951",
+            "sizeBytes": 4194304,
+            "type": "SPR_BUFFER"
+        },
+        {
+            "id": 492,
+            "name": "sponza_650",
+            "sizeBytes": 154704,
+            "type": "SPR_MESH"
+        },
+        {
+            "id": 237,
+            "name": "sponza_276",
+            "sizeBytes": 0,
+            "type": "SPR_MATERIAL"
+        },
+        {
+            "id": 200,
+            "name": "sponza_211",
+            "sizeBytes": 4032,
+            "type": "SPR_BUFFER"
+        },
+        {
+            "id": 102,
+            "name": "sponza_78",
+            "sizeBytes": 12582912,
+            "type": "SPR_MATERIAL"
+        },
+        {
+            "id": 308,
+            "name": "sponza_386",
+            "sizeBytes": 0,
+            "type": "SPR_MATERIAL"
+        },
+        {
+            "id": 52,
+            "name": "sponza_13",
+            "sizeBytes": 4194304,
+            "type": "SPR_TEXTURE"
+        },
+        {
+            "id": 199,
+            "name": "sponza_207",
+            "sizeBytes": 2016,
+            "type": "SPR_BUFFER"
+        },
+        {
+            "id": 421,
+            "name": "sponza_538",
+            "sizeBytes": 52160,
+            "type": "SPR_BUFFER"
+        },
+        {
+            "id": 535,
+            "name": "sponza_717",
+            "sizeBytes": 4194304,
+            "type": "SPR_BUFFER"
+        },
+        {
+            "id": 90,
+            "name": "sponza_57",
+            "sizeBytes": 12589704,
+            "type": "SPR_MESH"
+        },
+        {
+            "id": 563,
+            "name": "sponza_756",
+            "sizeBytes": 512,
+            "type": "SPR_BUFFER"
+        },
+        {
+            "id": 252,
+            "name": "sponza_300",
+            "sizeBytes": 0,
+            "type": "SPR_MATERIAL"
+        },
+        {
+            "id": 464,
+            "name": "sponza_610",
+            "sizeBytes": 8536688,
+            "type": "SPR_MESH"
+        },
+        {
+            "id": 276,
+            "name": "sponza_333",
+            "sizeBytes": 44880,
+            "type": "SPR_MESH"
+        },
+        {
+            "id": 188,
+            "name": "sponza_190",
+            "sizeBytes": 960,
+            "type": "SPR_BUFFER"
+        },
+        {
+            "id": 210,
+            "name": "sponza_227",
+            "sizeBytes": 4032,
+            "type": "SPR_BUFFER"
+        },
+        {
+            "id": 407,
+            "name": "sponza_532",
+            "sizeBytes": 4194304,
+            "type": "SPR_TEXTURE"
+        },
+        {
+            "id": 443,
+            "name": "sponza_580",
+            "sizeBytes": 189504,
+            "type": "SPR_MESH"
+        },
+        {
+            "id": 691,
+            "name": "sponza_944",
+            "sizeBytes": 380480,
+            "type": "SPR_BUFFER"
+        },
+        {
+            "id": 363,
+            "name": "sponza_471",
+            "sizeBytes": 4194304,
+            "type": "SPR_TEXTURE"
+        },
+        {
+            "id": 349,
+            "name": "sponza_444",
+            "sizeBytes": 8160,
+            "type": "SPR_BUFFER"
+        },
+        {
+            "id": 138,
+            "name": "sponza_119",
+            "sizeBytes": 102144,
+            "type": "SPR_BUFFER"
+        },
+        {
+            "id": 696,
+            "name": "sponza_958",
+            "sizeBytes": 640,
+            "type": "SPR_BUFFER"
+        },
+        {
+            "id": 660,
+            "name": "sponza_898",
+            "sizeBytes": 27712,
+            "type": "SPR_BUFFER"
+        },
+        {
+            "id": 166,
+            "name": "sponza_163",
+            "sizeBytes": 4194304,
+            "type": "SPR_TEXTURE"
+        },
+        {
+            "id": 607,
+            "name": "sponza_824",
+            "sizeBytes": 19696,
+            "type": "SPR_BUFFER"
+        },
+        {
+            "id": 94,
+            "name": "sponza_67",
+            "sizeBytes": 4194304,
+            "type": "SPR_TEXTURE"
+        },
+        {
+            "id": 116,
+            "name": "sponza_95",
+            "sizeBytes": 4194304,
+            "type": "SPR_TEXTURE"
+        },
+        {
+            "id": 117,
+            "name": "sponza_96",
+            "sizeBytes": 4194304,
+            "type": "SPR_BUFFER"
+        },
+        {
+            "id": 674,
+            "name": "sponza_924",
+            "sizeBytes": 12048,
+            "type": "SPR_BUFFER"
+        },
+        {
+            "id": 614,
+            "name": "sponza_838",
+            "sizeBytes": 72354,
+            "type": "SPR_MESH"
+        },
+        {
+            "id": 156,
+            "name": "sponza_150",
+            "sizeBytes": 0,
+            "type": "SPR_MATERIAL"
+        },
+        {
+            "id": 500,
+            "name": "sponza_660",
+            "sizeBytes": 40144,
+            "type": "SPR_BUFFER"
+        },
+        {
+            "id": 24,
+            "name": "WaterBottle_15",
+            "sizeBytes": 16777216,
+            "type": "SPR_TEXTURE"
+        },
+        {
+            "id": 461,
+            "name": "sponza_597",
+            "sizeBytes": 29184,
+            "type": "SPR_BUFFER"
+        },
+        {
+            "id": 455,
+            "name": "sponza_604",
+            "sizeBytes": 4194304,
+            "type": "SPR_TEXTURE"
+        },
+        {
+            "id": 502,
+            "name": "sponza_666",
+            "sizeBytes": 154704,
+            "type": "SPR_MESH"
+        },
+        {
+            "id": 305,
+            "name": "sponza_367",
+            "sizeBytes": 5024,
+            "type": "SPR_BUFFER"
+        },
+        {
+            "id": 364,
+            "name": "sponza_472",
+            "sizeBytes": 4194304,
+            "type": "SPR_BUFFER"
+        },
+        {
+            "id": 79,
+            "name": "sponza_43",
+            "sizeBytes": 12627228,
+            "type": "SPR_MESH"
+        },
+        {
+            "id": 313,
+            "name": "sponza_394",
+            "sizeBytes": 0,
+            "type": "SPR_MATERIAL"
+        },
+        {
+            "id": 560,
+            "name": "sponza_757",
+            "sizeBytes": 0,
+            "type": "SPR_MATERIAL"
+        },
+        {
+            "id": 296,
+            "name": "sponza_365",
+            "sizeBytes": 12599436,
+            "type": "SPR_MESH"
+        },
+        {
+            "id": 295,
+            "name": "sponza_363",
+            "sizeBytes": 2112,
+            "type": "SPR_BUFFER"
+        },
+        {
+            "id": 630,
+            "name": "sponza_869",
+            "sizeBytes": 0,
+            "type": "SPR_MATERIAL"
+        },
+        {
+            "id": 361,
+            "name": "sponza_469",
+            "sizeBytes": 4194304,
+            "type": "SPR_TEXTURE"
+        },
+        {
+            "id": 168,
+            "name": "sponza_152",
+            "sizeBytes": 22080,
+            "type": "SPR_BUFFER"
+        },
+        {
+            "id": 353,
+            "name": "sponza_458",
+            "sizeBytes": 0,
+            "type": "SPR_MATERIAL"
+        },
+        {
+            "id": 221,
+            "name": "sponza_245",
+            "sizeBytes": 6528,
+            "type": "SPR_MESH"
+        },
+        {
+            "id": 507,
+            "name": "sponza_674",
+            "sizeBytes": 148080,
+            "type": "SPR_MESH"
+        },
+        {
+            "id": 504,
+            "name": "sponza_667",
+            "sizeBytes": 29184,
+            "type": "SPR_BUFFER"
+        },
+        {
+            "id": 499,
+            "name": "sponza_659",
+            "sizeBytes": 27648,
+            "type": "SPR_BUFFER"
+        },
+        {
+            "id": 91,
+            "name": "sponza_64",
+            "sizeBytes": 12582912,
+            "type": "SPR_MATERIAL"
+        },
+        {
+            "id": 480,
+            "name": "sponza_624",
+            "sizeBytes": 41840,
+            "type": "SPR_BUFFER"
+        },
+        {
+            "id": 396,
+            "name": "sponza_518",
+            "sizeBytes": 4194304,
+            "type": "SPR_TEXTURE"
+        },
+        {
+            "id": 651,
+            "name": "sponza_899",
+            "sizeBytes": 12582912,
+            "type": "SPR_MATERIAL"
+        },
+        {
+            "id": 106,
+            "name": "sponza_82",
+            "sizeBytes": 4194304,
+            "type": "SPR_BUFFER"
+        },
+        {
+            "id": 92,
+            "name": "sponza_65",
+            "sizeBytes": 4194304,
+            "type": "SPR_TEXTURE"
+        },
+        {
+            "id": 332,
+            "name": "sponza_419",
+            "sizeBytes": 303840,
+            "type": "SPR_MESH"
+        },
+        {
+            "id": 627,
+            "name": "sponza_856",
+            "sizeBytes": 19696,
+            "type": "SPR_BUFFER"
+        },
+        {
+            "id": 457,
+            "name": "sponza_606",
+            "sizeBytes": 4194304,
+            "type": "SPR_TEXTURE"
+        },
+        {
+            "id": 81,
+            "name": "sponza_51",
+            "sizeBytes": 4194304,
+            "type": "SPR_TEXTURE"
+        },
+        {
+            "id": 545,
+            "name": "sponza_733",
+            "sizeBytes": 0,
+            "type": "SPR_MATERIAL"
+        },
+        {
+            "id": 244,
+            "name": "sponza_279",
+            "sizeBytes": 1952,
+            "type": "SPR_BUFFER"
+        },
+        {
+            "id": 246,
+            "name": "sponza_285",
+            "sizeBytes": 7008,
+            "type": "SPR_MESH"
+        },
+        {
+            "id": 481,
+            "name": "sponza_628",
+            "sizeBytes": 83680,
+            "type": "SPR_BUFFER"
+        },
+        {
+            "id": 151,
+            "name": "sponza_142",
+            "sizeBytes": 0,
+            "type": "SPR_MATERIAL"
+        },
+        {
+            "id": 291,
+            "name": "sponza_357",
+            "sizeBytes": 3492,
+            "type": "SPR_MESH"
+        },
+        {
+            "id": 391,
+            "name": "sponza_503",
+            "sizeBytes": 166776,
+            "type": "SPR_BUFFER"
+        },
+        {
+            "id": 588,
+            "name": "sponza_796",
+            "sizeBytes": 39392,
+            "type": "SPR_BUFFER"
+        },
+        {
+            "id": 695,
+            "name": "sponza_954",
+            "sizeBytes": 320,
+            "type": "SPR_BUFFER"
+        },
+        {
+            "id": 302,
+            "name": "sponza_377",
+            "sizeBytes": 4194304,
+            "type": "SPR_TEXTURE"
         }
     ]
 }
