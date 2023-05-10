@@ -33,8 +33,7 @@ public:
                 .dimensions = m_dim,
                 .format = Flags::Format::RGBA8_UNORM,
                 .usage = Flags::ImageUsage::IU_COLOR_ATTACHMENT |
-                         Flags::ImageUsage::IU_SAMPLED          |
-                         Flags::ImageUsage::IU_TRANSFER_DST,
+                         Flags::ImageUsage::IU_SAMPLED          
             }
         });
 
