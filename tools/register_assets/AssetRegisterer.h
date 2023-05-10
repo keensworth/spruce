@@ -38,7 +38,8 @@ private:
     ska::flat_hash_map<std::string, ResourceMetadata> m_modelMetadataMap;
     ska::flat_hash_map<std::string, ResourceMetadata> m_nonSubresourceTextureMap;
 
-    uint32 m_id = 1;
+    ska::flat_hash_map<uint32, uint32> m_texturePresenceMap;
+    uint32 m_id = 2;
 };
 
 }

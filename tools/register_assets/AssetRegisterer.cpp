@@ -8,6 +8,8 @@ namespace spr::tools{
 //    Buffer - .sbuf                                                         // 
 // ------------------------------------------------------------------------- //
 // ╔═══════════════════════════════════╗
+// ║     association (4)               ║ // parent type ('smtl', 'stex',..)
+// ╠═══════════════════════════════════╣
 // ║     element type (4)              ║ // element type (vec3,...)
 // ╠═══════════════════════════════════╣
 // ║     component type (4)            ║ // component type (f,i,s,...)
@@ -19,8 +21,8 @@ namespace spr::tools{
 // ║                 ...               ║
 // ╚═══════════════════════════════════╝
 int AssetRegisterer::loadBuffer(std::string path, uint32& newId){
-    std::cout << "    Registering buffer:   " << path << std::endl;
 
+    unsigned char association[4];
     uint32 elementType;
     uint32 componentType;
     uint32 byteLength;
@@ -33,6 +35,9 @@ int AssetRegisterer::loadBuffer(std::string path, uint32& newId){
             std::cerr << "Failed to load." << std::endl;
             return 0;
         }
+
+        // read association
+        f.read((char*)&association, sizeof(uint32));
 
         // read element type
         f.read((char*)&elementType, sizeof(uint32));
@@ -85,7 +90,6 @@ int AssetRegisterer::loadBuffer(std::string path, uint32& newId){
 // ║     components (4)                ║ // 1 - grey | 2 - grey,red | 3 - rgb | 4 - rgba
 // ╚═══════════════════════════════════╝
 int AssetRegisterer::loadTexture(std::string path, bool subresource, uint32& newId){
-    std::cout << "    Registering texture:  " << path << std::endl;
 
     uint32 bufferId;
     uint32 height;
@@ -231,7 +235,6 @@ int AssetRegisterer::loadTexture(std::string path, bool subresource, uint32& new
 // ║     sentinel (4)                  ║ // terminate
 // ╚═══════════════════════════════════╝
 int AssetRegisterer::loadMaterial(std::string path, uint32& newId){
-    std::cout << "    Registering material: " << path << std::endl;
     
     uint32 materialFlags;
 
@@ -342,28 +345,53 @@ int AssetRegisterer::loadMaterial(std::string path, uint32& newId){
     
     uint32 globalBaseColorTexId = 0;
     if (materialFlags & 0b1 && baseColorTexId > 0){ // base color
-        totalBytes += loadTexture(ResourceTypes::getPath(SPR_TEXTURE) + name.substr(0,found) + "_" + std::to_string(baseColorTexId) + ResourceTypes::getExtension(SPR_TEXTURE), true,
+        if ((m_texturePresenceMap.count(baseColorTexId) == 0)){
+            totalBytes += loadTexture(ResourceTypes::getPath(SPR_TEXTURE) + name.substr(0,found) + "_" + std::to_string(baseColorTexId) + ResourceTypes::getExtension(SPR_TEXTURE), true,
                                   globalBaseColorTexId);
+            m_texturePresenceMap[baseColorTexId] = globalBaseColorTexId;
+        } else {
+            globalBaseColorTexId = m_texturePresenceMap[baseColorTexId];
+        }
     }
     uint32 globalMetalRoughTexId = 0;
     if (materialFlags & (0b1<<1) && metalRoughTexId > 0){ // metallicroughness
-        totalBytes += loadTexture(ResourceTypes::getPath(SPR_TEXTURE) + name.substr(0,found) + "_" + std::to_string(metalRoughTexId) + ResourceTypes::getExtension(SPR_TEXTURE), true,
+        if ((m_texturePresenceMap.count(metalRoughTexId) == 0)){
+            totalBytes += loadTexture(ResourceTypes::getPath(SPR_TEXTURE) + name.substr(0,found) + "_" + std::to_string(metalRoughTexId) + ResourceTypes::getExtension(SPR_TEXTURE), true,
                                   globalMetalRoughTexId);
+            m_texturePresenceMap[metalRoughTexId] = globalMetalRoughTexId;
+        } else {
+            globalMetalRoughTexId = m_texturePresenceMap[metalRoughTexId];
+        }
     }
     uint32 globalNormalTexId = 0;
     if (materialFlags & (0b1<<2) && normalTexId > 0){ // normal
-        totalBytes += loadTexture(ResourceTypes::getPath(SPR_TEXTURE) + name.substr(0,found) + "_" + std::to_string(normalTexId) + ResourceTypes::getExtension(SPR_TEXTURE), true,
+        if ((m_texturePresenceMap.count(normalTexId) == 0)){
+            totalBytes += loadTexture(ResourceTypes::getPath(SPR_TEXTURE) + name.substr(0,found) + "_" + std::to_string(normalTexId) + ResourceTypes::getExtension(SPR_TEXTURE), true,
                                   globalNormalTexId);
+            m_texturePresenceMap[normalTexId] = globalNormalTexId;
+        } else {
+            globalNormalTexId = m_texturePresenceMap[normalTexId];
+        }
     }
     uint32 globalOcclusionTexId = 0;
     if (materialFlags & (0b1<<3) && occlusionTexId > 0){ // occlusion
-        totalBytes += loadTexture(ResourceTypes::getPath(SPR_TEXTURE) + name.substr(0,found) + "_" + std::to_string(occlusionTexId) + ResourceTypes::getExtension(SPR_TEXTURE), true,
+        if ((m_texturePresenceMap.count(occlusionTexId) == 0)){
+            totalBytes += loadTexture(ResourceTypes::getPath(SPR_TEXTURE) + name.substr(0,found) + "_" + std::to_string(occlusionTexId) + ResourceTypes::getExtension(SPR_TEXTURE), true,
                                   globalOcclusionTexId);
+            m_texturePresenceMap[occlusionTexId] = globalOcclusionTexId;
+        } else {
+            globalOcclusionTexId = m_texturePresenceMap[occlusionTexId];
+        }
     }
     uint32 globalEmissiveTexId = 0;
     if (materialFlags & (0b1<<4) && emissiveTexId > 0){ // emissive
-        totalBytes += loadTexture(ResourceTypes::getPath(SPR_TEXTURE) + name.substr(0,found) + "_" + std::to_string(emissiveTexId) + ResourceTypes::getExtension(SPR_TEXTURE), true,
+        if ((m_texturePresenceMap.count(emissiveTexId) == 0)){
+            totalBytes += loadTexture(ResourceTypes::getPath(SPR_TEXTURE) + name.substr(0,found) + "_" + std::to_string(emissiveTexId) + ResourceTypes::getExtension(SPR_TEXTURE), true,
                                   globalEmissiveTexId);
+            m_texturePresenceMap[emissiveTexId] = globalEmissiveTexId;
+        } else {
+            globalEmissiveTexId = m_texturePresenceMap[emissiveTexId];
+        }
     }
     metadata.sizeBytes = totalBytes;
     // store metadata
@@ -566,10 +594,8 @@ int AssetRegisterer::loadMesh(std::string path, uint32& newId){
 //    Model - .smdl                                                          // 
 // ------------------------------------------------------------------------- //
 // ╔═══════════════════════════════════╗
-// ║     name length (4)               ║ // # characters in name
-// ╠═══════════════════════════════════╣
 // ║                 ...               ║
-// ╠     name (name-length)            ╣ // name characters
+// ╠     model name (32)               ╣ // name characters
 // ║                 ...               ║
 // ╠═══════════════════════════════════╣
 // ║     mesh count (4)                ║ // # meshes that make up model
@@ -580,8 +606,8 @@ int AssetRegisterer::loadMesh(std::string path, uint32& newId){
 // ╚═══════════════════════════════════╝
 int AssetRegisterer::loadModel(std::string path){
     std::cout << "Registering model: " << path << std::endl;
-    uint32 nameLength;
     std::string name;
+    uint32 nameLength = 0;
     uint32 meshCount;
     std::vector<uint32> meshIds;
 
@@ -595,14 +621,18 @@ int AssetRegisterer::loadModel(std::string path){
         }
         std::cout << "  f: opened" << std::endl;
 
-        // read name length
-        f.read((char*)&nameLength, sizeof(uint32));
-        std::cout << "  r: nameLength: " << nameLength << std::endl;
-
         // read name
-        name.resize(nameLength);
-        f.read(&name[0], nameLength);
+        name.resize(32);
+        f.read(&name[0], 32);
         std::cout << "  r: name: " << name << std::endl;
+        
+        for (const char& c : name)
+            if (c == '\0')
+                break;
+            else
+                nameLength++;
+        name.resize(nameLength);
+
 
         // read mesh count
         f.read((char*)&meshCount, sizeof(uint32));
@@ -648,12 +678,9 @@ int AssetRegisterer::loadModel(std::string path){
         }
         std::cout << "          f: created" << std::endl;
         
-        // write name length
-        f.write((char*)&nameLength, sizeof(uint32_t));
-        std::cout << "          w: nameLength: " << nameLength << std::endl;
-
         // write name
-        f.write(&name[0], nameLength);
+        name.resize(32);
+        f.write(&name[0], 32);
         std::cout << "          w: name: " << name << std::endl;
 
         // write mesh count
@@ -849,6 +876,7 @@ void AssetRegisterer::registerDirectory(std::string dir){
 
     // process models and subresources
     for (const auto& dirEntry : std::filesystem::recursive_directory_iterator(dir + "models/")){
+        m_texturePresenceMap.clear();
         totalSizeBytes += loadModel(dirEntry.path());
     }
 
@@ -864,7 +892,6 @@ void AssetRegisterer::registerDirectory(std::string dir){
         }
 
         std::string tail = name.substr(found+1);
-        std::cout << "   ----------------------------   " << tail << std::endl;
         if (isNumber(tail))
             continue;
         
