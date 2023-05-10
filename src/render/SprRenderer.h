@@ -19,32 +19,79 @@ struct Light;
 struct Camera;
 
 struct TransformInfo {
-    glm::vec3 position;
-    glm::quat rotation;
-    float scale;
+    glm::vec3 position {0.f, 0.f, 0.f};
+    glm::quat rotation {1.f, 0.f, 0.f, 0.f};
+    float scale = 1.f;
 };
 
 class SprRenderer {
 public:
     SprRenderer(Window* window);
     ~SprRenderer();
-
     void loadAssets(SprResourceManager& rm);
 
-    void insertMesh(uint32 meshId, uint32 materialFlags, const Transform& transform);
-    void insertMeshes(spr::Span<uint32> meshIds, spr::Span<uint32> materialFlags, spr::Span<const Transform> transforms);
-    void insertMeshes(spr::Span<uint32> meshIds, uint32 materialFlags, spr::Span<const Transform> transforms);
+    // render accumulated scene
+    void render();
 
-    void insertMesh(uint32 meshId, uint32 materialFlags, const TransformInfo& transformInfo);
-    void insertMeshes(spr::Span<uint32> meshIds, spr::Span<uint32> materialFlags, spr::Span<const TransformInfo> transformInfo);
-    void insertMeshes(spr::Span<uint32> meshIds, uint32 materialFlags, spr::Span<const TransformInfo> transformInfo);
-
-    void insertLight(const Light& light);
-    void insertLights(spr::Span<const Light> lights);
-
+    // set scene camera
     void updateCamera(const Camera& camera);
 
-    void render();
+    // add lights to scene
+    void insertLight(const Light& light);
+    void insertLights(Span<const Light> lights);
+
+    // ╔══════════════════════════════════════════════════════════════════════════╗
+    // ║     Models                                                               ║
+    // ╚══════════════════════════════════════════════════════════════════════════╝
+
+    void insertModel(uint32 modelId, const TransformInfo& transformInfo);
+    void insertModel(uint32 modelId, uint32 materialFlags, const TransformInfo& transformInfo);
+    void insertModel(uint32 modelId, const Transform& transform);
+    void insertModel(uint32 modelId, uint32 materialFlags, const Transform& transform);
+
+
+    // ╔══════════════════════════════════════════════════════════════════════════╗
+    // ║     Meshes                                                               ║
+    // ╚══════════════════════════════════════════════════════════════════════════╝
+
+    // single mesh
+    void insertMesh(         uint32 meshId,       const TransformInfo& transformInfo);
+    // batch meshes, shared transform
+    void insertMeshes(Span<uint32> meshIds,       const TransformInfo& transformInfo);
+    // batch meshes
+    void insertMeshes(Span<uint32> meshIds,  Span<const TransformInfo> transformInfos);
+
+    // single mesh
+    void insertMesh(        uint32 meshId,        uint32 materialFlags,       const TransformInfo& transformInfo);
+    // batch meshes, shared material, shared transform
+    void insertMeshes(Span<uint32> meshIds,       uint32 materialFlags,       const TransformInfo& transformInfo);
+    // batch meshes, shared material
+    void insertMeshes(Span<uint32> meshIds,       uint32 materialFlags,  Span<const TransformInfo> transformInfos);
+    // batch meshes, shared transform
+    void insertMeshes(Span<uint32> meshIds, Span<uint32> materialsFlags,      const TransformInfo& transformInfo);
+    // batch meshes
+    void insertMeshes(Span<uint32> meshIds, Span<uint32> materialsFlags, Span<const TransformInfo> transformInfos);
+    
+
+    // single mesh
+    void insertMesh(        uint32 meshId,       const Transform& transform);
+    // batch meshes, shared transform
+    void insertMeshes(Span<uint32> meshIds,      const Transform& transform);
+    // batch meshes
+    void insertMeshes(Span<uint32> meshIds, Span<const Transform> transforms);
+
+    // single mesh
+    void insertMesh(        uint32 meshId,        uint32 materialFlags,       const Transform& transform);
+    // batch meshes, shared material, shared transform
+    void insertMeshes(Span<uint32> meshIds,       uint32 materialFlags,       const Transform& transform);
+    // batch meshes, shared material
+    void insertMeshes(Span<uint32> meshIds,       uint32 materialFlags,  Span<const Transform> transforms);
+    // batch meshes, shared transform
+    void insertMeshes(Span<uint32> meshIds, Span<uint32> materialsFlags,      const Transform& transform);
+    // batch meshes
+    void insertMeshes(Span<uint32> meshIds, Span<uint32> materialsFlags, Span<const Transform> transforms);
+
+    Transform buildTransform(const TransformInfo& info);
     
 private:
     VulkanRenderer m_renderer;
@@ -56,5 +103,6 @@ private:
 
     // non-owning
     Window* m_window;
+    SprResourceManager* m_srm;
 };
 }
