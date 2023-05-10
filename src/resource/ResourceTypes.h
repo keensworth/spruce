@@ -93,6 +93,7 @@ typedef struct Mesh : ResourceInstance {
     uint32 indexBufferId      = 0;
     uint32 positionBufferId   = 0;
     uint32 attributesBufferId = 0;
+    uint32 materialFlags      = 0;
 } Mesh;
 
 
