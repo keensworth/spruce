@@ -70,6 +70,8 @@ void InputHandler::handleMouseWheel(){
 }
 
 void InputHandler::update(){
+    mouse->mouseMotion = {0, 0};
+    
     while (SDL_PollEvent(&event)){
         switch( event.type ){
             // handle keyboard input
