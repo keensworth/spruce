@@ -96,8 +96,14 @@ int main() {
         // insert models using their ids directly
         renderer.insertModel(data::helmet, {
             .position = {0.f, 0.f, 0.f}, 
-            .rotation = angleAxis((pi<float>()/2)*(frame/120.f), vec3{1.f, 0.f, 0.f}), 
-            .scale = 0.4f
+            .rotation = angleAxis((pi<float>()/2)*(frame/240.f), vec3{1.f, 0.f, 0.f}), 
+            .scale = 0.2f
+        });
+
+        renderer.insertModel(data::helmet, {
+            .position = {1.f, 0.f, 0.f}, 
+            .rotation = angleAxis((pi<float>()/2), vec3{1.f, 0.f, 0.f}), 
+            .scale = 0.2f
         });
         renderer.insertModel(data::sponza, {
             .position = {0.f, 0.f, -5.f}, 
@@ -105,8 +111,10 @@ int main() {
             .scale = 0.02f
         });
         
-        // blank light
-        renderer.insertLight({});
+        // lights
+        renderer.insertLight({.pos = {3.f, 0.f, -1.f}, .intensity = 1.f, .range = 32.f});
+        renderer.insertLight({.pos = {20.f * glm::sin(frame/500.f), 0.f, -1.f}, .intensity = 1.f, .range = 32.f});
+        renderer.insertLight({.pos = {-3.f, 0.f, -1.f}, .intensity = 1.f, .range = 32.f});
 
         // update camera
         dir = rotate(angleAxis(yaw, vec3{0.f, 0.f, 1.f}), dir);
