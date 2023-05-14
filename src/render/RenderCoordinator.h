@@ -1,6 +1,7 @@
 #pragma once
 
 #include "renderers/UnlitMeshRenderer.h"
+#include "renderers/LitMeshRenderer.h"
 #include "vulkan/FrameRenderer.h"
 #include "renderers/TestRenderer.h"
 #include "renderers/DebugMeshRenderer.h"
@@ -48,5 +49,6 @@ private:
     TestRenderer m_testRenderer;
     DebugMeshRenderer m_debugMeshRenderer;
     UnlitMeshRenderer m_unlitMeshRenderer;
+    LitMeshRenderer m_litMeshRenderer;
 };
 }
