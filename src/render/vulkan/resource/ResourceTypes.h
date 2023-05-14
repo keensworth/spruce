@@ -212,8 +212,8 @@ typedef struct Texture::Desc {
     static const uint32 ALL_LAYERS = 16;
 
     typedef struct Sampler {
-        uint32 minFilter  = Flags::Filter::NEAREST;
-        uint32 magFilter  = Flags::Filter::NEAREST;
+        uint32 minFilter  = Flags::Filter::LINEAR;
+        uint32 magFilter  = Flags::Filter::LINEAR;
         uint32 mipmapMode = Flags::Mipmap::MODE_NEAREST;
         uint32 addressing = Flags::Wrap::REPEAT;
         float anisotropy  = 8.f;
