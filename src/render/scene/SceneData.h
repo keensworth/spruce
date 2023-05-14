@@ -61,6 +61,10 @@ typedef struct Camera {
 
 typedef struct Scene {
     glm::mat4x4 viewProj;
+    uint32 lightCount = 0;
+    uint32 pad1 = 0;
+    uint32 pad2 = 0;
+    uint32 pad3 = 0;
 } Scene;
 
 }
