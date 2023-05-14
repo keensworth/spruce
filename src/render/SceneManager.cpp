@@ -36,6 +36,7 @@ void SceneManager::init(VulkanResourceManager& rm){
         m_lights[i] = TempBuffer<Light>(MAX_LIGHTS);
         m_cameras[i] = TempBuffer<Camera>(1);
         m_sceneData[i] = TempBuffer<Scene>(1);
+        m_sceneData[i].insert({});
     }
 }
 
@@ -151,6 +152,7 @@ void SceneManager::insertMeshes(uint32 frame, spr::Span<uint32> meshIds, uint32 
 
 void SceneManager::insertLights(uint32 frame, spr::Span<const Light> lights){
     m_lights[frame % MAX_FRAME_COUNT].insert(lights.data(), lights.size());
+    m_sceneData[frame % MAX_FRAME_COUNT].getData()[0].lightCount += lights.size();
 }
 
 
@@ -160,7 +162,7 @@ void SceneManager::updateCamera(uint32 frame, glm::vec2 screenDim, const Camera&
     // pre-compute viewProjection matrix
     glm::mat4 view = glm::lookAt(camera.pos, camera.pos + camera.dir, camera.up);
     glm::mat4 proj = glm::perspective(camera.fov, (screenDim.x/screenDim.y), camera.near, camera.far);
-    m_sceneData[frame % MAX_FRAME_COUNT].insert({proj * view});
+    m_sceneData[frame % MAX_FRAME_COUNT][0].viewProj = {proj * view};
 }
 
 
@@ -408,7 +410,7 @@ void SceneManager::reset(uint32 frame) {
     m_lights[frame % MAX_FRAME_COUNT].reset();
     m_drawData[frame % MAX_FRAME_COUNT].reset();
     m_sceneData[frame % MAX_FRAME_COUNT].reset();
-
+    m_sceneData[frame % MAX_FRAME_COUNT].insert({});
     // m_assetLoader.clear(); TODO
 }
 
