@@ -65,6 +65,10 @@ struct SpotProperties {
     float outerAngle;
 };
 
+const uint POINT        = 0x00000000u;
+const uint SPOT         = 0x00000001u;
+const uint DIRECTIONAL  = 0x00000002u;
+
 struct Light {
     vec3 pos;
     float intensity;
@@ -92,4 +96,8 @@ struct Camera {
 
 struct Scene {
     mat4 viewProj; // precomputed camera view
+    uint lightCount;
+    uint pad1;
+    uint pad2;
+    uint pad3;
 };
