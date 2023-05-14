@@ -59,6 +59,20 @@ public:
         return *this;
     }
 
+    T& operator[](uint32 index) {
+        if (index >= m_size)
+            SprLog::error("[Span] [operator[]] index out of range for span size of ", m_size);
+        
+        return m_data[index];
+    }
+
+    const T& operator[](uint32 index) const {
+        if (index >= m_size)
+            SprLog::error("[Span] [const operator[]] index out of range for span size of ", m_size);
+        
+        return m_data[index];
+    }
+
 public:
     // Input: 
     //      T* data     - data to be stored in buffer
