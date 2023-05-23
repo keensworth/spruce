@@ -87,7 +87,12 @@ void main(){
 
     vec3 directLighting = vec3(0.0);
     for(int i = 0; i < lightCount; ++i){
-        vec3 Li = normalize(lights[i].pos - pos.rgb);
+		vec3 Li;
+		if (lights[i].type == DIRECTIONAL){
+        	Li = -lights[i].dir;
+		} else {
+			Li = normalize(lights[i].pos - pos.rgb);
+		}
         float d = length(lights[i].pos - pos.rgb);
         float attenuation = (clamp(lights[i].range - d, 0.0, lights[i].range)) / (1.0 + 0.5*d*d);
         vec3 Lradiance = lights[i].color * attenuation * lights[i].intensity;
@@ -112,8 +117,6 @@ void main(){
 		vec3 kd = mix(vec3(1.0) - F, vec3(0.0), mapMetal);
 
 		// Lambert diffuse BRDF.
-		// We don't scale by 1/PI for lighting & material units to be more convenient.
-		// See: https://seblagarde.wordpress.com/2012/01/08/pi-or-not-to-pi-in-game-lighting-equation/
 		vec3 diffuseBRDF = kd * baseColor.rgb;
 
 		// Cook-Torrance specular microfacet BRDF.
