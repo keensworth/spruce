@@ -6,15 +6,19 @@
 #include "../scene/BatchManager.h"
 #include "resource/ResourceFlags.h"
 #include "../../debug/SprLog.h"
+#include "../../interface/Window.h"
+
+
 
 namespace spr::gfx {
 class FrameRenderer {
 public:
     FrameRenderer(){}
-    FrameRenderer(VulkanResourceManager& rm, VulkanRenderer& renderer, glm::uvec3 dimensions){
+    FrameRenderer(VulkanResourceManager& rm, VulkanRenderer& renderer, Window* window, glm::uvec3 dimensions){
         m_rm = &rm;
         m_renderer = &renderer;
         m_dim = dimensions;
+        m_window = window;
     }
     ~FrameRenderer(){}
 
@@ -56,8 +60,8 @@ public:
 
         // shader
         m_shader = m_rm->create<Shader>({
-            .vertexShader = {.path = "../data/shaders/spv/copy.vert.spv"},
-            .fragmentShader = {.path = "../data/shaders/spv/copy.frag.spv"},
+            .vertexShader = {.path = "../data/shaders/spv/copy_swapchain.vert.spv"},
+            .fragmentShader = {.path = "../data/shaders/spv/copy_swapchain.frag.spv"},
             .descriptorSets = {
                 { globalDescSetLayout },
                 { }, // unused
@@ -91,13 +95,11 @@ public:
             SprLog::error("[FrameRenderer] [render] no input TextureAttachment specified");
 
         RenderPassRenderer& passRenderer = cb.beginRenderPass(m_renderPass, glm::vec4(1.f,0.f,1.f,1.f));
-        
         passRenderer.drawSubpass({
             .shader = m_shader,
             .set0 =  m_globalDescriptorSet,
             .set2 = m_descriptorSet}, 
             batchManager.getQuadBatch(), 0);
-
         cb.endRenderPass();
     }
 
@@ -126,6 +128,7 @@ private: // owning
 private: // non-owning
     VulkanResourceManager* m_rm;
     VulkanRenderer* m_renderer;
+    Window* m_window;
     glm::uvec3 m_dim;
 
     Handle<TextureAttachment> m_input;
