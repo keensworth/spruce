@@ -50,6 +50,8 @@ public:
 
     InputManager& getInputManager();
 
+    void addEventListener(std::function<void (SDL_Event* e)> func);
+
     bool isAlive();
 
 private:

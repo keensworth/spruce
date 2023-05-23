@@ -198,6 +198,10 @@ InputManager& Window::getInputManager(){
     return input.getInputManager();
 }
 
+void Window::addEventListener(std::function<void (SDL_Event* e)> func){
+    input.addEventListener(func);
+}
+
 bool Window::isAlive(){
     return !input.quit;
 }

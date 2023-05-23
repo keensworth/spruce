@@ -1,6 +1,8 @@
 #pragma once
 
 #include "InputManager.h"
+#include <functional>
+#include "../../external/imgui/imgui_impl_sdl2.h"
 
 namespace spr {
 class InputHandler {
@@ -13,6 +15,7 @@ public:
     
     void update();
     InputManager& getInputManager();
+    void addEventListener(std::function<void (SDL_Event* e)> func);
     bool quit;
 
 private:
@@ -20,6 +23,8 @@ private:
     KeyboardState* keyboard;
     MouseState* mouse;
     SDL_Event event;
+    std::vector<std::function<void (SDL_Event* e)>> m_eventListeners;
+
 
     void handleKeyPress(bool keyDown);
     void handleButtonPress(bool buttonDown);

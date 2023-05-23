@@ -22,6 +22,10 @@ SprButton InputHandler::getSprButtonFromSDLButton(int button){
     return mouse->config.getSprButtonFromSDLButton(button);
 }
 
+void InputHandler::addEventListener(std::function<void (SDL_Event* e)> func){
+    m_eventListeners.push_back(func);
+}
+
 void InputHandler::handleKeyPress(bool keyDown){
     if (event.key.repeat == 1)
         return;
@@ -73,6 +77,9 @@ void InputHandler::update(){
     mouse->mouseMotion = {0, 0};
     
     while (SDL_PollEvent(&event)){
+        for (auto listener : m_eventListeners){
+            listener(&event);
+        }
         switch( event.type ){
             // handle keyboard input
             case SDL_KEYDOWN:
