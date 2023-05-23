@@ -113,9 +113,9 @@ target_include_directories(srcFiles
   PUBLIC external
 )
 
-target_link_libraries(srcFiles PUBLIC vkbootstrap vma glm volk tinyobjloader imgui stb_image oof)
+target_link_libraries(srcFiles PUBLIC vma glm volk imgui stb_image oof)
 target_link_libraries(srcFiles PUBLIC  sdl2)
-target_compile_options(srcFiles PUBLIC)
+target_compile_options(srcFiles PUBLIC -O0 -g)
 
 
 
