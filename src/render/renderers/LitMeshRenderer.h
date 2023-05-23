@@ -123,7 +123,7 @@ public:
         m_rm->remove<RenderPassLayout>(m_renderPassLayout);
         m_rm->remove<TextureAttachment>(m_depthAttachment);
         m_rm->remove<TextureAttachment>(m_attachment);
-        SprLog::info("[DebugMeshRenderer] [destroy] destroyed...");
+        SprLog::info("[LitMeshRenderer] [destroy] destroyed...");
     }
 
 private: // owning
