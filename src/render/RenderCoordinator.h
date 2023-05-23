@@ -2,9 +2,10 @@
 
 #include "renderers/UnlitMeshRenderer.h"
 #include "renderers/LitMeshRenderer.h"
-#include "vulkan/FrameRenderer.h"
 #include "renderers/TestRenderer.h"
 #include "renderers/DebugMeshRenderer.h"
+#include "vulkan/FrameRenderer.h"
+#include "vulkan/ImGuiRenderer.h"
 
 namespace spr {
     class Window;
@@ -50,5 +51,6 @@ private:
     DebugMeshRenderer m_debugMeshRenderer;
     UnlitMeshRenderer m_unlitMeshRenderer;
     LitMeshRenderer m_litMeshRenderer;
+    ImGuiRenderer m_imguiRenderer;
 };
 }

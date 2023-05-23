@@ -36,6 +36,7 @@ void RenderCoordinator::render(SceneManager& sceneManager){
         //m_debugMeshRenderer.render(offscreenCB, batchManager);
         //m_unlitMeshRenderer.render(offscreenCB, batchManager);
         m_litMeshRenderer.render(offscreenCB, batchManager);
+        m_imguiRenderer.render(offscreenCB, batchManager);
     }
     offscreenCB.submit();
 
@@ -97,9 +98,15 @@ void RenderCoordinator::initRenderers(SceneManager& sceneManager){
         sceneManager.getGlobalDescriptorSetLayout(),
         sceneManager.getPerFrameDescriptorSets(),
         sceneManager.getPerFrameDescriptorSetLayout());
+    
+    m_imguiRenderer = ImGuiRenderer(*m_rm, *m_renderer, m_window, windowDim);
+    m_imguiRenderer.init(
+        sceneManager.getGlobalDescriptorSet(),
+        sceneManager.getGlobalDescriptorSetLayout());
+    m_imguiRenderer.setInput(m_litMeshRenderer.getAttachment());
 
     // swapchain renderer
-    m_frameRenderer = FrameRenderer(*m_rm, *m_renderer, windowDim);
+    m_frameRenderer = FrameRenderer(*m_rm, *m_renderer, m_window, windowDim);
     m_frameRenderer.init(
         m_renderer->getDisplay().getImageViews(), 
         sceneManager.getGlobalDescriptorSet(),
@@ -107,7 +114,7 @@ void RenderCoordinator::initRenderers(SceneManager& sceneManager){
     //m_frameRenderer.setInput(m_testRenderer.getAttachment());
     //m_frameRenderer.setInput(m_debugMeshRenderer.getAttachment());
     // m_frameRenderer.setInput(m_unlitMeshRenderer.getAttachment());
-    m_frameRenderer.setInput(m_litMeshRenderer.getAttachment());
+    m_frameRenderer.setInput(m_imguiRenderer.getAttachment());
 
     
 }
@@ -126,6 +133,7 @@ void RenderCoordinator::onResize(){
 void RenderCoordinator::destroy(){
     // teardown renderers
     m_frameRenderer.destroy();
+    m_imguiRenderer.destroy();
     m_testRenderer.destroy();
     m_debugMeshRenderer.destroy();
     m_unlitMeshRenderer.destroy();
