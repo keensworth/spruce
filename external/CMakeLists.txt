@@ -27,21 +27,21 @@ target_sources(tinygltf PRIVATE
   tinygltf/tiny_gltf.cpp
   )
 
-target_include_directories(vkbootstrap PUBLIC vkbootstrap)
+target_include_directories(vkbootstrap PUBLIC ${CMAKE_CURRENT_LIST_DIR}/vkbootstrap)
 target_link_libraries(vkbootstrap PUBLIC volk $<$<BOOL:UNIX>:${CMAKE_DL_LIBS}>)
 
-target_include_directories(flathashmap INTERFACE flathashmap)
-target_include_directories(json INTERFACE json)
-target_include_directories(oof INTERFACE oof)
-target_include_directories(vma INTERFACE vma)
-target_include_directories(tinygltf PUBLIC tinygltf)
+target_include_directories(flathashmap INTERFACE ${CMAKE_CURRENT_LIST_DIR}/flathashmap)
+target_include_directories(json INTERFACE ${CMAKE_CURRENT_LIST_DIR}/json)
+target_include_directories(oof INTERFACE ${CMAKE_CURRENT_LIST_DIR}/oof)
+target_include_directories(vma INTERFACE ${CMAKE_CURRENT_LIST_DIR}/vma)
+target_include_directories(tinygltf PUBLIC ${CMAKE_CURRENT_LIST_DIR}/tinygltf)
 target_link_libraries(tinygltf PUBLIC json stb_image)
 
 
 
 #both vma and glm and header only libs so we only need the include path
 # target_include_directories(vma INTERFACE vma)
-target_include_directories(glm INTERFACE glm)
+target_include_directories(glm INTERFACE ${CMAKE_CURRENT_LIST_DIR}/glm)
 target_compile_options(glm INTERFACE)
 
 target_sources(tinyobjloader PRIVATE 
@@ -49,7 +49,7 @@ target_sources(tinyobjloader PRIVATE
   tinyobjloader/tiny_obj_loader.cc
   )
 
-target_include_directories(tinyobjloader PUBLIC tinyobjloader)
+target_include_directories(tinyobjloader PUBLIC ${CMAKE_CURRENT_LIST_DIR}/tinyobjloader)
 
 add_library(sdl2 INTERFACE)
 set(sdl2_DIR "SDL_PATH" CACHE FILEPATH "/usr/include/SDL2/")
@@ -67,7 +67,7 @@ target_compile_options(sdl2 INTERFACE -lSDL2 -I/usr/include/SDL2)
 
 add_library(imgui SHARED)
 
-target_include_directories(imgui PUBLIC imgui)
+target_include_directories(imgui PUBLIC ${CMAKE_CURRENT_LIST_DIR}/imgui)
 
 target_sources(imgui PRIVATE 
   imgui/imconfig.h
@@ -89,4 +89,4 @@ target_sources(imgui PRIVATE
 
 target_link_libraries(imgui PUBLIC volk -lSDL2 sdl2)
 
-target_include_directories(stb_image INTERFACE stb_image)
+target_include_directories(stb_image INTERFACE ${CMAKE_CURRENT_LIST_DIR}/stb_image)

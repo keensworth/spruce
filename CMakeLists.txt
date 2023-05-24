@@ -59,6 +59,10 @@ option(SPRUCE_BUILD_SHARED "Build SPRUCE as a shared library? (otherwise static)
 set(BUILD_SHARED_LIBS ${SPRUCE_BUILD_SHARED}) # use 'SPRUCE_' naming convention
 add_subdirectory(src)
 add_executable(spruce main.cpp)
+target_include_directories(spruce PUBLIC
+  ${CMAKE_CURRENT_LIST_DIR}/src
+  ${CMAKE_CURRENT_LIST_DIR}/external
+)
 target_link_libraries(spruce PUBLIC srcFiles)
 target_compile_options(spruce PUBLIC -g -lSDL2 -lSDL -std=c++20 -I/usr/include/SDL2)
 

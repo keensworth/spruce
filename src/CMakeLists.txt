@@ -104,13 +104,14 @@ target_sources(srcFiles PRIVATE
 
 
 target_include_directories(srcFiles 
-  PUBLIC ecs
-  PUBLIC core
-  PUBLIC debug
-  PUBLIC interface
-  PUBLIC resource
-  PUBLIC render
-  PUBLIC external
+  PUBLIC ${CMAKE_CURRENT_LIST_DIR}
+  PUBLIC ${CMAKE_CURRENT_LIST_DIR}/ecs
+  PUBLIC ${CMAKE_CURRENT_LIST_DIR}/core
+  PUBLIC ${CMAKE_CURRENT_LIST_DIR}/debug
+  PUBLIC ${CMAKE_CURRENT_LIST_DIR}/interface
+  PUBLIC ${CMAKE_CURRENT_LIST_DIR}/resource
+  PUBLIC ${CMAKE_CURRENT_LIST_DIR}/render
+  PUBLIC ${CMAKE_CURRENT_LIST_DIR}/external
 )
 
 target_link_libraries(srcFiles PUBLIC vma glm volk imgui stb_image oof)
