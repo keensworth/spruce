@@ -31,7 +31,11 @@
 *.out
 *.app
 
+# Config
+.clangd
+
 # Directories
 build/
-data/shaders/spv
+data/shaders/spv/
+zreference/
 .*/
