@@ -2,7 +2,6 @@
 
 #include "InputManager.h"
 #include <functional>
-#include "../../external/imgui/imgui_impl_sdl2.h"
 
 namespace spr {
 class InputHandler {
