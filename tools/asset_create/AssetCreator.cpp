@@ -41,7 +41,6 @@ void AssetCreator::writeTextureFile(uint32_t bufferId, uint32_t height, uint32_t
     // width (4)
     // components (4)
 
-    std::cout << "      Write Texture File:" << std::endl;
 
     // write to file
     // open file
@@ -51,28 +50,21 @@ void AssetCreator::writeTextureFile(uint32_t bufferId, uint32_t height, uint32_t
         std::cerr << "Failed to open/create file" << std::endl;
         return ;
     }
-    std::cout << "          f: created" << std::endl;
     
     // write buffer id
     f.write((char*)&bufferId, sizeof(uint32_t));
-    std::cout << "          w: bufferId: " << bufferId << std::endl;
 
     // write height
     f.write((char*)&height, sizeof(uint32_t));
-    std::cout << "          w: height: " << height << std::endl;
 
     // write width
     f.write((char*)&width, sizeof(uint32_t));
-    std::cout << "          w: width: " << width << std::endl;
 
     // write components
     f.write((char*)&components, sizeof(uint32_t));
-    std::cout << "          w: components: " << components << std::endl;
 
     // close file
     f.close();
-    std::cout << "          f: closed" << std::endl;
-    std::cout << "" << std::endl;
 }
 
 void AssetCreator::writeBufferFile(const unsigned char* data, uint32_t byteLength, uint32_t elementType, uint32_t componentType, uint32_t bufferId){
@@ -81,7 +73,6 @@ void AssetCreator::writeBufferFile(const unsigned char* data, uint32_t byteLengt
     // component type (4)
     // byte length (4)
     // data (byte length)
-    std::cout << "      Write Buffer File:" << std::endl;
 
     // write to file
     // open file
@@ -91,32 +82,24 @@ void AssetCreator::writeBufferFile(const unsigned char* data, uint32_t byteLengt
         std::cerr << "Failed to open/create file" << std::endl;
         return ;
     }
-    std::cout << "          f: created" << std::endl;
 
     // write association
     f.write("stex", sizeof(uint32_t));
-    std::cout << "          w: association: " << "stex" << std::endl;
 
     // write element type
     f.write((char*)&elementType, sizeof(uint32_t));
-    std::cout << "          w: elementType: " << elementType << std::endl;
 
     // write component type
     f.write((char*)&componentType, sizeof(uint32_t));
-    std::cout << "          w: componentType: " << componentType << std::endl;
 
     // write byte length
     f.write((char*)&byteLength, sizeof(uint32_t));
-    std::cout << "          w: byteLength: " << byteLength << std::endl;
     
     // write data 
     f.write((char*)data, byteLength);
-    std::cout << "          w: data" << std::endl;
 
     // close file
     f.close();
-    std::cout << "          f: closed" << std::endl;
-    std::cout << "" << std::endl;
 }
 
 }

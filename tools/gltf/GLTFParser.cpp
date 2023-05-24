@@ -1,7 +1,6 @@
 #include <cstring>
 #include <fstream>
 #include "GLTFParser.h"
-#include "FileWriter.h"
 
 #include "stb_image.h"
 
@@ -15,7 +14,6 @@ void GLTFParser::writeBufferFile(const unsigned char* data, std::string associat
     // component type (4)
     // byte length (4)
     // data (byte length)
-    std::cout << "      Write Buffer File:" << std::endl;
 
     // write to file
     // open file
@@ -25,32 +23,24 @@ void GLTFParser::writeBufferFile(const unsigned char* data, std::string associat
         std::cerr << "Failed to open/create file" << std::endl;
         return ;
     }
-    std::cout << "          f: created" << std::endl;
 
     // write association
     f.write(association.data(), sizeof(uint32_t));
-    std::cout << "          w: association: " << association << std::endl;
 
     // write element type
     f.write((char*)&elementType, sizeof(uint32_t));
-    std::cout << "          w: elementType: " << elementType << std::endl;
 
     // write component type
     f.write((char*)&componentType, sizeof(uint32_t));
-    std::cout << "          w: componentType: " << componentType << std::endl;
 
     // write byte length
     f.write((char*)&byteLength, sizeof(uint32_t));
-    std::cout << "          w: byteLength: " << byteLength << std::endl;
     
     // write data 
     f.write((char*)data, byteLength);
-    std::cout << "          w: data" << std::endl;
 
     // close file
     f.close();
-    std::cout << "          f: closed" << std::endl;
-    std::cout << "" << std::endl;
 }
 
 void GLTFParser::writeMeshFile(
@@ -64,7 +54,6 @@ void GLTFParser::writeMeshFile(
     // position buffer id (4)
     // attributes buffer id (4)
 
-    std::cout << "      Write Mesh File:" << std::endl;
 
     // write to file
     // open file
@@ -74,28 +63,21 @@ void GLTFParser::writeMeshFile(
         std::cerr << "Failed to open/create file" << std::endl;
         return ;
     }
-    std::cout << "          f: created" << std::endl;
 
     // write material id
     f.write((char*)&materialId, sizeof(uint32_t));
-    std::cout << "          w: materialId: " << materialId << std::endl;
 
     // write index buffer id
     f.write((char*)&indexBufferId, sizeof(uint32_t));
-    std::cout << "          w: indexBufferId: " << indexBufferId << std::endl;
 
     // write position buffer id
     f.write((char*)&posBufferId, sizeof(uint32_t));
-    std::cout << "          w: posBufferId: " << posBufferId << std::endl;
 
     // write attributes buffer id
     f.write((char*)&attributesBufferId, sizeof(uint32_t));
-    std::cout << "          w: attributesBufferId: " << attributesBufferId << std::endl;
 
     // close file
     f.close();
-    std::cout << "          f: closed" << std::endl;
-    std::cout << "" << std::endl;
 }
 
 void GLTFParser::writeMaterialFile(
@@ -104,7 +86,6 @@ void GLTFParser::writeMaterialFile(
         std::vector<uint32_t> texIds,
         uint32_t materialId){
     uint32_t currId = 0;
-    std::cout << "      Write Material File:" << std::endl;
     // write to file
     // open file
     std::ofstream f("../data/materials/"+(m_name+("_"+std::to_string(materialId)))+".smtl", std::ios::binary);
@@ -113,173 +94,135 @@ void GLTFParser::writeMaterialFile(
         std::cerr << "Failed to open/create file" << std::endl;
         return ;
     }
-    std::cout << "          f: created" << std::endl;
 
     // base color (4)
     //      tex id (4) (2 id, 2 min/mag filter)
     //      factor (16)
     if (materialFlags & 0b1){
-        std::cout << "          [base color] " << std::endl;
         // base color sentinel
         uint32_t sentinel = 1;
         f.write((char*)&sentinel, sizeof(uint32_t));
-        std::cout << "          w: sentinel: " << sentinel << std::endl;
         
         // tex id
         uint32_t baseColorTexId = texIds[currId++];
         f.write((char*)&baseColorTexId, sizeof(uint32_t));
-        std::cout << "          w: baseColorTexId: " << (baseColorTexId&0xffff) << std::endl;
-        std::cout << "          w: filter: " << ((baseColorTexId>>16)&0xffff) << std::endl;
         
         // base color factor (x,y,z,w)
         std::vector<double> baseColorFactorDouble = material.pbrMetallicRoughness.baseColorFactor;
         std::vector<float> baseColorFactor(baseColorFactorDouble.begin(), baseColorFactorDouble.end());
         //      x
         f.write((char*)&baseColorFactor[0], sizeof(float));
-        std::cout << "          w: baseColorFactor.x: " << baseColorFactor[0] << std::endl;
         //      y
         f.write((char*)&baseColorFactor[1], sizeof(float));
-        std::cout << "          w: baseColorFactor.y: " << baseColorFactor[1] << std::endl;
         //      z
         f.write((char*)&baseColorFactor[2], sizeof(float));
-        std::cout << "          w: baseColorFactor.z: " << baseColorFactor[2] << std::endl;
         //      w
         f.write((char*)&baseColorFactor[3], sizeof(float));
-        std::cout << "          w: baseColorFactor.w: " << baseColorFactor[3] << std::endl;
     }
 
     // metalroughness (4)
     //      tex id (4) (3 id, 1 min/mag filter)
     //      factor (8) (m(4)/r(4))
     if (materialFlags & (0b1<<1)){
-        std::cout << "          [metallic roughness] " << std::endl;
         // metalroughness sentinel
         uint32_t sentinel = 2;
         f.write((char*)&sentinel, sizeof(uint32_t));
-        std::cout << "          w: sentinel: " << sentinel << std::endl;
         
         // tex id
         uint32_t metalRoughnessTexId = texIds[currId++];
         f.write((char*)&metalRoughnessTexId, sizeof(uint32_t));
-        std::cout << "          w: metalRoughnessTexId: " << (metalRoughnessTexId&0xffff) << std::endl;
-        std::cout << "          w: filter: " << ((metalRoughnessTexId>>16)&0xffff) << std::endl;
         
         // metalness factor
         float metalFactor = material.pbrMetallicRoughness.metallicFactor;
         f.write((char*)&metalFactor, sizeof(float));
-        std::cout << "          w: metalFactor: " << metalFactor << std::endl;
         
         // roughness factor
         float roughnessFactor = material.pbrMetallicRoughness.roughnessFactor;
         f.write((char*)&roughnessFactor, sizeof(float));
-        std::cout << "          w: roughnessFactor: " << roughnessFactor << std::endl;
     }
 
     // normal (4)
     //      tex id (4) (3 id, 1 min/mag filter)
     //      scale (4)
     if (materialFlags & (0b1<<2)){
-        std::cout << "          [normal] " << std::endl;
         // normal sentinel
         uint32_t sentinel = 3;
         f.write((char*)&sentinel, sizeof(uint32_t));
-        std::cout << "          w: sentinel: " << sentinel << std::endl;
         
         // tex id
         uint32_t normalTexId = texIds[currId++];
         f.write((char*)&normalTexId, sizeof(uint32_t));
-        std::cout << "          w: normalTexId: " << (normalTexId&0xffff) << std::endl;
-        std::cout << "          w: filter: " << ((normalTexId>>16)&0xffff) << std::endl;
         
         // normal scale
         float normalScale = material.normalTexture.scale;
         f.write((char*)&normalScale, sizeof(float));
-        std::cout << "          w: normalScale: " << normalScale << std::endl;
     }
 
     // occlusion (4)
     //      tex id (4) (3 id, 1 min/mag filter)
     //      strength (4)
     if (materialFlags & (0b1<<3)){
-        std::cout << "          [occlusion] " << std::endl;
         // occlusion sentinel
         uint32_t sentinel = 4;
         f.write((char*)&sentinel, sizeof(uint32_t));
-        std::cout << "          w: sentinel: " << sentinel << std::endl;
         
         // tex id
         uint32_t occlusionTexId = texIds[currId++];
         f.write((char*)&occlusionTexId, sizeof(uint32_t));
-        std::cout << "          w: occlusionTexId: " << (occlusionTexId&0xffff) << std::endl;
-        std::cout << "          w: filter: " << ((occlusionTexId>>16)&0xffff) << std::endl;
         
         // occlusion strength
         float occlusionStrength = material.occlusionTexture.strength;
         f.write((char*)&occlusionStrength, sizeof(float));
-        std::cout << "          w: occlusionStrength: " << occlusionStrength << std::endl;
     }
 
     // emissive (4)
     //      tex id (4) (3 id, 1 min/mag filter)
     //      factor (12)
     if (materialFlags & (0b1<<4)){
-        std::cout << "          [emissive]" << std::endl;
         // emissive sentinel
         uint32_t sentinel = 5;
         f.write((char*)&sentinel, sizeof(uint32_t));
-        std::cout << "          w: sentinel: " << sentinel << std::endl;
 
         // tex id
         uint32_t emissiveTexId = texIds[currId++];
         f.write((char*)&emissiveTexId, sizeof(uint32_t));
-        std::cout << "          w: emissiveTexId: " << (emissiveTexId&0xffff) << std::endl;
-        std::cout << "          w: filter: " << ((emissiveTexId>>16)&0xffff) << std::endl;        
 
         // emissive factor (x,y,z);
         std::vector<double> emissiveFactorDouble = material.emissiveFactor;
         std::vector<float> emissiveFactor(emissiveFactorDouble.begin(), emissiveFactorDouble.end());
         //      x
         f.write((char*)&emissiveFactor[0], sizeof(float));
-        std::cout << "          w: emissiveFactor.x: " << emissiveFactor[0] << std::endl;
         //      y
         f.write((char*)&emissiveFactor[1], sizeof(float));
-        std::cout << "          w: emissiveFactor.y: " << emissiveFactor[1] << std::endl;
         //      z
         f.write((char*)&emissiveFactor[2], sizeof(float));
-        std::cout << "          w: emissiveFactor.z: " << emissiveFactor[2] << std::endl;
     }
 
     // alpha (4)
     //      type (4)
     //      cutoff (4)
     if (materialFlags & (0b1<<5)){
-        std::cout << "          [alpha] " << std::endl;
         // alpha sentinel
         uint32_t sentinel = 6;
         f.write((char*)&sentinel, sizeof(uint32_t));
-        std::cout << "          w: sentinel: " << sentinel << std::endl;
 
         // alpha type
         uint32_t alphaType = 0; // blend by default
         if (material.alphaMode == "MASK")
             alphaType = 1;
         f.write((char*)&alphaType, sizeof(uint32_t));
-        std::cout << "          w: alphaType: " << alphaType << std::endl;
 
         // alpha cutoff
         float alphaCutoff = material.alphaCutoff;
         f.write((char*)&alphaCutoff, sizeof(float));
-        std::cout << "          w: alphaCutoff: " << alphaCutoff << std::endl;
 
     }
 
     // doublesided (4)
     if (materialFlags & (0b1<<6)){
-        std::cout << "          [double sided] " << std::endl;
         // doublesided sentinel
         uint32_t sentinel = 7;
         f.write((char*)&sentinel, sizeof(uint32_t));
-        std::cout << "          w: sentinel: " << sentinel << std::endl;
     }
 
     // terminate
@@ -288,8 +231,6 @@ void GLTFParser::writeMaterialFile(
     
     // close file
     f.close();
-    std::cout << "          f: closed" << std::endl;
-    std::cout << "" << std::endl;
 }
 
 void GLTFParser::writeModelFile(uint32_t meshCount, std::vector<uint32_t> meshIds, uint32_t modelId){
@@ -298,9 +239,6 @@ void GLTFParser::writeModelFile(uint32_t meshCount, std::vector<uint32_t> meshId
     // name (32)
     // mesh count (4)
     // mesh ids (4*count) 
-    uint32_t nameLength = m_name.size();
-
-    std::cout << "      Write Model File:" << std::endl;
 
     // write to file
     // open file
@@ -310,27 +248,21 @@ void GLTFParser::writeModelFile(uint32_t meshCount, std::vector<uint32_t> meshId
         std::cerr << "Failed to open/create file" << std::endl;
         return ;
     }
-    std::cout << "          f: created" << std::endl;
 
     // write name
     m_name.resize(32);
     f.write(m_name.c_str(), 32);
-    std::cout << "          w: name: " << m_name << std::endl;
 
     // write mesh count
     f.write((char*)&meshCount, sizeof(uint32_t));
-    std::cout << "          w: meshCount: " << meshCount << std::endl;
 
     // write mesh ids
     for (int i = 0; i < meshCount; i++){
         f.write((char*)&meshIds[i], sizeof(uint32_t));
-        std::cout << "          w: meshId: " << meshIds[i] << std::endl;
     }
 
     // close file
     f.close();
-    std::cout << "          f: closed" << std::endl;
-    std::cout << "" << std::endl;
 }
 
 void GLTFParser::writeTextureFile(uint32_t bufferId, uint32_t height, uint32_t width, uint32_t components, uint32_t texId){
@@ -339,7 +271,6 @@ void GLTFParser::writeTextureFile(uint32_t bufferId, uint32_t height, uint32_t w
     // width (4)
     // components (4)
 
-    std::cout << "      Write Texture File:" << std::endl;
 
     // write to file
     // open file
@@ -349,28 +280,21 @@ void GLTFParser::writeTextureFile(uint32_t bufferId, uint32_t height, uint32_t w
         std::cerr << "Failed to open/create file" << std::endl;
         return ;
     }
-    std::cout << "          f: created" << std::endl;
     
     // write buffer id
     f.write((char*)&bufferId, sizeof(uint32_t));
-    std::cout << "          w: bufferId: " << bufferId << std::endl;
 
     // write image height
     f.write((char*)&height, sizeof(uint32_t));
-    std::cout << "          w: height: " << height << std::endl;
 
     // write image width
     f.write((char*)&width, sizeof(uint32_t));
-    std::cout << "          w: width: " << width << std::endl;
 
     // write image components
     f.write((char*)&components, sizeof(uint32_t));
-    std::cout << "          w: components: " << components << std::endl;
 
     // close file
     f.close();
-    std::cout << "          f: closed" << std::endl;
-    std::cout << "" << std::endl;
 }
 
 void GLTFParser::handleBuffer(
@@ -386,13 +310,6 @@ void GLTFParser::handleBuffer(
         std::vector<uint8_t>& out,
         bool writeToFile,
         bool isPosition){    
-    std::cout << "Buffer:" << std::endl;
-    std::cout << "  byteOffset " << byteOffset << std::endl;
-    std::cout << "  byteLength " << byteLength << std::endl;
-    std::cout << "  elementType " << elementType << std::endl;
-    std::cout << "  componentType " << componentType << std::endl;
-    std::cout << "  bufferId " << bufferId << std::endl;
-    std::cout << "" << std::endl;
 
     
 
@@ -415,7 +332,6 @@ void GLTFParser::handleBuffer(
             data[i] = bufferData[i+byteOffset];
         }
     } else { // pad vec3 to vec4
-        std::cout << "  position padding: true" << std::endl;
 
         // get 1.0f as byte array
         char float1fByteArray[4];
@@ -462,13 +378,6 @@ void GLTFParser::handleMIMEImageBuffer(
         uint32_t elementType, 
         uint32_t componentType,
         uint32_t bufferId){
-    std::cout << "MIME Image Buffer:" << std::endl;
-    std::cout << "  byteOffset " << byteOffset << std::endl;
-    std::cout << "  byteLength " << byteLength << std::endl;
-    std::cout << "  elementType " << elementType << std::endl;
-    std::cout << "  componentType " << componentType << std::endl;
-    std::cout << "  bufferId " << bufferId << std::endl;
-    std::cout << "" << std::endl;
 
     // buffer data
     const unsigned char* bufferData = buffer.data.data();
@@ -517,15 +426,6 @@ void GLTFParser::handleBufferInterleaved(
         bool writeToFile){
     std::vector<unsigned char> bufferData = buffer.data;
     std::vector<unsigned char> data;
-    std::cout << "BufferInterleaved:" << std::endl;
-    std::cout << "  byteOffset " << byteOffset << std::endl;
-    std::cout << "  byteLength " << byteLength << std::endl;
-    std::cout << "  byteStride " << byteStride << std::endl;
-    std::cout << "  bytesPerElement " << bytesPerElement << std::endl;
-    std::cout << "  elementType " << elementType << std::endl;
-    std::cout << "  componentType " << componentType << std::endl;
-    std::cout << "  bufferId " << bufferId << std::endl;
-    std::cout << "" << std::endl;
     // iterate over buffer, one stride at a time 
     for (uint32_t i = byteOffset; i < byteOffset + byteLength; i+= byteStride){
         // grab neccessary bytes from stride (byte-by byte, may be slow)
@@ -557,25 +457,12 @@ void GLTFParser::handleBufferView(
         std::vector<uint8_t>& out,
         bool writeToFile,
         bool isPosition){
-    std::cout << "BufferView:" << std::endl;
-    std::cout << "  byteOffset " << byteOffset << std::endl;
-    std::cout << "  bytesPerElement " << bytesPerElement << std::endl;
-    std::cout << "  elementCount " << elementCount << std::endl;
-    std::cout << "  elementType " << elementType << std::endl;
-    std::cout << "  componentType " << componentType << std::endl;
-    std::cout << "  bufferId " << bufferId << std::endl;
     // properties
     uint32_t adjustedByteOffset = bufferView.byteOffset + byteOffset;
     uint32_t byteLength = bufferView.byteLength - byteOffset;
     uint32_t byteStride = bufferView.byteStride;
     if (byteStride == 0)
         byteStride = bytesPerElement;
-    std::cout << "  [properties]" << std::endl;
-    std::cout << "  bufferView.byteOffset " << bufferView.byteOffset << std::endl;
-    std::cout << "  adjustedByteOffset " << adjustedByteOffset << std::endl;
-    std::cout << "  byteLength " << byteLength << std::endl;
-    std::cout << "  byteStride " << byteStride << std::endl;
-    std::cout << "" << std::endl;
 
     // buffer
     const tinygltf::Buffer& buffer = model.buffers[bufferView.buffer];
@@ -600,13 +487,6 @@ uint32_t GLTFParser::handleAccessor(const tinygltf::Accessor& accessor, std::vec
     uint32_t elementType = accessor.type;
     uint32_t componentType = accessor.componentType;
     uint32_t bytesPerElement = tinygltf::GetNumComponentsInType(elementType) * tinygltf::GetComponentSizeInBytes(componentType);
-    std::cout << "Accessor:" << std::endl;
-    std::cout << "  byteOffset " << byteOffset << std::endl;
-    std::cout << "  elementCount " << elementCount << std::endl;
-    std::cout << "  elementType " << elementType << std::endl;
-    std::cout << "  componentType " << componentType << std::endl;
-    std::cout << "  bytesPerElement " << bytesPerElement << std::endl;
-    std::cout << "" << std::endl;
 
     // buffer view
     const tinygltf::BufferView& bufferView = model.bufferViews[accessor.bufferView];
@@ -625,9 +505,6 @@ uint32_t GLTFParser::handleTexture(const tinygltf::Texture& tex){
     int32_t minFilter;
     tinygltf::Image image;
     tinygltf::Sampler sampler;
-    std::cout << "Texture:" << std::endl;
-    std::cout << "  sourceIndex " << sourceIndex << std::endl;
-    std::cout << "  samplerIndex " << samplerIndex << std::endl;
     if (sourceIndex == -1)
         return 0;
     if (samplerIndex == -1)
@@ -652,8 +529,6 @@ uint32_t GLTFParser::handleTexture(const tinygltf::Texture& tex){
     // write tex file but not buffer
     if (m_sourceBuffIdMap.count(sourceIndex) > 0){
         // write texture to file
-        std::cout << "  [exists, skipping]" << std::endl;
-        std::cout << "" << std::endl;
         return m_sourceTexIdMap[sourceIndex]; 
     }
 
@@ -669,11 +544,6 @@ uint32_t GLTFParser::handleTexture(const tinygltf::Texture& tex){
     m_sourceBuffIdMap[sourceIndex] = bufferId;
     if (image.bufferView >= 0){ // bufferview
         int32_t elementCount = image.width * image.height * image.component;
-        std::cout << "  [bufferview] " << std::endl;
-        std::cout << "  minFilter " << minFilter << std::endl;
-        std::cout << "  elementType " << elementType << std::endl;
-        std::cout << "  componentType " << componentType << std::endl;
-        std::cout << "  elementCount " << elementCount << std::endl;
         handleBufferView(model.bufferViews[image.bufferView], std::string("stex"), 0, 1, elementCount, elementType, componentType, bufferId, out, true, false);
     } else { // direct buffer
         tinygltf::Buffer buffer;
@@ -681,15 +551,9 @@ uint32_t GLTFParser::handleTexture(const tinygltf::Texture& tex){
         int32_t elementType = TINYGLTF_TYPE_SCALAR;
         int32_t componentType = TINYGLTF_COMPONENT_TYPE_UNSIGNED_BYTE;
         buffer.data = image.image;
-        std::cout << "  [buffer uri] " << std::endl;
-        std::cout << "  minFilter " << minFilter << std::endl;
-        std::cout << "  elementType " << elementType << std::endl;
-        std::cout << "  componentType " << componentType << std::endl;
-        std::cout << "  elementCount " << elementCount << std::endl;
         uint32_t bytesPerElement = tinygltf::GetNumComponentsInType(elementType) * tinygltf::GetComponentSizeInBytes(componentType);
         handleBuffer(buffer, std::string("stex"), 0, bytesPerElement*elementCount, bytesPerElement, elementCount, elementType, componentType, bufferId, out, true, false);
     }
-    std::cout << "" << std::endl;
 
     // write texture to file
     writeTextureFile(bufferId, image.height, image.width, components, texId);
@@ -725,7 +589,6 @@ uint32_t GLTFParser::handleTexture(const tinygltf::OcclusionTextureInfo& texInfo
 
 uint32_t GLTFParser::handleMaterial(const tinygltf::Material& material){
     uint32_t materialId = m_id++;
-    std::cout << "Material:" << std::endl;
     // material flags
     uint32_t materialFlags = 0;
 
@@ -736,48 +599,40 @@ uint32_t GLTFParser::handleMaterial(const tinygltf::Material& material){
     const tinygltf::PbrMetallicRoughness& pbr = material.pbrMetallicRoughness;
     if (pbr.baseColorTexture.index >= 0){ // base color
         materialFlags |= 0b1;
-        std::cout << "  > basecolor" << std::endl;
         texIds.push_back(handleTexture(pbr.baseColorTexture));
     }
     if (pbr.metallicRoughnessTexture.index >= 0){ //metallicroughness
         materialFlags |= (0b1<<1);
-        std::cout << "  > metrough" << std::endl;
         texIds.push_back(handleTexture(pbr.metallicRoughnessTexture));
     }
     // normal
     const tinygltf::NormalTextureInfo& normal = material.normalTexture;
     if (normal.index >= 0){
         materialFlags |= (0b1<<2);
-        std::cout << "  > normal" << std::endl;
         texIds.push_back(handleTexture(normal));
     }
     // occlusion
     const tinygltf::OcclusionTextureInfo& occlusion = material.occlusionTexture;
     if (occlusion.index >= 0){
         materialFlags |= (0b1<<3);
-        std::cout << "  > occlusion" << std::endl;
         texIds.push_back(handleTexture(occlusion));
     }
     // emissive
     const tinygltf::TextureInfo& emissive = material.emissiveTexture;
     if (emissive.index >= 0){
         materialFlags |= (0b1<<4);
-        std::cout << "  > emissive" << std::endl;
         texIds.push_back(handleTexture(emissive));
     }
     // alphamode
     std::string alpha = material.alphaMode;
     if (alpha != "OPAQUE"){
-        std::cout << "  > alpha" << std::endl;
         materialFlags |= (0b1<<5);
     }
     // doublesided 
     if (material.doubleSided){
-        std::cout << "  > doublesided" << std::endl;
         materialFlags |= (0b1<<6);
     }
     //TODO: check for specularglossiness + update flags
-    std::cout << "" << std::endl;
     // write material to file
     writeMaterialFile(materialFlags, material, texIds, materialId);
 
@@ -793,17 +648,10 @@ uint32_t GLTFParser::interleaveVertexAttributes(
     uint32_t attributesId = m_id++;
 
     uint32_t bytesPerNormal = 12;
-    uint32_t bytesPerTangent = 12;
     uint32_t bytesPerColor = 12;
     uint32_t bytesPerTexCoord = 8;
     uint32_t bytesPerVertex = bytesPerNormal + bytesPerColor + bytesPerTexCoord;
 
-    std::cout << "INTERLEAVING____________________" << std::endl;
-    std::cout << "    vertices: " << vertexCount << std::endl;
-    std::cout << "    bytesper: " << bytesPerVertex << std::endl;
-    std::cout << "    nsize: " << normalBuffer.size()  << std::endl;
-    std::cout << "    csize: " << colorBuffer.size()  << std::endl;
-    std::cout << "    tsize: " << texCoordBuffer.size()  << std::endl;
 
     if (normalBuffer.size() != vertexCount * bytesPerNormal){
         normalBuffer.resize(vertexCount * bytesPerNormal);
@@ -824,52 +672,38 @@ uint32_t GLTFParser::interleaveVertexAttributes(
     //
     for (uint32_t vertex = 0; vertex < vertexCount; vertex++){
         if (vertex < 0) {
-            std::cout << "      VERT: " << vertex << std::endl;
             uint32_t offset = vertex*bytesPerVertex;
-            std::cout << "        offset: " << offset << std::endl;
             // copy normal 
             for(uint32_t normal = 0; normal < bytesPerNormal; normal++){
                 result[offset + normal] = normalBuffer[vertex*bytesPerNormal + normal];
                 if (vertex < 16){
-                    std::cout << "        ri: " << offset + normal << std::endl;
-                    std::cout << "        ni: " << vertex*bytesPerNormal + normal << std::endl;
                 }
             }
             offset += bytesPerNormal;
-            std::cout << "        offset+n: " << offset << std::endl;
 
             // copy texCoord.U
             for(uint32_t tex = 0; tex < bytesPerTexCoord/2; tex++){
                 result[offset + tex] = texCoordBuffer[vertex*bytesPerTexCoord + tex];
                 if (vertex < 16){
-                    std::cout << "        ri: " << offset + tex << std::endl;
-                    std::cout << "        ti: " << vertex*bytesPerTexCoord + tex << std::endl;
                 }
             }
             offset += bytesPerTexCoord/2;
-            std::cout << "        offset+tc/2: " << offset << std::endl;
 
             // copy color
             for(uint32_t color = 0; color < bytesPerColor; color++){
                 result[offset + color] = colorBuffer[vertex*bytesPerColor + color];
                 if (vertex < 16){
-                    std::cout << "        ri: " << offset + color << std::endl;
-                    std::cout << "        ci: " << vertex*bytesPerColor + color << std::endl;
                 }
             }
             offset += bytesPerColor;
-            std::cout << "        offset+c: " << offset << std::endl;
             
             // copy texCoord.V
             for(uint32_t tex = 0; tex < bytesPerTexCoord/2; tex++){
                 result[offset + tex] = texCoordBuffer[vertex*bytesPerTexCoord + tex];
                 if (vertex < 16){
-                    std::cout << "        ri: " << offset + tex << std::endl;
-                    std::cout << "        ti: " << vertex*bytesPerTexCoord + tex << std::endl;
                 }
             }
             offset += bytesPerTexCoord/2;
-            std::cout << "        offset+tc: " << offset << std::endl;
         } else {
             uint32_t offset = vertex*bytesPerVertex;
             // copy normal 
@@ -933,11 +767,9 @@ uint32_t GLTFParser::handlePrimitive(const tinygltf::Primitive& primitive){
             colorAccessorIndex = val;
         }
     }
-    std::cout << "Primitive:" << std::endl;
 
     // handle accessors
     // indices
-    std::cout << "  (indices):" << std::endl;
     int32_t indicesId = handleAccessor(model.accessors[indicesAccessorIndex], tempOut, true, false);
     assert(indicesId >= 0);
     
@@ -945,7 +777,6 @@ uint32_t GLTFParser::handlePrimitive(const tinygltf::Primitive& primitive){
     int32_t positionId = -1;
     uint32_t vertexCount = 0;
     if (positionAccessorIndex >= 0){
-        std::cout << "  (position):" << std::endl;
         vertexCount = model.accessors[positionAccessorIndex].count;
         positionId = handleAccessor(model.accessors[positionAccessorIndex], tempOut, true, true);
     }
@@ -979,24 +810,8 @@ uint32_t GLTFParser::handlePrimitive(const tinygltf::Primitive& primitive){
         colorId = handleAccessor(model.accessors[colorAccessorIndex], outColor, false, false);
     }
 
-    std::cout << "  (attributes):" << std::endl;
     uint32_t attributesId = interleaveVertexAttributes(vertexCount, outNormal, outTangent, outTexCoord, outColor);
 
-    //std::cout << "Primitive:" << std::endl;
-    std::cout << "  vertexCount " << vertexCount << std::endl;
-    std::cout << "  materialIndex " << materialIndex << std::endl;
-    std::cout << "  indicesAccessorIndex " << indicesAccessorIndex << std::endl;
-    std::cout << "  positionAccessorIndex " << positionAccessorIndex << std::endl;
-    std::cout << "  normalAccessorIndex " << normalAccessorIndex << std::endl;
-    std::cout << "  tangentAccessorIndex " << tangentAccessorIndex << std::endl;
-    std::cout << "  indicesId " << indicesId << std::endl;
-    std::cout << "  positionId " << positionId << std::endl;
-    std::cout << "  normalId " << normalId << std::endl;
-    std::cout << "  tangentId " << tangentId << std::endl;
-    std::cout << "  colorId " << colorId << std::endl;
-    std::cout << "  texId " << texCoordId << std::endl;
-    std::cout << "  attributesId " << attributesId << std::endl;
-    std::cout << "" << std::endl;
 
     // handle material
     uint32_t materialId = 0;
@@ -1033,7 +848,6 @@ void GLTFParser::parseNode(const tinygltf::Node& node, std::vector<uint32_t> &me
 }
 
 void GLTFParser::parse(){
-    std::cout << "Sucessfully loaded, parsing..." << std::endl;
 
     int32_t modelId = m_id++;
     // assume one scene
@@ -1053,15 +867,12 @@ void GLTFParser::parseJson(std::string path){
     bool ret = loader.LoadASCIIFromFile(&model, &err, &warn, path);
 
     if (!warn.empty()) {
-        printf("Warn: %s\n", warn.c_str());
     }
 
     if (!err.empty()) {
-        printf("Err: %s\n", err.c_str());
     }
 
     if (!ret) {
-        printf("Failed to parse .gltf\n");
         return;
     }
 
@@ -1069,7 +880,6 @@ void GLTFParser::parseJson(std::string path){
     m_name = std::filesystem::path(path).stem();
     m_extension = std::filesystem::path(path).extension();
 
-    std::cout << "[        Parsing: " << m_name << m_extension << "        ]" << std::endl;
 
     parse();
 }
@@ -1079,15 +889,12 @@ void GLTFParser::parseBinary(std::string path){
     bool ret = loader.LoadBinaryFromFile(&model, &err, &warn, path);
 
     if (!warn.empty()) {
-        printf("Warn: %s\n", warn.c_str());
     }
 
     if (!err.empty()) {
-        printf("Err: %s\n", err.c_str());
     }
 
     if (!ret) {
-        printf("Failed to parse .glb\n");
         return;
     }   
 
@@ -1095,7 +902,6 @@ void GLTFParser::parseBinary(std::string path){
     m_name = std::filesystem::path(path).stem();
     m_extension = std::filesystem::path(path).extension();
 
-    std::cout << "[        Parsing: " << m_name << m_extension << "        ]" << std::endl;
 
     parse();
 }
