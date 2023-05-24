@@ -165,6 +165,10 @@ uint32 GfxAssetLoader::loadTexture(SprResourceManager& rm, uint32 textureId, boo
         return 0;
     }
 
+    if (m_textureIds.count(texture->bufferId) > 0){
+        return m_textureIds[texture->bufferId];
+    }
+
     spr::Buffer* texBuffer = rm.getData<spr::Buffer>(texBufferHandle);
     TempBuffer<uint8> textureBuffer(texBuffer->data.size());
     textureBuffer.insert(texBuffer->data.data(), texBuffer->data.size());
@@ -178,6 +182,7 @@ uint32 GfxAssetLoader::loadTexture(SprResourceManager& rm, uint32 textureId, boo
         .srgb = srgb});
 
     m_counts.textureCount++;
+    m_textureIds[texture->bufferId] = texIndex;
 
     return texIndex;
 }

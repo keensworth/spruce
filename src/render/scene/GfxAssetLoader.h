@@ -64,5 +64,7 @@ private:
     void loadMaterial(SprResourceManager& rm, Mesh* mesh, MeshInfo& info);
     uint32 loadTexture(SprResourceManager& rm, uint32 texId, bool srgb);
     void loadBuiltinAssets(SprResourceManager& rm, MeshInfoMap& meshes);
+
+    ska::flat_hash_map<uint32, uint32> m_textureIds;
 };
 }
