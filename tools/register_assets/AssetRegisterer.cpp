@@ -1,5 +1,6 @@
 #include "AssetRegisterer.h"
 #include "json.hpp"
+#include "debug/SprLog.h"
 
 namespace spr::tools{
 
@@ -59,7 +60,6 @@ int AssetRegisterer::loadBuffer(std::string path, uint32& newId){
 
     // === Create metadata ===
     std::string name = std::filesystem::path(path).stem();
-    size_t found = name.find_last_of("_");
 
     ResourceMetadata metadata;
     metadata.name = std::string(name);
@@ -236,7 +236,7 @@ int AssetRegisterer::loadTexture(std::string path, bool subresource, uint32& new
 // ╚═══════════════════════════════════╝
 int AssetRegisterer::loadMaterial(std::string path, uint32& newId){
     
-    uint32 materialFlags;
+    uint32 materialFlags = 0;
 
     uint32 baseColorTexId = 0;
     glm::vec4 baseColorFactor;
@@ -256,8 +256,6 @@ int AssetRegisterer::loadMaterial(std::string path, uint32& newId){
 
     uint32 alphaType;
     float alphaCutoff;
-
-    bool doubleSided;
 
     { // === Open original ===
         // open file
@@ -319,7 +317,6 @@ int AssetRegisterer::loadMaterial(std::string path, uint32& newId){
                     break;
                 case 7 : // double-sided
                     materialFlags |= (0b1<<6);
-                    doubleSided = true;
                     break;
                 case 0 :
                     keepParsing = false;
@@ -452,7 +449,6 @@ int AssetRegisterer::loadMaterial(std::string path, uint32& newId){
         if (materialFlags & (0b1<<6)){ // double-sided
             uint32_t sentinel = 7;
             f.write((char*)&sentinel, sizeof(uint32_t));
-            doubleSided = true;
         }
         uint32 terminate = 0;
         f.write((char*)&terminate, sizeof(uint32));
@@ -481,7 +477,6 @@ int AssetRegisterer::loadMaterial(std::string path, uint32& newId){
 // ║     attribute buffer id (4)       ║ // attributes buffer file
 // ╚═══════════════════════════════════╝
 int AssetRegisterer::loadMesh(std::string path, uint32& newId){
-    std::cout << "    Registering mesh:     " << path << std::endl;
 
     uint32 materialId;
     uint32 indexBufferId;
@@ -561,28 +556,21 @@ int AssetRegisterer::loadMesh(std::string path, uint32& newId){
             std::cerr << "Failed to open/create file" << std::endl;
             return 0;
         }
-        std::cout << "          f: created" << std::endl;
 
         // write material id
         f.write((char*)&globalMaterialId, sizeof(uint32_t));
-        std::cout << "          w: materialId: " << globalMaterialId << std::endl;
 
         // write index buffer id
         f.write((char*)&globalIndexBufferId, sizeof(uint32_t));
-        std::cout << "          w: indexBufferId: " << globalIndexBufferId << std::endl;
 
         // write position buffer id
         f.write((char*)&globalPositionBufferId, sizeof(uint32_t));
-        std::cout << "          w: posBufferId: " << globalPositionBufferId << std::endl;
 
         // write attributes buffer id
         f.write((char*)&globalAttributesBufferId, sizeof(uint32_t));
-        std::cout << "          w: attributesBufferId: " << globalAttributesBufferId << std::endl;
 
         // close file
         f.close();
-        std::cout << "          f: closed" << std::endl;
-        std::cout << "" << std::endl;
     }
 
     newId = metadata.resourceId;
@@ -605,7 +593,6 @@ int AssetRegisterer::loadMesh(std::string path, uint32& newId){
 // ║                 ...               ║
 // ╚═══════════════════════════════════╝
 int AssetRegisterer::loadModel(std::string path){
-    std::cout << "Registering model: " << path << std::endl;
     std::string name;
     uint32 nameLength = 0;
     uint32 meshCount;
@@ -619,12 +606,10 @@ int AssetRegisterer::loadModel(std::string path){
             std::cerr << "Failed to load." << std::endl;
             return 0;
         }
-        std::cout << "  f: opened" << std::endl;
 
         // read name
         name.resize(32);
         f.read(&name[0], 32);
-        std::cout << "  r: name: " << name << std::endl;
         
         for (const char& c : name)
             if (c == '\0')
@@ -636,18 +621,15 @@ int AssetRegisterer::loadModel(std::string path){
 
         // read mesh count
         f.read((char*)&meshCount, sizeof(uint32));
-        std::cout << "  r: meshCount: " << meshCount << std::endl;
 
         // read mesh ids
         meshIds.resize(meshCount);
         for (uint32 i = 0; i < meshCount; i++){
             f.read((char*)&meshIds[i], sizeof(uint32));
-            std::cout << "  r: meshId: " << meshIds[i] << std::endl;
         }
 
         // close file
         f.close();
-        std::cout << "  f: closed" << std::endl;
     }
 
     // === Create metadata ===
@@ -676,38 +658,30 @@ int AssetRegisterer::loadModel(std::string path){
             std::cerr << "Failed to open/create file" << std::endl;
             return 0;
         }
-        std::cout << "          f: created" << std::endl;
         
         // write name
         name.resize(32);
         f.write(&name[0], 32);
-        std::cout << "          w: name: " << name << std::endl;
 
         // write mesh count
         f.write((char*)&meshCount, sizeof(uint32_t));
-        std::cout << "          w: meshCount: " << meshCount << std::endl;
 
         // write mesh ids
         for (int i = 0; i < meshCount; i++){
             f.write((char*)&meshIds[i], sizeof(uint32_t));
-            std::cout << "          w: meshId: " << meshIds[i] << std::endl;
         }
 
         // close file
         f.close();
-        std::cout << "          f: closed" << std::endl;
-        std::cout << "" << std::endl;
     }
 
     return totalBytes;
 }
 
 void AssetRegisterer::writeHeader(){
-    std::cout << "Writing asset_ids.h" << std::endl;
     std::ofstream f;
     f.open ("../data/asset_ids.h");
     if (!f.is_open()){
-        std::cout << "Failed to create file" << std::endl;
         return;
     }
     // write contents
@@ -723,12 +697,18 @@ void AssetRegisterer::writeHeader(){
     f << "\n";
     f << "    // === Imported Resources ===\n";
     f << "    // models:\n";
+    uint32 conflictId = 1;
     for (std::pair<std::string, ResourceMetadata> metadata : m_modelMetadataMap){
         std::string name = metadata.first;
         std::transform(name.begin(), name.end(), name.begin(),
             [](unsigned char c){ return std::tolower(c); }); // lowercase
         std::replace(name.begin(), name.end(), ' ', '_');    // " " -> "_"
-        f << "    " << name << " = " << std::to_string(metadata.second.resourceId) << ",\n";
+
+        m_headerLowerNameMap[name]++;
+        uint32 nameCount = m_headerLowerNameMap.at(name);
+
+        std::string suffix = nameCount > 1 ? std::to_string(conflictId) : "";
+        f << "    " << name << suffix << " = " << std::to_string(metadata.second.resourceId) << ",\n";
     }
     f << "\n";
     f << "    // textures:\n";
@@ -737,7 +717,12 @@ void AssetRegisterer::writeHeader(){
         std::transform(name.begin(), name.end(), name.begin(),
             [](unsigned char c){ return std::tolower(c); }); // lowercase
         std::replace(name.begin(), name.end(), ' ', '_');    // " " -> "_"
-        f << "    " << name << " = " << std::to_string(metadata.second.resourceId) << ",\n";
+
+        m_headerLowerNameMap[name]++;
+        uint32 nameCount = m_headerLowerNameMap.at(name);
+
+        std::string suffix = nameCount > 1 ? std::to_string(conflictId) : "";
+        f << "    " << name << suffix << " = " << std::to_string(metadata.second.resourceId) << ",\n";
     }
     f << "\n";
     f << "    // shaders:\n";
@@ -752,21 +737,18 @@ void AssetRegisterer::writeHeader(){
     f << "        // models\n";
     for (std::pair<std::string, ResourceMetadata> metadata : m_modelMetadataMap){
         std::string name = metadata.first;
-        int id = metadata.second.resourceId;
         f << "        {\"" << name << "\", " << metadata.second.resourceId << "},\n";
     }
     f << "        // textures\n";
     for (std::pair<std::string, ResourceMetadata> metadata : m_nonSubresourceTextureMap){
         std::string name = metadata.first;
-        int id = metadata.second.resourceId;
         f << "        {\"" << name << "\", " << metadata.second.resourceId << "},\n";
     }
-    f << "        // sub-resources\n";
-    for (std::pair<std::string, ResourceMetadata> metadata : m_metadataMap){
-        std::string name = metadata.first;
-        int id = metadata.second.resourceId;
-        f << "        {\"" << name << "\", " << metadata.second.resourceId << "},\n";
-    }
+    // f << "        // sub-resources\n";
+    // for (std::pair<std::string, ResourceMetadata> metadata : m_metadataMap){
+    //     std::string name = metadata.first;
+    //     f << "        {\"" << name << "\", " << metadata.second.resourceId << "},\n";
+    // }
     f << "    };\n";
     f << "\n";
     f << "    uint32_t getIdFromName(std::string name){\n";
@@ -780,7 +762,6 @@ void AssetRegisterer::writeHeader(){
 }
 
 void AssetRegisterer::writeManifest(int totalBytes){
-    std::cout << "Writing asset_manifest.json" << std::endl;
     nlohmann::json manifest;
 
     // get date/time
@@ -843,7 +824,6 @@ void AssetRegisterer::writeManifest(int totalBytes){
     std::ofstream f;
     f.open ("../data/asset_manifest.json");
     if (!f.is_open()){
-        std::cout << "Failed to create JSON file" << std::endl;
         return;
     }
 
@@ -866,13 +846,6 @@ bool isNumber(const std::string& s){
 
 void AssetRegisterer::registerDirectory(std::string dir){
     int totalSizeBytes = 0;
-
-    // list all models
-    std::cout << "Processing the following models: " << std::endl;
-    for (const auto& dirEntry : std::filesystem::recursive_directory_iterator(dir + "models/")){
-        std::cout << "    " << dirEntry << std::endl;
-    }
-    std::cout << " " << std::endl;
 
     // process models and subresources
     for (const auto& dirEntry : std::filesystem::recursive_directory_iterator(dir + "models/")){
@@ -904,10 +877,11 @@ void AssetRegisterer::registerDirectory(std::string dir){
     // write asset_manifest.h
     writeManifest(totalSizeBytes);
 
-    std::cout << "Done, processed:" << std::endl;
-    std::cout << "   models: " << m_modelMetadataMap.size() << std::endl;
-    std::cout << "   subres: " << m_metadataMap.size() << std::endl;
-    std::cout << "   bytes:  " << totalSizeBytes << std::endl;
+    // std::cout << "Done, processed:" << std::endl;
+    // std::cout << "   models      : " << m_modelMetadataMap.size() << std::endl;
+    // std::cout << "   subres: " << m_metadataMap.size() << std::endl;
+    // std::cout << "   unqtex: " << m_nonSubresourceTextureMap.size() << std::endl;
+    // std::cout << "   bytes:  " << totalSizeBytes << std::endl;
 }
 
 }

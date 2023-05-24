@@ -40,6 +40,8 @@ private:
 
     ska::flat_hash_map<uint32, uint32> m_texturePresenceMap;
     uint32 m_id = 2;
+
+    ska::flat_hash_map<std::string, uint32> m_headerLowerNameMap;
 };
 
 }
