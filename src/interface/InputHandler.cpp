@@ -6,12 +6,17 @@ namespace spr {
 InputHandler::InputHandler(){
     keyboard = new KeyboardState();
     mouse = new MouseState();
-    inputManager = InputManager(keyboard, mouse);
+    m_inputManager = InputManager(keyboard, mouse);
     quit = false;
+
+    m_updatedKeys.reserve(256);
+    m_updatedButtons.reserve(256);
+    m_updatedMousePos = false;
+    m_updatedMouseWheel = false;
 }
 
 InputManager& InputHandler::getInputManager(){
-    return inputManager;
+    return m_inputManager;
 }
 
 SprKey InputHandler::getSprKeyFromSDLKeycode(SDL_Keycode keycode){
@@ -27,12 +32,15 @@ void InputHandler::addEventListener(std::function<void (SDL_Event* e)> func){
 }
 
 void InputHandler::handleKeyPress(bool keyDown){
-    if (event.key.repeat == 1)
+    if (m_event.key.repeat != 0)
         return;
-
-    SDL_Keycode keycode = event.key.keysym.sym;
+    
+    SDL_Keycode keycode = m_event.key.keysym.sym;
     SprKey key = getSprKeyFromSDLKeycode(keycode);
+
     keyboard->keyDown[key] = keyDown;
+    m_updatedKeys.push_back(key);
+
     if (keyDown)
         keyboard->keyDownTicks[key] = SDL_GetTicks();
     else 
@@ -40,47 +48,78 @@ void InputHandler::handleKeyPress(bool keyDown){
 }
 
 void InputHandler::handleButtonPress(bool buttonDown){
-    int button = event.button.button;
-    SprButton sprButton = getSprButtonFromSDLButton(button);
-    mouse->buttonDown[sprButton] = buttonDown;
+    uint32 buttonCode = m_event.button.button;
+    SprButton button = getSprButtonFromSDLButton(buttonCode);
+
+    if (mouse->buttonDownPrev[button] == buttonDown)
+        return;
+
+    mouse->buttonDown[button] = buttonDown;
+    m_updatedButtons.push_back(button);
+
     if (buttonDown)
-        mouse->buttonDownTicks[sprButton] = SDL_GetTicks();
+        mouse->buttonDownTicks[button] = SDL_GetTicks();
     else 
-        mouse->buttonUpTicks[sprButton] = SDL_GetTicks();
+        mouse->buttonUpTicks[button] = SDL_GetTicks();
 }
 
 void InputHandler::handleMouseMotion(){
-    ivec2 mousePos;
-    mousePos.x = event.motion.x;
-    mousePos.y = event.motion.y;
+    mouse->mousePos.x = m_event.motion.x;
+    mouse->mousePos.y = m_event.motion.y;
+    
+    mouse->mouseMotion.x += m_event.motion.xrel;
+    mouse->mouseMotion.y += m_event.motion.yrel;
 
-    ivec2 mouseMotion;
-    mouseMotion.x = event.motion.xrel;
-    mouseMotion.y = event.motion.yrel;
-
-    mouse->mousePos = mousePos;
-    mouse->mouseMotion = mouseMotion;
     mouse->mouseMotionTicks = SDL_GetTicks();
-    //std::cout << "MPos: " << mousePos.x << ", " << mousePos.y << std::endl;
+    m_updatedMousePos = true;
 }
 
 void InputHandler::handleMouseWheel(){
     ivec2 scrollMotion;
-    scrollMotion.x = event.wheel.x;
-    scrollMotion.y = event.wheel.y;
+    scrollMotion.x = m_event.wheel.x;
+    scrollMotion.y = m_event.wheel.y;
 
     mouse->scrollWheelMotion = scrollMotion;
     mouse->scrollTicks = SDL_GetTicks();
+    m_updatedMouseWheel = true;
+}
+
+void InputHandler::updatePreviousState(){
+    // store previous key/button state from last frame's updates
+    for (SprKey key : m_updatedKeys)
+        keyboard->keyDownPrev[key] = keyboard->keyDown[key];
+    for (SprButton button : m_updatedButtons)
+        mouse->buttonDownPrev[button] = mouse->buttonDown[button];
+    if (!m_updatedKeys.empty())
+        m_updatedKeys.clear();
+    if (!m_updatedButtons.empty())
+        m_updatedButtons.clear();
+    
+    // store prev mouse pos/motion
+    if (m_updatedMousePos){
+        mouse->mousePosPrev = mouse->mousePos; // don't reset
+        mouse->mouseMotionPrev = mouse->mouseMotion;
+        mouse->mouseMotion = {0, 0};
+        m_updatedMousePos = false;
+    }
+
+    // store prev mouse wheel motion
+    if (m_updatedMouseWheel){
+        mouse->scrollWheelMotionPrev = mouse->scrollWheelMotion;
+        mouse->scrollWheelMotion = {0, 0};
+        m_updatedMouseWheel = false;
+    }
 }
 
 void InputHandler::update(){
-    mouse->mouseMotion = {0, 0};
+    updatePreviousState();
     
-    while (SDL_PollEvent(&event)){
+    // poll events
+    while (SDL_PollEvent(&m_event)){
         for (auto listener : m_eventListeners){
-            listener(&event);
+            listener(&m_event);
         }
-        switch( event.type ){
+        switch( m_event.type ){
             // handle keyboard input
             case SDL_KEYDOWN:
                 handleKeyPress(true);
@@ -116,6 +155,6 @@ void InputHandler::update(){
                 break;
         }   
     } 
-    event = SDL_Event();  
+    m_event = SDL_Event();  
 }
 }

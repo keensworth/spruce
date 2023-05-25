@@ -18,13 +18,19 @@ public:
     bool quit;
 
 private:
-    InputManager inputManager;
+    InputManager m_inputManager;
     KeyboardState* keyboard;
     MouseState* mouse;
-    SDL_Event event;
+
+    SDL_Event m_event;
     std::vector<std::function<void (SDL_Event* e)>> m_eventListeners;
 
+    std::vector<SprKey> m_updatedKeys;
+    std::vector<SprButton> m_updatedButtons;
+    bool m_updatedMousePos;
+    bool m_updatedMouseWheel;
 
+    void updatePreviousState();
     void handleKeyPress(bool keyDown);
     void handleButtonPress(bool buttonDown);
     void handleMouseMotion();
