@@ -20,7 +20,8 @@ struct RenderState {
         TEST = 0b1,
         DEBUG_MESH = 0b1 << 1,
         UNLIT_MESH = 0b1 << 2,
-        LIT_MESH = 0b1 << 3
+        LIT_MESH = 0b1 << 3,
+        DEBUG_NORMALS = 0b1 << 4
     };
 
     Shader visible = LIT_MESH;
@@ -197,6 +198,7 @@ public:
         static int visible = RenderState::LIT_MESH;
         ImGui::RadioButton("Test", &visible, RenderState::TEST);
         ImGui::RadioButton("Debug Mesh", &visible, RenderState::DEBUG_MESH);
+        ImGui::RadioButton("Debug Normals", &visible, RenderState::DEBUG_NORMALS);
         ImGui::RadioButton("Unlit Mesh", &visible, RenderState::UNLIT_MESH);
         ImGui::RadioButton("Lit Mesh", &visible, RenderState::LIT_MESH);
         if ((uint32)visible != (uint32)state.visible){
