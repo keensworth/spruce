@@ -43,6 +43,8 @@ public:
     void showCursor();
     void hideCursor();
     bool isCursorVisible();
+    void setRelativeMouse(bool enable);
+    bool isRelativeMouse();
 
     std::string title();
     uint32 width();
@@ -61,8 +63,8 @@ private:
 
     bool m_fullscreen;
     bool m_borderless;
-
     bool m_resized;
+    bool m_relativeMouse;
 
     struct SDL_Window* m_window{ nullptr };
 

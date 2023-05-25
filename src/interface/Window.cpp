@@ -16,6 +16,7 @@ Window::Window(){
     m_fullscreen = false;
     m_borderless = false;
     m_resized = false;
+    m_relativeMouse = false;
 }
 
 Window::Window(std::string title){
@@ -26,6 +27,7 @@ Window::Window(std::string title){
     m_fullscreen = false;
     m_borderless = false;
     m_resized = false;
+    m_relativeMouse = false;
 }
 
 Window::Window(std::string title, uint32 width, uint32 height){
@@ -36,6 +38,7 @@ Window::Window(std::string title, uint32 width, uint32 height){
     m_fullscreen = false;
     m_borderless = false;
     m_resized = false;
+    m_relativeMouse = false;
 }
 
 void Window::init(){
@@ -236,6 +239,17 @@ bool Window::isCursorVisible(){
 
 void Window::setCursorPos(uint32 x, uint32 y){
     SDL_WarpMouseInWindow(m_window, x, y);
+}
+
+void Window::setRelativeMouse(bool enable){
+    SDL_SetHintWithPriority(SDL_HINT_MOUSE_RELATIVE_MODE_WARP, enable ? "1" : "0", SDL_HINT_OVERRIDE);
+    enable ? hideCursor() : showCursor();
+    SDL_SetRelativeMouseMode((SDL_bool)enable);
+    m_relativeMouse = enable;
+}
+
+bool Window::isRelativeMouse(){
+    return m_relativeMouse;
 }
 
 bool Window::resized(){
