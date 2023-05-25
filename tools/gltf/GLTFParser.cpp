@@ -2,7 +2,12 @@
 #include <fstream>
 #include "GLTFParser.h"
 
+
+#include "glm/gtc/type_ptr.hpp"
+#include "glm/gtx/quaternion.hpp"
+#include <glm/gtc/type_ptr.hpp>
 #include "stb_image.h"
+#include "glm/gtx/string_cast.hpp"
 
 namespace spr::tools{
 
@@ -309,7 +314,8 @@ void GLTFParser::handleBuffer(
         uint32_t bufferId,
         std::vector<uint8_t>& out,
         bool writeToFile,
-        bool isPosition){    
+        bool isPosition,
+        glm::mat4& transform){    
 
     
 
@@ -353,6 +359,13 @@ void GLTFParser::handleBuffer(
                 data[i] = bufferData[index+byteOffset];
                 index++;
             }
+        }
+
+        // apply transform to all positions
+        for (uint32_t i = 0; i < byteLength; i += 16){
+            glm::vec4 pos = glm::make_vec4((float*)(data + i));
+            pos = transform * pos;
+            memcpy((unsigned char*)(data + i), ((unsigned char*)glm::value_ptr(pos)), 16);
         }
     }
 
@@ -456,7 +469,8 @@ void GLTFParser::handleBufferView(
         uint32_t bufferId,
         std::vector<uint8_t>& out,
         bool writeToFile,
-        bool isPosition){
+        bool isPosition,
+        glm::mat4& transform){
     // properties
     uint32_t adjustedByteOffset = bufferView.byteOffset + byteOffset;
     uint32_t byteLength = bufferView.byteLength - byteOffset;
@@ -470,7 +484,7 @@ void GLTFParser::handleBufferView(
     // handle buffer
     if (byteStride == bytesPerElement){
         if (!association.compare("sbuf")) // normal case
-            handleBuffer(buffer, association, adjustedByteOffset, byteLength, bytesPerElement, elementCount, elementType, componentType, bufferId, out, writeToFile, isPosition);
+            handleBuffer(buffer, association, adjustedByteOffset, byteLength, bytesPerElement, elementCount, elementType, componentType, bufferId, out, writeToFile, isPosition, transform);
         else  // handle buffer that contains MIME image data
             handleMIMEImageBuffer(buffer, association, adjustedByteOffset, byteLength, bytesPerElement, elementCount, elementType, componentType, bufferId);
     } else
@@ -478,7 +492,7 @@ void GLTFParser::handleBufferView(
     
 }
 
-uint32_t GLTFParser::handleAccessor(const tinygltf::Accessor& accessor, std::vector<uint8_t>& out, bool writeToFile, bool isPosition){
+uint32_t GLTFParser::handleAccessor(const tinygltf::Accessor& accessor, std::vector<uint8_t>& out, bool writeToFile, bool isPosition, glm::mat4& transform){
     uint32_t accessorId = m_id++;
 
     // properties
@@ -492,7 +506,7 @@ uint32_t GLTFParser::handleAccessor(const tinygltf::Accessor& accessor, std::vec
     const tinygltf::BufferView& bufferView = model.bufferViews[accessor.bufferView];
 
     // handle bufer view
-    handleBufferView(bufferView, std::string("sbuf"), byteOffset, bytesPerElement, elementCount, elementType, componentType, accessorId, out, writeToFile, isPosition);
+    handleBufferView(bufferView, std::string("sbuf"), byteOffset, bytesPerElement, elementCount, elementType, componentType, accessorId, out, writeToFile, isPosition, transform);
     return accessorId;
 }
 
@@ -542,9 +556,10 @@ uint32_t GLTFParser::handleTexture(const tinygltf::Texture& tex){
     int32_t bufferId = m_id++;
     m_sourceTexIdMap[sourceIndex] = texId;
     m_sourceBuffIdMap[sourceIndex] = bufferId;
+    glm::mat4 temp;
     if (image.bufferView >= 0){ // bufferview
         int32_t elementCount = image.width * image.height * image.component;
-        handleBufferView(model.bufferViews[image.bufferView], std::string("stex"), 0, 1, elementCount, elementType, componentType, bufferId, out, true, false);
+        handleBufferView(model.bufferViews[image.bufferView], std::string("stex"), 0, 1, elementCount, elementType, componentType, bufferId, out, true, false, temp);
     } else { // direct buffer
         tinygltf::Buffer buffer;
         int32_t elementCount = image.image.size();
@@ -552,7 +567,7 @@ uint32_t GLTFParser::handleTexture(const tinygltf::Texture& tex){
         int32_t componentType = TINYGLTF_COMPONENT_TYPE_UNSIGNED_BYTE;
         buffer.data = image.image;
         uint32_t bytesPerElement = tinygltf::GetNumComponentsInType(elementType) * tinygltf::GetComponentSizeInBytes(componentType);
-        handleBuffer(buffer, std::string("stex"), 0, bytesPerElement*elementCount, bytesPerElement, elementCount, elementType, componentType, bufferId, out, true, false);
+        handleBuffer(buffer, std::string("stex"), 0, bytesPerElement*elementCount, bytesPerElement, elementCount, elementType, componentType, bufferId, out, true, false, temp);
     }
 
     // write texture to file
@@ -658,6 +673,10 @@ uint32_t GLTFParser::interleaveVertexAttributes(
     }
     if (colorBuffer.size() != vertexCount * bytesPerColor){
         colorBuffer.resize(vertexCount * bytesPerColor);
+        glm::vec3 defaultColor = {1.f, 1.f, 1.f};
+        for (uint32_t i = 0; i < colorBuffer.size(); i+= bytesPerColor){
+            memcpy(((unsigned char*)colorBuffer.data()) + i, (unsigned char*)glm::value_ptr(defaultColor), bytesPerColor);
+        }
     }
     if (texCoordBuffer.size() != vertexCount * bytesPerTexCoord){
         texCoordBuffer.resize(vertexCount * bytesPerTexCoord);
@@ -738,7 +757,7 @@ uint32_t GLTFParser::interleaveVertexAttributes(
     return attributesId;
 }
 
-uint32_t GLTFParser::handlePrimitive(const tinygltf::Primitive& primitive){
+uint32_t GLTFParser::handlePrimitive(const tinygltf::Primitive& primitive, glm::mat4& transform){
     uint32_t meshId = m_id++;
     std::vector<uint8_t> tempOut;
 
@@ -770,7 +789,7 @@ uint32_t GLTFParser::handlePrimitive(const tinygltf::Primitive& primitive){
 
     // handle accessors
     // indices
-    int32_t indicesId = handleAccessor(model.accessors[indicesAccessorIndex], tempOut, true, false);
+    int32_t indicesId = handleAccessor(model.accessors[indicesAccessorIndex], tempOut, true, false, transform);
     assert(indicesId >= 0);
     
     // position
@@ -778,7 +797,7 @@ uint32_t GLTFParser::handlePrimitive(const tinygltf::Primitive& primitive){
     uint32_t vertexCount = 0;
     if (positionAccessorIndex >= 0){
         vertexCount = model.accessors[positionAccessorIndex].count;
-        positionId = handleAccessor(model.accessors[positionAccessorIndex], tempOut, true, true);
+        positionId = handleAccessor(model.accessors[positionAccessorIndex], tempOut, true, true, transform);
     }
     assert(positionId >= 0);
 
@@ -786,28 +805,28 @@ uint32_t GLTFParser::handlePrimitive(const tinygltf::Primitive& primitive){
     int32_t normalId = -1;
     std::vector<uint8_t> outNormal;
     if (normalAccessorIndex >= 0){
-        normalId = handleAccessor(model.accessors[normalAccessorIndex], outNormal, false, false);
+        normalId = handleAccessor(model.accessors[normalAccessorIndex], outNormal, false, false, transform);
     }
 
     // tangent
     int32_t tangentId = -1;
     std::vector<uint8_t> outTangent;
     if (tangentAccessorIndex >= 0){
-        tangentId = handleAccessor(model.accessors[tangentAccessorIndex], outTangent, false, false);
+        tangentId = handleAccessor(model.accessors[tangentAccessorIndex], outTangent, false, false, transform);
     }
 
     // texcoords
     int32_t texCoordId = -1;
     std::vector<uint8_t> outTexCoord;
     if (texcoordAccessorIndex >= 0) {
-        texCoordId = handleAccessor(model.accessors[texcoordAccessorIndex], outTexCoord, false, false);
+        texCoordId = handleAccessor(model.accessors[texcoordAccessorIndex], outTexCoord, false, false, transform);
     }
 
     // colors
     int32_t colorId = -1;
     std::vector<uint8_t> outColor;
     if (colorAccessorIndex >= 0) {
-        colorId = handleAccessor(model.accessors[colorAccessorIndex], outColor, false, false);
+        colorId = handleAccessor(model.accessors[colorAccessorIndex], outColor, false, false, transform);
     }
 
     uint32_t attributesId = interleaveVertexAttributes(vertexCount, outNormal, outTangent, outTexCoord, outColor);
@@ -824,26 +843,76 @@ uint32_t GLTFParser::handlePrimitive(const tinygltf::Primitive& primitive){
     return meshId;
 }
 
-void GLTFParser::handleMesh(const tinygltf::Mesh& mesh, std::vector<uint32_t> &meshIds){
+void GLTFParser::handleMesh(const tinygltf::Mesh& mesh, std::vector<uint32_t> &meshIds, glm::mat4& transform){
     for (int32_t i = 0; i < mesh.primitives.size(); i++){
         const tinygltf::Primitive& primitive = mesh.primitives[i];
         if (primitive.mode == 4 || primitive.mode == -1){
-            meshIds.push_back(handlePrimitive(primitive));
+            meshIds.push_back(handlePrimitive(primitive, transform));
         }
     }
 }
 
-void GLTFParser::parseNode(const tinygltf::Node& node, std::vector<uint32_t> &meshIds){
+void GLTFParser::vectorToMat4(const std::vector<double>& src, glm::mat4& dst){
+    float mat[16];
+    for (uint32_t i = 0; i < 16; i++){
+        mat[i] = (float)src.at(i);
+    }
+    dst = glm::make_mat4(mat);
+}   
+
+void GLTFParser::vectorToQuat(const std::vector<double>& src, glm::quat& dst){
+    float quat[4];
+    for (uint32_t i = 0; i < 4; i++){
+        quat[i] = (float)src.at(i);
+    }
+    dst = glm::make_quat(quat);
+}
+
+void GLTFParser::vectorToVec3(const std::vector<double>& src, glm::vec3& dst){
+    float vec[3];
+    for (uint32_t i = 0; i < 3; i++){
+        vec[i] = (float)src.at(i);
+    }
+    dst = glm::make_vec3(vec);
+}
+
+void GLTFParser::parseNode(const tinygltf::Node& node, std::vector<uint32_t> &meshIds, glm::mat4& transform){
+    // get node transform matrix
+    glm::mat4 nodeTransform = glm::mat4(1.0f);
+    if (node.matrix.size() != 0){
+        vectorToMat4(node.matrix, nodeTransform);
+    } else if (node.translation.size() || node.rotation.size() || node.translation.size()) {
+        glm::vec3 t = {0.f, 0.f, 0.f};
+        glm::quat r = {0.f, 0.f, 0.f, 1.f};
+        glm::vec3 s = {1.f, 1.f, 1.f};
+        
+        if (node.translation.size())
+            vectorToVec3(node.translation, t);
+        if (node.rotation.size())
+            vectorToQuat(node.rotation, r);
+        if (node.scale.size())
+            vectorToVec3(node.scale, s);
+
+        glm::mat4 translation = glm::translate(glm::mat4(1.f), t);
+        glm::mat4 rotation = glm::toMat4(r);
+        glm::mat4 scale = glm::scale(glm::mat4(1.f), s);
+
+        nodeTransform = translation * rotation * scale;
+    }
+
+    // apply parent transform
+    nodeTransform = nodeTransform * transform;
+
     // handle meshes
     if (node.mesh != -1){
         const tinygltf::Mesh& mesh = model.meshes[node.mesh];
-        handleMesh(mesh, meshIds);
+        handleMesh(mesh, meshIds, nodeTransform);
     }
 
     // handle children
     for (int32_t i = 0; i < node.children.size(); i++){
         const tinygltf::Node& child = model.nodes[node.children[i]];
-        parseNode(child, meshIds);
+        parseNode(child, meshIds, nodeTransform);
     }
 }
 
@@ -856,7 +925,8 @@ void GLTFParser::parse(){
     // process top level nodes
     for (int32_t i = 0; i < scene.nodes.size(); i++){
         const tinygltf::Node& currNode = model.nodes[scene.nodes[i]];
-        parseNode(currNode, meshIds);
+        glm::mat4 identity = glm::mat4(1.0f);
+        parseNode(currNode, meshIds, identity);
     }
     // write model file
     writeModelFile(meshIds.size(), meshIds, modelId);
