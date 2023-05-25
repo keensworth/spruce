@@ -31,11 +31,21 @@ void RenderCoordinator::render(SceneManager& sceneManager){
     // offscreen renderpasses
     CommandBuffer& offscreenCB = m_renderer->beginGraphicsCommands(CommandType::OFFSCREEN);
     offscreenCB.bindIndexBuffer(sceneManager.getIndexBuffer());
-    {
-        //m_testRenderer.render(offscreenCB, batchManager);
-        //m_debugMeshRenderer.render(offscreenCB, batchManager);
-        //m_unlitMeshRenderer.render(offscreenCB, batchManager);
-        m_litMeshRenderer.render(offscreenCB, batchManager);
+    {   
+        uint32 visible = m_imguiRenderer.state.visible;
+        if (visible & RenderState::TEST){
+            m_testRenderer.render(offscreenCB, batchManager);
+        }
+        else if (visible & RenderState::DEBUG_MESH){
+            m_debugMeshRenderer.render(offscreenCB, batchManager);
+        }
+        else if (visible & RenderState::UNLIT_MESH){
+            m_unlitMeshRenderer.render(offscreenCB, batchManager);
+        }
+        else { // LIT_MESH
+            m_litMeshRenderer.render(offscreenCB, batchManager);
+        }
+    
         m_imguiRenderer.render(offscreenCB, batchManager);
     }
     offscreenCB.submit();
@@ -51,6 +61,26 @@ void RenderCoordinator::render(SceneManager& sceneManager){
     // present result
     m_renderer->present(frame);
     m_frameId = m_renderer->getFrameId();
+
+    if (m_imguiRenderer.state.dirty){
+        Handle<TextureAttachment> output;
+        uint32 visible = m_imguiRenderer.state.visible;
+        if (visible & RenderState::TEST){
+            output = m_testRenderer.getAttachment();
+        }
+        else if (visible & RenderState::DEBUG_MESH){
+            output = m_debugMeshRenderer.getAttachment();
+        }
+        else if (visible & RenderState::UNLIT_MESH){
+            output = m_unlitMeshRenderer.getAttachment();
+        }
+        else { // LIT_MESH
+            output = m_litMeshRenderer.getAttachment();
+        }
+        m_imguiRenderer.setInput(output);
+        m_frameRenderer.setInput(m_imguiRenderer.getAttachment());
+        m_imguiRenderer.state.dirty = false;
+    }
 }
 
 

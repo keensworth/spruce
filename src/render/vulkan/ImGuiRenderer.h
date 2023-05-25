@@ -7,12 +7,26 @@
 #include "../scene/BatchManager.h"
 #include "resource/ResourceFlags.h"
 #include "../../debug/SprLog.h"
+#include "../../../external/imgui/imgui_impl_sdl2.h"
 #include "../../../external/imgui/imgui_impl_vulkan.h"
 #include "../../interface/Window.h"
 
 
 
 namespace spr::gfx {
+
+struct RenderState {
+    enum Shader : uint32 {
+        TEST = 0b1,
+        DEBUG_MESH = 0b1 << 1,
+        UNLIT_MESH = 0b1 << 2,
+        LIT_MESH = 0b1 << 3
+    };
+
+    Shader visible = LIT_MESH;
+    bool dirty = false;
+};
+
 class ImGuiRenderer {
 public:
     ImGuiRenderer(){}
@@ -123,12 +137,13 @@ public:
         ImGui_ImplSDL2_InitForVulkan(m_window->getHandle());
 
         // init for Vulkan
+        VulkanDevice& device = m_renderer->getDevice();
         ImGui_ImplVulkan_InitInfo init_info = {};
-        init_info.Instance = m_renderer->getDevice().getInstance();
-        init_info.PhysicalDevice = m_renderer->getDevice().getPhysicalDevice();
-        init_info.Device = m_renderer->getDevice().getDevice();
-        init_info.QueueFamily = m_renderer->getDevice().getQueueFamilies().graphicsFamilyIndex.has_value() ? m_renderer->getDevice().getQueueFamilies().graphicsFamilyIndex.value() : 0;
-        init_info.Queue = m_renderer->getDevice().getQueue(VulkanDevice::QueueType::GRAPHICS);
+        init_info.Instance = device.getInstance();
+        init_info.PhysicalDevice = device.getPhysicalDevice();
+        init_info.Device = device.getDevice();
+        init_info.QueueFamily = device.getQueueFamilies().graphicsFamilyIndex.value();
+        init_info.Queue = device.getQueue(VulkanDevice::QueueType::GRAPHICS);
         init_info.DescriptorPool = m_imguiDescriptorPool;
         init_info.MinImageCount = m_renderer->getDisplay().getImageViews().size();
         init_info.ImageCount = m_renderer->getDisplay().getImageViews().size();
@@ -164,6 +179,35 @@ public:
     }
 
 
+    void buildLayout(){
+        const ImGuiViewport* main_viewport = ImGui::GetMainViewport();
+        ImGui::SetNextWindowPos(ImVec2(main_viewport->WorkPos.x + 650, main_viewport->WorkPos.y + 20), ImGuiCond_FirstUseEver);
+        ImGui::SetNextWindowSize(ImVec2(550, 680), ImGuiCond_FirstUseEver);
+
+        if (!ImGui::Begin("Spruce")){
+            ImGui::End();
+            return;
+        }
+
+        if (!ImGui::CollapsingHeader("Output")){
+            ImGui::End();
+            return;
+        }
+            
+        static int visible = RenderState::LIT_MESH;
+        ImGui::RadioButton("Test", &visible, RenderState::TEST);
+        ImGui::RadioButton("Debug Mesh", &visible, RenderState::DEBUG_MESH);
+        ImGui::RadioButton("Unlit Mesh", &visible, RenderState::UNLIT_MESH);
+        ImGui::RadioButton("Lit Mesh", &visible, RenderState::LIT_MESH);
+        if ((uint32)visible != (uint32)state.visible){
+            state.visible = (RenderState::Shader)visible;
+            state.dirty = true;
+        }
+
+        ImGui::End();
+    }
+
+
     void render(CommandBuffer& cb, BatchManager& batchManager){
         if (!m_hasInput)
             SprLog::error("[ImGuiRenderer] [render] no input TextureAttachment specified");
@@ -173,20 +217,26 @@ public:
             m_imguiInit = true;
         }
 
+        // new frame
         ImGui_ImplVulkan_NewFrame();
 		ImGui_ImplSDL2_NewFrame(m_window->getHandle());
 		ImGui::NewFrame();
-
-        ImGui::ShowDemoWindow();
-
+        
+        // build out layout
+        buildLayout();
+        
         RenderPassRenderer& passRenderer = cb.beginRenderPass(m_renderPass, glm::vec4(0.f,1.f,0.f,1.f));
+        
         ImGui::Render();        
+        
         passRenderer.drawSubpass({
             .shader = m_shader,
             .set0 =  m_globalDescriptorSet,
             .set2 = m_descriptorSet}, 
             batchManager.getQuadBatch(), 0);
+        
         ImGui_ImplVulkan_RenderDrawData(ImGui::GetDrawData(), cb.getCommandBuffer());
+        
         cb.endRenderPass();
     }
 
@@ -213,6 +263,8 @@ public:
         m_rm->remove<TextureAttachment>(m_attachment);
         SprLog::info("[ImGuiRenderer] [destroy] destroyed...");
     }
+
+    RenderState state;
 
 private: // owning
     Handle<RenderPassLayout> m_renderPassLayout;
