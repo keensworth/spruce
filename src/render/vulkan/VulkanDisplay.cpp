@@ -2,8 +2,8 @@
 #include "SDL_stdinc.h"
 #include "VulkanDevice.h"
 #include "../../external/volk/volk.h"
-#include "../../debug/SprLog.h"
-#include "../../interface/Window.h"
+#include "debug/SprLog.h"
+#include "interface/SprWindow.h"
 #include "SDL_vulkan.h"
 #include <algorithm>
 #include <vulkan/vulkan_core.h>
@@ -22,7 +22,7 @@ VulkanDisplay::VulkanDisplay(){
     
 }
 
-VulkanDisplay::VulkanDisplay(Window* window){
+VulkanDisplay::VulkanDisplay(SprWindow* window){
     m_window = window;
 }
 

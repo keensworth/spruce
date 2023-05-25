@@ -6,7 +6,7 @@
 #include <vector>
 
 namespace spr {
-    class Window;
+    class SprWindow;
 }
 
 namespace spr::gfx {
@@ -23,8 +23,8 @@ public:
     VulkanDevice();
     ~VulkanDevice();
 
-    void createInfo(Window& window);
-    void createInstance(Window& window);
+    void createInfo(SprWindow& window);
+    void createInstance(SprWindow& window);
     void createPhysicalDevice();
     void createDevice(VkSurfaceKHR surface);
     void destroy();
@@ -105,7 +105,7 @@ private: // non-owning
     uint32 m_deviceCount = 0;
     std::vector<VkPhysicalDevice> m_physicalDevices;
 
-    void getExtensions(Window& window);
+    void getExtensions(SprWindow& window);
     bool hasExtension(std::vector<const char*> extensions, const char* requested);
     bool hasLayer(std::vector<VkLayerProperties> layers, const char* requested);
     void enableValidationLayers(VkDebugUtilsMessengerCreateInfoEXT& debugCreateInfo);

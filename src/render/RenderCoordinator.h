@@ -9,7 +9,7 @@
 #include "vulkan/ImGuiRenderer.h"
 
 namespace spr {
-    class Window;
+    class SprWindow;
 }
 
 namespace spr::gfx{
@@ -21,7 +21,7 @@ class SceneManager;
 class RenderCoordinator{
 public:
     RenderCoordinator();
-    RenderCoordinator(Window* window);
+    RenderCoordinator(SprWindow* window);
     ~RenderCoordinator();
 
     void init(VulkanRenderer* renderer, VulkanResourceManager* rm);
@@ -34,7 +34,7 @@ public:
 
 private: 
     // non-owning
-    Window* m_window;
+    SprWindow* m_window;
     VulkanResourceManager* m_rm;
     VulkanRenderer* m_renderer;
     uint32 m_frameId;

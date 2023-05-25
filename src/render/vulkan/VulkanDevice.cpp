@@ -1,12 +1,12 @@
 #include "VulkanDevice.h"
 
-#include "../../external/volk/volk.h"
+#include "../external/volk/volk.h"
 
 #define VMA_IMPLEMENTATION
 #include "vk_mem_alloc.h"
 
-#include "../../debug/SprLog.h"
-#include "../../interface/Window.h"
+#include "debug/SprLog.h"
+#include "interface/SprWindow.h"
 #include "SDL_vulkan.h"
 #include "gfx_vulkan_core.h"
 #include <cstring>
@@ -85,7 +85,7 @@ void VulkanDevice::destroy(){
     SprLog::info("[VulkanDevice] [destroy] destroyed...");
 }
 
-void VulkanDevice::createInfo(Window& window){
+void VulkanDevice::createInfo(SprWindow& window){
     m_appName = std::string(window.title());
     VkApplicationInfo appInfo {
         .sType = VK_STRUCTURE_TYPE_APPLICATION_INFO,
@@ -99,7 +99,7 @@ void VulkanDevice::createInfo(Window& window){
     m_appInfo = appInfo;
 }
 
-void VulkanDevice::createInstance(Window& window){
+void VulkanDevice::createInstance(SprWindow& window){
     VK_CHECK(volkInitialize());
     // get extensions required by SDL
     getExtensions(window);
@@ -432,7 +432,7 @@ bool VulkanDevice::hasExtension(std::vector<const char*> extensions, const char*
     return false;
 }
 
-void VulkanDevice::getExtensions(Window& window){
+void VulkanDevice::getExtensions(SprWindow& window){
     m_instanceExtensionCount = 0;
     m_deviceExtensionCount = 0;
 

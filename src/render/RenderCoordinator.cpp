@@ -2,12 +2,12 @@
 #include "renderers/DebugMeshRenderer.h"
 #include "vulkan/resource/ResourceTypes.h"
 #include "SceneManager.h"
-#include "../interface/Window.h"
+#include "../interface/SprWindow.h"
 
 namespace spr::gfx {
 
 RenderCoordinator::RenderCoordinator(){}
-RenderCoordinator::RenderCoordinator(Window* window){
+RenderCoordinator::RenderCoordinator(SprWindow* window){
     m_window = window;
     m_frameId = 0;
 }

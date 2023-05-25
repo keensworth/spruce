@@ -3,7 +3,7 @@
 #include "glm/ext/quaternion_trigonometric.hpp"
 #include "glm/ext/scalar_constants.hpp"
 #include "glm/gtc/type_ptr.hpp"
-#include "src/interface/Window.h"
+#include "src/interface/SprWindow.h"
 #include "src/render/SprRenderer.h"
 #include "src/render/scene/Material.h"
 #include "src/render/scene/SceneData.h"
@@ -18,7 +18,7 @@
 
 using namespace spr;
 
-void handleInput(InputManager& input, vec3& pos, vec3& dir, vec3& up, vec3& right, spr::Window& window, float dt){
+void handleInput(InputManager& input, vec3& pos, vec3& dir, vec3& up, vec3& right, SprWindow& window, float dt){
     if (input.isKeyDownEdge(SPR_TAB)){
         window.setRelativeMouse(!window.isRelativeMouse());
     }
@@ -73,13 +73,13 @@ void handleInput(InputManager& input, vec3& pos, vec3& dir, vec3& up, vec3& righ
 
 int main() {
     // window and input
-    spr::Window window = spr::Window(std::string("Spruce Test"), 1920, 1080);
+    SprWindow window = SprWindow(std::string("Spruce Test"), 1920, 1080);
     window.init();
     window.setRelativeMouse(true);
     InputManager& input = window.getInputManager();
 
     // renderer and assets
-    gfx::SprRenderer renderer(&window);
+    SprRenderer renderer(&window);
     SprResourceManager rm;
     renderer.loadAssets(rm);
 

@@ -3,10 +3,10 @@
 #include "VulkanRenderer.h"
 #include "resource/ResourceTypes.h"
 #include "resource/VulkanResourceManager.h"
-#include "../scene/BatchManager.h"
+#include "render/scene/BatchManager.h"
 #include "resource/ResourceFlags.h"
-#include "../../debug/SprLog.h"
-#include "../../interface/Window.h"
+#include "debug/SprLog.h"
+#include "interface/SprWindow.h"
 
 
 
@@ -14,7 +14,7 @@ namespace spr::gfx {
 class FrameRenderer {
 public:
     FrameRenderer(){}
-    FrameRenderer(VulkanResourceManager& rm, VulkanRenderer& renderer, Window* window, glm::uvec3 dimensions){
+    FrameRenderer(VulkanResourceManager& rm, VulkanRenderer& renderer, SprWindow* window, glm::uvec3 dimensions){
         m_rm = &rm;
         m_renderer = &renderer;
         m_dim = dimensions;
@@ -128,7 +128,7 @@ private: // owning
 private: // non-owning
     VulkanResourceManager* m_rm;
     VulkanRenderer* m_renderer;
-    Window* m_window;
+    SprWindow* m_window;
     glm::uvec3 m_dim;
 
     Handle<TextureAttachment> m_input;

@@ -44,8 +44,8 @@ target_sources(srcFiles PRIVATE
   interface/MouseConfig.cpp
   interface/KeyboardState.h
   interface/MouseState.h
-  interface/Window.h
-  interface/Window.cpp
+  interface/SprWindow.h
+  interface/SprWindow.cpp
 
   resource/ResourceTypes.h
   resource/AssetLoader.h

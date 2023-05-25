@@ -9,14 +9,14 @@
 
 
 namespace spr {
-    class Window;
-}
 
-namespace spr::gfx {
-    
-struct Transform;
-struct Light;
-struct Camera;
+class SprWindow;
+
+namespace gfx {
+    struct Transform;
+    struct Light;
+    struct Camera;
+}
 
 struct TransformInfo {
     glm::vec3 position {0.f, 0.f, 0.f};
@@ -26,7 +26,7 @@ struct TransformInfo {
 
 class SprRenderer {
 public:
-    SprRenderer(Window* window);
+    SprRenderer(SprWindow* window);
     ~SprRenderer();
     void loadAssets(SprResourceManager& rm);
 
@@ -34,11 +34,11 @@ public:
     void render();
 
     // set scene camera
-    void updateCamera(const Camera& camera);
+    void updateCamera(const gfx::Camera& camera);
 
     // add lights to scene
-    void insertLight(const Light& light);
-    void insertLights(Span<const Light> lights);
+    void insertLight(const gfx::Light& light);
+    void insertLights(Span<const gfx::Light> lights);
 
     // ╔══════════════════════════════════════════════════════════════════════════╗
     // ║     Models                                                               ║
@@ -46,8 +46,8 @@ public:
 
     void insertModel(uint32 modelId, const TransformInfo& transformInfo);
     void insertModel(uint32 modelId, uint32 materialFlags, const TransformInfo& transformInfo);
-    void insertModel(uint32 modelId, const Transform& transform);
-    void insertModel(uint32 modelId, uint32 materialFlags, const Transform& transform);
+    void insertModel(uint32 modelId, const gfx::Transform& transform);
+    void insertModel(uint32 modelId, uint32 materialFlags, const gfx::Transform& transform);
 
 
     // ╔══════════════════════════════════════════════════════════════════════════╗
@@ -74,35 +74,35 @@ public:
     
 
     // single mesh
-    void insertMesh(        uint32 meshId,       const Transform& transform);
+    void insertMesh(        uint32 meshId,       const gfx::Transform& transform);
     // batch meshes, shared transform
-    void insertMeshes(Span<uint32> meshIds,      const Transform& transform);
+    void insertMeshes(Span<uint32> meshIds,      const gfx::Transform& transform);
     // batch meshes
-    void insertMeshes(Span<uint32> meshIds, Span<const Transform> transforms);
+    void insertMeshes(Span<uint32> meshIds, Span<const gfx::Transform> transforms);
 
     // single mesh
-    void insertMesh(        uint32 meshId,        uint32 materialFlags,       const Transform& transform);
+    void insertMesh(        uint32 meshId,        uint32 materialFlags,       const gfx::Transform& transform);
     // batch meshes, shared material, shared transform
-    void insertMeshes(Span<uint32> meshIds,       uint32 materialFlags,       const Transform& transform);
+    void insertMeshes(Span<uint32> meshIds,       uint32 materialFlags,       const gfx::Transform& transform);
     // batch meshes, shared material
-    void insertMeshes(Span<uint32> meshIds,       uint32 materialFlags,  Span<const Transform> transforms);
+    void insertMeshes(Span<uint32> meshIds,       uint32 materialFlags,  Span<const gfx::Transform> transforms);
     // batch meshes, shared transform
-    void insertMeshes(Span<uint32> meshIds, Span<uint32> materialsFlags,      const Transform& transform);
+    void insertMeshes(Span<uint32> meshIds, Span<uint32> materialsFlags,      const gfx::Transform& transform);
     // batch meshes
-    void insertMeshes(Span<uint32> meshIds, Span<uint32> materialsFlags, Span<const Transform> transforms);
+    void insertMeshes(Span<uint32> meshIds, Span<uint32> materialsFlags, Span<const gfx::Transform> transforms);
 
-    Transform buildTransform(const TransformInfo& info);
+    gfx::Transform buildTransform(const TransformInfo& info);
     
 private:
-    VulkanRenderer m_renderer;
-    VulkanResourceManager m_rm;
+    gfx::VulkanRenderer m_renderer;
+    gfx::VulkanResourceManager m_rm;
         
-    SceneManager m_sceneManager;
-    RenderCoordinator m_renderCoordinator;
+    gfx::SceneManager m_sceneManager;
+    gfx::RenderCoordinator m_renderCoordinator;
     uint32 m_frameId;    
 
     // non-owning
-    Window* m_window;
+    SprWindow* m_window;
     SprResourceManager* m_srm;
 };
 }

@@ -14,7 +14,7 @@ VulkanRenderer::VulkanRenderer() {
 
 }
 
-VulkanRenderer::VulkanRenderer(Window* window) : m_display(window){
+VulkanRenderer::VulkanRenderer(SprWindow* window) : m_display(window){
     // create device info, instance, and physical device
     m_device.createInfo(*window);
     m_device.createInstance(*window);

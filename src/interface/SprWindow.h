@@ -5,12 +5,12 @@
 #include "InputHandler.h"
 
 namespace spr {
-class Window {
+class SprWindow {
 public:
-    Window();
-    Window(std::string title);
-    Window(std::string title, uint32 width, uint32 height);
-    ~Window() {
+    SprWindow();
+    SprWindow(std::string title);
+    SprWindow(std::string title, uint32 width, uint32 height);
+    ~SprWindow() {
         SDL_DestroyWindow(m_window);
         SDL_Quit();
     }

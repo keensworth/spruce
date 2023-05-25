@@ -1,8 +1,9 @@
 #include "SprRenderer.h"
 
-#include "interface/Window.h"
+#include "interface/SprWindow.h"
 #include "debug/SprLog.h"
 #include "resource/SprResourceManager.h"
+#include "scene/SceneData.h"
 #include "glm/ext/matrix_transform.hpp"
 #include "glm/gtx/quaternion.hpp"
 #include <glm/gtc/matrix_inverse.hpp>
@@ -11,9 +12,9 @@ namespace spr {
     class SprResourceManager;
 }
 
-namespace spr::gfx {
+namespace spr {
 
-SprRenderer::SprRenderer(Window* window) : m_renderer(window), m_renderCoordinator(window){
+SprRenderer::SprRenderer(SprWindow* window) : m_renderer(window), m_renderCoordinator(window){
     m_window = window;
     m_frameId = 0;
     // init renderer and resource manager
@@ -62,18 +63,18 @@ void SprRenderer::render(){
 // ╔══════════════════════════════════════════════════════════════════════════╗
 // ║     Light                                                                ║
 // ╚══════════════════════════════════════════════════════════════════════════╝
-void SprRenderer::insertLight(const Light& light){
+void SprRenderer::insertLight(const gfx::Light& light){
     m_sceneManager.insertLights(m_frameId, {light});
 }
 
-void SprRenderer::insertLights(spr::Span<const Light> lights){
+void SprRenderer::insertLights(Span<const gfx::Light> lights){
     m_sceneManager.insertLights(m_frameId, lights);
 }
 
 // ╔══════════════════════════════════════════════════════════════════════════╗
 // ║     Camera                                                               ║
 // ╚══════════════════════════════════════════════════════════════════════════╝
-void SprRenderer::updateCamera(const Camera& camera){
+void SprRenderer::updateCamera(const gfx::Camera& camera){
     m_sceneManager.updateCamera(m_frameId, {m_window->width(), m_window->height()}, camera);
 }
 
@@ -92,12 +93,12 @@ void SprRenderer::insertModel(uint32 modelId, uint32 materialFlags, const Transf
     insertMeshes(model->meshIds, materialFlags, transformInfo);
 }
 
-void SprRenderer::insertModel(uint32 modelId, const Transform& transform){
+void SprRenderer::insertModel(uint32 modelId, const gfx::Transform& transform){
     spr::Model* model = m_srm->getData<Model>(modelId);
     insertMeshes(model->meshIds, transform);
 }
 
-void SprRenderer::insertModel(uint32 modelId, uint32 materialFlags, const Transform& transform){
+void SprRenderer::insertModel(uint32 modelId, uint32 materialFlags, const gfx::Transform& transform){
     spr::Model* model = m_srm->getData<Model>(modelId);
     insertMeshes(model->meshIds, materialFlags, transform);
 }
@@ -134,7 +135,7 @@ void SprRenderer::insertMeshes(Span<uint32> meshIds, Span<const TransformInfo> t
     for(uint32 i = 0; i < meshIds.size(); i++)
         materialsFlags[i] = m_srm->getData<Mesh>(meshIds[i])->materialFlags;
 
-    Transform transforms[meshIds.size()];
+    gfx::Transform transforms[meshIds.size()];
     for(uint32 i = 0; i < meshIds.size(); i++)
         transforms[i] = buildTransform(transformInfos[i]);
 
@@ -159,7 +160,7 @@ void SprRenderer::insertMeshes(Span<uint32> meshIds, uint32 materialFlags, Span<
     if (meshIds.size() != transformInfos.size())
         SprLog::error("[SprRenderer] [insertMeshes] size mismatch between meshIds and transformInfos");
     
-    Transform transforms[meshIds.size()];
+    gfx::Transform transforms[meshIds.size()];
     for (uint32 i = 0; i < meshIds.size(); i++){
         transforms[i] = buildTransform(transformInfos[i]);
     }
@@ -186,7 +187,7 @@ void SprRenderer::insertMeshes(Span<uint32> meshIds, Span<uint32> materialsFlags
     if (meshIds.size() != transformInfos.size())
         SprLog::error("[SprRenderer] [insertMeshes] size mismatch between meshIds and materialsFlags");
     
-    Transform transforms[meshIds.size()];
+    gfx::Transform transforms[meshIds.size()];
     for (uint32 i = 0; i < meshIds.size(); i++){
         transforms[i] = buildTransform(transformInfos[i]);
     }
@@ -195,13 +196,13 @@ void SprRenderer::insertMeshes(Span<uint32> meshIds, Span<uint32> materialsFlags
 }
 
 // single mesh
-void SprRenderer::insertMesh(uint32 meshId, const Transform& transform){
+void SprRenderer::insertMesh(uint32 meshId, const gfx::Transform& transform){
     spr::Mesh* mesh = m_srm->getData<spr::Mesh>(meshId);
     m_sceneManager.insertMeshes(m_frameId, {meshId}, mesh->materialFlags, transform);
 }
 
 // batch meshes, shared transform
-void SprRenderer::insertMeshes(Span<uint32> meshIds, const Transform& transform){
+void SprRenderer::insertMeshes(Span<uint32> meshIds, const gfx::Transform& transform){
     uint32 materialsFlags[meshIds.size()];
     for(uint32 i = 0; i < meshIds.size(); i++)
         materialsFlags[i] = m_srm->getData<Mesh>(meshIds[i])->materialFlags;
@@ -209,7 +210,7 @@ void SprRenderer::insertMeshes(Span<uint32> meshIds, const Transform& transform)
 }
 
 // batch meshes
-void SprRenderer::insertMeshes(Span<uint32> meshIds, Span<const Transform> transforms){
+void SprRenderer::insertMeshes(Span<uint32> meshIds, Span<const gfx::Transform> transforms){
     if (!meshIds.size() || !transforms.size())
         SprLog::error("[SprRenderer] [insertMeshes] must provide at least 1 of each parameter");
 
@@ -223,17 +224,17 @@ void SprRenderer::insertMeshes(Span<uint32> meshIds, Span<const Transform> trans
 }
 
 // single mesh
-void SprRenderer::insertMesh(uint32 meshId, uint32 materialFlags, const Transform& transform){
+void SprRenderer::insertMesh(uint32 meshId, uint32 materialFlags, const gfx::Transform& transform){
     m_sceneManager.insertMeshes(m_frameId, {meshId}, materialFlags, transform);
 }
 
 // batch meshes, shared material, shared transform
-void SprRenderer::insertMeshes(Span<uint32> meshIds, uint32 materialFlags, const Transform& transform){
+void SprRenderer::insertMeshes(Span<uint32> meshIds, uint32 materialFlags, const gfx::Transform& transform){
     m_sceneManager.insertMeshes(m_frameId, meshIds, materialFlags, transform);
 }
 
 // batch meshes, shared material
-void SprRenderer::insertMeshes(Span<uint32> meshIds, uint32 materialFlags, Span<const Transform> transforms){
+void SprRenderer::insertMeshes(Span<uint32> meshIds, uint32 materialFlags, Span<const gfx::Transform> transforms){
     if (!meshIds.size() || !transforms.size())
         SprLog::error("[SprRenderer] [insertMeshes] must provide at least 1 of each parameter");
 
@@ -244,7 +245,7 @@ void SprRenderer::insertMeshes(Span<uint32> meshIds, uint32 materialFlags, Span<
 }
 
 // batch meshes, shared transform
-void SprRenderer::insertMeshes(Span<uint32> meshIds, Span<uint32> materialsFlags, const Transform& transform){
+void SprRenderer::insertMeshes(Span<uint32> meshIds, Span<uint32> materialsFlags, const gfx::Transform& transform){
     if (!meshIds.size() || !materialsFlags.size())
         SprLog::error("[SprRenderer] [insertMeshes] must provide at least 1 of each parameter");
 
@@ -255,7 +256,7 @@ void SprRenderer::insertMeshes(Span<uint32> meshIds, Span<uint32> materialsFlags
 }
 
 // batch meshes
-void SprRenderer::insertMeshes(Span<uint32> meshIds, Span<uint32> materialsFlags, Span<const Transform> transforms){
+void SprRenderer::insertMeshes(Span<uint32> meshIds, Span<uint32> materialsFlags, Span<const gfx::Transform> transforms){
     if (!meshIds.size() || !materialsFlags.size() || !transforms.size())
         SprLog::error("[SprRenderer] [insertMeshes] must provide at least 1 of each parameter");
 
@@ -273,13 +274,13 @@ void SprRenderer::loadAssets(SprResourceManager& rm){
 }
 
 
-Transform SprRenderer::buildTransform(const TransformInfo &info){
-    glm::mat4 translation = glm::translate(glm::mat4(1.f), info.position);
-    glm::mat4 rotation = glm::mat4_cast(info.rotation);
-    glm::mat4 scale = glm::scale(glm::mat4(1.f), glm::vec3(info.scale));
+gfx::Transform SprRenderer::buildTransform(const TransformInfo &info){
+    mat4 translation = translate(mat4(1.f), info.position);
+    mat4 rotation = glm::mat4_cast(info.rotation);
+    mat4 scale = glm::scale(mat4(1.f), vec3(info.scale));
 
-    glm::mat4 model = translation * rotation * scale;
-    glm::mat4 modelInvTranspose = glm::inverseTranspose(model);
+    mat4 model = translation * rotation * scale;
+    mat4 modelInvTranspose = inverseTranspose(model);
 
     return {model, modelInvTranspose};
 }

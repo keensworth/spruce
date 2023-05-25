@@ -1,4 +1,4 @@
-#include "Window.h"
+#include "SprWindow.h"
 #include "SDL_stdinc.h"
 #include <string>
 
@@ -8,7 +8,7 @@
 #include <SDL2/SDL_vulkan.h>
 
 namespace spr {
-Window::Window(){
+SprWindow::SprWindow(){
     m_title = "Spruce Application";
     m_width = 1280;
     m_height = 720;
@@ -19,7 +19,7 @@ Window::Window(){
     m_relativeMouse = false;
 }
 
-Window::Window(std::string title){
+SprWindow::SprWindow(std::string title){
     m_title = title;
     m_width = 1280;
     m_height = 720;
@@ -30,7 +30,7 @@ Window::Window(std::string title){
     m_relativeMouse = false;
 }
 
-Window::Window(std::string title, uint32 width, uint32 height){
+SprWindow::SprWindow(std::string title, uint32 width, uint32 height){
     m_title = title;
     m_width = width;
     m_height = height;
@@ -41,7 +41,7 @@ Window::Window(std::string title, uint32 width, uint32 height){
     m_relativeMouse = false;
 }
 
-void Window::init(){
+void SprWindow::init(){
     SDL_Init(SDL_INIT_VIDEO);
 
 	SDL_WindowFlags flags = (SDL_WindowFlags)(SDL_WINDOW_VULKAN);
@@ -58,7 +58,7 @@ void Window::init(){
     SDL_SetWindowResizable(m_window, SDL_FALSE);
 }
 
-void Window::init(uint32 flags){
+void SprWindow::init(uint32 flags){
     SDL_Init(SDL_INIT_VIDEO);
 
 	SDL_WindowFlags windowFlags = (SDL_WindowFlags)(SDL_WINDOW_VULKAN | flags);
@@ -75,27 +75,27 @@ void Window::init(uint32 flags){
     SDL_SetWindowResizable(m_window, SDL_FALSE);
 }
 
-void Window::update(){
+void SprWindow::update(){
     input.update();
 }
 
-SDL_Window* Window::getHandle(){
+SDL_Window* SprWindow::getHandle(){
     return m_window;
 }
 
-uint32 Window::getFlags(){
+uint32 SprWindow::getFlags(){
     return SDL_GetWindowFlags( m_window );
 }
 
-std::string Window::title(){
+std::string SprWindow::title(){
     return m_title;
 }
 
-uint32 Window::width(){
+uint32 SprWindow::width(){
     return m_width;
 }
 
-uint32 Window::height(){
+uint32 SprWindow::height(){
     return m_height;
 }
 
@@ -106,7 +106,7 @@ void delay(int ms){
 }
 
 
-int Window::setFullscreen(){
+int SprWindow::setFullscreen(){
     m_fullscreen = true;
     int full;
     
@@ -127,7 +127,7 @@ int Window::setFullscreen(){
     return full;
 }
 
-void Window::setWindowed(){
+void SprWindow::setWindowed(){
     if (!m_fullscreen)
         return;
 
@@ -138,7 +138,7 @@ void Window::setWindowed(){
     updateResolution();
 }
 
-void Window::setBorderless(){
+void SprWindow::setBorderless(){
     if (m_fullscreen)
         return; 
 
@@ -149,7 +149,7 @@ void Window::setBorderless(){
     );
 }
 
-void Window::setBordered(){
+void SprWindow::setBordered(){
     if (m_fullscreen)
         return; 
 
@@ -160,7 +160,7 @@ void Window::setBordered(){
     );
 }
 
-void Window::setResolution(uint32 width, uint32 height){
+void SprWindow::setResolution(uint32 width, uint32 height){
     if (m_fullscreen)
         return;
 
@@ -173,7 +173,7 @@ void Window::setResolution(uint32 width, uint32 height){
     updateResolution();
 }
 
-void Window::updateResolution(){
+void SprWindow::updateResolution(){
     SDL_PumpEvents();
 
     // get fullscreen resolution
@@ -191,72 +191,72 @@ void Window::updateResolution(){
         m_resized = true;
 }
 
-void Window::setTitle(std::string title){
+void SprWindow::setTitle(std::string title){
     m_title = title;
     SDL_SetWindowTitle(m_window, title.c_str());
 }
 
 
-InputManager& Window::getInputManager(){
+InputManager& SprWindow::getInputManager(){
     return input.getInputManager();
 }
 
-void Window::addEventListener(std::function<void (SDL_Event* e)> func){
+void SprWindow::addEventListener(std::function<void (SDL_Event* e)> func){
     input.addEventListener(func);
 }
 
-bool Window::isAlive(){
+bool SprWindow::isAlive(){
     return !input.quit;
 }
 
-bool Window::isFullscreen(){
+bool SprWindow::isFullscreen(){
     return m_fullscreen;
 }
 
-bool Window::isWindowed(){
+bool SprWindow::isWindowed(){
     return !m_fullscreen;
 }
 
-bool Window::isBorderless(){
+bool SprWindow::isBorderless(){
     return m_borderless;
 }
 
-bool Window::isMinimzed(){
+bool SprWindow::isMinimzed(){
     return SDL_GetWindowFlags(m_window) & SDL_WINDOW_MINIMIZED;
 }
 
-void Window::showCursor(){
+void SprWindow::showCursor(){
     SDL_ShowCursor(SDL_ENABLE);
 }
 
-void Window::hideCursor(){
+void SprWindow::hideCursor(){
     SDL_ShowCursor(SDL_DISABLE);
 }
 
-bool Window::isCursorVisible(){
+bool SprWindow::isCursorVisible(){
     return SDL_ShowCursor(SDL_QUERY);
 }
 
-void Window::setCursorPos(uint32 x, uint32 y){
+void SprWindow::setCursorPos(uint32 x, uint32 y){
     SDL_WarpMouseInWindow(m_window, x, y);
 }
 
-void Window::setRelativeMouse(bool enable){
+void SprWindow::setRelativeMouse(bool enable){
     SDL_SetHintWithPriority(SDL_HINT_MOUSE_RELATIVE_MODE_WARP, enable ? "1" : "0", SDL_HINT_OVERRIDE);
     enable ? hideCursor() : showCursor();
     SDL_SetRelativeMouseMode((SDL_bool)enable);
     m_relativeMouse = enable;
 }
 
-bool Window::isRelativeMouse(){
+bool SprWindow::isRelativeMouse(){
     return m_relativeMouse;
 }
 
-bool Window::resized(){
+bool SprWindow::resized(){
     return m_resized;
 }
 
-void Window::resizeHandled(){
+void SprWindow::resizeHandled(){
     m_resized = false;
 }
 

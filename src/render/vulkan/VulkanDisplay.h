@@ -5,14 +5,14 @@
 #include <vector>
 
 namespace spr {
-    class Window;
+    class SprWindow;
 }
 
 namespace spr::gfx {
 class VulkanDisplay{
 public:
     VulkanDisplay();
-    VulkanDisplay(Window* window);
+    VulkanDisplay(SprWindow* window);
     ~VulkanDisplay();
 
     void createSurface(VkInstance instance);
@@ -34,7 +34,7 @@ private: //owning
     std::vector<VkImageView> m_imageViews;
 
 private: // non-owning
-    Window* m_window;
+    SprWindow* m_window;
 
     uint32 m_imageCount;
     std::vector<VkImage> m_images;

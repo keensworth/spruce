@@ -41,7 +41,7 @@ void SceneManager::init(VulkanResourceManager& rm){
 }
 
 
-void SceneManager::insertMeshes(uint32 frame, spr::Span<uint32> meshIds, spr::Span<uint32> materialsFlags, spr::Span<const Transform> transforms){
+void SceneManager::insertMeshes(uint32 frame, Span<uint32> meshIds, Span<uint32> materialsFlags, Span<const Transform> transforms){
     bool sharedMaterial = (meshIds.size() != materialsFlags.size() && materialsFlags.size() == 1);
 
     for (uint32 i = 0; i < meshIds.size(); i++){
@@ -68,7 +68,7 @@ void SceneManager::insertMeshes(uint32 frame, spr::Span<uint32> meshIds, spr::Sp
     }
 }
 
-void SceneManager::insertMeshes(uint32 frame, spr::Span<uint32> meshIds, spr::Span<uint32> materialsFlags, const Transform& transform ){
+void SceneManager::insertMeshes(uint32 frame, Span<uint32> meshIds, Span<uint32> materialsFlags, const Transform& transform ){
     bool sharedMaterial = (meshIds.size() != materialsFlags.size() && materialsFlags.size() == 1);
 
     uint32 transformIndex = m_transforms[frame % MAX_FRAME_COUNT].insert(transform);
@@ -97,7 +97,7 @@ void SceneManager::insertMeshes(uint32 frame, spr::Span<uint32> meshIds, spr::Sp
     }
 }
 
-void SceneManager::insertMeshes(uint32 frame, spr::Span<uint32> meshIds, uint32 materialFlags , spr::Span<const Transform> transforms){
+void SceneManager::insertMeshes(uint32 frame, Span<uint32> meshIds, uint32 materialFlags , Span<const Transform> transforms){
     for (uint32 i = 0; i < meshIds.size(); i++){
         // get mesh data and fill draw
         MeshInfo& meshInfo = m_meshInfo[meshIds[i]];
@@ -122,7 +122,7 @@ void SceneManager::insertMeshes(uint32 frame, spr::Span<uint32> meshIds, uint32 
     }
 }
 
-void SceneManager::insertMeshes(uint32 frame, spr::Span<uint32> meshIds, uint32 materialFlags , const Transform& transform){
+void SceneManager::insertMeshes(uint32 frame, Span<uint32> meshIds, uint32 materialFlags , const Transform& transform){
     uint32 transformIndex = m_transforms[frame % MAX_FRAME_COUNT].insert(transform);
 
     for (uint32 i = 0; i < meshIds.size(); i++){
@@ -150,7 +150,7 @@ void SceneManager::insertMeshes(uint32 frame, spr::Span<uint32> meshIds, uint32 
 }
 
 
-void SceneManager::insertLights(uint32 frame, spr::Span<const Light> lights){
+void SceneManager::insertLights(uint32 frame, Span<const Light> lights){
     m_lights[frame % MAX_FRAME_COUNT].insert(lights.data(), lights.size());
     m_sceneData[frame % MAX_FRAME_COUNT].getData()[0].lightCount += lights.size();
 }

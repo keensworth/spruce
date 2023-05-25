@@ -8,7 +8,7 @@
 #include "UploadHandler.h"
 
 namespace spr {
-    class Window;
+    class SprWindow;
 }
 
 namespace spr::gfx{
@@ -16,7 +16,7 @@ namespace spr::gfx{
 class VulkanRenderer{
 public:
     VulkanRenderer();
-    VulkanRenderer(Window* window);
+    VulkanRenderer(SprWindow* window);
     ~VulkanRenderer();
 
     void init(VulkanResourceManager* rm);
