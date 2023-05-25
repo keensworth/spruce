@@ -17,7 +17,7 @@
         MaterialData materials[];
     };
 
-    layout(set = 0, binding = 3) uniform sampler2D textures[9];
+    layout(set = 0, binding = 3) uniform sampler2D textures[1024];
 #endif // SPR_GLOBAL_BINDINGS
 
 
