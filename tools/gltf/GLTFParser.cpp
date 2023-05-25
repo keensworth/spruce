@@ -3,6 +3,7 @@
 #include "GLTFParser.h"
 
 
+#include "glm/gtc/matrix_inverse.hpp"
 #include "glm/gtc/type_ptr.hpp"
 #include "glm/gtx/quaternion.hpp"
 #include <glm/gtc/type_ptr.hpp>
@@ -360,8 +361,10 @@ void GLTFParser::handleBuffer(
                 index++;
             }
         }
+    }
 
-        // apply transform to all positions
+    // apply transform to all positions
+    if (isPosition){
         for (uint32_t i = 0; i < byteLength; i += 16){
             glm::vec4 pos = glm::make_vec4((float*)(data + i));
             pos = transform * pos;
@@ -659,7 +662,8 @@ uint32_t GLTFParser::interleaveVertexAttributes(
         std::vector<uint8_t>& normalBuffer,
         std::vector<uint8_t>& tangentBuffer,
         std::vector<uint8_t>& texCoordBuffer,
-        std::vector<uint8_t>& colorBuffer){
+        std::vector<uint8_t>& colorBuffer,
+        glm::mat4& transform){
     uint32_t attributesId = m_id++;
 
     uint32_t bytesPerNormal = 12;
@@ -680,6 +684,13 @@ uint32_t GLTFParser::interleaveVertexAttributes(
     }
     if (texCoordBuffer.size() != vertexCount * bytesPerTexCoord){
         texCoordBuffer.resize(vertexCount * bytesPerTexCoord);
+    }
+
+    // transform normals
+    for (uint32_t i = 0; i < vertexCount*bytesPerNormal; i += bytesPerNormal){
+        glm::vec3 normal = glm::make_vec3((float*)(normalBuffer.data() + i));
+        normal = glm::mat3(transform) * normal;
+        memcpy((unsigned char*)(normalBuffer.data() + i), ((unsigned char*)glm::value_ptr(normal)), 16);
     }
 
     // interleave into attributes buffer
@@ -829,7 +840,7 @@ uint32_t GLTFParser::handlePrimitive(const tinygltf::Primitive& primitive, glm::
         colorId = handleAccessor(model.accessors[colorAccessorIndex], outColor, false, false, transform);
     }
 
-    uint32_t attributesId = interleaveVertexAttributes(vertexCount, outNormal, outTangent, outTexCoord, outColor);
+    uint32_t attributesId = interleaveVertexAttributes(vertexCount, outNormal, outTangent, outTexCoord, outColor, transform);
 
 
     // handle material
@@ -881,9 +892,10 @@ void GLTFParser::parseNode(const tinygltf::Node& node, std::vector<uint32_t> &me
     glm::mat4 nodeTransform = glm::mat4(1.0f);
     if (node.matrix.size() != 0){
         vectorToMat4(node.matrix, nodeTransform);
+        //glm::transpose(nodeTransform);
     } else if (node.translation.size() || node.rotation.size() || node.translation.size()) {
         glm::vec3 t = {0.f, 0.f, 0.f};
-        glm::quat r = {0.f, 0.f, 0.f, 1.f};
+        glm::quat r = {1.f, 0.f, 0.f, 0.f};
         glm::vec3 s = {1.f, 1.f, 1.f};
         
         if (node.translation.size())
@@ -901,7 +913,7 @@ void GLTFParser::parseNode(const tinygltf::Node& node, std::vector<uint32_t> &me
     }
 
     // apply parent transform
-    nodeTransform = nodeTransform * transform;
+    nodeTransform = transform * nodeTransform;
 
     // handle meshes
     if (node.mesh != -1){

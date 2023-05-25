@@ -40,7 +40,8 @@ private:
         std::vector<uint8_t>& normalBuffer,
         std::vector<uint8_t>& tangentBuffer,
         std::vector<uint8_t>& texCoordBuffer,
-        std::vector<uint8_t>& colorBuffer);
+        std::vector<uint8_t>& colorBuffer,
+        glm::mat4& transform);
     uint32_t handleMaterial(const tinygltf::Material& material);
     uint32_t handleTexture(const tinygltf::TextureInfo& texInfo);
     uint32_t handleTexture(const tinygltf::NormalTextureInfo& texInfo);
