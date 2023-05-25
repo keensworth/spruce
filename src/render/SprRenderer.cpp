@@ -1,11 +1,11 @@
 #include "SprRenderer.h"
 
-#include "../interface/Window.h"
-#include "../debug/SprLog.h"
+#include "interface/Window.h"
+#include "debug/SprLog.h"
+#include "resource/SprResourceManager.h"
 #include "glm/ext/matrix_transform.hpp"
 #include "glm/gtx/quaternion.hpp"
 #include <glm/gtc/matrix_inverse.hpp>
-#include "../resource/SprResourceManager.h"
 
 namespace spr {
     class SprResourceManager;
@@ -275,7 +275,7 @@ void SprRenderer::loadAssets(SprResourceManager& rm){
 
 Transform SprRenderer::buildTransform(const TransformInfo &info){
     glm::mat4 translation = glm::translate(glm::mat4(1.f), info.position);
-    glm::mat4 rotation = glm::toMat4(info.rotation);
+    glm::mat4 rotation = glm::mat4_cast(info.rotation);
     glm::mat4 scale = glm::scale(glm::mat4(1.f), glm::vec3(info.scale));
 
     glm::mat4 model = translation * rotation * scale;
