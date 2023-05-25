@@ -32,20 +32,20 @@ void RenderCoordinator::render(SceneManager& sceneManager){
     CommandBuffer& offscreenCB = m_renderer->beginGraphicsCommands(CommandType::OFFSCREEN);
     offscreenCB.bindIndexBuffer(sceneManager.getIndexBuffer());
     {   
+        // render currently enabled renderer
         uint32 visible = m_imguiRenderer.state.visible;
-        if (visible & RenderState::TEST){
+        if (visible & RenderState::TEST)
             m_testRenderer.render(offscreenCB, batchManager);
-        }
-        else if (visible & RenderState::DEBUG_MESH){
+        else if (visible & RenderState::DEBUG_MESH)
             m_debugMeshRenderer.render(offscreenCB, batchManager);
-        }
-        else if (visible & RenderState::UNLIT_MESH){
+        else if (visible & RenderState::DEBUG_NORMALS)
+            m_debugNormalsRenderer.render(offscreenCB, batchManager);
+        else if (visible & RenderState::UNLIT_MESH)
             m_unlitMeshRenderer.render(offscreenCB, batchManager);
-        }
-        else { // LIT_MESH
+        else // LIT_MESH
             m_litMeshRenderer.render(offscreenCB, batchManager);
-        }
-    
+
+        // render imgui
         m_imguiRenderer.render(offscreenCB, batchManager);
     }
     offscreenCB.submit();
@@ -62,23 +62,23 @@ void RenderCoordinator::render(SceneManager& sceneManager){
     m_renderer->present(frame);
     m_frameId = m_renderer->getFrameId();
 
+    // need to change input to copy shader
     if (m_imguiRenderer.state.dirty){
         Handle<TextureAttachment> output;
         uint32 visible = m_imguiRenderer.state.visible;
-        if (visible & RenderState::TEST){
+
+        if (visible & RenderState::TEST)
             output = m_testRenderer.getAttachment();
-        }
-        else if (visible & RenderState::DEBUG_MESH){
+        else if (visible & RenderState::DEBUG_MESH)
             output = m_debugMeshRenderer.getAttachment();
-        }
-        else if (visible & RenderState::UNLIT_MESH){
+        else if (visible & RenderState::DEBUG_NORMALS)
+            output = m_debugNormalsRenderer.getAttachment();
+        else if (visible & RenderState::UNLIT_MESH)
             output = m_unlitMeshRenderer.getAttachment();
-        }
-        else { // LIT_MESH
+        else // LIT_MESH
             output = m_litMeshRenderer.getAttachment();
-        }
+        
         m_imguiRenderer.setInput(output);
-        m_frameRenderer.setInput(m_imguiRenderer.getAttachment());
         m_imguiRenderer.state.dirty = false;
     }
 }
@@ -115,6 +115,13 @@ void RenderCoordinator::initRenderers(SceneManager& sceneManager){
         sceneManager.getPerFrameDescriptorSets(),
         sceneManager.getPerFrameDescriptorSetLayout());
 
+    m_debugNormalsRenderer = DebugNormalsRenderer(*m_rm, *m_renderer, windowDim);
+    m_debugNormalsRenderer.init(
+        sceneManager.getGlobalDescriptorSet(),
+        sceneManager.getGlobalDescriptorSetLayout(),
+        sceneManager.getPerFrameDescriptorSets(),
+        sceneManager.getPerFrameDescriptorSetLayout());
+
     m_unlitMeshRenderer = UnlitMeshRenderer(*m_rm, *m_renderer, windowDim);
     m_unlitMeshRenderer.init(
         sceneManager.getGlobalDescriptorSet(),
@@ -141,9 +148,6 @@ void RenderCoordinator::initRenderers(SceneManager& sceneManager){
         m_renderer->getDisplay().getImageViews(), 
         sceneManager.getGlobalDescriptorSet(),
         sceneManager.getGlobalDescriptorSetLayout());
-    //m_frameRenderer.setInput(m_testRenderer.getAttachment());
-    //m_frameRenderer.setInput(m_debugMeshRenderer.getAttachment());
-    // m_frameRenderer.setInput(m_unlitMeshRenderer.getAttachment());
     m_frameRenderer.setInput(m_imguiRenderer.getAttachment());
 
     
@@ -166,6 +170,7 @@ void RenderCoordinator::destroy(){
     m_imguiRenderer.destroy();
     m_testRenderer.destroy();
     m_debugMeshRenderer.destroy();
+    m_debugNormalsRenderer.destroy();
     m_unlitMeshRenderer.destroy();
     m_litMeshRenderer.destroy();
 }

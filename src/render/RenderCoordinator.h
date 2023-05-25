@@ -1,5 +1,6 @@
 #pragma once
 
+#include "renderers/DebugNormalsRenderer.h"
 #include "renderers/UnlitMeshRenderer.h"
 #include "renderers/LitMeshRenderer.h"
 #include "renderers/TestRenderer.h"
@@ -49,6 +50,7 @@ private:
     // OFFSCREEN renderers
     TestRenderer m_testRenderer;
     DebugMeshRenderer m_debugMeshRenderer;
+    DebugNormalsRenderer m_debugNormalsRenderer;
     UnlitMeshRenderer m_unlitMeshRenderer;
     LitMeshRenderer m_litMeshRenderer;
     ImGuiRenderer m_imguiRenderer;
