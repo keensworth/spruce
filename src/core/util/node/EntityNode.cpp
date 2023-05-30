@@ -103,7 +103,7 @@ void EntityNode::addLeafData(uint32 key, Entity entity){
     m_leafData.at(key).add(entity);
 }
 void EntityNode::removeLeafData(uint32 key, Entity entity){
-    m_leafData.at(key).erase(entity);
+    m_leafData.at(key).eraseData(entity);
 }
 Container<Entity> EntityNode::getLeafData(uint32 key){
     return m_leafData.at(key);

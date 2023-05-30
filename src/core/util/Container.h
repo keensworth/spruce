@@ -50,7 +50,7 @@ public:
     }
 
     // get data at index
-    T get(int32 index){
+    T& get(int32 index){
         return m_data.at(index);
     }
 
@@ -82,7 +82,7 @@ public:
     }
 
     // erase data, shrink underlying container
-    void erase(T data){
+    void eraseData(T data){
         auto itr = std::find(m_data.begin(), m_data.end(), data);
         if(itr == m_data.end())
             return;
@@ -111,7 +111,29 @@ public:
 
             m_writeIndices.erase(m_writeIndices.begin()+indexErase);
         }
-        
+    }
+
+    // erase data, shrink underlying container
+    void erase(uint32 index){
+        m_data.erase(m_data.begin() + index);
+
+        int32 toErase = -1;
+        for (int32& i : m_writeIndices){
+            if (i == index){
+                toErase = index;
+            }
+            if (i > index){
+                i--;
+            }
+        }
+        if (toErase != -1){
+            auto itrErase = std::find(m_writeIndices.begin(), m_writeIndices.end(), toErase);
+            if(itrErase == m_writeIndices.end())
+                return;
+            auto indexErase = std::distance(m_writeIndices.begin(), itrErase);
+
+            m_writeIndices.erase(m_writeIndices.begin()+indexErase);
+        }
     }
 
     // append container to end of current
