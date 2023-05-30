@@ -81,7 +81,10 @@ public:
 
         m_descriptorSet = m_rm->create<DescriptorSet>({
             .textures = {
-                {.attachment = input}
+                {
+                    .attachment = input,
+                    .layout = Flags::ImageLayout::READ_ONLY
+                }
             },
             .layout = m_descriptorSetLayout
         });
@@ -99,7 +102,7 @@ public:
             .shader = m_shader,
             .set0 =  m_globalDescriptorSet,
             .set2 = m_descriptorSet}, 
-            batchManager.getQuadBatch(), 0);
+            batchManager.getQuadBatch(), 0, 0);
         cb.endRenderPass();
     }
 

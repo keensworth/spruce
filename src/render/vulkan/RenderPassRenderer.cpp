@@ -22,7 +22,7 @@ RenderPassRenderer::RenderPassRenderer(VulkanResourceManager* rm, VkCommandBuffe
 RenderPassRenderer::~RenderPassRenderer(){
 }
 
-
+// draw batches of models+material that use the same pipeline
 void RenderPassRenderer::drawSubpass(PassContext context, std::vector<Batch>& batches){
     glm::uvec3 screenDim = m_rm->m_screenDim;
 
@@ -63,7 +63,8 @@ void RenderPassRenderer::drawSubpass(PassContext context, std::vector<Batch>& ba
     }
 }
 
-void RenderPassRenderer::drawSubpass(PassContext context, Batch batch, uint32 vertexOffset){
+// draw a single batch, with specified vertexOffset and firstInstance
+void RenderPassRenderer::drawSubpass(PassContext context, Batch batch, uint32 vertexOffset, uint32 firstInstance){
     glm::uvec3 screenDim = m_rm->m_screenDim;
 
     // viewport
@@ -96,8 +97,7 @@ void RenderPassRenderer::drawSubpass(PassContext context, Batch batch, uint32 ve
     m_descSetHandler.updateBindings(shader->layout, m_frameIndex);
     
     // draw the batch:
-    vkCmdDrawIndexed(m_commandBuffer, batch.indexCount, batch.drawCount, batch.firstIndex, vertexOffset, 0);
-    
+    vkCmdDrawIndexed(m_commandBuffer, batch.indexCount, batch.drawCount, batch.firstIndex, vertexOffset, firstInstance);
 }
 
 void RenderPassRenderer::setFrameId(uint32 frameId){
