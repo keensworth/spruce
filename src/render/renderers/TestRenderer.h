@@ -50,7 +50,7 @@ public:
             .colorAttachments = {
                 {
                     .texture = m_attachment,
-                    .finalLayout = Flags::ImageLayout::SHADER_READ_ONLY
+                    .finalLayout = Flags::ImageLayout::READ_ONLY
                 }
             }
         });
@@ -78,7 +78,7 @@ public:
         
         passRenderer.drawSubpass(
             {.shader = m_shader, .set0 =  m_globalDescriptorSet}, 
-            batchManager.getQuadBatch(), 0);
+            batchManager.getQuadBatch(), 0, 0);
 
         cb.endRenderPass();
     }
@@ -90,6 +90,10 @@ public:
 
     Handle<TextureAttachment> getAttachment(){
         return m_attachment;
+    }
+
+    Handle<Shader> getShader(){
+        return m_shader;
     }
 
     void destroy(){

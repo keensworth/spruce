@@ -24,7 +24,8 @@ public:
         Handle<DescriptorSet> globalDescSet, 
         Handle<DescriptorSetLayout> globalDescSetLayout,
         Handle<DescriptorSet> frameDescSets[MAX_FRAME_COUNT],
-        Handle<DescriptorSetLayout> frameDescSetLayout)
+        Handle<DescriptorSetLayout> frameDescSetLayout,
+        Handle<TextureAttachment> depthAttachment)
     {
         m_globalDescSet = globalDescSet;
         m_globalDescSetLayout = globalDescSetLayout;
@@ -41,14 +42,6 @@ public:
                          Flags::ImageUsage::IU_SAMPLED          
             }
         });
-        // depth attachment
-        m_depthAttachment = m_rm ->create<TextureAttachment>({
-            .textureLayout = {
-                .dimensions = m_dim,
-                .format = Flags::Format::D32_SFLOAT,
-                .usage = Flags::ImageUsage::IU_DEPTH_STENCIL_ATTACHMENT
-            }
-        });
 
         // render pass
         m_renderPassLayout = m_rm->create<RenderPassLayout>({
@@ -63,13 +56,15 @@ public:
             .dimensions = m_dim,
             .layout = m_renderPassLayout,
             .depthAttachment = {
-                .texture = m_depthAttachment,
-                .finalLayout = Flags::ImageLayout::DEPTH_STENCIL_ATTACHMENT
+                .texture = depthAttachment,
+                .loadOp = Flags::LoadOp::LOAD,
+                .layout = Flags::ImageLayout::ATTACHMENT,
+                .finalLayout = Flags::ImageLayout::READ_ONLY
             },
             .colorAttachments = {
                 {
                     .texture = m_attachment,
-                    .finalLayout = Flags::ImageLayout::SHADER_READ_ONLY
+                    .finalLayout = Flags::ImageLayout::READ_ONLY
                 }
             }
         });
@@ -85,7 +80,8 @@ public:
                 { }  // unused
             },
             .graphicsState = {
-                .depthTest = Flags::Compare::LESS_OR_EQUAL,
+                .depthTest = Flags::Compare::GREATER_OR_EQUAL,
+                .depthWriteEnabled = false,
                 .renderPass = m_renderPass,
             }
         });
@@ -116,19 +112,21 @@ public:
         return m_attachment;
     }
 
+    Handle<Shader> getShader(){
+        return m_shader;
+    }
+
 
     void destroy(){
         m_rm->remove<Shader>(m_shader);
         m_rm->remove<RenderPass>(m_renderPass);
         m_rm->remove<RenderPassLayout>(m_renderPassLayout);
-        m_rm->remove<TextureAttachment>(m_depthAttachment);
         m_rm->remove<TextureAttachment>(m_attachment);
         SprLog::info("[DebugMeshRenderer] [destroy] destroyed...");
     }
 
 private: // owning
     Handle<TextureAttachment> m_attachment;
-    Handle<TextureAttachment> m_depthAttachment;
     Handle<RenderPassLayout> m_renderPassLayout;
     Handle<RenderPass> m_renderPass;
     Handle<Shader> m_shader;
