@@ -87,10 +87,15 @@ RenderPassRenderer& CommandBuffer::beginRenderPass(Handle<RenderPass> handle, gl
         clearValues[i] = VkClearValue {
             .color = {{clearColor.x, clearColor.y, clearColor.z, clearColor.w}} // (green-gray by default)
         };
-    if (hasDepth)
+    if (hasDepth){
+        uint32 compareOp = renderPass->depthAttachment.compareOp;
+        VkClearDepthStencilValue depthClearColor = {1.0f, 0};
+        if (compareOp == Flags::Compare::GREATER || compareOp == Flags::Compare::GREATER_OR_EQUAL)
+            depthClearColor = {0.0f, 0};
         clearValues[colorCount] = VkClearValue {
-            .depthStencil = {1.0f, 0}
-        };    
+            .depthStencil = depthClearColor
+        };
+    } 
 
     VkRenderPassBeginInfo renderPassInfo {
         .sType           = VK_STRUCTURE_TYPE_RENDER_PASS_BEGIN_INFO,
