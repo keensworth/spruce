@@ -97,7 +97,7 @@ struct Camera {
 struct Scene {
     mat4 viewProj; // precomputed camera view
     uint lightCount;
-    uint pad1;
-    uint pad2;
-    uint pad3;
+    uint screenDimX;
+    uint screenDimY;
+    uint time;
 };
