@@ -112,7 +112,7 @@ public:
 
     // get entity's component
     template <typename T>
-    auto get(Entity& entity){
+    auto& get(Entity& entity){
         return componentManager.getEntityComponent<T>(entity);
     }
 
