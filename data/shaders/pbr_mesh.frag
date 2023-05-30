@@ -5,6 +5,9 @@
 #include "common_bindings.glsl"
 #include "common_constants.glsl"
 
+#define SPR_NORMALS 1
+#include "common_util.glsl"
+
 layout(location = 0) out vec4 FragColor;
 
 layout(location = 0) in vec4 pos;
@@ -13,13 +16,18 @@ layout(location = 2) in vec3 color;
 layout(location = 3) in vec2 texCoord;
 layout(location = 4) in flat uint drawId;
 
-vec3 worldNormal(vec3 geomNormal, vec3 mapNormal){
-    mapNormal = mapNormal * 2.0 - 1.0;
-    mapNormal.x = -mapNormal.x;
-    vec3 up = normalize(vec3(0.0001, 1, 0.0001));
-    vec3 surfaceTangent = normalize(cross(geomNormal, up));
-    vec3 surfaceBinormal = normalize(cross(geomNormal, surfaceTangent));
-    return normalize(mapNormal.y * surfaceTangent + mapNormal.x * surfaceBinormal + mapNormal.z * geomNormal);
+
+layout(set = 2, binding = 0) uniform sampler2D depthMap;
+layout(set = 2, binding = 1) uniform sampler2D occlusionMap;
+
+
+vec3 gtaoMultiBounce(float visibility, vec3 color){
+	vec3 a = vec3( 2.0404 * color - 0.3324);
+	vec3 b = vec3(-4.7951 * color + 0.6417);
+	vec3 c = vec3( 2.7552 * color + 0.6903);
+
+	float x = visibility;
+	return vec3(max(vec3(x), ((a * x + b) * x + c) * x));
 }
 
 // GGX/Towbridge-Reitz normal distribution function.
@@ -61,6 +69,7 @@ void main(){
     vec4 baseColor = vec4(texture(textures[material.baseColorTexIdx], texCoord).rgb, 1.0);
     baseColor *= material.baseColorFactor;// * vec4(color,1.0);
     vec3 mapNormal = texture(textures[material.normalTexIdx], texCoord).rgb;
+	mapNormal = normalize(mapNormal * 2.0 - 1.0);
     mapNormal *= vec3(material.normalScale, material.normalScale, 1.0);
     float mapMetal = texture(textures[material.metalRoughTexIdx], texCoord).b;
     mapMetal *= material.metallicFactor;
@@ -68,16 +77,13 @@ void main(){
     float mapRoughness = texture(textures[material.metalRoughTexIdx], texCoord).g;
     mapRoughness *= material.roughnessFactor;
     mapRoughness = clamp(mapRoughness, 0.04, 1.0);
-    vec3 mapEmissive = texture(textures[material.emissiveTexIdx], texCoord).rgb;
-	mapEmissive *= material.emissiveFactor;
-	// occlusion
     
 
     // Outgoing light direction (vector from world-space fragment position to the "eye").
 	vec3 Lo = normalize(camera.pos - pos.rgb);
 
 	// Get current fragment's normal and transform to world space.
-	vec3 N = worldNormal(normal, mapNormal);
+	vec3 N = perturb_normal(normal, camera.pos - pos.xyz, texCoord, mapNormal);
 	
 	// Angle between surface normal and outgoing light direction.
 	float cosLo = max(0.0, dot(N, Lo));
@@ -98,7 +104,8 @@ void main(){
 		} else {
 			Li = normalize(lights[i].pos - pos.rgb);
 			float d = length(lights[i].pos - pos.rgb);
-			attenuation = (clamp(lights[i].range - d, 0.0, lights[i].range)) / (1.0 + 0.5*d*d);
+			//attenuation = (clamp(lights[i].range - d, 0.0, lights[i].range)) / (1.0 + 0.5*d*d);
+			attenuation = 1.0 / (1.0 + 0.5*d*d);
 		}
         vec3 Lradiance = lights[i].color * attenuation * lights[i].intensity;
 
@@ -133,11 +140,24 @@ void main(){
 
 	vec3 ambientLighting;
 	{
+		vec3 mapEmissive = texture(textures[material.emissiveTexIdx], texCoord).rgb;
+		mapEmissive *= material.emissiveFactor;
+		
+		vec2 uv = vec2(gl_FragCoord.xy / textureSize(occlusionMap, 0));
+		vec3 visibility = texture(occlusionMap, uv).rgb;
+		visibility = gtaoMultiBounce(visibility.x, baseColor.rgb);
+		
+		// vec3 irradiance = vec3(1.0, 0.9098, 0.6706) * 0.3;
 
-		vec3 diffuseIBL = vec3(0.0,0.0,0.0);
-		vec3 specularIBL = vec3(0.0,0.0,0.0);
+		// vec3 F = fresnelSchlick(F0, cosLo);
+		// vec3 kd = mix(vec3(1.0) - F, vec3(0.0), mapMetal);
 
-		ambientLighting = diffuseIBL + specularIBL + mapEmissive;
+		// vec3 diffuseIBL = kd * baseColor.rgb * irradiance;
+		// vec3 specularIBL = vec3(0.0,0.0,0.0);
+
+		ambientLighting = vec3(0.8) * baseColor.rgb;
+		ambientLighting *= visibility;
+		ambientLighting += mapEmissive;
 	}
     
     FragColor = vec4(directLighting + ambientLighting, 1.0);

@@ -4,7 +4,7 @@
 // ║     Global (persist over frames)                                         ║
 // ╚══════════════════════════════════════════════════════════════════════════╝
 
-#if SPR_GLOBAL_BINDINGS
+#ifdef SPR_GLOBAL_BINDINGS
     layout(set = 0, binding = 0) readonly buffer Positions {
         VertexPosition positions[];
     };
@@ -25,7 +25,7 @@
 // ║     Per-frame (bindless scene and per-draw data)                         ║
 // ╚══════════════════════════════════════════════════════════════════════════╝
 
-#if SPR_FRAME_BINDINGS
+#ifdef SPR_FRAME_BINDINGS
     layout(set = 1, binding = 0) uniform SceneData {
         Scene sceneData;
     };
