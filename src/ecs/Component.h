@@ -8,7 +8,7 @@ namespace spr {
 class Component {
 public:
     // get entity's component data
-    auto get(Entity entity);
+    auto& get(Entity entity);
 
     // set entity's component data
     void set(Entity entity, auto data);
@@ -35,7 +35,7 @@ public:
     ~TypedComponent(){}
 
     // get entity's component data
-    T get(Entity entity) {
+    T& get(Entity entity) {
         return m_container.get(m_reg.getIndex(entity));
     }
 
