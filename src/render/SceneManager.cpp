@@ -1,4 +1,5 @@
 #include "SceneManager.h"
+#include "SDL_timer.h"
 #include "glm/ext/matrix_clip_space.hpp"
 #include "glm/ext/matrix_transform.hpp"
 #include "scene/GfxAssetLoader.h"
@@ -13,6 +14,7 @@
 #include <cctype>
 #include "scene/SceneData.h"
 #include "../debug/SprLog.h"
+#include <glm/ext/matrix_clip_space.hpp>
 
 namespace spr::gfx {
 
@@ -161,8 +163,11 @@ void SceneManager::updateCamera(uint32 frame, glm::vec2 screenDim, const Camera&
 
     // pre-compute viewProjection matrix
     glm::mat4 view = glm::lookAt(camera.pos, camera.pos + camera.dir, camera.up);
-    glm::mat4 proj = glm::perspective(camera.fov, (screenDim.x/screenDim.y), camera.near, camera.far);
+    glm::mat4 proj = glm::perspectiveFovZO(camera.fov, screenDim.x, screenDim.y, camera.far, camera.near);
     m_sceneData[frame % MAX_FRAME_COUNT][0].viewProj = {proj * view};
+    m_sceneData[frame % MAX_FRAME_COUNT][0].screenDimX = screenDim.x;
+    m_sceneData[frame % MAX_FRAME_COUNT][0].screenDimY = screenDim.y;
+    m_sceneData[frame % MAX_FRAME_COUNT][0].time = SDL_GetTicks();
 }
 
 

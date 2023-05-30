@@ -54,7 +54,7 @@ typedef struct Camera {
     glm::vec3 pos = {0.f, 0.f, 0.f};
     float fov     = 3.1415f/3.f;
     glm::vec3 dir = {0.f, 1.f, 0.f};
-    float near    = 0.01f;
+    float near    = 0.1f;
     glm::vec3 up  = {0.f, 0.f, 1.f};
     float far     = 1024.f;
 } Camera;
@@ -62,9 +62,9 @@ typedef struct Camera {
 typedef struct Scene {
     glm::mat4x4 viewProj;
     uint32 lightCount = 0;
-    uint32 pad1 = 0;
-    uint32 pad2 = 0;
-    uint32 pad3 = 0;
+    uint32 screenDimX = 0;
+    uint32 screenDimY = 0;
+    uint32 time       = 0;
 } Scene;
 
 }
