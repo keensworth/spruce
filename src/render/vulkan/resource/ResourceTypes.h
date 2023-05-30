@@ -147,7 +147,7 @@ typedef struct RenderPass {
         uint32 stencilLoadOp  = Flags::LoadOp::LOAD_DONT_CARE;
         uint32 stencilStoreOp = Flags::StoreOp::STORE_DONT_CARE;
         uint32 layout         = Flags::ImageLayout::UNDEFINED;
-        uint32 finalLayout    = Flags::ImageLayout::SHADER_READ_ONLY;
+        uint32 finalLayout    = Flags::ImageLayout::READ_ONLY;
     } ColorAttachment;
 
     typedef struct DepthAttachment {
@@ -159,7 +159,9 @@ typedef struct RenderPass {
         uint32 stencilLoadOp  = Flags::LoadOp::LOAD_DONT_CARE;
         uint32 stencilStoreOp = Flags::StoreOp::STORE_DONT_CARE;
         uint32 layout         = Flags::ImageLayout::UNDEFINED;
-        uint32 finalLayout    = Flags::ImageLayout::DEPTH_STENCIL_ATTACHMENT;
+        uint32 finalLayout    = Flags::ImageLayout::ATTACHMENT;
+        // overwritten by Shader, not to be set
+        uint32 compareOp;
     } DepthAttachment;
 
     bool hasDepthAttachment = false;
@@ -180,6 +182,18 @@ typedef struct Shader {
     VkShaderModule vertexModule = VK_NULL_HANDLE;
     VkShaderModule fragmentModule = VK_NULL_HANDLE;
     struct Desc;
+    
+    typedef struct GraphicsState {
+        Flags::Compare depthTest = Flags::Compare::ALWAYS;
+        bool depthTestEnabled = true;
+        bool depthWriteEnabled = true;
+        Handle<RenderPass> renderPass;
+    } GraphicsState;
+
+    std::string vertexPath = "";
+    std::string fragmentPath = "";
+    std::vector<Handle<DescriptorSetLayout>> descSetLayouts;
+    GraphicsState graphicsState;
 } Shader;
 
 
@@ -214,7 +228,7 @@ typedef struct Texture::Desc {
     typedef struct Sampler {
         uint32 minFilter  = Flags::Filter::LINEAR;
         uint32 magFilter  = Flags::Filter::LINEAR;
-        uint32 mipmapMode = Flags::Mipmap::MODE_NEAREST;
+        uint32 mipmapMode = Flags::Mipmap::MODE_LINEAR;
         uint32 addressing = Flags::Wrap::REPEAT;
         float anisotropy  = 8.f;
         uint32 compare    = Flags::Compare::ALWAYS;
@@ -263,6 +277,8 @@ typedef struct DescriptorSet::Desc {
         Handle<Texture> texture;               // global texture
         std::vector<Handle<Texture>> textures; // global array of textures
         Handle<TextureAttachment> attachment;  // per-frame textures
+        // default layout, will override all entries
+        Flags::ImageLayout layout = Flags::ImageLayout::READ_ONLY;
     } TextureBinding;
 
     typedef struct BufferBinding {           // [mutually exclusive]
@@ -273,9 +289,9 @@ typedef struct DescriptorSet::Desc {
         uint32 byteSize   = ALL_BYTES;
     } BufferBinding;
 
-    std::vector<TextureBinding> textures{};
-    std::vector<BufferBinding> buffers{};
-    Handle<DescriptorSetLayout> layout{};
+    std::vector<TextureBinding> textures;
+    std::vector<BufferBinding> buffers;
+    Handle<DescriptorSetLayout> layout;
 } DescriptorSetDesc;
 
 
@@ -315,6 +331,8 @@ typedef struct Shader::Desc {
 
     typedef struct GraphicsState {
         Flags::Compare depthTest = Flags::Compare::ALWAYS;
+        bool depthTestEnabled = true;
+        bool depthWriteEnabled = true;
         Handle<RenderPass> renderPass;
     } GraphicsState;
 

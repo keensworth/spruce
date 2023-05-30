@@ -171,7 +171,6 @@ void VulkanResourceManager::destroy(){
 template<>
 void VulkanResourceManager::allocate(Handle<Buffer> handle, VkBufferCreateInfo& info){
     Buffer* buffer = get<Buffer>(handle);
-    uint32 testVal = buffer->byteSize;
 
     // allocation info
     VmaAllocationCreateInfo allocationInfo;
@@ -559,7 +558,7 @@ Handle<DescriptorSet> VulkanResourceManager::create<DescriptorSet>(DescriptorSet
                 VkDescriptorImageInfo textureInfo {
                     .sampler      = texture->sampler,
                     .imageView    = texture->view,
-                    .imageLayout  = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL
+                    .imageLayout  = (VkImageLayout)binding.layout
                 };
                 textureInfos.push_back(textureInfo);
 
@@ -570,7 +569,7 @@ Handle<DescriptorSet> VulkanResourceManager::create<DescriptorSet>(DescriptorSet
                 VkDescriptorImageInfo textureInfo {
                     .sampler      = texture->sampler,
                     .imageView    = texture->view,
-                    .imageLayout  = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL
+                    .imageLayout  = (VkImageLayout)binding.layout
                 };
                 textureInfos.push_back(textureInfo);
 
@@ -581,7 +580,7 @@ Handle<DescriptorSet> VulkanResourceManager::create<DescriptorSet>(DescriptorSet
                     VkDescriptorImageInfo textureInfo {
                         .sampler      = texture->sampler,
                         .imageView    = texture->view,
-                        .imageLayout  = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL
+                        .imageLayout  = (VkImageLayout)binding.layout
                     };
                     textureInfos.push_back(textureInfo);
                 }
@@ -645,15 +644,13 @@ Handle<RenderPassLayout> VulkanResourceManager::create<RenderPassLayout>(RenderP
         // color
         for (uint32 colorAttachment : desc.subpass.colorAttachments){
             colorReferences.push_back({
-                .attachment = colorAttachment,
-                .layout = (VkImageLayout)Flags::ImageLayout::COLOR_ATTACHMENT
+                .attachment = colorAttachment
             });
         }
         // depth
         if (depthAttachment){
             depthReference = {
-                .attachment = (uint32)attachmentCount,
-                .layout = (VkImageLayout)Flags::ImageLayout::DEPTH_STENCIL_ATTACHMENT
+                .attachment = (uint32)attachmentCount
             };
         }
     }
@@ -679,7 +676,9 @@ Handle<RenderPass> VulkanResourceManager::create<RenderPass>(RenderPassDesc desc
     // meta
     RenderPassLayout* layout = get<RenderPassLayout>(desc.layout);
     uint32 attachmentCount = layout->attachmentCount;
-    uint32 swapchainImageCount = desc.colorAttachments[0].swapchainImageViews.size();
+    uint32 swapchainImageCount = 0;
+    if (desc.colorAttachments.size() > 0)
+        swapchainImageCount = desc.colorAttachments[0].swapchainImageViews.size();
     bool swapchainOverride = swapchainImageCount > 0;
     uint32 adjustedFrameCount = swapchainOverride ? swapchainImageCount : MAX_FRAME_COUNT;
     bool hasDepthAttachment = (layout->colorReferences.size() + 1) == attachmentCount;
@@ -694,6 +693,11 @@ Handle<RenderPass> VulkanResourceManager::create<RenderPass>(RenderPassDesc desc
     uint32 samples;    
     // depth
     if (hasDepthAttachment) {
+        VkImageLayout depthLayout = (VkImageLayout)desc.depthAttachment.layout;
+        if (depthLayout == VK_IMAGE_LAYOUT_UNDEFINED)
+            depthLayout = VK_IMAGE_LAYOUT_ATTACHMENT_OPTIMAL;
+        layout->depthReference.layout = depthLayout;
+        
         VkAttachmentDescription newAttachment = {
             .format         = layout->attachmentDescriptions[attachmentCount-1].format,
             .samples        = (VkSampleCountFlagBits)desc.depthAttachment.samples,
@@ -710,6 +714,11 @@ Handle<RenderPass> VulkanResourceManager::create<RenderPass>(RenderPassDesc desc
     // color
     int attachmentIndex = 0;
     for (auto attachment : desc.colorAttachments){
+        VkImageLayout colorLayout = (VkImageLayout)attachment.layout;
+        if (colorLayout == VK_IMAGE_LAYOUT_UNDEFINED)
+            colorLayout = VK_IMAGE_LAYOUT_ATTACHMENT_OPTIMAL;
+        layout->colorReferences[attachmentIndex].layout = colorLayout;
+
         VkAttachmentDescription newAttachment = {
             .format         = layout->attachmentDescriptions[attachmentIndex].format,
             .samples        = (VkSampleCountFlagBits)attachment.samples,
@@ -728,6 +737,8 @@ Handle<RenderPass> VulkanResourceManager::create<RenderPass>(RenderPassDesc desc
     // build subpass dependencies
     VkSubpassDependency inDependency;
     VkSubpassDependency outDependency;
+    VkSubpassDependency inDependencyDepth;
+    VkSubpassDependency outDependencyDepth;
     if (swapchainOverride){ // special case for swapchain image attachments
         inDependency = {
             .srcSubpass      = VK_SUBPASS_EXTERNAL,
@@ -766,11 +777,62 @@ Handle<RenderPass> VulkanResourceManager::create<RenderPass>(RenderPassDesc desc
             .dstAccessMask   = VK_ACCESS_SHADER_READ_BIT,
             .dependencyFlags = 0
         };
+
+        if (hasDepthAttachment){
+            VkAttachmentDescription& depthDesc = layout->attachmentDescriptions[attachmentCount-1];
+
+            VkAccessFlags inAccessFlags;
+            VkAccessFlags outAccessFlags;
+            if (depthDesc.initialLayout == VK_IMAGE_LAYOUT_DEPTH_STENCIL_READ_ONLY_OPTIMAL || 
+                depthDesc.initialLayout == VK_IMAGE_LAYOUT_DEPTH_READ_ONLY_OPTIMAL         ||
+                depthDesc.initialLayout == VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL        ||
+                depthDesc.initialLayout == VK_IMAGE_LAYOUT_READ_ONLY_OPTIMAL_KHR)
+                inAccessFlags = VK_ACCESS_DEPTH_STENCIL_ATTACHMENT_READ_BIT;
+            else
+                inAccessFlags = VK_ACCESS_DEPTH_STENCIL_ATTACHMENT_WRITE_BIT | 
+                                VK_ACCESS_DEPTH_STENCIL_ATTACHMENT_READ_BIT;
+
+            if (depthDesc.finalLayout == VK_IMAGE_LAYOUT_DEPTH_STENCIL_READ_ONLY_OPTIMAL || 
+                depthDesc.finalLayout == VK_IMAGE_LAYOUT_DEPTH_READ_ONLY_OPTIMAL         ||
+                depthDesc.finalLayout == VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL        ||
+                depthDesc.finalLayout == VK_IMAGE_LAYOUT_READ_ONLY_OPTIMAL_KHR)
+                outAccessFlags = VK_ACCESS_DEPTH_STENCIL_ATTACHMENT_READ_BIT;
+            else
+                outAccessFlags = VK_ACCESS_DEPTH_STENCIL_ATTACHMENT_WRITE_BIT | 
+                                 VK_ACCESS_DEPTH_STENCIL_ATTACHMENT_READ_BIT;
+            
+            inDependencyDepth = {
+                .srcSubpass      = VK_SUBPASS_EXTERNAL,
+                .dstSubpass      = 0,
+                .srcStageMask    = VK_PIPELINE_STAGE_EARLY_FRAGMENT_TESTS_BIT | VK_PIPELINE_STAGE_LATE_FRAGMENT_TESTS_BIT,
+                .dstStageMask    = VK_PIPELINE_STAGE_EARLY_FRAGMENT_TESTS_BIT | VK_PIPELINE_STAGE_LATE_FRAGMENT_TESTS_BIT,
+                .srcAccessMask   = inAccessFlags,
+                .dstAccessMask   = outAccessFlags,
+                .dependencyFlags = 0
+            };
+
+            outDependencyDepth = {
+                .srcSubpass      = 0,
+                .dstSubpass      = VK_SUBPASS_EXTERNAL,
+                .srcStageMask    = VK_PIPELINE_STAGE_EARLY_FRAGMENT_TESTS_BIT | VK_PIPELINE_STAGE_LATE_FRAGMENT_TESTS_BIT,
+                .dstStageMask    = VK_PIPELINE_STAGE_EARLY_FRAGMENT_TESTS_BIT | VK_PIPELINE_STAGE_LATE_FRAGMENT_TESTS_BIT,
+                .srcAccessMask   = inAccessFlags,
+                .dstAccessMask   = outAccessFlags,
+                .dependencyFlags = 0
+            };
+        }
     }
     
     VkSubpassDependency dependencies[2] = {
         inDependency,
         outDependency
+    };
+
+    VkSubpassDependency dependenciesWithDepth[4] = {
+        inDependency,
+        outDependency,
+        inDependencyDepth,
+        outDependencyDepth
     };
 
     // build subpass description
@@ -798,7 +860,7 @@ Handle<RenderPass> VulkanResourceManager::create<RenderPass>(RenderPassDesc desc
         .subpassCount    = 1,
         .pSubpasses      = &subpassDescription,
         .dependencyCount = 2,
-        .pDependencies   = dependencies
+        .pDependencies   = hasDepthAttachment ? dependenciesWithDepth : dependencies
     };
     // create vulkan render pass
     VkRenderPass vulkanRenderPass;
@@ -878,7 +940,7 @@ Handle<Shader> VulkanResourceManager::create<Shader>(ShaderDesc desc){
     RenderPass* renderPass = get<RenderPass>(desc.graphicsState.renderPass);
     RenderPassLayout* renderPassLayout = get<RenderPassLayout>(renderPass->layout);
     // create vertex shader module
-    VkShaderModule vertexShader;
+    VkShaderModule vertexShader = VK_NULL_HANDLE;
     bool hasVertexShader = false;
     if (!desc.vertexShader.path.empty()){
         hasVertexShader = true;
@@ -907,7 +969,7 @@ Handle<Shader> VulkanResourceManager::create<Shader>(ShaderDesc desc){
     }
 
     // create fragment shader module
-    VkShaderModule fragmentShader;
+    VkShaderModule fragmentShader = VK_NULL_HANDLE;
     bool hasFragmentShader = false;
     if (!desc.fragmentShader.path.empty()){
         hasFragmentShader = true;
@@ -945,7 +1007,7 @@ Handle<Shader> VulkanResourceManager::create<Shader>(ShaderDesc desc){
             .module = vertexShader,
             .pName  = "main"
         });
-    if (fragmentShader) // fragment
+    if (hasFragmentShader) // fragment
         shaderStages.push_back({
             .sType  = VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO,
             .stage  = VK_SHADER_STAGE_FRAGMENT_BIT,
@@ -1054,14 +1116,18 @@ Handle<Shader> VulkanResourceManager::create<Shader>(ShaderDesc desc){
         };  
 
         // build depth stencil state info
+        bool test = desc.graphicsState.depthTestEnabled;
+        bool write = desc.graphicsState.depthWriteEnabled;
         depthStencilState = {
             .sType = VK_STRUCTURE_TYPE_PIPELINE_DEPTH_STENCIL_STATE_CREATE_INFO,
-            .depthTestEnable       = VK_TRUE,
-            .depthWriteEnable      = VK_TRUE,
+            .depthTestEnable       = test          ? VK_TRUE : VK_FALSE,
+            .depthWriteEnable      = write && test ? VK_TRUE : VK_FALSE,
             .depthCompareOp        = (VkCompareOp) desc.graphicsState.depthTest,
             .depthBoundsTestEnable = VK_FALSE,
             .stencilTestEnable     = VK_FALSE
         };
+        if (renderPass->hasDepthAttachment)
+            renderPass->depthAttachment.compareOp = desc.graphicsState.depthTest;
 
         // build color blend attachments
         for (int i = 0; i < renderPassLayout->colorReferences.size(); i++){
@@ -1132,7 +1198,16 @@ Handle<Shader> VulkanResourceManager::create<Shader>(ShaderDesc desc){
         .pipeline = vulkanPipeline,
         .emptyDescSetLayouts = emptyLayouts,
         .vertexModule = vertexShader,
-        .fragmentModule = fragmentShader
+        .fragmentModule = fragmentShader,
+        .vertexPath = desc.vertexShader.path,
+        .fragmentPath = desc.fragmentShader.path,
+        .descSetLayouts = desc.descriptorSets,
+        .graphicsState = {
+            .depthTest = desc.graphicsState.depthTest,
+            .depthTestEnabled = desc.graphicsState.depthTestEnabled,
+            .depthWriteEnabled = desc.graphicsState.depthWriteEnabled,
+            .renderPass = desc.graphicsState.renderPass
+        }
     };
     return shaderCache->insert(shader);
 }
@@ -1151,7 +1226,6 @@ Handle<Shader> VulkanResourceManager::create<Shader>(ShaderDesc desc){
 // ------------------------------------------------------------------------- //
 template<>
 Handle<RenderPass> VulkanResourceManager::recreate<RenderPass>(Handle<RenderPass> handle, glm::uvec2 newDimensions){
-    RenderPassCache* renderPassCache = ((RenderPassCache*) m_resourceMap[typeid(RenderPass)]);
     RenderPass* renderPass = get<RenderPass>(handle);
 
     // update screen dimensions
@@ -1348,6 +1422,297 @@ Handle<RenderPass> VulkanResourceManager::recreate<RenderPass>(Handle<RenderPass
         VK_CHECK(vkCreateFramebuffer(m_device, &framebufferInfo, NULL, &vulkanFramebuffers[frame]));
     }
     
+    return handle;
+}
+
+
+// ------------------------------------------------------------------------- //
+//                 Shader                                                    //
+// ------------------------------------------------------------------------- //
+template<>
+Handle<Shader> VulkanResourceManager::recreate<Shader>(Handle<Shader> handle, bool temp){
+    Shader* shader = get<Shader>(handle);
+
+    ShaderDesc desc = {
+        .vertexShader = {shader->vertexPath},
+        .fragmentShader = {shader->fragmentPath},
+        .descriptorSets = shader->descSetLayouts,
+        .graphicsState = {
+            .depthTest = shader->graphicsState.depthTest,
+            .depthTestEnabled = shader->graphicsState.depthTestEnabled,
+            .depthWriteEnabled = shader->graphicsState.depthWriteEnabled,
+            .renderPass = shader->graphicsState.renderPass
+        }
+    };
+
+    // destroy existing objects
+    vkDestroyPipeline(m_device, shader->pipeline, nullptr);
+    vkDestroyPipelineLayout(m_device, shader->layout, nullptr);
+    vkDestroyShaderModule(m_device, shader->vertexModule, nullptr);
+    vkDestroyShaderModule(m_device, shader->fragmentModule, nullptr);
+
+    // meta
+    RenderPass* renderPass = get<RenderPass>(desc.graphicsState.renderPass);
+    RenderPassLayout* renderPassLayout = get<RenderPassLayout>(renderPass->layout);
+    // create vertex shader module
+    VkShaderModule vertexShader = VK_NULL_HANDLE;
+    bool hasVertexShader = false;
+    if (!desc.vertexShader.path.empty()){
+        hasVertexShader = true;
+
+        // get shader bytes
+        std::ifstream instream(desc.vertexShader.path, std::ios::in | std::ios::binary);
+        if (!instream){
+            std::string message = "[VulkanResourceManager] [create<Shader>] Shader (VS) not found: ";
+            message += desc.vertexShader.path;
+            SprLog::error(message);
+        }
+        std::vector<uint8> bytes = std::vector<uint8>((std::istreambuf_iterator<char>(instream)), std::istreambuf_iterator<char>());
+        uint32 size = bytes.size();
+
+        // build shader module info
+        VkShaderModuleCreateInfo shaderModuleInfo {
+            .sType    = VK_STRUCTURE_TYPE_SHADER_MODULE_CREATE_INFO,
+            .pNext    = NULL,
+            .flags    = 0,
+            .codeSize = size,
+            .pCode    = reinterpret_cast<const uint32_t*>(bytes.data())
+        };
+
+        // create shader module
+        VK_CHECK(vkCreateShaderModule(m_device, &shaderModuleInfo, NULL, &vertexShader));
+    }
+
+    // create fragment shader module
+    VkShaderModule fragmentShader = VK_NULL_HANDLE;
+    bool hasFragmentShader = false;
+    if (!desc.fragmentShader.path.empty()){
+        hasFragmentShader = true;
+
+        // get shader bytes
+        std::ifstream instream(desc.fragmentShader.path, std::ios::in | std::ios::binary);
+        if (!instream){
+            std::string message = "[VulkanResourceManager] [create<Shader>] Shader (FS) not found: ";
+            message += desc.fragmentShader.path;
+            SprLog::error(message);
+        }
+        std::vector<uint8> bytes = std::vector<uint8>((std::istreambuf_iterator<char>(instream)), std::istreambuf_iterator<char>());
+        uint32 size = bytes.size();
+
+        // build shader module info
+        VkShaderModuleCreateInfo shaderModuleInfo {
+            .sType    = VK_STRUCTURE_TYPE_SHADER_MODULE_CREATE_INFO,
+            .pNext    = NULL,
+            .flags    = 0,
+            .codeSize = size,
+            .pCode    = reinterpret_cast<const uint32_t*>(bytes.data())
+        };
+
+        // create shader module
+        VK_CHECK(vkCreateShaderModule(m_device, &shaderModuleInfo, NULL, &fragmentShader));
+
+    }
+
+    // create shader stages
+    std::vector<VkPipelineShaderStageCreateInfo> shaderStages;
+    if (hasVertexShader) // vertex
+        shaderStages.push_back({
+            .sType  = VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO,
+            .stage  = VK_SHADER_STAGE_VERTEX_BIT,
+            .module = vertexShader,
+            .pName  = "main"
+        });
+    if (hasFragmentShader) // fragment
+        shaderStages.push_back({
+            .sType  = VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO,
+            .stage  = VK_SHADER_STAGE_FRAGMENT_BIT,
+            .module = fragmentShader,
+            .pName  = "main"
+        });
+
+    // build pipeline layout info
+    std::vector<VkDescriptorSetLayout> descriptorSetLayouts;
+    std::vector<VkDescriptorSetLayout> emptyLayouts;
+    for (auto setLayoutHandle : desc.descriptorSets) {
+        // check for empty layouts
+        if (!setLayoutHandle.isValid()){ 
+            VkDescriptorSetLayoutCreateInfo emptyLayoutInfo = {
+                .sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_LAYOUT_CREATE_INFO,
+                .pNext = NULL,
+                .flags = 0,
+                .bindingCount = 0,
+                .pBindings = NULL
+            };
+            VkDescriptorSetLayout emptyLayout;
+            VK_CHECK(vkCreateDescriptorSetLayout(m_device, &emptyLayoutInfo, NULL, &emptyLayout));
+            descriptorSetLayouts.push_back(emptyLayout);
+            emptyLayouts.push_back(emptyLayout);
+        } else { // valid layout
+            DescriptorSetLayout* setLayout = get<DescriptorSetLayout>(setLayoutHandle);
+            descriptorSetLayouts.push_back(setLayout->descriptorSetLayout);
+        }
+    }
+    VkPipelineLayoutCreateInfo pipelineLayoutInfo {
+        .sType                  = VK_STRUCTURE_TYPE_PIPELINE_LAYOUT_CREATE_INFO,
+        .pNext                  = NULL,
+        .flags                  = 0,
+        .setLayoutCount         = (uint32)descriptorSetLayouts.size(),
+        .pSetLayouts            = descriptorSetLayouts.data(),
+        .pushConstantRangeCount = 0,
+        .pPushConstantRanges    = NULL
+    };
+
+    // create pipeline layout
+    VkPipelineLayout pipelineLayout;
+    VK_CHECK(vkCreatePipelineLayout(m_device, &pipelineLayoutInfo, NULL, &pipelineLayout));
+
+    // graphics state meta
+    std::vector<VkPipelineColorBlendAttachmentState> colorBlendAttachments(renderPassLayout->colorReferences.size());
+    std::vector<VkDynamicState> dynamicStates = {
+            VK_DYNAMIC_STATE_VIEWPORT,
+            VK_DYNAMIC_STATE_SCISSOR
+    };
+
+    // build graphics state info
+    VkPipelineVertexInputStateCreateInfo   vertexInputState;
+    VkPipelineInputAssemblyStateCreateInfo inputAssemblyState;
+    VkPipelineViewportStateCreateInfo      viewportState;
+    VkPipelineRasterizationStateCreateInfo rasterizationState;
+    VkPipelineMultisampleStateCreateInfo   multisampleState;
+    VkPipelineDepthStencilStateCreateInfo  depthStencilState;
+    VkPipelineColorBlendStateCreateInfo    colorBlendState;
+    VkPipelineDynamicStateCreateInfo       dynamicState;
+    {
+        // build vertex input state info
+        vertexInputState = {
+            .sType                           = VK_STRUCTURE_TYPE_PIPELINE_VERTEX_INPUT_STATE_CREATE_INFO,
+            .vertexBindingDescriptionCount   = 0,
+            .pVertexBindingDescriptions      = NULL,
+            .vertexAttributeDescriptionCount = 0,
+            .pVertexAttributeDescriptions    = NULL
+        };
+
+        // build input assembly state info
+        inputAssemblyState = {
+            .sType                  = VK_STRUCTURE_TYPE_PIPELINE_INPUT_ASSEMBLY_STATE_CREATE_INFO,
+            .topology               = VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST,
+            .primitiveRestartEnable = VK_FALSE
+        };
+
+        // build viewport state info
+        viewportState = {
+            .sType         = VK_STRUCTURE_TYPE_PIPELINE_VIEWPORT_STATE_CREATE_INFO,
+            .viewportCount = 1,
+            .scissorCount  = 1
+        };
+
+        // build rasterization state info
+        rasterizationState = {
+            .sType                   = VK_STRUCTURE_TYPE_PIPELINE_RASTERIZATION_STATE_CREATE_INFO,
+            .depthClampEnable        = VK_FALSE,
+            .rasterizerDiscardEnable = VK_FALSE,
+            .polygonMode             = VK_POLYGON_MODE_FILL,
+            .cullMode                = VK_CULL_MODE_BACK_BIT,
+            .frontFace               = VK_FRONT_FACE_COUNTER_CLOCKWISE,
+            .depthBiasEnable         = VK_FALSE,
+            .lineWidth               = 1.0f
+        };
+
+        // build multisample state info
+        RenderPass* renderPass = get<RenderPass>(desc.graphicsState.renderPass);
+        RenderPassLayout* renderPassLayout = get<RenderPassLayout>(renderPass->layout);
+        uint32 sampleCount = renderPass->samples;
+        multisampleState = {
+            .sType                 = VK_STRUCTURE_TYPE_PIPELINE_MULTISAMPLE_STATE_CREATE_INFO,
+            .rasterizationSamples  = (VkSampleCountFlagBits)sampleCount,
+            .sampleShadingEnable   = VK_FALSE,
+            .alphaToCoverageEnable = VK_FALSE,
+            .alphaToOneEnable      = VK_FALSE
+        };  
+
+        // build depth stencil state info
+        bool test = desc.graphicsState.depthTestEnabled;
+        bool write = desc.graphicsState.depthWriteEnabled;
+        depthStencilState = {
+            .sType = VK_STRUCTURE_TYPE_PIPELINE_DEPTH_STENCIL_STATE_CREATE_INFO,
+            .depthTestEnable       = test          ? VK_TRUE : VK_FALSE,
+            .depthWriteEnable      = write && test ? VK_TRUE : VK_FALSE,
+            .depthCompareOp        = (VkCompareOp) desc.graphicsState.depthTest,
+            .depthBoundsTestEnable = VK_FALSE,
+            .stencilTestEnable     = VK_FALSE
+        };
+        if (renderPass->hasDepthAttachment)
+            renderPass->depthAttachment.compareOp = desc.graphicsState.depthTest;
+
+        // build color blend attachments
+        for (int i = 0; i < renderPassLayout->colorReferences.size(); i++){
+            colorBlendAttachments[i] = {
+                .blendEnable         = VK_TRUE,
+                .srcColorBlendFactor = VK_BLEND_FACTOR_SRC_ALPHA,
+                .dstColorBlendFactor = VK_BLEND_FACTOR_ONE_MINUS_SRC_ALPHA,
+                .colorBlendOp        = VK_BLEND_OP_ADD,
+                .srcAlphaBlendFactor = VK_BLEND_FACTOR_ONE,
+                .dstAlphaBlendFactor = VK_BLEND_FACTOR_ZERO,
+                .alphaBlendOp        = VK_BLEND_OP_ADD,
+                .colorWriteMask = VK_COLOR_COMPONENT_R_BIT | 
+                                  VK_COLOR_COMPONENT_G_BIT | 
+                                  VK_COLOR_COMPONENT_B_BIT | 
+                                  VK_COLOR_COMPONENT_A_BIT
+            };
+        }
+
+        // build color blend state
+        colorBlendState = {
+            .sType           = VK_STRUCTURE_TYPE_PIPELINE_COLOR_BLEND_STATE_CREATE_INFO,
+            .logicOpEnable   = VK_FALSE,
+            .attachmentCount = (uint32)renderPassLayout->colorReferences.size(),
+            .pAttachments    = colorBlendAttachments.data(),
+            .blendConstants  = {
+                1.f,1.f,1.f,1.f
+            }
+        };
+
+        // build dynamic state
+        dynamicState = {
+            .sType             = VK_STRUCTURE_TYPE_PIPELINE_DYNAMIC_STATE_CREATE_INFO,
+            .dynamicStateCount = 2,
+            .pDynamicStates    = dynamicStates.data()
+        };
+    }
+
+    // build pipeline info
+    VkGraphicsPipelineCreateInfo pipelineInfo {
+        .sType               = VK_STRUCTURE_TYPE_GRAPHICS_PIPELINE_CREATE_INFO,
+        .pNext               = NULL,
+        .flags               = 0,
+        .stageCount          = (uint32)(hasVertexShader + hasFragmentShader),
+        .pStages             = shaderStages.data(),
+        .pVertexInputState   = &vertexInputState,
+        .pInputAssemblyState = &inputAssemblyState,
+        .pTessellationState  = NULL,
+        .pViewportState      = &viewportState,
+        .pRasterizationState = &rasterizationState,
+        .pMultisampleState   = &multisampleState,
+        .pDepthStencilState  = &depthStencilState,
+        .pColorBlendState    = &colorBlendState,
+        .pDynamicState       = &dynamicState,
+        .layout              = pipelineLayout,
+        .renderPass          = renderPass->renderPass,
+        .subpass             = 0,
+        .basePipelineHandle  = VK_NULL_HANDLE,
+        .basePipelineIndex   = 0
+    };
+
+    // create pipeline
+    VkPipeline vulkanPipeline;
+    VK_CHECK(vkCreateGraphicsPipelines(m_device, NULL, 1, &pipelineInfo, NULL, &vulkanPipeline));
+
+    // set newly created objects
+    shader->layout = pipelineLayout;
+    shader->pipeline = vulkanPipeline;
+    shader->emptyDescSetLayouts = emptyLayouts;
+    shader->vertexModule = vertexShader;
+    shader->fragmentModule = fragmentShader;
     return handle;
 }
 

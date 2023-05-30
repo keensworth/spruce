@@ -122,6 +122,7 @@ template<> Handle<RenderPass> VulkanResourceManager::create<RenderPass>(RenderPa
 template<> Handle<Shader> VulkanResourceManager::create<Shader>(ShaderDesc desc);
 
 template<> Handle<RenderPass> VulkanResourceManager::recreate<RenderPass>(Handle<RenderPass> handle, glm::uvec2 newDimensions);
+template<> Handle<Shader> VulkanResourceManager::recreate<Shader>(Handle<Shader> handle, bool temp);
 
 template<> void VulkanResourceManager::remove<Buffer>(Handle<Buffer> handle);
 template<> void VulkanResourceManager::remove<Texture>(Handle<Texture> handle);
