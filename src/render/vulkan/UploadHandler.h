@@ -27,8 +27,9 @@ public:
         Buffer* dstBuffer = m_rm->get<Buffer>(dst);
         GPUStreamer::BufferTransfer transfer = {
             .pSrc = (unsigned char*)src.getBytes(),
-            .size = (uint32)src.getSizeBytes(),
-            .dst = dstBuffer
+            .size = (uint32)(src.getSize() * sizeof(T)),
+            .dst = dstBuffer,
+            .memType = (MemoryType)dstBuffer->memType
         };
         m_bufferUploadQueue.push_back(transfer);
     }
@@ -41,7 +42,8 @@ public:
         GPUStreamer::BufferTransfer transfer = {
             .pSrc = (unsigned char*)src.getBytes(),
             .size = (uint32)(src.getSize() * sizeof(T)),
-            .dst = dstBuffer
+            .dst = dstBuffer,
+            .memType = (MemoryType)dstBuffer->memType
         };
         m_dynamicBufferUploadQueue.push_back(transfer);
     }
@@ -54,7 +56,7 @@ public:
         GPUStreamer::TextureTransfer transfer = {
             .pSrc = (unsigned char*)src.getBytes(),
             .size = (uint32)(src.getSize() * sizeof(T)),
-            .dst = dstTexture
+            .dst = dstTexture,
         };
         m_textureUploadQueue.push_back(transfer);
     }

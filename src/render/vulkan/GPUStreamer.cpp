@@ -219,7 +219,7 @@ void GPUStreamer::transfer(TextureTransfer data) {
             .srcStageMask = VK_PIPELINE_STAGE_2_TRANSFER_BIT_KHR,
             .srcAccessMask = VK_ACCESS_2_TRANSFER_WRITE_BIT_KHR,
             .oldLayout = VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL,
-            .newLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL,
+            .newLayout = VK_IMAGE_LAYOUT_READ_ONLY_OPTIMAL_KHR,
             .srcQueueFamilyIndex = m_transferFamilyIndex,
             .dstQueueFamilyIndex = m_graphicsFamilyIndex,
             .image = dstImage,
@@ -238,7 +238,7 @@ void GPUStreamer::transfer(TextureTransfer data) {
             .dstStageMask = VK_PIPELINE_STAGE_2_FRAGMENT_SHADER_BIT_KHR,
             .dstAccessMask = VK_ACCESS_2_SHADER_READ_BIT_KHR,
             .oldLayout = VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL,
-            .newLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL,
+            .newLayout = VK_IMAGE_LAYOUT_READ_ONLY_OPTIMAL_KHR,
             .srcQueueFamilyIndex = m_transferFamilyIndex,
             .dstQueueFamilyIndex = m_graphicsFamilyIndex,
             .image = dstImage,
@@ -254,7 +254,7 @@ void GPUStreamer::transferDynamic(BufferTransfer data, uint32 frame) {
 
     // shared, just upload
     if (data.memType == (HOST|DEVICE)) {
-        std::memcpy(data.dst->allocInfo.pMappedData, data.pSrc + offset, data.size);
+        std::memcpy((unsigned char*)data.dst->allocInfo.pMappedData + offset, data.pSrc, data.size);
         // https://github.com/KhronosGroup/Vulkan-Docs/wiki/Synchronization-Examples
         uint32_t alignedSize = (data.size-1) - ((data.size-1) % m_nonCoherentAtomSize) + m_nonCoherentAtomSize;
 
@@ -262,16 +262,17 @@ void GPUStreamer::transferDynamic(BufferTransfer data, uint32 frame) {
         VkMappedMemoryRange stagingRange = {
             .sType  = VK_STRUCTURE_TYPE_MAPPED_MEMORY_RANGE,
             .memory = data.dst->allocInfo.deviceMemory,
-            .offset = 0,
+            .offset = offset,
             .size   = alignedSize
         };
+        
         vkFlushMappedMemoryRanges(m_device->getDevice(), 1, &stagingRange);
         return;
     }
 
     // host local, just copy
     if (data.memType == HOST) {
-        std::memcpy(data.dst->allocInfo.pMappedData, data.pSrc + offset, data.size);
+        std::memcpy((unsigned char*)data.dst->allocInfo.pMappedData + offset, data.pSrc, data.size);
         return;
     }
 
