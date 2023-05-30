@@ -33,7 +33,7 @@ public:
 
     // get entity data for component T
     template <typename T>
-    auto getEntityComponent(Entity entity){
+    auto& getEntityComponent(Entity entity){
         uint32 index = m_typeMap[typeid(T)];
         T* comp = ((T*) dynamic_cast<T*>(m_components.at(index)));
         return comp->get(entity);
@@ -45,7 +45,6 @@ public:
         uint32 index = getComponentIndex<T>();
         T* comp = ((T*) dynamic_cast<T*>(m_components.at(index)));
         comp->set(entity, data);
-        
     }
 
     // add data for component T
