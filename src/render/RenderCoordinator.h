@@ -1,6 +1,9 @@
 #pragma once
 
+#include "renderers/BlurRenderer.h"
 #include "renderers/DebugNormalsRenderer.h"
+#include "renderers/DepthPrepassRenderer.h"
+#include "renderers/GTAORenderer.h"
 #include "renderers/UnlitMeshRenderer.h"
 #include "renderers/LitMeshRenderer.h"
 #include "renderers/TestRenderer.h"
@@ -51,6 +54,9 @@ private:
     TestRenderer m_testRenderer;
     DebugMeshRenderer m_debugMeshRenderer;
     DebugNormalsRenderer m_debugNormalsRenderer;
+    DepthPrepassRenderer m_depthPrepassRenderer;
+    GTAORenderer m_gtaoRenderer;
+    BlurRenderer m_blurRenderer;
     UnlitMeshRenderer m_unlitMeshRenderer;
     LitMeshRenderer m_litMeshRenderer;
     ImGuiRenderer m_imguiRenderer;

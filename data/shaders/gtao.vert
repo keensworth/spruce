@@ -1,0 +1,41 @@
+#version 460
+
+#define SPR_GLOBAL_BINDINGS 1
+#define SPR_FRAME_BINDINGS 1
+#include "common_bindings.glsl"
+
+#define SPR_RANDOM 1
+#include "common_util.glsl"
+
+layout(location = 0) out vec2 texCoord;
+layout(location = 1) out flat vec2 invScreenDim;
+layout(location = 2) out flat float aspect;
+layout(location = 3) out float spatialOffset;
+layout(location = 4) out float angleOffset;
+
+vec2 positionsHard[4] = vec2[](
+    vec2(-1.0,  1.0),
+    vec2(-1.0, -1.0),
+    vec2( 1.0, -1.0),
+    vec2( 1.0,  1.0)
+);
+
+void main()
+{
+    Scene scene = sceneData;
+
+    spatialOffset = 0.0*0.001 * random(scene.time);
+    angleOffset = 0.0*0.001 * random(scene.time + 100.0);
+
+    invScreenDim = vec2(1.0 / float(scene.screenDimX), 1.0 / float(scene.screenDimY));
+    aspect = float(scene.screenDimX) / float(scene.screenDimY);
+
+    vec4 pos = vec4(positionsHard[gl_VertexIndex], 0.0, 1.0);
+
+    float x = pos.x;
+    float y = -pos.y;
+    texCoord.x = x * 0.5 + 0.5;
+    texCoord.y = y * 0.5 + 0.5;
+    
+    gl_Position = pos;
+}

@@ -21,11 +21,15 @@ struct RenderState {
         DEBUG_MESH = 0b1 << 1,
         UNLIT_MESH = 0b1 << 2,
         LIT_MESH = 0b1 << 3,
-        DEBUG_NORMALS = 0b1 << 4
+        DEBUG_NORMALS = 0b1 << 4,
+        DEPTH_PREPASS = 0b1 << 5,
+        GTAO_PASS = 0b1 << 6,
+        BLUR_PASS = 0b1 << 7,
     };
 
     Shader visible = LIT_MESH;
-    bool dirty = false;
+    bool dirtyOutput = false;
+    bool dirtyShader = false;
 };
 
 class ImGuiRenderer {
@@ -64,65 +68,8 @@ public:
     }
     ~ImGuiRenderer(){}
 
-
-    void init(
-        Handle<DescriptorSet> globalDescriptorSet, 
-        Handle<DescriptorSetLayout> globalDescSetLayout)
-    {
-        m_globalDescriptorSet = globalDescriptorSet;
-        m_globalDescriptorSetLayout = globalDescSetLayout;
-
-        // color attachment
-        m_attachment = m_rm ->create<TextureAttachment>({
-            .textureLayout = {
-                .dimensions = m_dim,
-                .format = Flags::Format::RGBA8_UNORM,
-                .usage = Flags::ImageUsage::IU_COLOR_ATTACHMENT |
-                         Flags::ImageUsage::IU_SAMPLED          
-            }
-        });
-
-        // render pass
-        m_renderPassLayout = m_rm->create<RenderPassLayout>({
-            .colorAttatchmentFormats = {Flags::RGBA8_UNORM},
-            .subpass = {
-                .colorAttachments = {0}
-            }
-        });
-        m_renderPass = m_rm->create<RenderPass>({
-            .dimensions = m_dim,
-            .layout = m_renderPassLayout,
-            .colorAttachments = {
-                {
-                    .texture = m_attachment,
-                    .finalLayout = Flags::ImageLayout::SHADER_READ_ONLY
-                }
-            }
-        });
-
-        // descriptor set layout
-        m_descriptorSetLayout = m_rm->create<DescriptorSetLayout>({
-            .textures = {
-                {.binding = 0}
-            }
-        });
-
-        // shader
-        m_shader = m_rm->create<Shader>({
-            .vertexShader   = {.path = "../data/shaders/spv/copy.vert.spv"},
-            .fragmentShader = {.path = "../data/shaders/spv/copy.frag.spv"},
-            .descriptorSets = {
-                { globalDescSetLayout },
-                { }, // unused
-                { m_descriptorSetLayout },
-                { }  // unused
-            },
-            .graphicsState = {
-                .depthTest = Flags::Compare::LESS_OR_EQUAL,
-                .renderPass = m_renderPass,
-            }
-        });
-
+private:
+    void initImGui(){
         // -- imgui init --
         // create context
         IMGUI_CHECKVERSION();
@@ -164,22 +111,6 @@ public:
         });
     }
 
-
-    void setInput(Handle<TextureAttachment> input){
-        if (input == m_input)
-            return;
-
-        m_descriptorSet = m_rm->create<DescriptorSet>({
-            .textures = {
-                {.attachment = input}
-            },
-            .layout = m_descriptorSetLayout
-        });
-
-        m_hasInput = true;
-    }
-
-
     void buildLayout(){
         const ImGuiViewport* main_viewport = ImGui::GetMainViewport();
         ImGui::SetNextWindowPos(ImVec2(main_viewport->WorkPos.x + 650, main_viewport->WorkPos.y + 20), ImGuiCond_FirstUseEver);
@@ -196,17 +127,105 @@ public:
         }
             
         static int visible = RenderState::LIT_MESH;
+        bool reload = ImGui::Button("Reload Shader");
         ImGui::RadioButton("Test", &visible, RenderState::TEST);
         ImGui::RadioButton("Debug Mesh", &visible, RenderState::DEBUG_MESH);
         ImGui::RadioButton("Debug Normals", &visible, RenderState::DEBUG_NORMALS);
+        ImGui::RadioButton("Depth Prepass", &visible, RenderState::DEPTH_PREPASS);
+        ImGui::RadioButton("GTAO Pass", &visible, RenderState::GTAO_PASS);
+        ImGui::RadioButton("Blur Pass", &visible, RenderState::BLUR_PASS);
         ImGui::RadioButton("Unlit Mesh", &visible, RenderState::UNLIT_MESH);
         ImGui::RadioButton("Lit Mesh", &visible, RenderState::LIT_MESH);
         if ((uint32)visible != (uint32)state.visible){
             state.visible = (RenderState::Shader)visible;
-            state.dirty = true;
+            state.dirtyOutput = true;
+        }
+        if (reload){
+            state.dirtyShader = true;
         }
 
         ImGui::End();
+    }
+
+public:
+
+
+    void init(
+        Handle<DescriptorSet> globalDescriptorSet, 
+        Handle<DescriptorSetLayout> globalDescSetLayout)
+    {
+        m_globalDescriptorSet = globalDescriptorSet;
+        m_globalDescriptorSetLayout = globalDescSetLayout;
+
+        // color attachment
+        m_attachment = m_rm ->create<TextureAttachment>({
+            .textureLayout = {
+                .dimensions = m_dim,
+                .format = Flags::Format::RGBA8_UNORM,
+                .usage = Flags::ImageUsage::IU_COLOR_ATTACHMENT |
+                         Flags::ImageUsage::IU_SAMPLED          
+            }
+        });
+
+        // render pass
+        m_renderPassLayout = m_rm->create<RenderPassLayout>({
+            .colorAttatchmentFormats = {Flags::RGBA8_UNORM},
+            .subpass = {
+                .colorAttachments = {0}
+            }
+        });
+        m_renderPass = m_rm->create<RenderPass>({
+            .dimensions = m_dim,
+            .layout = m_renderPassLayout,
+            .colorAttachments = {
+                {
+                    .texture = m_attachment,
+                    .finalLayout = Flags::ImageLayout::READ_ONLY
+                }
+            }
+        });
+
+        // descriptor set layout
+        m_descriptorSetLayout = m_rm->create<DescriptorSetLayout>({
+            .textures = {
+                {.binding = 0}
+            }
+        });
+
+        // shader
+        m_shader = m_rm->create<Shader>({
+            .vertexShader   = {.path = "../data/shaders/spv/copy.vert.spv"},
+            .fragmentShader = {.path = "../data/shaders/spv/copy.frag.spv"},
+            .descriptorSets = {
+                { m_globalDescriptorSetLayout },
+                { }, // unused
+                { m_descriptorSetLayout },
+                { }  // unused
+            },
+            .graphicsState = {
+                .renderPass = m_renderPass,
+            }
+        });
+
+        initImGui();
+    }
+
+
+    void setInput(Handle<TextureAttachment> input){
+        if (input == m_input)
+            return;
+
+        m_descriptorSet = m_rm->create<DescriptorSet>({
+            .textures = {
+                {
+                    .attachment = input,
+                    .layout = Flags::ImageLayout::READ_ONLY
+                }
+            },
+            .layout = m_descriptorSetLayout
+        });
+
+        m_hasInput = true;
     }
 
 
@@ -235,7 +254,7 @@ public:
             .shader = m_shader,
             .set0 =  m_globalDescriptorSet,
             .set2 = m_descriptorSet}, 
-            batchManager.getQuadBatch(), 0);
+            batchManager.getQuadBatch(), 0, 0);
         
         ImGui_ImplVulkan_RenderDrawData(ImGui::GetDrawData(), cb.getCommandBuffer());
         
