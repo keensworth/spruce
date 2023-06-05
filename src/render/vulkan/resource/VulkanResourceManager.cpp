@@ -859,7 +859,7 @@ Handle<RenderPass> VulkanResourceManager::create<RenderPass>(RenderPassDesc desc
         .pAttachments    = layout->attachmentDescriptions.data(),
         .subpassCount    = 1,
         .pSubpasses      = &subpassDescription,
-        .dependencyCount = 2,
+        .dependencyCount = hasDepthAttachment ? 4u : 2u,
         .pDependencies   = hasDepthAttachment ? dependenciesWithDepth : dependencies
     };
     // create vulkan render pass
