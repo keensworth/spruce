@@ -14,6 +14,7 @@ class TextureCache : public TypedResourceCache<Texture>{};
 class TextureAttachmentCache : public TypedResourceCache<TextureAttachment>{};
 class DescriptorSetLayoutCache : public TypedResourceCache<DescriptorSetLayout>{};
 class DescriptorSetCache : public TypedResourceCache<DescriptorSet>{};
+class FramebufferCache : public TypedResourceCache<Framebuffer>{};
 class RenderPassLayoutCache : public TypedResourceCache<RenderPassLayout>{};
 class RenderPassCache : public TypedResourceCache<RenderPass>{};
 class ShaderCache : public TypedResourceCache<Shader>{};
@@ -86,6 +87,7 @@ private:
         {typeid(TextureAttachment),   new TextureAttachmentCache},
         {typeid(DescriptorSetLayout), new DescriptorSetLayoutCache},
         {typeid(DescriptorSet),       new DescriptorSetCache},
+        {typeid(Framebuffer),         new FramebufferCache},
         {typeid(RenderPassLayout),    new RenderPassLayoutCache},
         {typeid(RenderPass),          new RenderPassCache},
         {typeid(Shader),              new ShaderCache},
@@ -117,10 +119,12 @@ template<> Handle<Texture> VulkanResourceManager::create<Texture>(TextureDesc de
 template<> Handle<TextureAttachment> VulkanResourceManager::create<TextureAttachment>(TextureAttachmentDesc desc);
 template<> Handle<DescriptorSetLayout> VulkanResourceManager::create<DescriptorSetLayout>(DescriptorSetLayoutDesc desc);
 template<> Handle<DescriptorSet> VulkanResourceManager::create<DescriptorSet>(DescriptorSetDesc desc);
+template<> Handle<Framebuffer> VulkanResourceManager::create<Framebuffer>(FramebufferDesc desc);
 template<> Handle<RenderPassLayout> VulkanResourceManager::create<RenderPassLayout>(RenderPassLayoutDesc desc);
 template<> Handle<RenderPass> VulkanResourceManager::create<RenderPass>(RenderPassDesc desc);
 template<> Handle<Shader> VulkanResourceManager::create<Shader>(ShaderDesc desc);
 
+template<> Handle<Framebuffer> VulkanResourceManager::recreate<Framebuffer>(Handle<Framebuffer> handle, FramebufferDesc desc);
 template<> Handle<RenderPass> VulkanResourceManager::recreate<RenderPass>(Handle<RenderPass> handle, glm::uvec2 newDimensions);
 template<> Handle<Shader> VulkanResourceManager::recreate<Shader>(Handle<Shader> handle, bool temp);
 
@@ -129,6 +133,7 @@ template<> void VulkanResourceManager::remove<Texture>(Handle<Texture> handle);
 template<> void VulkanResourceManager::remove<TextureAttachment>(Handle<TextureAttachment> handle);
 template<> void VulkanResourceManager::remove<DescriptorSetLayout>(Handle<DescriptorSetLayout> handle);
 template<> void VulkanResourceManager::remove<DescriptorSet>(Handle<DescriptorSet> handle);
+template<> void VulkanResourceManager::remove<Framebuffer>(Handle<Framebuffer> handle);
 template<> void VulkanResourceManager::remove<RenderPassLayout>(Handle<RenderPassLayout> handle);
 template<> void VulkanResourceManager::remove<RenderPass>(Handle<RenderPass> handle);
 template<> void VulkanResourceManager::remove<Shader>(Handle<Shader> handle);

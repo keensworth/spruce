@@ -13,6 +13,7 @@
 #include "memory/Handle.h"
 #include <vk_mem_alloc.h>
 #include <span>
+#include <vulkan/vulkan_core.h>
 
 namespace spr::gfx {
 
@@ -111,27 +112,9 @@ typedef struct DescriptorSet {
 
 
 // --------------------------------------------------------- //
-//                 Render Pass Layout                        // 
+//                 Framebuffer                               // 
 // --------------------------------------------------------- //
-typedef struct RenderPassLayout {
-    VkAttachmentReference depthReference;
-    std::vector<VkAttachmentReference> colorReferences;
-    std::vector<VkAttachmentDescription> attachmentDescriptions;
-    uint32 attachmentCount;
-    struct Desc;
-} RenderPassLayout;
-
-
-// --------------------------------------------------------- //
-//                 Render Pass                               // 
-// --------------------------------------------------------- //
-typedef struct RenderPass {
-    Handle<RenderPassLayout> layout;
-    VkRenderPass renderPass;
-    std::vector<VkFramebuffer> framebuffers;
-    glm::uvec3 dimensions;
-    uint32 samples;
-
+typedef struct Framebuffer {
     typedef struct ColorAttachment {
         Handle<TextureAttachment> texture;
 
@@ -160,14 +143,44 @@ typedef struct RenderPass {
         uint32 stencilStoreOp = Flags::StoreOp::STORE_DONT_CARE;
         uint32 layout         = Flags::ImageLayout::UNDEFINED;
         uint32 finalLayout    = Flags::ImageLayout::ATTACHMENT;
-        // overwritten by Shader, not to be set
+        // overwritten by create<Shader>, not to be set
         uint32 compareOp;
     } DepthAttachment;
 
+    std::vector<VkFramebuffer> framebuffers;
     bool hasDepthAttachment = false;
     DepthAttachment depthAttachment;
     std::vector<ColorAttachment> colorAttachments;
     bool swapchainOverride = false;
+
+    struct Desc;
+} Framebuffer;
+
+
+// --------------------------------------------------------- //
+//                 Render Pass Layout                        // 
+// --------------------------------------------------------- //
+typedef struct RenderPassLayout {
+    VkAttachmentReference depthReference;
+    std::vector<VkAttachmentReference> colorReferences;
+    std::vector<VkAttachmentDescription> attachmentDescriptions;
+
+    uint32 colorAttachmentCount = 0;
+    bool   depthAttachmnentCount = 0;
+
+    struct Desc;
+} RenderPassLayout;
+
+
+// --------------------------------------------------------- //
+//                 Render Pass                               // 
+// --------------------------------------------------------- //
+typedef struct RenderPass {
+    Handle<RenderPassLayout> layout;
+    VkRenderPass renderPass = VK_NULL_HANDLE;
+    Handle<Framebuffer> framebuffer;
+    glm::uvec3 dimensions;
+    uint32 samples;
     struct Desc;
 } RenderPass;
 
@@ -262,8 +275,11 @@ typedef struct TextureAttachment::Desc {
 //                 Descriptor Set Layout Desc                // 
 // --------------------------------------------------------- //
 typedef struct DescriptorSetLayout::Desc {
-    std::vector<DescriptorSetLayout::TextureBindingLayout> textures{};
-    std::vector<DescriptorSetLayout::BufferBindingLayout> buffers{};
+    typedef DescriptorSetLayout::TextureBindingLayout TextureBindingLayout;
+    typedef DescriptorSetLayout::BufferBindingLayout BufferBindingLayout;
+    
+    std::vector<TextureBindingLayout> textures{};
+    std::vector<BufferBindingLayout> buffers{};
 } DescriptorSetLayoutDesc;
 
 
@@ -296,6 +312,21 @@ typedef struct DescriptorSet::Desc {
 
 
 // --------------------------------------------------------- //
+//                 Framebuffer Desc                          // 
+// --------------------------------------------------------- //
+typedef struct Framebuffer::Desc {
+    glm::uvec3 dimensions = {0,0,0};
+    Handle<RenderPass> renderPass;
+
+    bool hasDepthAttachment = 0;
+    DepthAttachment depthAttachment;
+    std::vector<ColorAttachment> colorAttachments{};
+
+    bool swapchainOverride = false;
+} FramebufferDesc;
+
+
+// --------------------------------------------------------- //
 //                 Render Pass Layout Desc                   // 
 // --------------------------------------------------------- //
 typedef struct RenderPassLayout::Desc { 
@@ -314,10 +345,14 @@ typedef struct RenderPassLayout::Desc {
 //                 Render Pass Desc                          // 
 // --------------------------------------------------------- //
 typedef struct RenderPass::Desc { 
+    typedef Framebuffer::DepthAttachment DepthAttachment;
+    typedef Framebuffer::ColorAttachment ColorAttachment;
+
     glm::uvec3 dimensions = {0,0,0};
     Handle<RenderPassLayout> layout;
-    RenderPass::DepthAttachment depthAttachment;
-    std::vector<RenderPass::ColorAttachment> colorAttachments{};
+    
+    DepthAttachment depthAttachment;
+    std::vector<ColorAttachment> colorAttachments{};
 } RenderPassDesc;
 
 

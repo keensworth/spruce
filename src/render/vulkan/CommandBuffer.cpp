@@ -78,8 +78,9 @@ RenderPassRenderer& CommandBuffer::beginRenderPass(Handle<RenderPass> handle, gl
 
     // get attachment counts (color + depth)
     RenderPass* renderPass = m_rm->get<RenderPass>(handle);
-    bool hasDepth = renderPass->hasDepthAttachment;
-    uint32 colorCount = renderPass->colorAttachments.size();
+    Framebuffer* framebuffer = m_rm->get<Framebuffer>(renderPass->framebuffer);
+    bool hasDepth = framebuffer->hasDepthAttachment;
+    uint32 colorCount = framebuffer->colorAttachments.size();
 
     // create clear values and begin renderpass
     std::vector<VkClearValue> clearValues(colorCount + hasDepth);
@@ -88,7 +89,7 @@ RenderPassRenderer& CommandBuffer::beginRenderPass(Handle<RenderPass> handle, gl
             .color = {{clearColor.x, clearColor.y, clearColor.z, clearColor.w}} // (green-gray by default)
         };
     if (hasDepth){
-        uint32 compareOp = renderPass->depthAttachment.compareOp;
+        uint32 compareOp = framebuffer->depthAttachment.compareOp;
         VkClearDepthStencilValue depthClearColor = {1.0f, 0};
         if (compareOp == Flags::Compare::GREATER || compareOp == Flags::Compare::GREATER_OR_EQUAL)
             depthClearColor = {0.0f, 0};
@@ -100,7 +101,7 @@ RenderPassRenderer& CommandBuffer::beginRenderPass(Handle<RenderPass> handle, gl
     VkRenderPassBeginInfo renderPassInfo {
         .sType           = VK_STRUCTURE_TYPE_RENDER_PASS_BEGIN_INFO,
         .renderPass      = renderPass->renderPass,
-        .framebuffer     = renderPass->framebuffers[m_frameId % MAX_FRAME_COUNT],
+        .framebuffer     = framebuffer->framebuffers[m_frameId % MAX_FRAME_COUNT],
         .renderArea      = {
             .offset = {0,0},
             .extent = {renderPass->dimensions.x, renderPass->dimensions.y}
