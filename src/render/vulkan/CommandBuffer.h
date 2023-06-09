@@ -9,6 +9,7 @@ namespace spr::gfx{
 class VulkanDevice;
 class VulkanResourceManager;
 struct RenderPass;
+struct Framebuffer;
 struct Buffer;
 
 typedef enum CommandType : uint32 {
@@ -23,6 +24,7 @@ public:
     ~CommandBuffer();
 
     RenderPassRenderer& beginRenderPass(Handle<RenderPass> renderPass, glm::vec4 clearColor);
+    RenderPassRenderer& beginRenderPass(Handle<RenderPass> renderPass, Handle<Framebuffer> framebuffer, glm::vec4 clearColor);
     void endRenderPass();
 
     void bindIndexBuffer(Handle<Buffer> indexBuffer);

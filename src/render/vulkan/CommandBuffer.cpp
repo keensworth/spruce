@@ -115,6 +115,51 @@ RenderPassRenderer& CommandBuffer::beginRenderPass(Handle<RenderPass> handle, gl
     return m_passRenderer;
 }
 
+RenderPassRenderer& CommandBuffer::beginRenderPass(Handle<RenderPass> renderPassHandle, Handle<Framebuffer> framebufferHandle, glm::vec4 clearColor = {0.45098f, 0.52549f, 0.47058f, 1.0f}){
+    // make sure user is accessing correct commandbuffer
+    if (m_type != CommandType::OFFSCREEN && m_type != CommandType::MAIN){
+        SprLog::warn("[CommandBuffer] Not a render command buffer");
+    }
+
+    // get attachment counts (color + depth)
+    RenderPass* renderPass = m_rm->get<RenderPass>(renderPassHandle);
+    Framebuffer* framebuffer = m_rm->get<Framebuffer>(framebufferHandle);
+    bool hasDepth = framebuffer->hasDepthAttachment;
+    uint32 colorCount = framebuffer->colorAttachments.size();
+
+    // create clear values and begin renderpass
+    std::vector<VkClearValue> clearValues(colorCount + hasDepth);
+    for (uint32 i = 0; i < colorCount; i++)
+        clearValues[i] = VkClearValue {
+            .color = {{clearColor.x, clearColor.y, clearColor.z, clearColor.w}} // (green-gray by default)
+        };
+    if (hasDepth){
+        uint32 compareOp = framebuffer->depthAttachment.compareOp;
+        VkClearDepthStencilValue depthClearColor = {1.0f, 0};
+        if (compareOp == Flags::Compare::GREATER || compareOp == Flags::Compare::GREATER_OR_EQUAL)
+            depthClearColor = {0.0f, 0};
+        clearValues[colorCount] = VkClearValue {
+            .depthStencil = depthClearColor
+        };
+    } 
+
+    VkRenderPassBeginInfo renderPassInfo {
+        .sType           = VK_STRUCTURE_TYPE_RENDER_PASS_BEGIN_INFO,
+        .renderPass      = renderPass->renderPass,
+        .framebuffer     = framebuffer->framebuffers[m_frameId % MAX_FRAME_COUNT],
+        .renderArea      = {
+            .offset = {0,0},
+            .extent = {framebuffer->dimensions.x, framebuffer->dimensions.y}
+        },
+        .clearValueCount = (uint32)clearValues.size(),
+        .pClearValues    = clearValues.data(),
+    };
+    vkCmdBeginRenderPass(m_commandBuffer, &renderPassInfo, VK_SUBPASS_CONTENTS_INLINE);
+    
+    // prepare and return render pass renderer
+    return m_passRenderer;
+}
+
 void CommandBuffer::endRenderPass(){
     vkCmdEndRenderPass(m_commandBuffer);
 }
@@ -172,7 +217,6 @@ bool CommandBuffer::isRecording(){
 void CommandBuffer::waitFence(){
     if (!m_initialized)
         SprLog::error("[CommandBuffer] [waitFence] CB not initialized");
-    VkDevice& dev = m_device->getDevice();
     VK_CHECK(vkWaitForFences(m_device->getDevice(), 1, &m_fence, VK_TRUE, UINT64_MAX));
 }
 

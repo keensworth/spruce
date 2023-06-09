@@ -119,7 +119,7 @@ void RenderCoordinator::render(SceneManager& sceneManager){
         } else if (visible & RenderState::GTAO_PASS){
             reload = m_gtaoRenderer.getShader();
         } else if (visible & RenderState::BLUR_PASS){
-            reload = m_blurRenderer.getShaderX();
+            reload = m_blurRenderer.getShader();
         } else if (visible & RenderState::UNLIT_MESH){
             reload = m_unlitMeshRenderer.getShader();
         } else if (visible & RenderState::LIT_MESH){

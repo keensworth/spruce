@@ -36,7 +36,6 @@ public:
         m_frameDescSetLayout = frameDescSetLayout;
 
         // color attachment
-        // color attachment
         m_attachmentX = m_rm ->create<TextureAttachment>({
             .textureLayout = {
                 .dimensions = m_dim,
@@ -55,15 +54,15 @@ public:
         });
 
         // render pass (X or horizontal blur pass)
-        m_renderPassLayoutX = m_rm->create<RenderPassLayout>({
+        m_renderPassLayout = m_rm->create<RenderPassLayout>({
             .colorAttatchmentFormats = {Flags::RGBA8_UNORM},
             .subpass = {
                 .colorAttachments = {0}
             }
         });
-        m_renderPassX = m_rm->create<RenderPass>({
+        m_renderPass = m_rm->create<RenderPass>({
             .dimensions = m_dim,
-            .layout = m_renderPassLayoutX,
+            .layout = m_renderPassLayout,
             .colorAttachments = {
                 {
                     .texture = m_attachmentX,
@@ -71,17 +70,9 @@ public:
                 }
             }
         });
-
-        // render pass (Y or vertical blur pass)
-        m_renderPassLayoutY = m_rm->create<RenderPassLayout>({
-            .colorAttatchmentFormats = {Flags::RGBA8_UNORM},
-            .subpass = {
-                .colorAttachments = {0}
-            }
-        });
-        m_renderPassY = m_rm->create<RenderPass>({
+        m_framebufferY = m_rm->create<Framebuffer>({
             .dimensions = m_dim,
-            .layout = m_renderPassLayoutX,
+            .renderPass = m_renderPass,
             .colorAttachments = {
                 {
                     .texture = m_attachmentY,
@@ -90,145 +81,98 @@ public:
             }
         });
 
+
         // descriptor set layout
-        m_descriptorSetLayoutX = m_rm->create<DescriptorSetLayout>({
-            .textures = {
-                {.binding = 0}
-            }
-        });
-        m_descriptorSetLayoutY = m_rm->create<DescriptorSetLayout>({
+        m_descriptorSetLayout = m_rm->create<DescriptorSetLayout>({
             .textures = {
                 {.binding = 0}
             }
         });
 
         // shader (X or horizontal blur pass)
-        m_shaderX = m_rm->create<Shader>({
+        m_shader = m_rm->create<Shader>({
             .vertexShader = {.path = "../data/shaders/spv/blur.vert.spv"},
             .fragmentShader = {.path = "../data/shaders/spv/blur.frag.spv"},
             .descriptorSets = {
                 { globalDescSetLayout },
                 { frameDescSetLayout },
-                { m_descriptorSetLayoutX },
+                { m_descriptorSetLayout },
                 { } // unused
             },
             .graphicsState = {
                 .depthTestEnabled = false,
-                .renderPass = m_renderPassX,
-            }
-        });
-
-        // shader (Y or vertical blur pass)
-        m_shaderY = m_rm->create<Shader>({
-            .vertexShader = {.path = "../data/shaders/spv/blur.vert.spv"},
-            .fragmentShader = {.path = "../data/shaders/spv/blur.frag.spv"},
-            .descriptorSets = {
-                { globalDescSetLayout },
-                { frameDescSetLayout },
-                { m_descriptorSetLayoutY },
-                { } // unused
-            },
-            .graphicsState = {
-                .depthTestEnabled = false,
-                .renderPass = m_renderPassY,
+                .renderPass = m_renderPass,
             }
         });
 
         // descriptor set
-        m_descriptorSetX = m_rm->create<DescriptorSet>({
+        m_descriptorSet = m_rm->create<DescriptorSet>({
             .textures = {
                 {
                     .attachment = input,
                     .layout = Flags::ImageLayout::READ_ONLY
                 }
             },
-            .layout = m_descriptorSetLayoutX
-        });
-        m_descriptorSetY = m_rm->create<DescriptorSet>({
-            .textures = {
-                {
-                    .attachment = m_attachmentX,
-                    .layout = Flags::ImageLayout::READ_ONLY
-                }
-            },
-            .layout = m_descriptorSetLayoutY
+            .layout = m_descriptorSetLayout
         });
     }
 
 
     void render(CommandBuffer& cb, BatchManager& batchManager){
         // horizontal pass
-        RenderPassRenderer& passRenderer = cb.beginRenderPass(m_renderPassX, glm::vec4(1.f,1.f,1.f,1.f));
+        RenderPassRenderer& passRenderer = cb.beginRenderPass(m_renderPass, glm::vec4(1.f,1.f,1.f,1.f));
         passRenderer.drawSubpass({
-            .shader = m_shaderX,
+            .shader = m_shader,
             .set0 =  m_globalDescriptorSet,
             .set1 = m_frameDescSets[m_renderer->getFrameId() % MAX_FRAME_COUNT],
-            .set2 = m_descriptorSetX}, 
+            .set2 = m_descriptorSet}, 
             batchManager.getQuadBatch(), 0, 1);
         cb.endRenderPass();
 
         // horizontal pass
-        passRenderer = cb.beginRenderPass(m_renderPassY, glm::vec4(1.f,1.f,1.f,1.f));
+        passRenderer = cb.beginRenderPass(m_renderPass, m_framebufferY, glm::vec4(1.f,1.f,1.f,1.f));
         passRenderer.drawSubpass({
-            .shader = m_shaderY,
+            .shader = m_shader,
             .set0 =  m_globalDescriptorSet,
             .set1 = m_frameDescSets[m_renderer->getFrameId() % MAX_FRAME_COUNT],
-            .set2 = m_descriptorSetY}, 
+            .set2 = m_descriptorSet}, 
             batchManager.getQuadBatch(), 0, 2);
         cb.endRenderPass();
     }
 
 
-    Handle<RenderPass> getRenderPassX(){
-        return m_renderPassX;
-    }
-
-    Handle<RenderPass> getRenderPassY(){
-        return m_renderPassY;
+    Handle<RenderPass> getRenderPass(){
+        return m_renderPass;
     }
 
     Handle<TextureAttachment> getAttachment(){
         return m_attachmentY;
     }
 
-    Handle<Shader> getShaderX(){
-        return m_shaderX;
+    Handle<Shader> getShader(){
+        return m_shader;
     }
-
-    Handle<Shader> getShaderY(){
-        return m_shaderY;
-    }
-
 
     void destroy(){
-        m_rm->remove<DescriptorSet>(m_descriptorSetX);
-        m_rm->remove<DescriptorSet>(m_descriptorSetY);
-        m_rm->remove<Shader>(m_shaderX);
-        m_rm->remove<Shader>(m_shaderY);
-        m_rm->remove<DescriptorSetLayout>(m_descriptorSetLayoutX);
-        m_rm->remove<DescriptorSetLayout>(m_descriptorSetLayoutY);
-        m_rm->remove<RenderPass>(m_renderPassX);
-        m_rm->remove<RenderPass>(m_renderPassY);
-        m_rm->remove<RenderPassLayout>(m_renderPassLayoutX);
-        m_rm->remove<RenderPassLayout>(m_renderPassLayoutY);
+        m_rm->remove<DescriptorSet>(m_descriptorSet);
+        m_rm->remove<Shader>(m_shader);
+        m_rm->remove<DescriptorSetLayout>(m_descriptorSetLayout);
+        m_rm->remove<RenderPass>(m_renderPass);
+        m_rm->remove<RenderPassLayout>(m_renderPassLayout);
         m_rm->remove<TextureAttachment>(m_attachmentX);
         m_rm->remove<TextureAttachment>(m_attachmentY);
         SprLog::info("[BlurRenderer] [destroy] destroyed...");
     }
 
 private: // owning
-    Handle<TextureAttachment> m_attachmentY;
     Handle<TextureAttachment> m_attachmentX;
-    Handle<RenderPassLayout> m_renderPassLayoutX;
-    Handle<RenderPassLayout> m_renderPassLayoutY;
-    Handle<RenderPass> m_renderPassX;
-    Handle<RenderPass> m_renderPassY;
-    Handle<DescriptorSetLayout> m_descriptorSetLayoutX;
-    Handle<DescriptorSetLayout> m_descriptorSetLayoutY;
-    Handle<DescriptorSet> m_descriptorSetX;
-    Handle<DescriptorSet> m_descriptorSetY;
-    Handle<Shader> m_shaderX;
-    Handle<Shader> m_shaderY;
+    Handle<TextureAttachment> m_attachmentY;
+    Handle<Framebuffer> m_framebufferY;
+    Handle<RenderPassLayout> m_renderPassLayout;
+    Handle<RenderPass> m_renderPass;
+    Handle<DescriptorSetLayout> m_descriptorSetLayout;
+    Handle<DescriptorSet> m_descriptorSet;
+    Handle<Shader> m_shader;
 
 
 private: // non-owning
