@@ -148,6 +148,8 @@ typedef struct Framebuffer {
     } DepthAttachment;
 
     std::vector<VkFramebuffer> framebuffers;
+    glm::uvec3 dimensions;
+
     bool hasDepthAttachment = false;
     DepthAttachment depthAttachment;
     std::vector<ColorAttachment> colorAttachments;

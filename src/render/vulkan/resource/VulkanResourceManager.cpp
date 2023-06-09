@@ -671,6 +671,7 @@ Handle<Framebuffer> VulkanResourceManager::create<Framebuffer>(FramebufferDesc d
 
     Framebuffer framebuffer = {
         .framebuffers = vulkanFramebuffers,
+        .dimensions = desc.dimensions,
         .hasDepthAttachment = desc.hasDepthAttachment,
         .depthAttachment = desc.depthAttachment,
         .colorAttachments = desc.colorAttachments,
@@ -1304,8 +1305,7 @@ Handle<RenderPass> VulkanResourceManager::recreate<RenderPass>(Handle<RenderPass
     
     // recreate framebuffer
     recreate<Framebuffer>(renderPass->framebuffer, FramebufferDesc{
-        .dimensions = {newDimensions.x, newDimensions.y, renderPass->dimensions.z},
-        .renderPass = handle
+        .dimensions = {newDimensions.x, newDimensions.y, renderPass->dimensions.z}
     });
     
     return handle;
@@ -1329,6 +1329,10 @@ Handle<Framebuffer> VulkanResourceManager::recreate<Framebuffer>(Handle<Framebuf
     std::vector<Framebuffer::ColorAttachment>& colorAttachments = framebuffer->colorAttachments;
     Framebuffer::DepthAttachment& depthAttachment = framebuffer->depthAttachment;
     uint32 frameCount = swapchainOverride ? colorAttachments[0].swapchainImageViews.size() : MAX_FRAME_COUNT;
+
+    // don't recreate if desired dimension == current
+    if (desc.dimensions == framebuffer->dimensions)
+        return handle;
 
     // rebuild all textures that use default res,
     // assuming this renderpass doesnt use swapchain images
