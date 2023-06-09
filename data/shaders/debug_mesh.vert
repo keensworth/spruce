@@ -5,8 +5,7 @@
 #include "common_bindings.glsl"
 
 
-void main()
-{
+void main() {
     DrawData draw = draws[gl_InstanceIndex];
     Transform transform = transforms[draw.transformOffset];
     Scene scene = sceneData;

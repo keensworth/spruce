@@ -7,8 +7,7 @@
 layout(location = 0) out vec2 texCoord;
 layout(location = 1) out flat uint drawId;
 
-void main()
-{
+void main() {
     DrawData draw = draws[gl_InstanceIndex];
     Transform transform = transforms[draw.transformOffset];
     Scene scene = sceneData;

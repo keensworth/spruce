@@ -8,16 +8,16 @@
 #define SPR_NORMALS 1
 #include "common_util.glsl"
 
-layout(location = 0) out vec4 FragColor;
-
 layout(location = 0) in vec4 pos;
 layout(location = 1) in vec3 normal;
 layout(location = 2) in vec3 color;
 layout(location = 3) in vec2 texCoord;
 layout(location = 4) in flat uint drawId;
 
+layout(location = 0) out vec4 FragColor;
 
-void main(){
+
+void main() {
     DrawData draw = draws[drawId];
     MaterialData material = materials[draw.materialOffset];
     Scene scene = sceneData;

@@ -28,10 +28,10 @@ void main()
     texCoord.x = x * 0.5 + 0.5;
     texCoord.y = y * 0.5 + 0.5;
 
-    // use gl_InstanceIndex to pass in our desired direction for 
+    // use gl_BaseInstance to pass in our desired direction for 
     // this blur pass, where '1' is horizontal and '2' is vertical
     // (firstInstance parameter in draw call)
-    direction = vec2(gl_InstanceIndex==1, gl_InstanceIndex==2);
+    direction = vec2(gl_BaseInstance==1, gl_BaseInstance==2);
     
     gl_Position = pos;
 }

@@ -20,8 +20,7 @@ vec2 positionsHard[4] = vec2[](
     vec2( 1.0,  1.0)
 );
 
-void main()
-{
+void main() {
     Scene scene = sceneData;
 
     spatialOffset = 0.0*0.001 * random(scene.time);

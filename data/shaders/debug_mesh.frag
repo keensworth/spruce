@@ -21,6 +21,6 @@ vec3 debugColorPalette[16] = vec3[](
     vec3(0.4274,0.3921,0.4000)
 );
 
-void main(){
+void main() {
     FragColor = vec4(debugColorPalette[gl_PrimitiveID%16], 1.0);
 }

@@ -5,13 +5,13 @@
 #include "common_bindings.glsl"
 #include "common_constants.glsl"
 
-layout(location = 0) out vec4 FragColor;
-
 layout(location = 0) in vec2 texCoord;
 layout(location = 1) in flat vec2 invScreenDim;
 layout(location = 2) in flat float aspect;
 layout(location = 3) in float spatialOffset;
 layout(location = 4) in float angleOffset;
+
+layout(location = 0) out vec4 FragColor;
 
 layout(set = 2, binding = 0) uniform sampler2D depthMap;
 
