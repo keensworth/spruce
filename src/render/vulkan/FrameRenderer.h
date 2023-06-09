@@ -60,7 +60,7 @@ public:
 
         // shader
         m_shader = m_rm->create<Shader>({
-            .vertexShader = {.path = "../data/shaders/spv/copy_swapchain.vert.spv"},
+            .vertexShader = {.path = "../data/shaders/spv/copy.vert.spv"},
             .fragmentShader = {.path = "../data/shaders/spv/copy_swapchain.frag.spv"},
             .descriptorSets = {
                 { globalDescSetLayout },
