@@ -621,7 +621,8 @@ Handle<Framebuffer> VulkanResourceManager::create<Framebuffer>(FramebufferDesc d
     FramebufferCache* framebufferCache = ((FramebufferCache*) m_resourceMap[typeid(Framebuffer)]);
 
     RenderPass* renderPass = get<RenderPass>(desc.renderPass);
-    uint32 attachmentCount = desc.colorAttachments.size() + desc.hasDepthAttachment;
+    bool hasDepthAttachment = get<RenderPassLayout>(renderPass->layout)->depthAttachmnentCount;
+    uint32 attachmentCount = desc.colorAttachments.size() + hasDepthAttachment;
     uint32 frameCount = desc.swapchainOverride ? desc.colorAttachments[0].swapchainImageViews.size() :  MAX_FRAME_COUNT;
 
     std::vector<VkFramebuffer> vulkanFramebuffers(frameCount);
@@ -643,7 +644,7 @@ Handle<Framebuffer> VulkanResourceManager::create<Framebuffer>(FramebufferDesc d
             attachments[i] = texture->view;
         }
         // depth
-        if(desc.hasDepthAttachment){
+        if(hasDepthAttachment){
             TextureAttachment* textureAttachment = get<TextureAttachment>(desc.depthAttachment.texture);
             Texture* texture =  get<Texture>(textureAttachment->textures[frame]);
             attachments[attachmentCount-1] = texture->view;
@@ -672,7 +673,7 @@ Handle<Framebuffer> VulkanResourceManager::create<Framebuffer>(FramebufferDesc d
     Framebuffer framebuffer = {
         .framebuffers = vulkanFramebuffers,
         .dimensions = desc.dimensions,
-        .hasDepthAttachment = desc.hasDepthAttachment,
+        .hasDepthAttachment = hasDepthAttachment,
         .depthAttachment = desc.depthAttachment,
         .colorAttachments = desc.colorAttachments,
         .swapchainOverride = desc.swapchainOverride
@@ -984,7 +985,6 @@ Handle<RenderPass> VulkanResourceManager::create<RenderPass>(RenderPassDesc desc
     Handle<Framebuffer> framebuffer = create<Framebuffer>({
         .dimensions = desc.dimensions,
         .renderPass = renderPassHandle,
-        .hasDepthAttachment = hasDepthAttachment,
         .depthAttachment = desc.depthAttachment,
         .colorAttachments = desc.colorAttachments,
         .swapchainOverride = swapchainOverride

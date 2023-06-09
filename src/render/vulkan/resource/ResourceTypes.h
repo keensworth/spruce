@@ -320,7 +320,6 @@ typedef struct Framebuffer::Desc {
     glm::uvec3 dimensions = {0,0,0};
     Handle<RenderPass> renderPass;
 
-    bool hasDepthAttachment = 0;
     DepthAttachment depthAttachment;
     std::vector<ColorAttachment> colorAttachments{};
 
