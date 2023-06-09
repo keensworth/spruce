@@ -70,7 +70,7 @@ void CommandBuffer::end(){
 }
 
 
-RenderPassRenderer& CommandBuffer::beginRenderPass(Handle<RenderPass> handle, glm::vec4 clearColor = {0.45098f, 0.52549f, 0.47058f, 1.0f}){
+RenderPassRenderer& CommandBuffer::beginRenderPass(Handle<RenderPass> handle, glm::vec4 clearColor){
     // make sure user is accessing correct commandbuffer
     if (m_type != CommandType::OFFSCREEN && m_type != CommandType::MAIN){
         SprLog::warn("[CommandBuffer] Not a render command buffer");
@@ -115,7 +115,7 @@ RenderPassRenderer& CommandBuffer::beginRenderPass(Handle<RenderPass> handle, gl
     return m_passRenderer;
 }
 
-RenderPassRenderer& CommandBuffer::beginRenderPass(Handle<RenderPass> renderPassHandle, Handle<Framebuffer> framebufferHandle, glm::vec4 clearColor = {0.45098f, 0.52549f, 0.47058f, 1.0f}){
+RenderPassRenderer& CommandBuffer::beginRenderPass(Handle<RenderPass> renderPassHandle, Handle<Framebuffer> framebufferHandle, glm::vec4 clearColor){
     // make sure user is accessing correct commandbuffer
     if (m_type != CommandType::OFFSCREEN && m_type != CommandType::MAIN){
         SprLog::warn("[CommandBuffer] Not a render command buffer");

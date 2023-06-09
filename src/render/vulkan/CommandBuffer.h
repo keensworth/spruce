@@ -23,8 +23,8 @@ public:
     CommandBuffer();
     ~CommandBuffer();
 
-    RenderPassRenderer& beginRenderPass(Handle<RenderPass> renderPass, glm::vec4 clearColor);
-    RenderPassRenderer& beginRenderPass(Handle<RenderPass> renderPass, Handle<Framebuffer> framebuffer, glm::vec4 clearColor);
+    RenderPassRenderer& beginRenderPass(Handle<RenderPass> renderPass, glm::vec4 clearColor = glm::vec4{0.45098f, 0.52549f, 0.47058f, 1.0f});
+    RenderPassRenderer& beginRenderPass(Handle<RenderPass> renderPass, Handle<Framebuffer> framebuffer, glm::vec4 clearColor = glm::vec4{0.45098f, 0.52549f, 0.47058f, 1.0f});
     void endRenderPass();
 
     void bindIndexBuffer(Handle<Buffer> indexBuffer);
