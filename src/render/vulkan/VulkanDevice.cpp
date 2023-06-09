@@ -455,6 +455,9 @@ void VulkanDevice::getExtensions(SprWindow& window){
     // add swapchain extension
     m_deviceExtensionNames.push_back(VK_KHR_SWAPCHAIN_EXTENSION_NAME);
     m_deviceExtensionCount++;
+    // add shader draw parameters extension
+    m_deviceExtensionNames.push_back(VK_KHR_SHADER_DRAW_PARAMETERS_EXTENSION_NAME);
+    m_deviceExtensionCount++;
     
     // [instance]
     // add debug extension (if applicable)
