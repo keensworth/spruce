@@ -53,7 +53,7 @@ public:
             }
         });
 
-        // render pass (X or horizontal blur pass)
+        // render pass 
         m_renderPassLayout = m_rm->create<RenderPassLayout>({
             .colorAttatchmentFormats = {Flags::RGBA8_UNORM},
             .subpass = {
@@ -106,10 +106,19 @@ public:
         });
 
         // descriptor set
-        m_descriptorSet = m_rm->create<DescriptorSet>({
+        m_descriptorSetX = m_rm->create<DescriptorSet>({
             .textures = {
                 {
                     .attachment = input,
+                    .layout = Flags::ImageLayout::READ_ONLY
+                }
+            },
+            .layout = m_descriptorSetLayout
+        });
+        m_descriptorSetY = m_rm->create<DescriptorSet>({
+            .textures = {
+                {
+                    .attachment = m_attachmentX,
                     .layout = Flags::ImageLayout::READ_ONLY
                 }
             },
@@ -125,17 +134,17 @@ public:
             .shader = m_shader,
             .set0 =  m_globalDescriptorSet,
             .set1 = m_frameDescSets[m_renderer->getFrameId() % MAX_FRAME_COUNT],
-            .set2 = m_descriptorSet}, 
+            .set2 = m_descriptorSetX}, 
             batchManager.getQuadBatch(), 0, 1);
         cb.endRenderPass();
 
-        // horizontal pass
+        // vertical pass
         passRenderer = cb.beginRenderPass(m_renderPass, m_framebufferY, glm::vec4(1.f,1.f,1.f,1.f));
         passRenderer.drawSubpass({
             .shader = m_shader,
             .set0 =  m_globalDescriptorSet,
             .set1 = m_frameDescSets[m_renderer->getFrameId() % MAX_FRAME_COUNT],
-            .set2 = m_descriptorSet}, 
+            .set2 = m_descriptorSetY}, 
             batchManager.getQuadBatch(), 0, 2);
         cb.endRenderPass();
     }
@@ -154,9 +163,11 @@ public:
     }
 
     void destroy(){
-        m_rm->remove<DescriptorSet>(m_descriptorSet);
+        m_rm->remove<DescriptorSet>(m_descriptorSetX);
+        m_rm->remove<DescriptorSet>(m_descriptorSetY);
         m_rm->remove<Shader>(m_shader);
         m_rm->remove<DescriptorSetLayout>(m_descriptorSetLayout);
+        m_rm->remove<Framebuffer>(m_framebufferY);
         m_rm->remove<RenderPass>(m_renderPass);
         m_rm->remove<RenderPassLayout>(m_renderPassLayout);
         m_rm->remove<TextureAttachment>(m_attachmentX);
@@ -171,7 +182,8 @@ private: // owning
     Handle<RenderPassLayout> m_renderPassLayout;
     Handle<RenderPass> m_renderPass;
     Handle<DescriptorSetLayout> m_descriptorSetLayout;
-    Handle<DescriptorSet> m_descriptorSet;
+    Handle<DescriptorSet> m_descriptorSetX;
+    Handle<DescriptorSet> m_descriptorSetY;
     Handle<Shader> m_shader;
 
 
