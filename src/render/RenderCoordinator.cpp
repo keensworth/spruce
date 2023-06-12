@@ -1,6 +1,9 @@
 #include "RenderCoordinator.h"
+#include "glm/geometric.hpp"
 #include "renderers/DebugMeshRenderer.h"
 #include "renderers/GTAORenderer.h"
+#include "renderers/SunShadowRenderer.h"
+#include "vulkan/gfx_vulkan_core.h"
 #include "vulkan/resource/ResourceTypes.h"
 #include "SceneManager.h"
 #include "../interface/SprWindow.h"
@@ -29,12 +32,15 @@ void RenderCoordinator::render(SceneManager& sceneManager){
     BatchManager& batchManager = sceneManager.getBatchManager(m_frameId);
     uploadSceneData(sceneManager);
 
-    // offscreen renderpasses
+    // render offscreen renderpasses
     CommandBuffer& offscreenCB = m_renderer->beginGraphicsCommands(CommandType::OFFSCREEN);
     offscreenCB.bindIndexBuffer(sceneManager.getIndexBuffer());
     {   
         // depth pre-pass
         m_depthPrepassRenderer.render(offscreenCB, batchManager);
+
+        // cascaded shadows
+        m_sunShadowRenderer.render(offscreenCB, batchManager);
 
         // ambient occlusion
         m_gtaoRenderer.render(offscreenCB, batchManager);
@@ -42,18 +48,18 @@ void RenderCoordinator::render(SceneManager& sceneManager){
         // blur ao output
         m_blurRenderer.render(offscreenCB, batchManager);
 
-        // render currently enabled renderer
+        // render currently enabled output renderer
         uint32 visible = m_imguiRenderer.state.visible;
-        if (visible & RenderState::TEST)
-            m_testRenderer.render(offscreenCB, batchManager);
+        if (visible & RenderState::LIT_MESH)
+            m_litMeshRenderer.render(offscreenCB, batchManager);
         else if (visible & RenderState::DEBUG_MESH)
             m_debugMeshRenderer.render(offscreenCB, batchManager);
         else if (visible & RenderState::DEBUG_NORMALS)
             m_debugNormalsRenderer.render(offscreenCB, batchManager);
         else if (visible & RenderState::UNLIT_MESH)
             m_unlitMeshRenderer.render(offscreenCB, batchManager);
-        else // LIT_MESH
-            m_litMeshRenderer.render(offscreenCB, batchManager);
+        else // TEST
+            m_testRenderer.render(offscreenCB, batchManager);
         
         // render imgui
         m_imguiRenderer.render(offscreenCB, batchManager);
@@ -89,6 +95,9 @@ void RenderCoordinator::render(SceneManager& sceneManager){
         else if (visible & RenderState::DEPTH_PREPASS)
             output = m_depthPrepassRenderer.getDepthAttachment();
 
+        else if (visible & RenderState::SHADOW_CASCADES)
+            output = m_sunShadowRenderer.getDepthAttachments()[m_imguiRenderer.state.shadowSelection];
+
         else if (visible & RenderState::GTAO_PASS)
             output = m_gtaoRenderer.getAttachment();
 
@@ -116,6 +125,8 @@ void RenderCoordinator::render(SceneManager& sceneManager){
             reload = m_debugNormalsRenderer.getShader();
         } else if (visible & RenderState::DEPTH_PREPASS){
             reload = m_depthPrepassRenderer.getShader();
+        } else if (visible & RenderState::SHADOW_CASCADES){
+            reload = m_sunShadowRenderer.getShader();
         } else if (visible & RenderState::GTAO_PASS){
             reload = m_gtaoRenderer.getShader();
         } else if (visible & RenderState::BLUR_PASS){
@@ -138,14 +149,26 @@ void RenderCoordinator::render(SceneManager& sceneManager){
 void RenderCoordinator::uploadSceneData(SceneManager& sceneManager){
     UploadHandler& uploadHandler = m_renderer->beginTransferCommands();
 
-    // global
+    // global data
     if (!m_sceneInitialized){
         m_sceneInitialized = true;
         sceneManager.uploadGlobalResources(uploadHandler);
     }
 
-    // per-frame
+    // get and update scene data
+    Scene& scene = sceneManager.getScene(m_frameId);
+    Camera& camera = sceneManager.getCamera(m_frameId);
+    Light& sunLight = sceneManager.getSunLight(m_frameId);
+    // override w/ imgui input
+    sunLight.color = m_imguiRenderer.state.lightColor;
+    sunLight.dir = glm::normalize(m_imguiRenderer.state.lightDir);
+
+
+    // per-frame data
     sceneManager.uploadPerFrameResources(uploadHandler, m_frameId);
+
+    // renderer specific
+    m_sunShadowRenderer.uploadData(scene, camera, sunLight, uploadHandler, m_imguiRenderer.state.cascadeLambda);
 
     uploadHandler.submit();
 }
@@ -171,6 +194,13 @@ void RenderCoordinator::initRenderers(SceneManager& sceneManager){
         frameDescSets,
         frameDescSetLayout);
 
+    m_sunShadowRenderer = SunShadowRenderer(*m_rm, *m_renderer);
+    m_sunShadowRenderer.init(
+        globalDescSet,
+        globalDescSetLayout,
+        frameDescSets,
+        frameDescSetLayout);
+
     m_gtaoRenderer = GTAORenderer(*m_rm, *m_renderer, windowDim);
     m_gtaoRenderer.init(
         globalDescSet,
@@ -186,7 +216,7 @@ void RenderCoordinator::initRenderers(SceneManager& sceneManager){
         frameDescSets,
         frameDescSetLayout,
         m_gtaoRenderer.getAttachment());
-        
+
     m_debugMeshRenderer = DebugMeshRenderer(*m_rm, *m_renderer, windowDim);
     m_debugMeshRenderer.init(
         globalDescSet,
@@ -218,14 +248,16 @@ void RenderCoordinator::initRenderers(SceneManager& sceneManager){
         frameDescSets,
         frameDescSetLayout,
         m_depthPrepassRenderer.getDepthAttachment(),
-        m_blurRenderer.getAttachment());
+        m_blurRenderer.getAttachment(),
+        m_sunShadowRenderer.getDepthAttachments(),
+        m_sunShadowRenderer.getShadowData());
 
     m_imguiRenderer = ImGuiRenderer(*m_rm, *m_renderer, m_window, windowDim);
     m_imguiRenderer.init(
         globalDescSet,
         globalDescSetLayout);
     m_imguiRenderer.setInput(m_litMeshRenderer.getAttachment());
-
+    
     // swapchain renderer
     m_frameRenderer = FrameRenderer(*m_rm, *m_renderer, m_window, windowDim);
     m_frameRenderer.init(
@@ -254,6 +286,7 @@ void RenderCoordinator::destroy(){
     m_debugMeshRenderer.destroy();
     m_debugNormalsRenderer.destroy();
     m_depthPrepassRenderer.destroy();
+    m_sunShadowRenderer.destroy();
     m_blurRenderer.destroy();
     m_gtaoRenderer.destroy();
     m_unlitMeshRenderer.destroy();

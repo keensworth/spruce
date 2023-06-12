@@ -153,8 +153,15 @@ void SceneManager::insertMeshes(uint32 frame, Span<uint32> meshIds, uint32 mater
 
 
 void SceneManager::insertLights(uint32 frame, Span<const Light> lights){
-    m_lights[frame % MAX_FRAME_COUNT].insert(lights.data(), lights.size());
-    m_sceneData[frame % MAX_FRAME_COUNT].getData()[0].lightCount += lights.size();
+    uint32 offset = m_lights[frame % MAX_FRAME_COUNT].insert(lights.data(), lights.size());
+    Scene& scene = m_sceneData[frame % MAX_FRAME_COUNT][0];
+    scene.lightCount += lights.size();
+    // get most recently added directional light
+    for (uint32 i = 0; i < lights.size(); i++){
+        if (lights[i].type == DIRECTIONAL){
+            scene.sunOffset = offset + i;
+        }
+    }
 }
 
 
@@ -164,10 +171,12 @@ void SceneManager::updateCamera(uint32 frame, glm::vec2 screenDim, const Camera&
     // pre-compute viewProjection matrix
     glm::mat4 view = glm::lookAt(camera.pos, camera.pos + camera.dir, camera.up);
     glm::mat4 proj = glm::perspectiveFovZO(camera.fov, screenDim.x, screenDim.y, camera.far, camera.near);
-    m_sceneData[frame % MAX_FRAME_COUNT][0].viewProj = {proj * view};
-    m_sceneData[frame % MAX_FRAME_COUNT][0].screenDimX = screenDim.x;
-    m_sceneData[frame % MAX_FRAME_COUNT][0].screenDimY = screenDim.y;
-    m_sceneData[frame % MAX_FRAME_COUNT][0].time = SDL_GetTicks();
+    Scene& scene = m_sceneData[frame % MAX_FRAME_COUNT][0];
+    scene.view = view;
+    scene.viewProj = {proj * view};
+    scene.screenDimX = screenDim.x;
+    scene.screenDimY = screenDim.y;
+    scene.time = SDL_GetTicks();
 }
 
 
@@ -220,6 +229,22 @@ Handle<Buffer> SceneManager::getIndexBuffer(){
 
 BatchManager& SceneManager::getBatchManager(uint32 frame) {
     return m_batchManagers[frame % MAX_FRAME_COUNT];
+}
+
+Scene& SceneManager::getScene(uint32 frame){
+    return m_sceneData[frame % MAX_FRAME_COUNT][0];
+}
+
+Camera& SceneManager::getCamera(uint32 frame){
+    if (m_cameras[frame % MAX_FRAME_COUNT].getSize() == 0){
+        m_cameras[frame % MAX_FRAME_COUNT].insert(Camera{});
+    }
+    return m_cameras[frame % MAX_FRAME_COUNT][0];
+}
+
+Light& SceneManager::getSunLight(uint32 frame){
+    uint32 sunOffset = m_sceneData[frame % MAX_FRAME_COUNT][0].sunOffset;
+    return m_lights[frame % MAX_FRAME_COUNT][sunOffset];
 }
 
 

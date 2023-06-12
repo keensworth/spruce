@@ -96,8 +96,10 @@ struct Camera {
 };
 
 struct Scene {
-    mat4 viewProj; // precomputed camera view
+    mat4 view;
+    mat4 viewProj;
     uint lightCount;
+    uint sunOffset;
     uint screenDimX;
     uint screenDimY;
     uint time;

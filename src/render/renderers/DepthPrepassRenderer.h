@@ -62,6 +62,7 @@ public:
         // shader
         m_shader = m_rm->create<Shader>({
             .vertexShader   = {.path = "../data/shaders/spv/depth_pass.vert.spv"},
+            .fragmentShader = {.path = "../data/shaders/spv/depth_pass.frag.spv"},
             .descriptorSets = {
                 { globalDescSetLayout },
                 { frameDescSetLayout},

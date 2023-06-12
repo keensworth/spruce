@@ -56,15 +56,24 @@ typedef struct Camera {
     glm::vec3 dir = {0.f, 1.f, 0.f};
     float near    = 0.1f;
     glm::vec3 up  = {0.f, 0.f, 1.f};
-    float far     = 1024.f;
+    float far     = 256.f;
 } Camera;
 
 typedef struct Scene {
-    glm::mat4x4 viewProj;
+    glm::mat4 view;
+    glm::mat4 viewProj;
     uint32 lightCount = 0;
+    uint32 sunOffset  = 0;
     uint32 screenDimX = 0;
     uint32 screenDimY = 0;
-    uint32 time       = 0;
+    uint32 time = 0;
 } Scene;
+
+static const uint32 MAX_CASCADES = 4;
+
+typedef struct SunShadowData {
+    glm::mat4 cascadeViewProj[MAX_CASCADES];
+    glm::mat4 cascadeSplit;
+} SunShadowData;
 
 }

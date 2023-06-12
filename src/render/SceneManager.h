@@ -49,6 +49,10 @@ public:
     Handle<DescriptorSetLayout> getPerFrameDescriptorSetLayout();
     Handle<Buffer> getIndexBuffer();
 
+    Scene& getScene(uint32 frame);
+    Camera& getCamera(uint32 frame);
+    Light& getSunLight(uint32 frame);
+
     void uploadGlobalResources(UploadHandler& uploadHandler);
     void uploadPerFrameResources(UploadHandler& uploadHandler, uint32 frame);
 
@@ -93,5 +97,6 @@ private: // owning
     TempBuffer<Scene> m_sceneData[MAX_FRAME_COUNT];
     TempBuffer<Light> m_lights[MAX_FRAME_COUNT];
     TempBuffer<Transform> m_transforms[MAX_FRAME_COUNT];
+
 };
 }

@@ -9,6 +9,7 @@ layout(location = 1) out vec3 normal;
 layout(location = 2) out vec3 color;
 layout(location = 3) out vec2 texCoord;
 layout(location = 4) out flat uint drawId;
+layout(location = 5) out vec4 viewPos;
 
 void main() {
     DrawData draw = draws[gl_InstanceIndex];
@@ -24,6 +25,7 @@ void main() {
     color = att.color_v.rgb;
     texCoord = vec2(att.normal_u.w, att.color_v.w);
     drawId = gl_InstanceIndex;
+    viewPos = scene.view * pos;
 
     gl_Position = scene.viewProj * pos;
 }

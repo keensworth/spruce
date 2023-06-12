@@ -1,6 +1,8 @@
 #pragma once
 
 #include "VulkanRenderer.h"
+#include "glm/geometric.hpp"
+#include "glm/gtc/type_ptr.hpp"
 #include "imgui.h"
 #include "resource/ResourceTypes.h"
 #include "resource/VulkanResourceManager.h"
@@ -10,6 +12,7 @@
 #include "../external/imgui/imgui_impl_sdl2.h"
 #include "../external/imgui/imgui_impl_vulkan.h"
 #include "interface/SprWindow.h"
+#include "scene/SceneData.h"
 
 
 
@@ -25,11 +28,18 @@ struct RenderState {
         DEPTH_PREPASS = 0b1 << 5,
         GTAO_PASS = 0b1 << 6,
         BLUR_PASS = 0b1 << 7,
+        SHADOW_CASCADES = 0b1 << 8
     };
 
     Shader visible = LIT_MESH;
     bool dirtyOutput = false;
     bool dirtyShader = false;
+    bool dirtyLight = false;
+
+    uint32 shadowSelection = 0;
+    float cascadeLambda = 0.80f;
+    glm::vec3 lightColor = {1.f, 1.f, 1.f};
+    glm::vec3 lightDir = glm::normalize(vec3(0.3f, 1.f, -2.f));
 };
 
 class ImGuiRenderer {
@@ -128,16 +138,30 @@ private:
             
         static int visible = RenderState::LIT_MESH;
         bool reload = ImGui::Button("Reload Shader");
+        static int cascade = 0;
         ImGui::RadioButton("Test", &visible, RenderState::TEST);
         ImGui::RadioButton("Debug Mesh", &visible, RenderState::DEBUG_MESH);
         ImGui::RadioButton("Debug Normals", &visible, RenderState::DEBUG_NORMALS);
         ImGui::RadioButton("Depth Prepass", &visible, RenderState::DEPTH_PREPASS);
+        ImGui::RadioButton("Cascaded Shadows", &visible, RenderState::SHADOW_CASCADES);
+        if (visible & RenderState::SHADOW_CASCADES){
+            ImGui::SliderInt("cascade #", &cascade, 0, MAX_CASCADES-1);
+        }
         ImGui::RadioButton("GTAO Pass", &visible, RenderState::GTAO_PASS);
         ImGui::RadioButton("Blur Pass", &visible, RenderState::BLUR_PASS);
         ImGui::RadioButton("Unlit Mesh", &visible, RenderState::UNLIT_MESH);
         ImGui::RadioButton("Lit Mesh", &visible, RenderState::LIT_MESH);
+        if (visible & RenderState::LIT_MESH){
+            state.dirtyLight |= ImGui::SliderFloat3("light dir", glm::value_ptr(state.lightDir), -1.0f, 1.0f);
+            state.dirtyLight |= ImGui::ColorEdit3("light color", glm::value_ptr(state.lightColor));
+            ImGui::SliderFloat("cascade lambda", &state.cascadeLambda, 0.0f, 1.0f, "lambda = %.3f");
+        }
         if ((uint32)visible != (uint32)state.visible){
             state.visible = (RenderState::Shader)visible;
+            state.dirtyOutput = true;
+        }
+        if ((uint32)cascade != state.shadowSelection){
+            state.shadowSelection = cascade;
             state.dirtyOutput = true;
         }
         if (reload){

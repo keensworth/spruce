@@ -8,6 +8,7 @@
 #include "renderers/LitMeshRenderer.h"
 #include "renderers/TestRenderer.h"
 #include "renderers/DebugMeshRenderer.h"
+#include "renderers/SunShadowRenderer.h"
 #include "vulkan/FrameRenderer.h"
 #include "vulkan/ImGuiRenderer.h"
 
@@ -57,6 +58,7 @@ private:
     DepthPrepassRenderer m_depthPrepassRenderer;
     GTAORenderer m_gtaoRenderer;
     BlurRenderer m_blurRenderer;
+    SunShadowRenderer m_sunShadowRenderer;
     UnlitMeshRenderer m_unlitMeshRenderer;
     LitMeshRenderer m_litMeshRenderer;
     ImGuiRenderer m_imguiRenderer;

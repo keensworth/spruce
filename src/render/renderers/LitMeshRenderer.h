@@ -7,6 +7,8 @@
 #include "../vulkan/resource/ResourceFlags.h"
 #include "../../debug/SprLog.h"
 #include "../scene/Material.h"
+#include "scene/SceneData.h"
+#include "vulkan/gfx_vulkan_core.h"
 
 namespace spr::gfx {
 class LitMeshRenderer {
@@ -26,7 +28,9 @@ public:
         Handle<DescriptorSet> frameDescSets[MAX_FRAME_COUNT],
         Handle<DescriptorSetLayout> frameDescSetLayout,
         Handle<TextureAttachment> depthAttachment,
-        Handle<TextureAttachment> visibilityTexture)
+        Handle<TextureAttachment> visibilityTexture,
+        Handle<TextureAttachment> shadowCascades[MAX_CASCADES],
+        Handle<Buffer> shadowData)
     {
         m_globalDescSet = globalDescSet;
         m_globalDescSetLayout = globalDescSetLayout;
@@ -59,7 +63,7 @@ public:
             .depthAttachment = {
                 .texture = depthAttachment,
                 .loadOp = Flags::LoadOp::LOAD,
-                .layout = Flags::ImageLayout::ATTACHMENT,
+                .layout = Flags::ImageLayout::READ_ONLY,
                 .finalLayout = Flags::ImageLayout::READ_ONLY
             },
             .colorAttachments = {
@@ -74,7 +78,11 @@ public:
         m_descriptorSetLayout = m_rm->create<DescriptorSetLayout>({
             .textures = {
                 {.binding = 0}, // depth
-                {.binding = 1}  // visibility
+                {.binding = 1}, // visibility (ao)
+                {.binding = 2, .count = MAX_CASCADES}  // shadow cascade depth
+            },
+            .buffers = {
+                {.binding = 3} // sun shadow data
             }
         });
         
@@ -105,6 +113,16 @@ public:
                 {
                     .attachment = visibilityTexture,
                     .layout = Flags::ImageLayout::READ_ONLY
+                },
+                {
+                    .attachments = {shadowCascades, MAX_CASCADES},
+                    .layout = Flags::ImageLayout::READ_ONLY
+                }
+            },
+            .buffers = {
+                {
+                    .dynamicBuffer = shadowData, 
+                    .byteSize = (MAX_FRAME_COUNT * m_rm->alignedSize(sizeof(SunShadowData)))
                 }
             },
             .layout = m_descriptorSetLayout

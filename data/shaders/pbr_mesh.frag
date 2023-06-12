@@ -1,21 +1,28 @@
 #version 460
 
-#define SPR_GLOBAL_BINDINGS 1
-#define SPR_FRAME_BINDINGS 1
+#define SPR_GLOBAL_BINDINGS
+#define SPR_FRAME_BINDINGS
 #include "common_bindings.glsl"
 #include "common_constants.glsl"
 
-#define SPR_NORMALS 1
+#define SPR_NORMALS
 #include "common_util.glsl"
+
+#define SPR_SHADOW_CASCADE_MAPS 2
+#define SPR_SHADOW_CASCADE_DATA 3
+#include "common_shadow.glsl"
 
 layout(set = 2, binding = 0) uniform sampler2D depthMap;
 layout(set = 2, binding = 1) uniform sampler2D occlusionMap;
+// binding 2 & 3 defined in common_shadow.glsl
+
 
 layout(location = 0) in vec4 pos;
 layout(location = 1) in vec3 normal;
 layout(location = 2) in vec3 color;
 layout(location = 3) in vec2 texCoord;
 layout(location = 4) in flat uint drawId;
+layout(location = 5) in vec4 viewPos;
 
 layout(location = 0) out vec4 FragColor;
 
@@ -26,6 +33,34 @@ vec3 gtaoMultiBounce(float visibility, vec3 color) {
 
 	float x = visibility;
 	return vec3(max(vec3(x), ((a * x + b) * x + c) * x));
+}
+
+float calculateShadow(vec3 N, vec3 lightDir) {
+	uint cascadeIndex = 0;
+	vec2 texCoords = vec2(gl_FragCoord.xy / textureSize(depthMap, 0));
+	float depth = texture(depthMap, texCoords).r;
+	depth = inverseDepth(depth);
+	for(uint i = 0; i < MAX_SHADOW_CASCADES - 1; ++i) {
+		if(-viewPos.z > shadowData.cascadeSplit[0][i]) {	
+			cascadeIndex = i + 1;
+		}
+	}
+
+	vec4 shadowCoord = (biasMat * shadowData.cascadeViewProj[cascadeIndex]) * pos;
+	
+
+	float mixedDist = shadowData.cascadeSplit[0][cascadeIndex];
+	if (cascadeIndex > 0){
+		float nearDist = shadowData.cascadeSplit[0][cascadeIndex-1];
+		float farDist = mixedDist;
+		mixedDist = mix(nearDist, farDist, (-viewPos.z-nearDist)/(farDist - nearDist));
+	}
+
+	float bias = min(0.05 * max(1.0 - dot(normal, lightDir), 0.0), 0.005);
+	bias *= 1.0 / (mixedDist * 0.5);
+
+	float shadow = filterPCF(shadowCoord, cascadeIndex, bias);
+	return shadow;
 }
 
 // GGX/Towbridge-Reitz normal distribution function.
@@ -60,8 +95,11 @@ void main() {
     MaterialData material = materials[draw.materialOffset];
     uint lightCount = sceneData.lightCount;
 
-    vec4 baseColor = vec4(texture(textures[material.baseColorTexIdx], texCoord).rgb, 1.0);
+    vec4 baseColor = vec4(texture(textures[material.baseColorTexIdx], texCoord).rgba);
     baseColor *= material.baseColorFactor;// * vec4(color,1.0);
+	if (baseColor.a < material.alphaCutoff){
+		discard;
+	}
 
     vec3 mapNormal = texture(textures[material.normalTexIdx], texCoord).rgb;
 	mapNormal = normalize(mapNormal * 2.0 - 1.0);
@@ -74,7 +112,6 @@ void main() {
     float mapRoughness = texture(textures[material.metalRoughTexIdx], texCoord).g;
     mapRoughness *= material.roughnessFactor;
     mapRoughness = clamp(mapRoughness, 0.04, 1.0);
-    
 
     // ws_frag -> ws_camera
 	vec3 V = normalize(camera.pos - pos.rgb);
@@ -155,10 +192,12 @@ void main() {
 		// vec3 diffuseIBL = kd * baseColor.rgb * irradiance;
 		// vec3 specularIBL = vec3(0.0,0.0,0.0);
 
-		ambientLighting = vec3(0.7) * baseColor.rgb;
+		ambientLighting = vec3(0.3) * baseColor.rgb;
 		ambientLighting *= visibility;
 		ambientLighting += mapEmissive;
 	}
     
-    FragColor = vec4(directLighting + ambientLighting, 1.0);
+	float shadow = calculateShadow(N, lights[sceneData.sunOffset].dir);
+	
+    FragColor = vec4((directLighting * shadow) + ambientLighting, 1.0);
 }

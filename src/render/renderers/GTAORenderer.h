@@ -59,7 +59,7 @@ public:
                 .texture = depthAttachment,
                 .loadOp = Flags::LoadOp::LOAD,
                 .layout = Flags::ImageLayout::READ_ONLY,
-                .finalLayout = Flags::ImageLayout::ATTACHMENT
+                .finalLayout = Flags::ImageLayout::READ_ONLY
             },
             .colorAttachments = {
                 {
