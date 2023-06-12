@@ -111,6 +111,8 @@ RenderPassRenderer& CommandBuffer::beginRenderPass(Handle<RenderPass> handle, gl
     };
     vkCmdBeginRenderPass(m_commandBuffer, &renderPassInfo, VK_SUBPASS_CONTENTS_INLINE);
     
+    m_passRenderer.setDimensions(renderPass->dimensions);
+
     // prepare and return render pass renderer
     return m_passRenderer;
 }
@@ -155,7 +157,9 @@ RenderPassRenderer& CommandBuffer::beginRenderPass(Handle<RenderPass> renderPass
         .pClearValues    = clearValues.data(),
     };
     vkCmdBeginRenderPass(m_commandBuffer, &renderPassInfo, VK_SUBPASS_CONTENTS_INLINE);
-    
+
+    m_passRenderer.setDimensions(framebuffer->dimensions);
+
     // prepare and return render pass renderer
     return m_passRenderer;
 }
