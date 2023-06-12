@@ -24,14 +24,12 @@ RenderPassRenderer::~RenderPassRenderer(){
 
 // draw batches of models+material that use the same pipeline
 void RenderPassRenderer::drawSubpass(PassContext context, std::vector<Batch>& batches){
-    glm::uvec3 screenDim = m_rm->m_screenDim;
-
     // viewport
     VkViewport viewport {
         .x = 0.0f,
-        .y = (float)screenDim.y,
-        .width  = (float)screenDim.x,
-        .height = -(float)screenDim.y, // avoid manual y-flip in shader
+        .y = (float)m_dimensions.y,
+        .width  = (float)m_dimensions.x,
+        .height = -(float)m_dimensions.y, // avoid manual y-flip in shader
         .minDepth = 0.0f,
         .maxDepth = 1.0f
     };
@@ -40,7 +38,7 @@ void RenderPassRenderer::drawSubpass(PassContext context, std::vector<Batch>& ba
     // scissor
     VkRect2D scissor{
         .offset = {0, 0},
-        .extent = {screenDim.x, screenDim.y}
+        .extent = {m_dimensions.x, m_dimensions.y}
     };
     vkCmdSetScissor(m_commandBuffer, 0, 1, &scissor);
     
@@ -63,16 +61,14 @@ void RenderPassRenderer::drawSubpass(PassContext context, std::vector<Batch>& ba
     }
 }
 
-// draw a single batch, with specified vertexOffset and firstInstance
-void RenderPassRenderer::drawSubpass(PassContext context, Batch batch, uint32 vertexOffset, uint32 firstInstance){
-    glm::uvec3 screenDim = m_rm->m_screenDim;
-
+// draw batches of models+material that use the same pipeline, with specified vertexOffset
+void RenderPassRenderer::drawSubpass(PassContext context, std::vector<Batch>& batches, uint32 vertexOffset){
     // viewport
     VkViewport viewport {
         .x = 0.0f,
-        .y = (float)screenDim.y,
-        .width  = (float)screenDim.x,
-        .height = -(float)screenDim.y, // avoid manual y-flip in shader
+        .y = (float)m_dimensions.y,
+        .width  = (float)m_dimensions.x,
+        .height = -(float)m_dimensions.y, // avoid manual y-flip in shader
         .minDepth = 0.0f,
         .maxDepth = 1.0f
     };
@@ -81,7 +77,46 @@ void RenderPassRenderer::drawSubpass(PassContext context, Batch batch, uint32 ve
     // scissor
     VkRect2D scissor{
         .offset = {0, 0},
-        .extent = {screenDim.x, screenDim.y}
+        .extent = {m_dimensions.x, m_dimensions.y}
+    };
+    vkCmdSetScissor(m_commandBuffer, 0, 1, &scissor);
+    
+    // bind the current pipeline
+    Shader* shader = m_rm->get<Shader>(context.shader);
+    vkCmdBindPipeline(m_commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, shader->pipeline);
+
+    // set and update descriptor bindings
+    m_descSetHandler.set(0, context.set0);
+    m_descSetHandler.set(1, context.set1);
+    m_descSetHandler.set(2, context.set2);
+    m_descSetHandler.set(3, context.set3);
+    m_descSetHandler.updateBindings(shader->layout, m_frameIndex);
+    
+    // draw every batch:
+    // here, a batch is a collection of mesh draws that
+    // share a material (or subset of material flags)
+    for (Batch& batch : batches){
+        vkCmdDrawIndexed(m_commandBuffer, batch.indexCount, batch.drawCount, batch.firstIndex, vertexOffset, batch.drawDataOffset);
+    }
+}
+
+// draw a single batch, with specified vertexOffset and firstInstance
+void RenderPassRenderer::drawSubpass(PassContext context, Batch batch, uint32 vertexOffset, uint32 firstInstance){
+    // viewport
+    VkViewport viewport {
+        .x = 0.0f,
+        .y = (float)m_dimensions.y,
+        .width  = (float)m_dimensions.x,
+        .height = -(float)m_dimensions.y, // avoid manual y-flip in shader
+        .minDepth = 0.0f,
+        .maxDepth = 1.0f
+    };
+    vkCmdSetViewport(m_commandBuffer, 0, 1, &viewport);
+
+    // scissor
+    VkRect2D scissor{
+        .offset = {0, 0},
+        .extent = {m_dimensions.x, m_dimensions.y}
     };
     vkCmdSetScissor(m_commandBuffer, 0, 1, &scissor);
     
@@ -108,6 +143,10 @@ void RenderPassRenderer::setFrameId(uint32 frameId){
         std::string errInfo("Expected: " + std::to_string(m_frameIndex) + ", got: " + std::to_string(frameIndex));
         SprLog::error(errMsg + errInfo);
     }
+}
+
+void RenderPassRenderer::setDimensions(glm::uvec3& dimensions){
+    m_dimensions = dimensions;
 }
 
 }

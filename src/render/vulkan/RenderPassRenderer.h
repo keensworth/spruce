@@ -26,13 +26,17 @@ public:
     ~RenderPassRenderer();
 
     void drawSubpass(PassContext context, std::vector<Batch>& batches);
+    void drawSubpass(PassContext context, std::vector<Batch>& batches, uint32 vertexOffset);
     void drawSubpass(PassContext context, Batch batch, uint32 vertexOffset, uint32 firstInstance);
     void setFrameId(uint32 frameId);
+    void setDimensions(glm::uvec3& dimensions);
 
 private: // non-owning
     VulkanResourceManager* m_rm;
     VkCommandBuffer m_commandBuffer;
     DescriptorSetHandler m_descSetHandler;
+
+    glm::uvec3 m_dimensions;
 
     uint32 m_frameId;
     uint32 m_frameIndex;
