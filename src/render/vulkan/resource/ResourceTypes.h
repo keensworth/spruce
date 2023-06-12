@@ -14,6 +14,7 @@
 #include <vk_mem_alloc.h>
 #include <span>
 #include <vulkan/vulkan_core.h>
+#include "core/util/Span.h"
 
 namespace spr::gfx {
 
@@ -294,7 +295,8 @@ typedef struct DescriptorSet::Desc {
     typedef struct TextureBinding {            // [mutually exclusive]
         Handle<Texture> texture;               // global texture
         std::vector<Handle<Texture>> textures; // global array of textures
-        Handle<TextureAttachment> attachment;  // per-frame textures
+        Handle<TextureAttachment> attachment;  // per-frame textures (attachments)
+        spr::Span<Handle<TextureAttachment>> attachments; // per-frame array of textures
         // default layout, will override all entries
         Flags::ImageLayout layout = Flags::ImageLayout::READ_ONLY;
     } TextureBinding;
@@ -302,6 +304,9 @@ typedef struct DescriptorSet::Desc {
     typedef struct BufferBinding {           // [mutually exclusive]
         Handle<Buffer> buffer;               // global buffer
         std::vector<Handle<Buffer>> buffers; // per-frame buffers
+        Handle<Buffer> dynamicBuffer;        // per-frame buffers, sharing the range:
+                                             // [byteOffset, byteOffset+byteSize), where each
+                                             // occupies byteSize/MAX_FRAME_COUNT bytes
 
         uint32 byteOffset = 0;
         uint32 byteSize   = ALL_BYTES;
@@ -369,6 +374,7 @@ typedef struct Shader::Desc {
         Flags::Compare depthTest = Flags::Compare::ALWAYS;
         bool depthTestEnabled = true;
         bool depthWriteEnabled = true;
+        Flags::CullMode cullMode = Flags::CullMode::BACK;
         Handle<RenderPass> renderPass;
     } GraphicsState;
 

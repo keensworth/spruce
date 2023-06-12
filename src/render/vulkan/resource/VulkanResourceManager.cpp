@@ -465,9 +465,10 @@ Handle<DescriptorSet> VulkanResourceManager::create<DescriptorSet>(DescriptorSet
     uint32 globalDescriptorCount = 0;
     uint32 perFrameDescriptorCount = 0;
     for (auto binding : desc.textures){
-        bool texBinding        =  binding.texture.isValid();
-        bool arrayTexBinding   = !binding.textures.empty();
-        bool attachmentBinding =  binding.attachment.isValid();
+        bool texBinding         =  binding.texture.isValid();
+        bool arrayTexBinding    = !binding.textures.empty();
+        bool attachmentBinding  =  binding.attachment.isValid();
+        bool attachmentsBinding =  binding.attachments.size();
 
         if (texBinding && arrayTexBinding){
             SprLog::warn("[VulkanResourceManager] [create<DescriptorSet>] Texture binding overdefined, defaulting to single texture");
@@ -477,10 +478,12 @@ Handle<DescriptorSet> VulkanResourceManager::create<DescriptorSet>(DescriptorSet
         globalDescriptorCount   += texBinding;
         globalDescriptorCount   += arrayTexBinding;
         perFrameDescriptorCount += attachmentBinding;
+        perFrameDescriptorCount += attachmentsBinding;
     }
     for (auto binding : desc.buffers){
         globalDescriptorCount   +=  binding.buffer.isValid();
         perFrameDescriptorCount += !binding.buffers.empty();
+        perFrameDescriptorCount +=  binding.dynamicBuffer.isValid();
     }
     
     // validate
@@ -497,7 +500,6 @@ Handle<DescriptorSet> VulkanResourceManager::create<DescriptorSet>(DescriptorSet
     //      will run MAX_FRAME_COUNT if using per-frame descriptors (frame buffered sets)
     std::vector<VkDescriptorSet> vulkanDescriptorSets;
     uint32 descriptorSetCount = globalDescriptors ? 1 : MAX_FRAME_COUNT;
-
     for (uint32 frame = 0; frame < descriptorSetCount; frame++){
         // build descriptor set info
         VkDescriptorPool descriptorPool = globalDescriptors ? m_globalDescriptorPool 
@@ -518,17 +520,58 @@ Handle<DescriptorSet> VulkanResourceManager::create<DescriptorSet>(DescriptorSet
         uint32 bufferDescriptorCount = desc.buffers.size();
         for (uint32 bufferIndex = 0; bufferIndex < bufferDescriptorCount; bufferIndex++){
             DescriptorSetDesc::BufferBinding& binding = desc.buffers[bufferIndex];
-            Handle<Buffer> handle = globalDescriptors ? binding.buffer
-                                                      : binding.buffers[frame];
-            Buffer* buffer = get<Buffer>(handle);
-            VkBuffer buffResource = buffer->buffer;
 
-            VkDescriptorBufferInfo bufferInfo {
-                .buffer = buffResource,
-                .offset = (VkDeviceSize)binding.byteOffset,
-                .range  = (VkDeviceSize)(binding.byteSize == DescriptorSetDesc::ALL_BYTES)
-                        ? VK_WHOLE_SIZE : binding.byteSize,
-            };
+            bool usesGlobalBuffer = binding.buffer.isValid();
+            bool usesPerFrameBuffers = !binding.buffers.empty();
+            bool usesDynamicBuffer = binding.dynamicBuffer.isValid();
+
+            std::vector<VkDescriptorBufferInfo> bufferInfos;
+            if (usesGlobalBuffer){
+                Handle<Buffer> handle = binding.buffer;
+                Buffer* buffer = get<Buffer>(handle);
+                VkBuffer buffResource = buffer->buffer;
+
+                VkDescriptorBufferInfo bufferInfo {
+                    .buffer = buffResource,
+                    .offset = (VkDeviceSize)binding.byteOffset,
+                    .range  = (VkDeviceSize)(binding.byteSize == DescriptorSetDesc::ALL_BYTES)
+                            ? VK_WHOLE_SIZE : binding.byteSize,
+                };
+                bufferInfos.push_back(bufferInfo);
+
+            } else if (usesPerFrameBuffers){
+                Handle<Buffer> handle = binding.buffers[frame];
+                Buffer* buffer = get<Buffer>(handle);
+                VkBuffer buffResource = buffer->buffer;
+
+                VkDescriptorBufferInfo bufferInfo {
+                    .buffer = buffResource,
+                    .offset = (VkDeviceSize)binding.byteOffset,
+                    .range  = (VkDeviceSize)(binding.byteSize == DescriptorSetDesc::ALL_BYTES)
+                            ? VK_WHOLE_SIZE : binding.byteSize,
+                };
+                bufferInfos.push_back(bufferInfo);
+
+            } else if (usesDynamicBuffer){
+                Handle<Buffer> handle = binding.dynamicBuffer;
+                Buffer* buffer = get<Buffer>(handle);
+                VkBuffer buffResource = buffer->buffer;
+
+                if (binding.byteSize == DescriptorSetDesc::ALL_BYTES){
+                    SprLog::warn("[VulkanResourceManager] [create<DescriptorSet>] dynamicBuffer created with ALL_BYTES - explicit size must be specified, setting size to 0");
+                    binding.byteSize = 0;
+                }
+                
+                uint32 subBufferSize = (binding.byteSize) / MAX_FRAME_COUNT;
+                VkDescriptorBufferInfo bufferInfo {
+                    .buffer = buffResource,
+                    .offset = (VkDeviceSize)binding.byteOffset + frame*subBufferSize,
+                    .range  = subBufferSize
+                };
+                bufferInfos.push_back(bufferInfo);
+            } else {
+                SprLog::warn("[VulkanResourceManager] [create<DescriptorSet>] Invalid buffer descriptor, index: ", bufferIndex);
+            }
 
             VkWriteDescriptorSet descriptorSetWrite[1];
             descriptorSetWrite[0] = {
@@ -537,9 +580,9 @@ Handle<DescriptorSet> VulkanResourceManager::create<DescriptorSet>(DescriptorSet
                 .dstSet          = vulkanDescriptorSets.at(frame),
                 .dstBinding      = layout->bufferLayouts[bufferIndex].binding,
                 .dstArrayElement = 0,
-                .descriptorCount = 1,
+                .descriptorCount = (uint32)bufferInfos.size(),
                 .descriptorType  = (VkDescriptorType)layout->bufferLayouts[bufferIndex].type,
-                .pBufferInfo     = &bufferInfo
+                .pBufferInfo     = bufferInfos.data()
             };
             vkUpdateDescriptorSets(m_device, 1, descriptorSetWrite, 0, NULL);
         }
@@ -550,15 +593,17 @@ Handle<DescriptorSet> VulkanResourceManager::create<DescriptorSet>(DescriptorSet
             DescriptorSetDesc::TextureBinding binding = desc.textures[textureIndex];
 
             bool usesTexture = binding.texture.isValid();
+            bool usesTextureArray = !binding.textures.empty();
             bool usesAttachment = binding.attachment.isValid();
+            bool usesAttachmentArray = binding.attachments.size();
 
             std::vector<VkDescriptorImageInfo> textureInfos;
             if (usesAttachment) {
-                Handle<TextureAttachment> attachmentHandle = binding.attachment;
-                TextureAttachment* attachment = get<TextureAttachment>(attachmentHandle);
-                Handle<Texture> handle = attachment->textures[frame];
+                Handle<TextureAttachment> handle = binding.attachment;
+                TextureAttachment* attachment = get<TextureAttachment>(handle);
+                Handle<Texture> textureHandle = attachment->textures[frame];
 
-                Texture* texture = get<Texture>(handle);
+                Texture* texture = get<Texture>(textureHandle);
                 VkDescriptorImageInfo textureInfo {
                     .sampler      = texture->sampler,
                     .imageView    = texture->view,
@@ -566,6 +611,20 @@ Handle<DescriptorSet> VulkanResourceManager::create<DescriptorSet>(DescriptorSet
                 };
                 textureInfos.push_back(textureInfo);
 
+            } else if (usesAttachmentArray){
+                for (uint32 i = 0; i < binding.attachments.size(); i++){
+                    const Handle<TextureAttachment>& handle = binding.attachments[i];
+                    TextureAttachment* attachment = get<TextureAttachment>(handle);
+                    Handle<Texture> textureHandle = attachment->textures[frame];
+
+                    Texture* texture = get<Texture>(textureHandle);
+                    VkDescriptorImageInfo textureInfo {
+                        .sampler      = texture->sampler,
+                        .imageView    = texture->view,
+                        .imageLayout  = (VkImageLayout)binding.layout
+                    };
+                    textureInfos.push_back(textureInfo);
+                }
             } else if (usesTexture){
                 Handle<Texture> handle = binding.texture;
                 Texture* texture = get<Texture>(handle);
@@ -577,7 +636,7 @@ Handle<DescriptorSet> VulkanResourceManager::create<DescriptorSet>(DescriptorSet
                 };
                 textureInfos.push_back(textureInfo);
 
-            } else { // usesTextureArray
+            } else if (usesTextureArray){
                 for (Handle<Texture> handle : binding.textures){
                     Texture* texture = get<Texture>(handle);
 
@@ -588,6 +647,8 @@ Handle<DescriptorSet> VulkanResourceManager::create<DescriptorSet>(DescriptorSet
                     };
                     textureInfos.push_back(textureInfo);
                 }
+            } else {
+                SprLog::warn("[VulkanResourceManager] [create<DescriptorSet>] Invalid texture descriptor, index: ", textureIndex);
             }
 
             VkWriteDescriptorSet descriptorSetWrite {
@@ -1164,7 +1225,7 @@ Handle<Shader> VulkanResourceManager::create<Shader>(ShaderDesc desc){
             .depthClampEnable        = VK_FALSE,
             .rasterizerDiscardEnable = VK_FALSE,
             .polygonMode             = VK_POLYGON_MODE_FILL,
-            .cullMode                = VK_CULL_MODE_BACK_BIT,
+            .cullMode                = desc.graphicsState.cullMode,
             .frontFace               = VK_FRONT_FACE_COUNTER_CLOCKWISE,
             .depthBiasEnable         = VK_FALSE,
             .lineWidth               = 1.0f
