@@ -123,6 +123,13 @@ namespace Flags {
         BP_COMPUTE = 1,
     } BindPoint;
 
+    typedef enum CullMode {
+        NONE = 0,
+        FRONT = 1,
+        BACK = 2,
+        FRONT_AND_BACK = 3
+    } CullMode;
+
     typedef enum Format {
         UNDEFINED_FORMAT = 0,
         R4G4_UNORM_PACK8 = 1,
