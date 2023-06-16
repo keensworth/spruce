@@ -15,7 +15,7 @@ public:
 
     void update();
 
-    Container<Entity> getEntities(uint64 components);
+    void getEntities(uint64 components, Container<Entity>& out);
     
 private:
     // entity storage

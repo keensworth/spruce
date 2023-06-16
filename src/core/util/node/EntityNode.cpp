@@ -76,27 +76,22 @@ Container<Entity> EntityNode::get(uint64 key){
     return currNode->getLeafData(currIndex);
 }
 
-Container<Entity> EntityNode::getAccum(uint64 key){
+void EntityNode::getAccum(uint64 key, Container<Entity>& out){
     uint32 currIndex = subIndex(key, m_height);
-    Container<Entity> accum;
     for (uint32 i = 0; i < 16; i++){
         if (m_height > 0){
             if (!((currIndex & i) == currIndex && branchInitialized(i))){
                 continue;
             }
             EntityNode* node = getBranch(i);
-            Container<Entity> entities = node->getAccum(key);
-            accum.append(entities);
+            node->getAccum(key, out);
         } else {
             if (!((currIndex & i) == currIndex && m_initialized)){
                 continue;
             }
-            Container<Entity> entities = getLeafData(i);
-            accum.append(entities);
+            out.append(getLeafData(i));
         }
     }
-
-    return accum;
 }
 
 void EntityNode::addLeafData(uint32 key, Entity entity){
@@ -105,10 +100,7 @@ void EntityNode::addLeafData(uint32 key, Entity entity){
 void EntityNode::removeLeafData(uint32 key, Entity entity){
     m_leafData.at(key).eraseData(entity);
 }
-Container<Entity> EntityNode::getLeafData(uint32 key){
-    return m_leafData.at(key);
-}
-Container<Entity> EntityNode::getAccumLeafData(uint32 key){
+Container<Entity>& EntityNode::getLeafData(uint32 key){
     return m_leafData.at(key);
 }
 

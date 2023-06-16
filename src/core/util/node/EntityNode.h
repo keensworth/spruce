@@ -23,7 +23,7 @@ public:
     //get
     Container<Entity> get(uint64 key);
     //get_accum
-    Container<Entity> getAccum(uint64 key);
+    void getAccum(uint64 key, Container<Entity>& out);
 
     uint32 getHeight(){
         return m_height;
@@ -38,8 +38,7 @@ private:
 
     void addLeafData(uint32 key, Entity entity);
     void removeLeafData(uint32 key, Entity entity);
-    Container<Entity> getLeafData(uint32 key);
-    Container<Entity> getAccumLeafData(uint32 key);
+    Container<Entity>& getLeafData(uint32 key);
 
     void buildBranch(uint32 branchIndex, uint32 height);
     EntityNode* getBranch(uint32 branchIndex);

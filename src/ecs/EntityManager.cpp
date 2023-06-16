@@ -31,9 +31,8 @@ void EntityManager::removeEntity(Entity entity){
     m_entitiesRemove.push_back(entity);
 }
 
-Container<Entity> EntityManager::getEntities(uint64 components){
-    Container<Entity> cont = m_entities.getAccum(components);
-    return cont;
+void EntityManager::getEntities(uint64 components, Container<Entity>& out){
+    m_entities.getAccum(components, out);
 }
 
 }
