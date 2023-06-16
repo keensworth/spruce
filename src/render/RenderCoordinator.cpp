@@ -178,7 +178,7 @@ void RenderCoordinator::initRenderers(SceneManager& sceneManager){
 
     Handle<DescriptorSet> globalDescSet = sceneManager.getGlobalDescriptorSet();
     Handle<DescriptorSetLayout> globalDescSetLayout = sceneManager.getGlobalDescriptorSetLayout();
-    Handle<DescriptorSet>* frameDescSets = sceneManager.getPerFrameDescriptorSets();
+    Handle<DescriptorSet> frameDescSets = sceneManager.getPerFrameDescriptorSet();
     Handle<DescriptorSetLayout> frameDescSetLayout = sceneManager.getPerFrameDescriptorSetLayout();
 
     // offscreen renderers

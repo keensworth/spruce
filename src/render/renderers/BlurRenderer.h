@@ -25,14 +25,13 @@ public:
     void init(
         Handle<DescriptorSet> globalDescriptorSet, 
         Handle<DescriptorSetLayout> globalDescSetLayout,
-        Handle<DescriptorSet> frameDescSets[MAX_FRAME_COUNT],
+        Handle<DescriptorSet> frameDescSets,
         Handle<DescriptorSetLayout> frameDescSetLayout,
         Handle<TextureAttachment> input)
     {
         m_globalDescriptorSet = globalDescriptorSet;
         m_globalDescriptorSetLayout = globalDescSetLayout;
-        for (uint32 i = 0; i < MAX_FRAME_COUNT; i++)
-            m_frameDescSets[i] = frameDescSets[i];
+        m_frameDescSets = frameDescSets;
         m_frameDescSetLayout = frameDescSetLayout;
 
         // color attachment
@@ -133,7 +132,7 @@ public:
         passRenderer.drawSubpass({
             .shader = m_shader,
             .set0 =  m_globalDescriptorSet,
-            .set1 = m_frameDescSets[m_renderer->getFrameId() % MAX_FRAME_COUNT],
+            .set1 = m_frameDescSets,
             .set2 = m_descriptorSetX}, 
             batchManager.getQuadBatch(), 0, 1);
         cb.endRenderPass();
@@ -143,7 +142,7 @@ public:
         passRenderer.drawSubpass({
             .shader = m_shader,
             .set0 =  m_globalDescriptorSet,
-            .set1 = m_frameDescSets[m_renderer->getFrameId() % MAX_FRAME_COUNT],
+            .set1 = m_frameDescSets,
             .set2 = m_descriptorSetY}, 
             batchManager.getQuadBatch(), 0, 2);
         cb.endRenderPass();
@@ -194,7 +193,7 @@ private: // non-owning
 
     Handle<DescriptorSet> m_globalDescriptorSet;
     Handle<DescriptorSetLayout> m_globalDescriptorSetLayout;
-    Handle<DescriptorSet> m_frameDescSets[MAX_FRAME_COUNT];
+    Handle<DescriptorSet> m_frameDescSets;
     Handle<DescriptorSetLayout> m_frameDescSetLayout;
 };
 }

@@ -44,8 +44,7 @@ public:
 
     Handle<DescriptorSet> getGlobalDescriptorSet();
     Handle<DescriptorSetLayout> getGlobalDescriptorSetLayout();
-    Handle<DescriptorSet> getPerFrameDescriptorSet(uint32 frame);
-    Handle<DescriptorSet>* getPerFrameDescriptorSets();
+    Handle<DescriptorSet> getPerFrameDescriptorSet();
     Handle<DescriptorSetLayout> getPerFrameDescriptorSetLayout();
     Handle<Buffer> getIndexBuffer();
 
@@ -80,7 +79,7 @@ private: // owning
     Handle<Buffer> m_cameraBuffer;
     Handle<Buffer> m_sceneBuffer;
     Handle<DescriptorSetLayout> m_frameDescriptorSetLayout;
-    Handle<DescriptorSet> m_frameDescriptorSets[MAX_FRAME_COUNT];
+    Handle<DescriptorSet> m_frameDescriptorSet;
 
     // global resource handles
     Handle<Buffer> m_positionsBuffer;  

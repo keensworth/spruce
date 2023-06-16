@@ -211,12 +211,8 @@ Handle<DescriptorSetLayout> SceneManager::getGlobalDescriptorSetLayout(){
     return m_globalDescriptorSetLayout;
 }
 
-Handle<DescriptorSet> SceneManager::getPerFrameDescriptorSet(uint32 frame){
-    return m_frameDescriptorSets[frame % MAX_FRAME_COUNT];
-}
-
-Handle<DescriptorSet>* SceneManager::getPerFrameDescriptorSets(){
-    return m_frameDescriptorSets;
+Handle<DescriptorSet> SceneManager::getPerFrameDescriptorSet(){
+    return m_frameDescriptorSet;
 }
 
 Handle<DescriptorSetLayout> SceneManager::getPerFrameDescriptorSetLayout(){
@@ -392,6 +388,7 @@ void SceneManager::initDescriptorSets(VulkanDevice* device){
         },
         .layout = m_globalDescriptorSetLayout
     });
+
     // per-frame (set = 1)
     m_frameDescriptorSetLayout = m_rm->create<DescriptorSetLayout>({
         .buffers = {
@@ -402,34 +399,22 @@ void SceneManager::initDescriptorSets(VulkanDevice* device){
             {.binding = 4, .type = Flags::DescriptorType::STORAGE_BUFFER}
         }
     });
-    for (uint32 i = 0; i < MAX_FRAME_COUNT; i++){
-        
-        Buffer* scene = m_rm->get<Buffer>(m_sceneBuffer);
-        Buffer* cameras = m_rm->get<Buffer>(m_cameraBuffer);
-        Buffer* lights = m_rm->get<Buffer>(m_lightsBuffer);
-        Buffer* transforms = m_rm->get<Buffer>(m_transformBuffer);
-        Buffer* draws = m_rm->get<Buffer>(m_drawDataBuffer);
-        uint32 sceneFrameSize = ((scene->byteSize)/MAX_FRAME_COUNT);
-        uint32 camerasFrameSize = ((cameras->byteSize)/MAX_FRAME_COUNT);
-        uint32 lightsFrameSize = ((lights->byteSize)/MAX_FRAME_COUNT);
-        uint32 transformsFrameSize = ((transforms->byteSize)/MAX_FRAME_COUNT);
-        uint32 drawsFrameSize = ((draws->byteSize)/MAX_FRAME_COUNT);
-        uint32 sceneOffset = i*sceneFrameSize;
-        uint32 camerasOffset = i*camerasFrameSize;
-        uint32 lightsOffset = i*lightsFrameSize;
-        uint32 transformsOffset = i*transformsFrameSize;
-        uint32 drawsOffset = i*drawsFrameSize;
-        m_frameDescriptorSets[i] = m_rm->create<DescriptorSet>({
-            .buffers = {
-                {.buffer = m_sceneBuffer, .byteOffset = sceneOffset, .byteSize = sceneFrameSize},
-                {.buffer = m_cameraBuffer, .byteOffset = camerasOffset, .byteSize = camerasFrameSize},
-                {.buffer = m_lightsBuffer, .byteOffset = lightsOffset, .byteSize = lightsFrameSize},
-                {.buffer = m_transformBuffer, .byteOffset = transformsOffset, .byteSize = transformsFrameSize},
-                {.buffer = m_drawDataBuffer, .byteOffset = drawsOffset, .byteSize = drawsFrameSize}
-            },
-            .layout = m_frameDescriptorSetLayout
-        });
-    }
+    Buffer* scene = m_rm->get<Buffer>(m_sceneBuffer);
+    Buffer* cameras = m_rm->get<Buffer>(m_cameraBuffer);
+    Buffer* lights = m_rm->get<Buffer>(m_lightsBuffer);
+    Buffer* transforms = m_rm->get<Buffer>(m_transformBuffer);
+    Buffer* draws = m_rm->get<Buffer>(m_drawDataBuffer);
+    m_frameDescriptorSet = m_rm->create<DescriptorSet>({
+        .buffers = {
+            {.dynamicBuffer = m_sceneBuffer, .byteSize = scene->byteSize},
+            {.dynamicBuffer = m_cameraBuffer, .byteSize = cameras->byteSize},
+            {.dynamicBuffer = m_lightsBuffer, .byteSize = lights->byteSize},
+            {.dynamicBuffer = m_transformBuffer, .byteSize = transforms->byteSize},
+            {.dynamicBuffer = m_drawDataBuffer, .byteSize = draws->byteSize}
+        },
+        .layout = m_frameDescriptorSetLayout
+    });
+    
 }
 
 
@@ -464,8 +449,7 @@ void SceneManager::destroy(){
     m_rm->remove<Buffer>(m_drawDataBuffer);
     m_rm->remove<Buffer>(m_cameraBuffer);
     m_rm->remove<Buffer>(m_sceneBuffer);
-    for (uint32 i = 0; i < MAX_FRAME_COUNT; i++)
-        m_rm->remove<DescriptorSet>(m_frameDescriptorSets[i]);
+    m_rm->remove<DescriptorSet>(m_frameDescriptorSet);
     m_rm->remove<DescriptorSetLayout>(m_frameDescriptorSetLayout);
     
     // destroy global resources

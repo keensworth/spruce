@@ -27,13 +27,12 @@ public:
     void init(
         Handle<DescriptorSet> globalDescSet, 
         Handle<DescriptorSetLayout> globalDescSetLayout,
-        Handle<DescriptorSet> frameDescSets[MAX_FRAME_COUNT],
+        Handle<DescriptorSet> frameDescSets,
         Handle<DescriptorSetLayout> frameDescSetLayout)
     {
         m_globalDescSet = globalDescSet;
         m_globalDescSetLayout = globalDescSetLayout;
-        for (uint32 i = 0; i < MAX_FRAME_COUNT; i++)
-            m_frameDescSets[i] = frameDescSets[i];
+        m_frameDescSets = frameDescSets;
         m_frameDescSetLayout = frameDescSetLayout;
 
         // shadow data buffer
@@ -221,8 +220,6 @@ public:
 
 
     void render(CommandBuffer& cb, BatchManager& batchManager){
-        Handle<DescriptorSet> currFrameDescSet = m_frameDescSets[m_renderer->getFrameId() % MAX_FRAME_COUNT];
-
         std::vector<Batch> batches;
         batchManager.getBatches({.hasAny = MTL_ALL}, batches);
 
@@ -231,7 +228,7 @@ public:
         passRenderer.drawSubpass({
             .shader = m_shader, 
             .set0 =  m_globalDescSet,
-            .set1 = currFrameDescSet,
+            .set1 = m_frameDescSets,
             .set2 = m_descSet}, 
             batches, 0
         );
@@ -243,7 +240,7 @@ public:
             passRenderer.drawSubpass({
                 .shader = m_shader, 
                 .set0 =  m_globalDescSet,
-                .set1 = currFrameDescSet,
+                .set1 = m_frameDescSets,
                 .set2 = m_descSet}, 
                 batches, i + 1
             );
@@ -305,7 +302,7 @@ private: // non-owning
 
     Handle<DescriptorSet> m_globalDescSet;
     Handle<DescriptorSetLayout> m_globalDescSetLayout;
-    Handle<DescriptorSet> m_frameDescSets[MAX_FRAME_COUNT];
+    Handle<DescriptorSet> m_frameDescSets;
     Handle<DescriptorSetLayout> m_frameDescSetLayout;
 };
 }
