@@ -54,6 +54,14 @@ public:
         return m_data.at(index);
     }
 
+    T* data(){
+        return m_data.data();
+    }
+
+    std::vector<T>& vector(){
+        return m_data;
+    }
+
     // remove data and allow overwrite
     void remove(int32 index, bool eraseData){
         if (index >= m_data.size()){
