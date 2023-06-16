@@ -20,7 +20,7 @@ public:
     Span(std::array<T, N>& array) : m_data(array.data()), m_size(N) {}
     Span(TempBuffer<T>& buffer) : m_data(buffer.getData()), m_size(buffer.getSize()) {}
 
-    const T& operator[](uint32 index) {
+    T operator[](uint32 index) {
         if (index >= m_size)
             SprLog::error("[Span] [operator[]] index out of range for span size of ", m_size);
         
@@ -38,8 +38,22 @@ public:
         return m_data;
     }
 
-    uint32 size() {
+    const T* begin() const {
+        return m_data;
+    }
+
+    const T* end() const {
+        return m_data + m_size;
+    }
+
+    uint32 size() const {
         return m_size;
+    }
+
+    std::vector<T> toVec() {
+        std::vector<T> out(m_size);
+        out.insert(out.begin(), begin(), end());
+        return out;
     }
 
 private:
