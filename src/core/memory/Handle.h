@@ -12,7 +12,7 @@ class Handle {
 public:
     Handle() : m_index(0), m_generation(0) {}
     ~Handle() {}
-    bool isValid() { return m_generation != 0; }
+    bool isValid() const { return m_generation != 0; }
     bool operator==(const Handle& rhs) const{
         return (this->m_index == rhs.m_index) && (this->m_generation == rhs.m_generation);
     }
