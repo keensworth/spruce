@@ -24,7 +24,7 @@ template <typename T>
 class TypedResourceCache : public VulkanResourceCache {
 public:
     TypedResourceCache() : m_data(1024) {}
-    ~TypedResourceCache(){}
+    virtual ~TypedResourceCache() = default;
 
     // get data from pool with handle
     T* get(Handle<T> handle){

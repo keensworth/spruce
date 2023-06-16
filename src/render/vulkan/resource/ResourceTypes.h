@@ -281,8 +281,8 @@ typedef struct DescriptorSetLayout::Desc {
     typedef DescriptorSetLayout::TextureBindingLayout TextureBindingLayout;
     typedef DescriptorSetLayout::BufferBindingLayout BufferBindingLayout;
     
-    std::vector<TextureBindingLayout> textures{};
-    std::vector<BufferBindingLayout> buffers{};
+    spr::Span<TextureBindingLayout> textures{};
+    spr::Span<BufferBindingLayout> buffers{};
 } DescriptorSetLayoutDesc;
 
 
@@ -292,29 +292,29 @@ typedef struct DescriptorSetLayout::Desc {
 typedef struct DescriptorSet::Desc {
     static const uint32 ALL_BYTES = 0xFFFFFFFF;
     
-    typedef struct TextureBinding {            // [mutually exclusive]
-        Handle<Texture> texture;               // global texture
-        std::vector<Handle<Texture>> textures; // global array of textures
-        Handle<TextureAttachment> attachment;  // per-frame textures (attachments)
-        spr::Span<Handle<TextureAttachment>> attachments; // per-frame array of textures
+    typedef struct TextureBinding {           // [mutually exclusive]
+        Handle<Texture> texture{};              // global texture
+        spr::Span<Handle<Texture>> textures{};  // global array of textures
+        Handle<TextureAttachment> attachment{}; // per-frame textures (attachments)
+        spr::Span<Handle<TextureAttachment>> attachments{}; // per-frame array of textures
         // default layout, will override all entries
         Flags::ImageLayout layout = Flags::ImageLayout::READ_ONLY;
     } TextureBinding;
 
-    typedef struct BufferBinding {           // [mutually exclusive]
-        Handle<Buffer> buffer;               // global buffer
-        std::vector<Handle<Buffer>> buffers; // per-frame buffers
-        Handle<Buffer> dynamicBuffer;        // per-frame buffers, sharing the range:
-                                             // [byteOffset, byteOffset+byteSize), where each
-                                             // occupies byteSize/MAX_FRAME_COUNT bytes
+    typedef struct BufferBinding {         // [mutually exclusive]
+        Handle<Buffer> buffer{};             // global buffer
+        spr::Span<Handle<Buffer>> buffers{}; // per-frame buffers
+        Handle<Buffer> dynamicBuffer{};      // per-frame buffers, sharing the range:
+                                           // [byteOffset, byteOffset+byteSize), where each
+                                           // occupies byteSize/MAX_FRAME_COUNT bytes
 
         uint32 byteOffset = 0;
         uint32 byteSize   = ALL_BYTES;
     } BufferBinding;
 
-    std::vector<TextureBinding> textures;
-    std::vector<BufferBinding> buffers;
-    Handle<DescriptorSetLayout> layout;
+    spr::Span<TextureBinding> textures{};
+    spr::Span<BufferBinding> buffers{};
+    Handle<DescriptorSetLayout> layout{};
 } DescriptorSetDesc;
 
 
@@ -326,7 +326,7 @@ typedef struct Framebuffer::Desc {
     Handle<RenderPass> renderPass;
 
     DepthAttachment depthAttachment;
-    std::vector<ColorAttachment> colorAttachments{};
+    spr::Span<ColorAttachment> colorAttachments{};
 
     bool swapchainOverride = false;
 } FramebufferDesc;
@@ -338,11 +338,11 @@ typedef struct Framebuffer::Desc {
 typedef struct RenderPassLayout::Desc { 
     typedef struct SubpassLayout {
         bool depthAttachment = false;
-        std::vector<uint32> colorAttachments;
+        spr::Span<uint32> colorAttachments;
     } SubpassLayout;
 
     uint32 depthAttachmentFormat = Flags::Format::UNDEFINED_FORMAT;
-    std::vector<uint32> colorAttatchmentFormats;
+    spr::Span<uint32> colorAttatchmentFormats;
     SubpassLayout subpass;
 } RenderPassLayoutDesc;
 
@@ -358,7 +358,7 @@ typedef struct RenderPass::Desc {
     Handle<RenderPassLayout> layout;
     
     DepthAttachment depthAttachment;
-    std::vector<ColorAttachment> colorAttachments{};
+    spr::Span<ColorAttachment> colorAttachments{};
 } RenderPassDesc;
 
 
@@ -381,7 +381,7 @@ typedef struct Shader::Desc {
     Shader vertexShader;
     Shader fragmentShader;
     // Shader computeShader;
-    std::vector<Handle<DescriptorSetLayout>> descriptorSets;
+    spr::Span<Handle<DescriptorSetLayout>> descriptorSets;
     GraphicsState graphicsState;
 } ShaderDesc;
 

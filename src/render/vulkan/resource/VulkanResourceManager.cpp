@@ -440,8 +440,8 @@ Handle<DescriptorSetLayout> VulkanResourceManager::create<DescriptorSetLayout>(D
 
     // create descriptor set layout
     DescriptorSetLayout descriptorSetLayout {
-        .textureLayouts      = desc.textures,
-        .bufferLayouts       = desc.buffers,
+        .textureLayouts      = desc.textures.toVec(),
+        .bufferLayouts       = desc.buffers.toVec(),
         .descriptorSetLayout = VK_NULL_HANDLE
     };
     VK_CHECK(vkCreateDescriptorSetLayout(m_device, &descriptorSetLayoutInfo, NULL, &descriptorSetLayout.descriptorSetLayout));
@@ -464,11 +464,11 @@ Handle<DescriptorSet> VulkanResourceManager::create<DescriptorSet>(DescriptorSet
     // get descriptor counts
     uint32 globalDescriptorCount = 0;
     uint32 perFrameDescriptorCount = 0;
-    for (auto binding : desc.textures){
-        bool texBinding         =  binding.texture.isValid();
-        bool arrayTexBinding    = !binding.textures.empty();
-        bool attachmentBinding  =  binding.attachment.isValid();
-        bool attachmentsBinding =  binding.attachments.size();
+    for (auto& binding : desc.textures){
+        bool texBinding         = binding.texture.isValid();
+        bool arrayTexBinding    = binding.textures.size();
+        bool attachmentBinding  = binding.attachment.isValid();
+        bool attachmentsBinding = binding.attachments.size();
 
         if (texBinding && arrayTexBinding){
             SprLog::warn("[VulkanResourceManager] [create<DescriptorSet>] Texture binding overdefined, defaulting to single texture");
@@ -480,10 +480,10 @@ Handle<DescriptorSet> VulkanResourceManager::create<DescriptorSet>(DescriptorSet
         perFrameDescriptorCount += attachmentBinding;
         perFrameDescriptorCount += attachmentsBinding;
     }
-    for (auto binding : desc.buffers){
-        globalDescriptorCount   +=  binding.buffer.isValid();
-        perFrameDescriptorCount += !binding.buffers.empty();
-        perFrameDescriptorCount +=  binding.dynamicBuffer.isValid();
+    for (auto& binding : desc.buffers){
+        globalDescriptorCount   += binding.buffer.isValid();
+        perFrameDescriptorCount += binding.buffers.size();
+        perFrameDescriptorCount += binding.dynamicBuffer.isValid();
     }
     
     // validate
@@ -519,10 +519,10 @@ Handle<DescriptorSet> VulkanResourceManager::create<DescriptorSet>(DescriptorSet
         // write buffer descriptors 
         uint32 bufferDescriptorCount = desc.buffers.size();
         for (uint32 bufferIndex = 0; bufferIndex < bufferDescriptorCount; bufferIndex++){
-            DescriptorSetDesc::BufferBinding& binding = desc.buffers[bufferIndex];
+            const DescriptorSetDesc::BufferBinding& binding = desc.buffers[bufferIndex];
 
             bool usesGlobalBuffer = binding.buffer.isValid();
-            bool usesPerFrameBuffers = !binding.buffers.empty();
+            bool usesPerFrameBuffers = binding.buffers.size();
             bool usesDynamicBuffer = binding.dynamicBuffer.isValid();
 
             std::vector<VkDescriptorBufferInfo> bufferInfos;
@@ -557,12 +557,12 @@ Handle<DescriptorSet> VulkanResourceManager::create<DescriptorSet>(DescriptorSet
                 Buffer* buffer = get<Buffer>(handle);
                 VkBuffer buffResource = buffer->buffer;
 
-                if (binding.byteSize == DescriptorSetDesc::ALL_BYTES){
-                    SprLog::warn("[VulkanResourceManager] [create<DescriptorSet>] dynamicBuffer created with ALL_BYTES - explicit size must be specified, setting size to 0");
-                    binding.byteSize = 0;
-                }
-                
                 uint32 subBufferSize = (binding.byteSize) / MAX_FRAME_COUNT;
+                if (binding.byteSize == DescriptorSetDesc::ALL_BYTES){
+                    SprLog::warn("[VulkanResourceManager] [create<DescriptorSet>] dynamicBuffer created with ALL_BYTES - explicit size must be specified");
+                    subBufferSize = 0;
+                }
+            
                 VkDescriptorBufferInfo bufferInfo {
                     .buffer = buffResource,
                     .offset = (VkDeviceSize)binding.byteOffset + frame*subBufferSize,
@@ -590,10 +590,10 @@ Handle<DescriptorSet> VulkanResourceManager::create<DescriptorSet>(DescriptorSet
         // write texture descriptors
         uint32 textureDescriptorCount = desc.textures.size();
         for (uint32 textureIndex = 0; textureIndex < textureDescriptorCount; textureIndex++){
-            DescriptorSetDesc::TextureBinding binding = desc.textures[textureIndex];
+            const DescriptorSetDesc::TextureBinding& binding = desc.textures[textureIndex];
 
             bool usesTexture = binding.texture.isValid();
-            bool usesTextureArray = !binding.textures.empty();
+            bool usesTextureArray = binding.textures.size();
             bool usesAttachment = binding.attachment.isValid();
             bool usesAttachmentArray = binding.attachments.size();
 
@@ -613,7 +613,7 @@ Handle<DescriptorSet> VulkanResourceManager::create<DescriptorSet>(DescriptorSet
 
             } else if (usesAttachmentArray){
                 for (uint32 i = 0; i < binding.attachments.size(); i++){
-                    const Handle<TextureAttachment>& handle = binding.attachments[i];
+                    Handle<TextureAttachment> handle = binding.attachments[i];
                     TextureAttachment* attachment = get<TextureAttachment>(handle);
                     Handle<Texture> textureHandle = attachment->textures[frame];
 
@@ -695,7 +695,7 @@ Handle<Framebuffer> VulkanResourceManager::create<Framebuffer>(FramebufferDesc d
         for (uint32 i = 0; i < desc.colorAttachments.size(); i++){
             // use swapchain image view directly
             if (desc.swapchainOverride){
-                attachments[i] = desc.colorAttachments[i].swapchainImageViews[frame];
+                attachments[i] = desc.colorAttachments[0].swapchainImageViews[frame];
                 break;
             }
             
@@ -736,7 +736,7 @@ Handle<Framebuffer> VulkanResourceManager::create<Framebuffer>(FramebufferDesc d
         .dimensions = desc.dimensions,
         .hasDepthAttachment = hasDepthAttachment,
         .depthAttachment = desc.depthAttachment,
-        .colorAttachments = desc.colorAttachments,
+        .colorAttachments = desc.colorAttachments.toVec(),
         .swapchainOverride = desc.swapchainOverride
     };
     return framebufferCache->insert(framebuffer);
@@ -1330,7 +1330,7 @@ Handle<Shader> VulkanResourceManager::create<Shader>(ShaderDesc desc){
         .fragmentModule = fragmentShader,
         .vertexPath = desc.vertexShader.path,
         .fragmentPath = desc.fragmentShader.path,
-        .descSetLayouts = desc.descriptorSets,
+        .descSetLayouts = desc.descriptorSets.toVec(),
         .graphicsState = {
             .depthTest = desc.graphicsState.depthTest,
             .depthTestEnabled = desc.graphicsState.depthTestEnabled,
