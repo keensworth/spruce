@@ -65,8 +65,29 @@ public:
         uint64 mask = componentManager.getMask<Arg, Args...>();
 
         // get entities that have all components in mask
-        Container<Entity> entities = entityManager.getEntities(mask);
+        Container<Entity> entities;
+        entityManager.getEntities(mask, entities);
         return entities;
+    }
+
+    template <typename Arg, typename ...Args>
+    std::vector<Entity> getEntities(){
+        // get mask from components
+        uint64 mask = componentManager.getMask<Arg, Args...>();
+
+        // get entities that have all components in mask
+        Container<Entity> entities;
+        entityManager.getEntities(mask, entities);
+        return entities.vector();
+    }
+
+    template <typename Arg, typename ...Args>
+    void getEntities(Container<Entity>& out){
+        // get mask from components
+        uint64 mask = componentManager.getMask<Arg, Args...>();
+
+        // get entities that have all components in mask
+        entityManager.getEntities(mask, out);
     }
 
 
