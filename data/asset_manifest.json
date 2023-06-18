@@ -1,11 +1,11 @@
 {
-    "date": "06-06-2023 05:21:04",
+    "date": "18-06-2023 13:12:11",
     "modelCount": 7,
     "models": [
         {
             "id": 15,
             "name": "BoomBoxWithAxes",
-            "sizeBytes": 67704128,
+            "sizeBytes": 90077564,
             "type": "SPR_MODEL"
         },
         {
@@ -17,13 +17,13 @@
         {
             "id": 81,
             "name": "sponza",
-            "sizeBytes": 296026082,
+            "sizeBytes": 391130610,
             "type": "SPR_MODEL"
         },
         {
             "id": 65,
             "name": "helmet",
-            "sizeBytes": 84677480,
+            "sizeBytes": 112642100,
             "type": "SPR_MODEL"
         },
         {
@@ -35,13 +35,13 @@
         {
             "id": 2,
             "name": "Duck",
-            "sizeBytes": 1189000,
+            "sizeBytes": 1538996,
             "type": "SPR_MODEL"
         },
         {
             "id": 51,
             "name": "WaterBottle",
-            "sizeBytes": 67258276,
+            "sizeBytes": 89629972,
             "type": "SPR_MODEL"
         }
     ],
@@ -50,23 +50,23 @@
         {
             "id": 743,
             "name": "default_input_white",
-            "sizeBytes": 4,
+            "sizeBytes": 260,
             "type": "SPR_TEXTURE"
         },
         {
             "id": 739,
             "name": "default_color",
-            "sizeBytes": 4194304,
+            "sizeBytes": 5592900,
             "type": "SPR_TEXTURE"
         },
         {
             "id": 741,
             "name": "default_input_black",
-            "sizeBytes": 4,
+            "sizeBytes": 260,
             "type": "SPR_TEXTURE"
         }
     ],
-    "sizeBytes": 521084156,
+    "sizeBytes": 690647540,
     "subresourceCount": 733,
     "subresources": [
         {
@@ -78,7 +78,7 @@
         {
             "id": 333,
             "name": "sponza_372",
-            "sizeBytes": 12582912,
+            "sizeBytes": 16778700,
             "type": "SPR_MATERIAL"
         },
         {
@@ -90,13 +90,13 @@
         {
             "id": 23,
             "name": "BoomBoxWithAxes_14",
-            "sizeBytes": 16777216,
+            "sizeBytes": 22370140,
             "type": "SPR_BUFFER"
         },
         {
             "id": 61,
             "name": "WaterBottle_16",
-            "sizeBytes": 16777216,
+            "sizeBytes": 22370140,
             "type": "SPR_BUFFER"
         },
         {
@@ -108,7 +108,7 @@
         {
             "id": 111,
             "name": "sponza_42",
-            "sizeBytes": 4194304,
+            "sizeBytes": 5592900,
             "type": "SPR_BUFFER"
         },
         {
@@ -186,7 +186,7 @@
         {
             "id": 692,
             "name": "sponza_904",
-            "sizeBytes": 4194304,
+            "sizeBytes": 5592900,
             "type": "SPR_TEXTURE"
         },
         {
@@ -216,13 +216,13 @@
         {
             "id": 155,
             "name": "sponza_98",
-            "sizeBytes": 4194304,
+            "sizeBytes": 5592900,
             "type": "SPR_BUFFER"
         },
         {
             "id": 18,
             "name": "BoomBoxWithAxes_9",
-            "sizeBytes": 16777216,
+            "sizeBytes": 22370140,
             "type": "SPR_TEXTURE"
         },
         {
@@ -264,7 +264,7 @@
         {
             "id": 680,
             "name": "sponza_889",
-            "sizeBytes": 4194304,
+            "sizeBytes": 5592900,
             "type": "SPR_BUFFER"
         },
         {
@@ -276,7 +276,7 @@
         {
             "id": 179,
             "name": "sponza_131",
-            "sizeBytes": 4194304,
+            "sizeBytes": 5592900,
             "type": "SPR_TEXTURE"
         },
         {
@@ -294,7 +294,7 @@
         {
             "id": 108,
             "name": "sponza_39",
-            "sizeBytes": 4194304,
+            "sizeBytes": 5592900,
             "type": "SPR_TEXTURE"
         },
         {
@@ -306,7 +306,7 @@
         {
             "id": 93,
             "name": "sponza_15",
-            "sizeBytes": 12611304,
+            "sizeBytes": 16807092,
             "type": "SPR_MESH"
         },
         {
@@ -336,13 +336,13 @@
         {
             "id": 89,
             "name": "sponza_14",
-            "sizeBytes": 4194304,
+            "sizeBytes": 5592900,
             "type": "SPR_BUFFER"
         },
         {
             "id": 76,
             "name": "helmet_16",
-            "sizeBytes": 16777216,
+            "sizeBytes": 22370140,
             "type": "SPR_TEXTURE"
         },
         {
@@ -384,7 +384,7 @@
         {
             "id": 96,
             "name": "sponza_24",
-            "sizeBytes": 4194304,
+            "sizeBytes": 5592900,
             "type": "SPR_BUFFER"
         },
         {
@@ -438,7 +438,7 @@
         {
             "id": 336,
             "name": "sponza_375",
-            "sizeBytes": 4194304,
+            "sizeBytes": 5592900,
             "type": "SPR_TEXTURE"
         },
         {
@@ -450,7 +450,7 @@
         {
             "id": 717,
             "name": "sponza_938",
-            "sizeBytes": 13240536,
+            "sizeBytes": 17436324,
             "type": "SPR_MESH"
         },
         {
@@ -492,7 +492,7 @@
         {
             "id": 70,
             "name": "helmet_10",
-            "sizeBytes": 16777216,
+            "sizeBytes": 22370140,
             "type": "SPR_TEXTURE"
         },
         {
@@ -504,7 +504,7 @@
         {
             "id": 682,
             "name": "sponza_891",
-            "sizeBytes": 4194304,
+            "sizeBytes": 5592900,
             "type": "SPR_BUFFER"
         },
         {
@@ -522,7 +522,7 @@
         {
             "id": 68,
             "name": "helmet_8",
-            "sizeBytes": 16777216,
+            "sizeBytes": 22370140,
             "type": "SPR_TEXTURE"
         },
         {
@@ -576,7 +576,7 @@
         {
             "id": 444,
             "name": "sponza_533",
-            "sizeBytes": 4194304,
+            "sizeBytes": 5592900,
             "type": "SPR_BUFFER"
         },
         {
@@ -630,13 +630,13 @@
         {
             "id": 395,
             "name": "sponza_467",
-            "sizeBytes": 4194304,
+            "sizeBytes": 5592900,
             "type": "SPR_TEXTURE"
         },
         {
             "id": 495,
             "name": "sponza_608",
-            "sizeBytes": 4194304,
+            "sizeBytes": 5592900,
             "type": "SPR_TEXTURE"
         },
         {
@@ -654,7 +654,7 @@
         {
             "id": 512,
             "name": "sponza_631",
-            "sizeBytes": 4194304,
+            "sizeBytes": 5592900,
             "type": "SPR_BUFFER"
         },
         {
@@ -672,13 +672,13 @@
         {
             "id": 688,
             "name": "sponza_900",
-            "sizeBytes": 4194304,
+            "sizeBytes": 5592900,
             "type": "SPR_TEXTURE"
         },
         {
             "id": 52,
             "name": "WaterBottle_1",
-            "sizeBytes": 67258276,
+            "sizeBytes": 89629972,
             "type": "SPR_MESH"
         },
         {
@@ -696,13 +696,13 @@
         {
             "id": 120,
             "name": "sponza_54",
-            "sizeBytes": 4194304,
+            "sizeBytes": 5592900,
             "type": "SPR_BUFFER"
         },
         {
             "id": 140,
             "name": "sponza_80",
-            "sizeBytes": 4194304,
+            "sizeBytes": 5592900,
             "type": "SPR_BUFFER"
         },
         {
@@ -720,7 +720,7 @@
         {
             "id": 3,
             "name": "Duck_1",
-            "sizeBytes": 1189000,
+            "sizeBytes": 1538996,
             "type": "SPR_MESH"
         },
         {
@@ -732,7 +732,7 @@
         {
             "id": 722,
             "name": "sponza_949",
-            "sizeBytes": 4194304,
+            "sizeBytes": 5592900,
             "type": "SPR_BUFFER"
         },
         {
@@ -744,7 +744,7 @@
         {
             "id": 73,
             "name": "helmet_13",
-            "sizeBytes": 16777216,
+            "sizeBytes": 22370140,
             "type": "SPR_BUFFER"
         },
         {
@@ -762,7 +762,7 @@
         {
             "id": 25,
             "name": "BoomBoxWithAxes_16",
-            "sizeBytes": 16777216,
+            "sizeBytes": 22370140,
             "type": "SPR_BUFFER"
         },
         {
@@ -792,13 +792,13 @@
         {
             "id": 335,
             "name": "sponza_374",
-            "sizeBytes": 4194304,
+            "sizeBytes": 5592900,
             "type": "SPR_BUFFER"
         },
         {
             "id": 69,
             "name": "helmet_9",
-            "sizeBytes": 16777216,
+            "sizeBytes": 22370140,
             "type": "SPR_BUFFER"
         },
         {
@@ -816,7 +816,7 @@
         {
             "id": 742,
             "name": "default_input_black_1",
-            "sizeBytes": 4,
+            "sizeBytes": 260,
             "type": "SPR_BUFFER"
         },
         {
@@ -834,7 +834,7 @@
         {
             "id": 554,
             "name": "sponza_697",
-            "sizeBytes": 12582912,
+            "sizeBytes": 16778700,
             "type": "SPR_MATERIAL"
         },
         {
@@ -846,7 +846,7 @@
         {
             "id": 441,
             "name": "sponza_524",
-            "sizeBytes": 8578112,
+            "sizeBytes": 11375304,
             "type": "SPR_MESH"
         },
         {
@@ -870,7 +870,7 @@
         {
             "id": 490,
             "name": "sponza_603",
-            "sizeBytes": 12582912,
+            "sizeBytes": 16778700,
             "type": "SPR_MATERIAL"
         },
         {
@@ -882,7 +882,7 @@
         {
             "id": 84,
             "name": "sponza_9",
-            "sizeBytes": 4194304,
+            "sizeBytes": 5592900,
             "type": "SPR_TEXTURE"
         },
         {
@@ -918,13 +918,13 @@
         {
             "id": 56,
             "name": "WaterBottle_11",
-            "sizeBytes": 16777216,
+            "sizeBytes": 22370140,
             "type": "SPR_TEXTURE"
         },
         {
             "id": 160,
             "name": "sponza_106",
-            "sizeBytes": 12582912,
+            "sizeBytes": 16778700,
             "type": "SPR_MATERIAL"
         },
         {
@@ -948,7 +948,7 @@
         {
             "id": 568,
             "name": "sponza_714",
-            "sizeBytes": 4194304,
+            "sizeBytes": 5592900,
             "type": "SPR_TEXTURE"
         },
         {
@@ -966,7 +966,7 @@
         {
             "id": 107,
             "name": "sponza_38",
-            "sizeBytes": 4194304,
+            "sizeBytes": 5592900,
             "type": "SPR_BUFFER"
         },
         {
@@ -1002,7 +1002,7 @@
         {
             "id": 166,
             "name": "sponza_112",
-            "sizeBytes": 4194304,
+            "sizeBytes": 5592900,
             "type": "SPR_BUFFER"
         },
         {
@@ -1056,7 +1056,7 @@
         {
             "id": 77,
             "name": "helmet_17",
-            "sizeBytes": 16777216,
+            "sizeBytes": 22370140,
             "type": "SPR_BUFFER"
         },
         {
@@ -1068,25 +1068,25 @@
         {
             "id": 677,
             "name": "sponza_886",
-            "sizeBytes": 4194304,
+            "sizeBytes": 5592900,
             "type": "SPR_TEXTURE"
         },
         {
             "id": 22,
             "name": "BoomBoxWithAxes_13",
-            "sizeBytes": 16777216,
+            "sizeBytes": 22370140,
             "type": "SPR_TEXTURE"
         },
         {
             "id": 119,
             "name": "sponza_53",
-            "sizeBytes": 4194304,
+            "sizeBytes": 5592900,
             "type": "SPR_TEXTURE"
         },
         {
             "id": 116,
             "name": "sponza_50",
-            "sizeBytes": 12582912,
+            "sizeBytes": 16778700,
             "type": "SPR_MATERIAL"
         },
         {
@@ -1098,7 +1098,7 @@
         {
             "id": 445,
             "name": "sponza_534",
-            "sizeBytes": 4194304,
+            "sizeBytes": 5592900,
             "type": "SPR_TEXTURE"
         },
         {
@@ -1116,7 +1116,7 @@
         {
             "id": 104,
             "name": "sponza_29",
-            "sizeBytes": 12655266,
+            "sizeBytes": 16851054,
             "type": "SPR_MESH"
         },
         {
@@ -1128,13 +1128,13 @@
         {
             "id": 676,
             "name": "sponza_885",
-            "sizeBytes": 12582912,
+            "sizeBytes": 16778700,
             "type": "SPR_MATERIAL"
         },
         {
             "id": 198,
             "name": "sponza_159",
-            "sizeBytes": 4194304,
+            "sizeBytes": 5592900,
             "type": "SPR_TEXTURE"
         },
         {
@@ -1170,19 +1170,19 @@
         {
             "id": 162,
             "name": "sponza_108",
-            "sizeBytes": 4194304,
+            "sizeBytes": 5592900,
             "type": "SPR_BUFFER"
         },
         {
             "id": 121,
             "name": "sponza_55",
-            "sizeBytes": 4194304,
+            "sizeBytes": 5592900,
             "type": "SPR_TEXTURE"
         },
         {
             "id": 31,
             "name": "BoomBoxWithAxes_25",
-            "sizeBytes": 4096,
+            "sizeBytes": 5836,
             "type": "SPR_TEXTURE"
         },
         {
@@ -1194,7 +1194,7 @@
         {
             "id": 149,
             "name": "sponza_92",
-            "sizeBytes": 12582912,
+            "sizeBytes": 16778700,
             "type": "SPR_MATERIAL"
         },
         {
@@ -1230,7 +1230,7 @@
         {
             "id": 511,
             "name": "sponza_630",
-            "sizeBytes": 4194304,
+            "sizeBytes": 5592900,
             "type": "SPR_TEXTURE"
         },
         {
@@ -1242,7 +1242,7 @@
         {
             "id": 58,
             "name": "WaterBottle_13",
-            "sizeBytes": 16777216,
+            "sizeBytes": 22370140,
             "type": "SPR_TEXTURE"
         },
         {
@@ -1284,7 +1284,7 @@
         {
             "id": 53,
             "name": "WaterBottle_8",
-            "sizeBytes": 67108864,
+            "sizeBytes": 89480560,
             "type": "SPR_MATERIAL"
         },
         {
@@ -1296,13 +1296,13 @@
         {
             "id": 501,
             "name": "sponza_617",
-            "sizeBytes": 8388608,
+            "sizeBytes": 11185800,
             "type": "SPR_MATERIAL"
         },
         {
             "id": 436,
             "name": "sponza_522",
-            "sizeBytes": 4194304,
+            "sizeBytes": 5592900,
             "type": "SPR_TEXTURE"
         },
         {
@@ -1326,7 +1326,7 @@
         {
             "id": 570,
             "name": "sponza_716",
-            "sizeBytes": 4194304,
+            "sizeBytes": 5592900,
             "type": "SPR_TEXTURE"
         },
         {
@@ -1374,7 +1374,7 @@
         {
             "id": 567,
             "name": "sponza_713",
-            "sizeBytes": 4194304,
+            "sizeBytes": 5592900,
             "type": "SPR_BUFFER"
         },
         {
@@ -1404,7 +1404,7 @@
         {
             "id": 693,
             "name": "sponza_905",
-            "sizeBytes": 4194304,
+            "sizeBytes": 5592900,
             "type": "SPR_BUFFER"
         },
         {
@@ -1458,7 +1458,7 @@
         {
             "id": 66,
             "name": "helmet_1",
-            "sizeBytes": 84677480,
+            "sizeBytes": 112642100,
             "type": "SPR_MESH"
         },
         {
@@ -1524,7 +1524,7 @@
         {
             "id": 85,
             "name": "sponza_10",
-            "sizeBytes": 4194304,
+            "sizeBytes": 5592900,
             "type": "SPR_BUFFER"
         },
         {
@@ -1578,7 +1578,7 @@
         {
             "id": 675,
             "name": "sponza_878",
-            "sizeBytes": 12892800,
+            "sizeBytes": 17088588,
             "type": "SPR_MESH"
         },
         {
@@ -1602,7 +1602,7 @@
         {
             "id": 54,
             "name": "WaterBottle_9",
-            "sizeBytes": 16777216,
+            "sizeBytes": 22370140,
             "type": "SPR_TEXTURE"
         },
         {
@@ -1614,7 +1614,7 @@
         {
             "id": 137,
             "name": "sponza_71",
-            "sizeBytes": 12611472,
+            "sizeBytes": 16807260,
             "type": "SPR_MESH"
         },
         {
@@ -1626,7 +1626,7 @@
         {
             "id": 555,
             "name": "sponza_698",
-            "sizeBytes": 4194304,
+            "sizeBytes": 5592900,
             "type": "SPR_TEXTURE"
         },
         {
@@ -1638,13 +1638,13 @@
         {
             "id": 514,
             "name": "sponza_633",
-            "sizeBytes": 4194304,
+            "sizeBytes": 5592900,
             "type": "SPR_BUFFER"
         },
         {
             "id": 148,
             "name": "sponza_85",
-            "sizeBytes": 12686376,
+            "sizeBytes": 16882164,
             "type": "SPR_MESH"
         },
         {
@@ -1662,7 +1662,7 @@
         {
             "id": 678,
             "name": "sponza_887",
-            "sizeBytes": 4194304,
+            "sizeBytes": 5592900,
             "type": "SPR_BUFFER"
         },
         {
@@ -1680,7 +1680,7 @@
         {
             "id": 159,
             "name": "sponza_99",
-            "sizeBytes": 12673632,
+            "sizeBytes": 16869420,
             "type": "SPR_MESH"
         },
         {
@@ -1710,7 +1710,7 @@
         {
             "id": 24,
             "name": "BoomBoxWithAxes_15",
-            "sizeBytes": 16777216,
+            "sizeBytes": 22370140,
             "type": "SPR_TEXTURE"
         },
         {
@@ -1734,19 +1734,19 @@
         {
             "id": 452,
             "name": "sponza_544",
-            "sizeBytes": 4194304,
+            "sizeBytes": 5592900,
             "type": "SPR_TEXTURE"
         },
         {
             "id": 431,
             "name": "sponza_517",
-            "sizeBytes": 12582912,
+            "sizeBytes": 16778700,
             "type": "SPR_MATERIAL"
         },
         {
             "id": 504,
             "name": "sponza_620",
-            "sizeBytes": 4194304,
+            "sizeBytes": 5592900,
             "type": "SPR_TEXTURE"
         },
         {
@@ -1764,7 +1764,7 @@
         {
             "id": 129,
             "name": "sponza_66",
-            "sizeBytes": 4194304,
+            "sizeBytes": 5592900,
             "type": "SPR_BUFFER"
         },
         {
@@ -1788,7 +1788,7 @@
         {
             "id": 132,
             "name": "sponza_69",
-            "sizeBytes": 4194304,
+            "sizeBytes": 5592900,
             "type": "SPR_TEXTURE"
         },
         {
@@ -1806,7 +1806,7 @@
         {
             "id": 16,
             "name": "BoomBoxWithAxes_1",
-            "sizeBytes": 67316680,
+            "sizeBytes": 89688376,
             "type": "SPR_MESH"
         },
         {
@@ -1824,7 +1824,7 @@
         {
             "id": 83,
             "name": "sponza_8",
-            "sizeBytes": 12582912,
+            "sizeBytes": 16778700,
             "type": "SPR_MATERIAL"
         },
         {
@@ -1836,25 +1836,25 @@
         {
             "id": 419,
             "name": "sponza_499",
-            "sizeBytes": 4194304,
+            "sizeBytes": 5592900,
             "type": "SPR_BUFFER"
         },
         {
             "id": 17,
             "name": "BoomBoxWithAxes_8",
-            "sizeBytes": 67108864,
+            "sizeBytes": 89480560,
             "type": "SPR_MATERIAL"
         },
         {
             "id": 97,
             "name": "sponza_25",
-            "sizeBytes": 4194304,
+            "sizeBytes": 5592900,
             "type": "SPR_TEXTURE"
         },
         {
             "id": 416,
             "name": "sponza_496",
-            "sizeBytes": 4194304,
+            "sizeBytes": 5592900,
             "type": "SPR_TEXTURE"
         },
         {
@@ -1896,13 +1896,13 @@
         {
             "id": 118,
             "name": "sponza_52",
-            "sizeBytes": 4194304,
+            "sizeBytes": 5592900,
             "type": "SPR_BUFFER"
         },
         {
             "id": 178,
             "name": "sponza_130",
-            "sizeBytes": 4194304,
+            "sizeBytes": 5592900,
             "type": "SPR_BUFFER"
         },
         {
@@ -1914,7 +1914,7 @@
         {
             "id": 100,
             "name": "sponza_28",
-            "sizeBytes": 4194304,
+            "sizeBytes": 5592900,
             "type": "SPR_BUFFER"
         },
         {
@@ -1926,13 +1926,13 @@
         {
             "id": 723,
             "name": "sponza_950",
-            "sizeBytes": 4194304,
+            "sizeBytes": 5592900,
             "type": "SPR_TEXTURE"
         },
         {
             "id": 560,
             "name": "sponza_703",
-            "sizeBytes": 4194304,
+            "sizeBytes": 5592900,
             "type": "SPR_BUFFER"
         },
         {
@@ -1944,7 +1944,7 @@
         {
             "id": 110,
             "name": "sponza_41",
-            "sizeBytes": 4194304,
+            "sizeBytes": 5592900,
             "type": "SPR_TEXTURE"
         },
         {
@@ -1956,31 +1956,31 @@
         {
             "id": 559,
             "name": "sponza_702",
-            "sizeBytes": 4194304,
+            "sizeBytes": 5592900,
             "type": "SPR_TEXTURE"
         },
         {
             "id": 690,
             "name": "sponza_902",
-            "sizeBytes": 4194304,
+            "sizeBytes": 5592900,
             "type": "SPR_TEXTURE"
         },
         {
             "id": 197,
             "name": "sponza_158",
-            "sizeBytes": 12582912,
+            "sizeBytes": 16778700,
             "type": "SPR_MATERIAL"
         },
         {
             "id": 82,
             "name": "sponza_1",
-            "sizeBytes": 12757152,
+            "sizeBytes": 16952940,
             "type": "SPR_MESH"
         },
         {
             "id": 337,
             "name": "sponza_376",
-            "sizeBytes": 4194304,
+            "sizeBytes": 5592900,
             "type": "SPR_BUFFER"
         },
         {
@@ -2004,7 +2004,7 @@
         {
             "id": 139,
             "name": "sponza_79",
-            "sizeBytes": 4194304,
+            "sizeBytes": 5592900,
             "type": "SPR_TEXTURE"
         },
         {
@@ -2016,13 +2016,13 @@
         {
             "id": 150,
             "name": "sponza_93",
-            "sizeBytes": 4194304,
+            "sizeBytes": 5592900,
             "type": "SPR_TEXTURE"
         },
         {
             "id": 454,
             "name": "sponza_546",
-            "sizeBytes": 4194304,
+            "sizeBytes": 5592900,
             "type": "SPR_TEXTURE"
         },
         {
@@ -2040,7 +2040,7 @@
         {
             "id": 415,
             "name": "sponza_495",
-            "sizeBytes": 12582912,
+            "sizeBytes": 16778700,
             "type": "SPR_MATERIAL"
         },
         {
@@ -2058,7 +2058,7 @@
         {
             "id": 421,
             "name": "sponza_501",
-            "sizeBytes": 4194304,
+            "sizeBytes": 5592900,
             "type": "SPR_BUFFER"
         },
         {
@@ -2070,19 +2070,19 @@
         {
             "id": 4,
             "name": "Duck_7",
-            "sizeBytes": 1048576,
+            "sizeBytes": 1398572,
             "type": "SPR_MATERIAL"
         },
         {
             "id": 74,
             "name": "helmet_14",
-            "sizeBytes": 16777216,
+            "sizeBytes": 22370140,
             "type": "SPR_TEXTURE"
         },
         {
             "id": 175,
             "name": "sponza_121",
-            "sizeBytes": 12583776,
+            "sizeBytes": 16779564,
             "type": "SPR_MESH"
         },
         {
@@ -2124,7 +2124,7 @@
         {
             "id": 569,
             "name": "sponza_715",
-            "sizeBytes": 4194304,
+            "sizeBytes": 5592900,
             "type": "SPR_BUFFER"
         },
         {
@@ -2154,13 +2154,13 @@
         {
             "id": 450,
             "name": "sponza_536",
-            "sizeBytes": 8578112,
+            "sizeBytes": 11375304,
             "type": "SPR_MESH"
         },
         {
             "id": 86,
             "name": "sponza_11",
-            "sizeBytes": 4194304,
+            "sizeBytes": 5592900,
             "type": "SPR_TEXTURE"
         },
         {
@@ -2172,7 +2172,7 @@
         {
             "id": 109,
             "name": "sponza_40",
-            "sizeBytes": 4194304,
+            "sizeBytes": 5592900,
             "type": "SPR_BUFFER"
         },
         {
@@ -2196,7 +2196,7 @@
         {
             "id": 199,
             "name": "sponza_160",
-            "sizeBytes": 4194304,
+            "sizeBytes": 5592900,
             "type": "SPR_BUFFER"
         },
         {
@@ -2208,7 +2208,7 @@
         {
             "id": 496,
             "name": "sponza_609",
-            "sizeBytes": 4194304,
+            "sizeBytes": 5592900,
             "type": "SPR_BUFFER"
         },
         {
@@ -2244,7 +2244,7 @@
         {
             "id": 557,
             "name": "sponza_700",
-            "sizeBytes": 4194304,
+            "sizeBytes": 5592900,
             "type": "SPR_TEXTURE"
         },
         {
@@ -2256,7 +2256,7 @@
         {
             "id": 180,
             "name": "sponza_132",
-            "sizeBytes": 4194304,
+            "sizeBytes": 5592900,
             "type": "SPR_BUFFER"
         },
         {
@@ -2286,7 +2286,7 @@
         {
             "id": 503,
             "name": "sponza_619",
-            "sizeBytes": 4194304,
+            "sizeBytes": 5592900,
             "type": "SPR_BUFFER"
         },
         {
@@ -2304,7 +2304,7 @@
         {
             "id": 434,
             "name": "sponza_520",
-            "sizeBytes": 4194304,
+            "sizeBytes": 5592900,
             "type": "SPR_TEXTURE"
         },
         {
@@ -2352,7 +2352,7 @@
         {
             "id": 451,
             "name": "sponza_543",
-            "sizeBytes": 8388608,
+            "sizeBytes": 11185800,
             "type": "SPR_MATERIAL"
         },
         {
@@ -2406,7 +2406,7 @@
         {
             "id": 165,
             "name": "sponza_111",
-            "sizeBytes": 4194304,
+            "sizeBytes": 5592900,
             "type": "SPR_TEXTURE"
         },
         {
@@ -2424,7 +2424,7 @@
         {
             "id": 141,
             "name": "sponza_81",
-            "sizeBytes": 4194304,
+            "sizeBytes": 5592900,
             "type": "SPR_TEXTURE"
         },
         {
@@ -2442,7 +2442,7 @@
         {
             "id": 71,
             "name": "helmet_11",
-            "sizeBytes": 16777216,
+            "sizeBytes": 22370140,
             "type": "SPR_BUFFER"
         },
         {
@@ -2460,7 +2460,7 @@
         {
             "id": 164,
             "name": "sponza_110",
-            "sizeBytes": 4194304,
+            "sizeBytes": 5592900,
             "type": "SPR_BUFFER"
         },
         {
@@ -2484,13 +2484,13 @@
         {
             "id": 679,
             "name": "sponza_888",
-            "sizeBytes": 4194304,
+            "sizeBytes": 5592900,
             "type": "SPR_TEXTURE"
         },
         {
             "id": 718,
             "name": "sponza_945",
-            "sizeBytes": 12582912,
+            "sizeBytes": 16778700,
             "type": "SPR_MATERIAL"
         },
         {
@@ -2502,7 +2502,7 @@
         {
             "id": 32,
             "name": "BoomBoxWithAxes_26",
-            "sizeBytes": 4096,
+            "sizeBytes": 5836,
             "type": "SPR_BUFFER"
         },
         {
@@ -2526,7 +2526,7 @@
         {
             "id": 334,
             "name": "sponza_373",
-            "sizeBytes": 4194304,
+            "sizeBytes": 5592900,
             "type": "SPR_TEXTURE"
         },
         {
@@ -2538,19 +2538,19 @@
         {
             "id": 29,
             "name": "BoomBoxWithAxes_17",
-            "sizeBytes": 52936,
+            "sizeBytes": 54676,
             "type": "SPR_MESH"
         },
         {
             "id": 55,
             "name": "WaterBottle_10",
-            "sizeBytes": 16777216,
+            "sizeBytes": 22370140,
             "type": "SPR_BUFFER"
         },
         {
             "id": 67,
             "name": "helmet_7",
-            "sizeBytes": 83886080,
+            "sizeBytes": 111850700,
             "type": "SPR_MATERIAL"
         },
         {
@@ -2568,7 +2568,7 @@
         {
             "id": 398,
             "name": "sponza_470",
-            "sizeBytes": 4194304,
+            "sizeBytes": 5592900,
             "type": "SPR_BUFFER"
         },
         {
@@ -2610,13 +2610,13 @@
         {
             "id": 433,
             "name": "sponza_519",
-            "sizeBytes": 4194304,
+            "sizeBytes": 5592900,
             "type": "SPR_BUFFER"
         },
         {
             "id": 417,
             "name": "sponza_497",
-            "sizeBytes": 4194304,
+            "sizeBytes": 5592900,
             "type": "SPR_BUFFER"
         },
         {
@@ -2646,19 +2646,19 @@
         {
             "id": 489,
             "name": "sponza_596",
-            "sizeBytes": 12737616,
+            "sizeBytes": 16933404,
             "type": "SPR_MESH"
         },
         {
             "id": 564,
             "name": "sponza_704",
-            "sizeBytes": 12754590,
+            "sizeBytes": 16950378,
             "type": "SPR_MESH"
         },
         {
             "id": 492,
             "name": "sponza_605",
-            "sizeBytes": 4194304,
+            "sizeBytes": 5592900,
             "type": "SPR_BUFFER"
         },
         {
@@ -2676,7 +2676,7 @@
         {
             "id": 505,
             "name": "sponza_621",
-            "sizeBytes": 4194304,
+            "sizeBytes": 5592900,
             "type": "SPR_BUFFER"
         },
         {
@@ -2694,13 +2694,13 @@
         {
             "id": 99,
             "name": "sponza_27",
-            "sizeBytes": 4194304,
+            "sizeBytes": 5592900,
             "type": "SPR_TEXTURE"
         },
         {
             "id": 176,
             "name": "sponza_128",
-            "sizeBytes": 12582912,
+            "sizeBytes": 16778700,
             "type": "SPR_MATERIAL"
         },
         {
@@ -2724,13 +2724,13 @@
         {
             "id": 394,
             "name": "sponza_466",
-            "sizeBytes": 12582912,
+            "sizeBytes": 16778700,
             "type": "SPR_MATERIAL"
         },
         {
             "id": 151,
             "name": "sponza_94",
-            "sizeBytes": 4194304,
+            "sizeBytes": 5592900,
             "type": "SPR_BUFFER"
         },
         {
@@ -2766,13 +2766,13 @@
         {
             "id": 95,
             "name": "sponza_23",
-            "sizeBytes": 4194304,
+            "sizeBytes": 5592900,
             "type": "SPR_TEXTURE"
         },
         {
             "id": 203,
             "name": "sponza_164",
-            "sizeBytes": 4194304,
+            "sizeBytes": 5592900,
             "type": "SPR_BUFFER"
         },
         {
@@ -2784,25 +2784,25 @@
         {
             "id": 502,
             "name": "sponza_618",
-            "sizeBytes": 4194304,
+            "sizeBytes": 5592900,
             "type": "SPR_TEXTURE"
         },
         {
             "id": 691,
             "name": "sponza_903",
-            "sizeBytes": 4194304,
+            "sizeBytes": 5592900,
             "type": "SPR_BUFFER"
         },
         {
             "id": 721,
             "name": "sponza_948",
-            "sizeBytes": 4194304,
+            "sizeBytes": 5592900,
             "type": "SPR_TEXTURE"
         },
         {
             "id": 455,
             "name": "sponza_547",
-            "sizeBytes": 4194304,
+            "sizeBytes": 5592900,
             "type": "SPR_BUFFER"
         },
         {
@@ -2844,7 +2844,7 @@
         {
             "id": 200,
             "name": "sponza_161",
-            "sizeBytes": 4194304,
+            "sizeBytes": 5592900,
             "type": "SPR_TEXTURE"
         },
         {
@@ -2856,7 +2856,7 @@
         {
             "id": 94,
             "name": "sponza_22",
-            "sizeBytes": 12582912,
+            "sizeBytes": 16778700,
             "type": "SPR_MATERIAL"
         },
         {
@@ -2898,31 +2898,31 @@
         {
             "id": 6,
             "name": "Duck_9",
-            "sizeBytes": 1048576,
+            "sizeBytes": 1398572,
             "type": "SPR_BUFFER"
         },
         {
             "id": 133,
             "name": "sponza_70",
-            "sizeBytes": 4194304,
+            "sizeBytes": 5592900,
             "type": "SPR_BUFFER"
         },
         {
             "id": 105,
             "name": "sponza_36",
-            "sizeBytes": 12582912,
+            "sizeBytes": 16778700,
             "type": "SPR_MATERIAL"
         },
         {
             "id": 5,
             "name": "Duck_8",
-            "sizeBytes": 1048576,
+            "sizeBytes": 1398572,
             "type": "SPR_TEXTURE"
         },
         {
             "id": 19,
             "name": "BoomBoxWithAxes_10",
-            "sizeBytes": 16777216,
+            "sizeBytes": 22370140,
             "type": "SPR_BUFFER"
         },
         {
@@ -2934,13 +2934,13 @@
         {
             "id": 553,
             "name": "sponza_690",
-            "sizeBytes": 12583728,
+            "sizeBytes": 16779516,
             "type": "SPR_MESH"
         },
         {
             "id": 420,
             "name": "sponza_500",
-            "sizeBytes": 4194304,
+            "sizeBytes": 5592900,
             "type": "SPR_TEXTURE"
         },
         {
@@ -2952,7 +2952,7 @@
         {
             "id": 30,
             "name": "BoomBoxWithAxes_24",
-            "sizeBytes": 4096,
+            "sizeBytes": 5836,
             "type": "SPR_MATERIAL"
         },
         {
@@ -2964,7 +2964,7 @@
         {
             "id": 59,
             "name": "WaterBottle_14",
-            "sizeBytes": 16777216,
+            "sizeBytes": 22370140,
             "type": "SPR_BUFFER"
         },
         {
@@ -2988,7 +2988,7 @@
         {
             "id": 437,
             "name": "sponza_523",
-            "sizeBytes": 4194304,
+            "sizeBytes": 5592900,
             "type": "SPR_BUFFER"
         },
         {
@@ -3000,7 +3000,7 @@
         {
             "id": 719,
             "name": "sponza_946",
-            "sizeBytes": 4194304,
+            "sizeBytes": 5592900,
             "type": "SPR_TEXTURE"
         },
         {
@@ -3024,13 +3024,13 @@
         {
             "id": 181,
             "name": "sponza_133",
-            "sizeBytes": 4194304,
+            "sizeBytes": 5592900,
             "type": "SPR_TEXTURE"
         },
         {
             "id": 686,
             "name": "sponza_892",
-            "sizeBytes": 12633606,
+            "sizeBytes": 16829394,
             "type": "SPR_MESH"
         },
         {
@@ -3054,7 +3054,7 @@
         {
             "id": 21,
             "name": "BoomBoxWithAxes_12",
-            "sizeBytes": 16777216,
+            "sizeBytes": 22370140,
             "type": "SPR_BUFFER"
         },
         {
@@ -3066,7 +3066,7 @@
         {
             "id": 442,
             "name": "sponza_531",
-            "sizeBytes": 8388608,
+            "sizeBytes": 11185800,
             "type": "SPR_MATERIAL"
         },
         {
@@ -3078,7 +3078,7 @@
         {
             "id": 201,
             "name": "sponza_162",
-            "sizeBytes": 4194304,
+            "sizeBytes": 5592900,
             "type": "SPR_BUFFER"
         },
         {
@@ -3096,7 +3096,7 @@
         {
             "id": 720,
             "name": "sponza_947",
-            "sizeBytes": 4194304,
+            "sizeBytes": 5592900,
             "type": "SPR_BUFFER"
         },
         {
@@ -3114,7 +3114,7 @@
         {
             "id": 453,
             "name": "sponza_545",
-            "sizeBytes": 4194304,
+            "sizeBytes": 5592900,
             "type": "SPR_BUFFER"
         },
         {
@@ -3126,7 +3126,7 @@
         {
             "id": 430,
             "name": "sponza_510",
-            "sizeBytes": 12772416,
+            "sizeBytes": 16968204,
             "type": "SPR_MESH"
         },
         {
@@ -3204,7 +3204,7 @@
         {
             "id": 75,
             "name": "helmet_15",
-            "sizeBytes": 16777216,
+            "sizeBytes": 22370140,
             "type": "SPR_BUFFER"
         },
         {
@@ -3258,7 +3258,7 @@
         {
             "id": 558,
             "name": "sponza_701",
-            "sizeBytes": 4194304,
+            "sizeBytes": 5592900,
             "type": "SPR_BUFFER"
         },
         {
@@ -3282,13 +3282,13 @@
         {
             "id": 72,
             "name": "helmet_12",
-            "sizeBytes": 16777216,
+            "sizeBytes": 22370140,
             "type": "SPR_TEXTURE"
         },
         {
             "id": 106,
             "name": "sponza_37",
-            "sizeBytes": 4194304,
+            "sizeBytes": 5592900,
             "type": "SPR_TEXTURE"
         },
         {
@@ -3300,13 +3300,13 @@
         {
             "id": 122,
             "name": "sponza_56",
-            "sizeBytes": 4194304,
+            "sizeBytes": 5592900,
             "type": "SPR_BUFFER"
         },
         {
             "id": 393,
             "name": "sponza_459",
-            "sizeBytes": 13827984,
+            "sizeBytes": 18023772,
             "type": "SPR_MESH"
         },
         {
@@ -3318,13 +3318,13 @@
         {
             "id": 414,
             "name": "sponza_488",
-            "sizeBytes": 12805344,
+            "sizeBytes": 17001132,
             "type": "SPR_MESH"
         },
         {
             "id": 182,
             "name": "sponza_134",
-            "sizeBytes": 4194304,
+            "sizeBytes": 5592900,
             "type": "SPR_BUFFER"
         },
         {
@@ -3378,19 +3378,19 @@
         {
             "id": 98,
             "name": "sponza_26",
-            "sizeBytes": 4194304,
+            "sizeBytes": 5592900,
             "type": "SPR_BUFFER"
         },
         {
             "id": 494,
             "name": "sponza_607",
-            "sizeBytes": 4194304,
+            "sizeBytes": 5592900,
             "type": "SPR_BUFFER"
         },
         {
             "id": 740,
             "name": "default_color_1",
-            "sizeBytes": 4194304,
+            "sizeBytes": 5592900,
             "type": "SPR_BUFFER"
         },
         {
@@ -3438,7 +3438,7 @@
         {
             "id": 446,
             "name": "sponza_535",
-            "sizeBytes": 4194304,
+            "sizeBytes": 5592900,
             "type": "SPR_BUFFER"
         },
         {
@@ -3462,7 +3462,7 @@
         {
             "id": 163,
             "name": "sponza_109",
-            "sizeBytes": 4194304,
+            "sizeBytes": 5592900,
             "type": "SPR_TEXTURE"
         },
         {
@@ -3474,7 +3474,7 @@
         {
             "id": 57,
             "name": "WaterBottle_12",
-            "sizeBytes": 16777216,
+            "sizeBytes": 22370140,
             "type": "SPR_BUFFER"
         },
         {
@@ -3576,25 +3576,25 @@
         {
             "id": 87,
             "name": "sponza_12",
-            "sizeBytes": 4194304,
+            "sizeBytes": 5592900,
             "type": "SPR_BUFFER"
         },
         {
             "id": 196,
             "name": "sponza_151",
-            "sizeBytes": 12910656,
+            "sizeBytes": 17106444,
             "type": "SPR_MESH"
         },
         {
             "id": 418,
             "name": "sponza_498",
-            "sizeBytes": 4194304,
+            "sizeBytes": 5592900,
             "type": "SPR_TEXTURE"
         },
         {
             "id": 161,
             "name": "sponza_107",
-            "sizeBytes": 4194304,
+            "sizeBytes": 5592900,
             "type": "SPR_TEXTURE"
         },
         {
@@ -3672,7 +3672,7 @@
         {
             "id": 435,
             "name": "sponza_521",
-            "sizeBytes": 4194304,
+            "sizeBytes": 5592900,
             "type": "SPR_BUFFER"
         },
         {
@@ -3696,13 +3696,13 @@
         {
             "id": 396,
             "name": "sponza_468",
-            "sizeBytes": 4194304,
+            "sizeBytes": 5592900,
             "type": "SPR_BUFFER"
         },
         {
             "id": 744,
             "name": "default_input_white_1",
-            "sizeBytes": 4,
+            "sizeBytes": 260,
             "type": "SPR_BUFFER"
         },
         {
@@ -3726,7 +3726,7 @@
         {
             "id": 509,
             "name": "sponza_622",
-            "sizeBytes": 8543312,
+            "sizeBytes": 11340504,
             "type": "SPR_MESH"
         },
         {
@@ -3744,7 +3744,7 @@
         {
             "id": 143,
             "name": "sponza_83",
-            "sizeBytes": 4194304,
+            "sizeBytes": 5592900,
             "type": "SPR_TEXTURE"
         },
         {
@@ -3804,7 +3804,7 @@
         {
             "id": 566,
             "name": "sponza_712",
-            "sizeBytes": 4194304,
+            "sizeBytes": 5592900,
             "type": "SPR_TEXTURE"
         },
         {
@@ -3822,13 +3822,13 @@
         {
             "id": 513,
             "name": "sponza_632",
-            "sizeBytes": 4194304,
+            "sizeBytes": 5592900,
             "type": "SPR_TEXTURE"
         },
         {
             "id": 510,
             "name": "sponza_629",
-            "sizeBytes": 8388608,
+            "sizeBytes": 11185800,
             "type": "SPR_MATERIAL"
         },
         {
@@ -3840,19 +3840,19 @@
         {
             "id": 154,
             "name": "sponza_97",
-            "sizeBytes": 4194304,
+            "sizeBytes": 5592900,
             "type": "SPR_TEXTURE"
         },
         {
             "id": 681,
             "name": "sponza_890",
-            "sizeBytes": 4194304,
+            "sizeBytes": 5592900,
             "type": "SPR_TEXTURE"
         },
         {
             "id": 20,
             "name": "BoomBoxWithAxes_11",
-            "sizeBytes": 16777216,
+            "sizeBytes": 22370140,
             "type": "SPR_TEXTURE"
         },
         {
@@ -3864,13 +3864,13 @@
         {
             "id": 556,
             "name": "sponza_699",
-            "sizeBytes": 4194304,
+            "sizeBytes": 5592900,
             "type": "SPR_BUFFER"
         },
         {
             "id": 565,
             "name": "sponza_711",
-            "sizeBytes": 12582912,
+            "sizeBytes": 16778700,
             "type": "SPR_MATERIAL"
         },
         {
@@ -3888,19 +3888,19 @@
         {
             "id": 177,
             "name": "sponza_129",
-            "sizeBytes": 4194304,
+            "sizeBytes": 5592900,
             "type": "SPR_TEXTURE"
         },
         {
             "id": 689,
             "name": "sponza_901",
-            "sizeBytes": 4194304,
+            "sizeBytes": 5592900,
             "type": "SPR_BUFFER"
         },
         {
             "id": 131,
             "name": "sponza_68",
-            "sizeBytes": 4194304,
+            "sizeBytes": 5592900,
             "type": "SPR_BUFFER"
         },
         {
@@ -3930,7 +3930,7 @@
         {
             "id": 144,
             "name": "sponza_84",
-            "sizeBytes": 4194304,
+            "sizeBytes": 5592900,
             "type": "SPR_BUFFER"
         },
         {
@@ -3948,7 +3948,7 @@
         {
             "id": 339,
             "name": "sponza_378",
-            "sizeBytes": 4194304,
+            "sizeBytes": 5592900,
             "type": "SPR_BUFFER"
         },
         {
@@ -4014,7 +4014,7 @@
         {
             "id": 724,
             "name": "sponza_951",
-            "sizeBytes": 4194304,
+            "sizeBytes": 5592900,
             "type": "SPR_BUFFER"
         },
         {
@@ -4038,7 +4038,7 @@
         {
             "id": 138,
             "name": "sponza_78",
-            "sizeBytes": 12582912,
+            "sizeBytes": 16778700,
             "type": "SPR_MATERIAL"
         },
         {
@@ -4050,7 +4050,7 @@
         {
             "id": 88,
             "name": "sponza_13",
-            "sizeBytes": 4194304,
+            "sizeBytes": 5592900,
             "type": "SPR_TEXTURE"
         },
         {
@@ -4068,13 +4068,13 @@
         {
             "id": 571,
             "name": "sponza_717",
-            "sizeBytes": 4194304,
+            "sizeBytes": 5592900,
             "type": "SPR_BUFFER"
         },
         {
             "id": 126,
             "name": "sponza_57",
-            "sizeBytes": 12589704,
+            "sizeBytes": 16785492,
             "type": "SPR_MESH"
         },
         {
@@ -4092,7 +4092,7 @@
         {
             "id": 500,
             "name": "sponza_610",
-            "sizeBytes": 8536688,
+            "sizeBytes": 11333880,
             "type": "SPR_MESH"
         },
         {
@@ -4122,7 +4122,7 @@
         {
             "id": 443,
             "name": "sponza_532",
-            "sizeBytes": 4194304,
+            "sizeBytes": 5592900,
             "type": "SPR_TEXTURE"
         },
         {
@@ -4140,7 +4140,7 @@
         {
             "id": 399,
             "name": "sponza_471",
-            "sizeBytes": 4194304,
+            "sizeBytes": 5592900,
             "type": "SPR_TEXTURE"
         },
         {
@@ -4170,7 +4170,7 @@
         {
             "id": 202,
             "name": "sponza_163",
-            "sizeBytes": 4194304,
+            "sizeBytes": 5592900,
             "type": "SPR_TEXTURE"
         },
         {
@@ -4182,19 +4182,19 @@
         {
             "id": 130,
             "name": "sponza_67",
-            "sizeBytes": 4194304,
+            "sizeBytes": 5592900,
             "type": "SPR_TEXTURE"
         },
         {
             "id": 152,
             "name": "sponza_95",
-            "sizeBytes": 4194304,
+            "sizeBytes": 5592900,
             "type": "SPR_TEXTURE"
         },
         {
             "id": 153,
             "name": "sponza_96",
-            "sizeBytes": 4194304,
+            "sizeBytes": 5592900,
             "type": "SPR_BUFFER"
         },
         {
@@ -4224,7 +4224,7 @@
         {
             "id": 60,
             "name": "WaterBottle_15",
-            "sizeBytes": 16777216,
+            "sizeBytes": 22370140,
             "type": "SPR_TEXTURE"
         },
         {
@@ -4236,7 +4236,7 @@
         {
             "id": 491,
             "name": "sponza_604",
-            "sizeBytes": 4194304,
+            "sizeBytes": 5592900,
             "type": "SPR_TEXTURE"
         },
         {
@@ -4254,13 +4254,13 @@
         {
             "id": 400,
             "name": "sponza_472",
-            "sizeBytes": 4194304,
+            "sizeBytes": 5592900,
             "type": "SPR_BUFFER"
         },
         {
             "id": 115,
             "name": "sponza_43",
-            "sizeBytes": 12627228,
+            "sizeBytes": 16823016,
             "type": "SPR_MESH"
         },
         {
@@ -4278,7 +4278,7 @@
         {
             "id": 332,
             "name": "sponza_365",
-            "sizeBytes": 12599436,
+            "sizeBytes": 16795224,
             "type": "SPR_MESH"
         },
         {
@@ -4296,7 +4296,7 @@
         {
             "id": 397,
             "name": "sponza_469",
-            "sizeBytes": 4194304,
+            "sizeBytes": 5592900,
             "type": "SPR_TEXTURE"
         },
         {
@@ -4338,7 +4338,7 @@
         {
             "id": 127,
             "name": "sponza_64",
-            "sizeBytes": 12582912,
+            "sizeBytes": 16778700,
             "type": "SPR_MATERIAL"
         },
         {
@@ -4350,25 +4350,25 @@
         {
             "id": 432,
             "name": "sponza_518",
-            "sizeBytes": 4194304,
+            "sizeBytes": 5592900,
             "type": "SPR_TEXTURE"
         },
         {
             "id": 687,
             "name": "sponza_899",
-            "sizeBytes": 12582912,
+            "sizeBytes": 16778700,
             "type": "SPR_MATERIAL"
         },
         {
             "id": 142,
             "name": "sponza_82",
-            "sizeBytes": 4194304,
+            "sizeBytes": 5592900,
             "type": "SPR_BUFFER"
         },
         {
             "id": 128,
             "name": "sponza_65",
-            "sizeBytes": 4194304,
+            "sizeBytes": 5592900,
             "type": "SPR_TEXTURE"
         },
         {
@@ -4386,13 +4386,13 @@
         {
             "id": 493,
             "name": "sponza_606",
-            "sizeBytes": 4194304,
+            "sizeBytes": 5592900,
             "type": "SPR_TEXTURE"
         },
         {
             "id": 117,
             "name": "sponza_51",
-            "sizeBytes": 4194304,
+            "sizeBytes": 5592900,
             "type": "SPR_TEXTURE"
         },
         {
@@ -4464,7 +4464,7 @@
         {
             "id": 338,
             "name": "sponza_377",
-            "sizeBytes": 4194304,
+            "sizeBytes": 5592900,
             "type": "SPR_TEXTURE"
         }
     ]
