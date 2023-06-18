@@ -69,7 +69,7 @@ VulkanDevice::~VulkanDevice(){
 
 void VulkanDevice::destroy(){
     vkDestroyDevice(m_device, nullptr);
-    if (DEBUG)
+    if (SPR_DEBUG)
         DestroyDebugUtilsMessengerEXT(m_instance, m_debugMessenger, nullptr);
     vkDestroyInstance(m_instance, nullptr);
 
@@ -111,18 +111,18 @@ void VulkanDevice::createInstance(SprWindow& window){
     // fill and create instance
     VkInstanceCreateInfo createInfo {
         .sType = VK_STRUCTURE_TYPE_INSTANCE_CREATE_INFO,
-        .pNext = DEBUG ? (VkDebugUtilsMessengerCreateInfoEXT*) &debugCreateInfo : NULL,
+        .pNext = SPR_DEBUG ? (VkDebugUtilsMessengerCreateInfoEXT*) &debugCreateInfo : NULL,
         .flags = 0,
         .pApplicationInfo = &m_appInfo,
-        .enabledLayerCount = DEBUG ? m_validationLayerCount : 0,
-        .ppEnabledLayerNames = DEBUG ? m_validationLayers.data() : NULL,
+        .enabledLayerCount = SPR_DEBUG ? m_validationLayerCount : 0,
+        .ppEnabledLayerNames = SPR_DEBUG ? m_validationLayers.data() : NULL,
         .enabledExtensionCount = m_instanceExtensionCount,
         .ppEnabledExtensionNames = m_instanceExtensionNames.data(),
     };
     VK_CHECK(vkCreateInstance(&createInfo, nullptr, &m_instance));
     volkLoadInstanceOnly(m_instance);
     // enable debug messenger if DEBUG
-    if (DEBUG)
+    if (SPR_DEBUG)
         CreateDebugUtilsMessengerEXT(m_instance, &debugCreateInfo, nullptr, &m_debugMessenger);
 }
 
@@ -157,7 +157,8 @@ void VulkanDevice::createDevice(VkSurfaceKHR surface){
     };
 
     VkPhysicalDeviceFeatures deviceFeatures = {
-        .geometryShader = VK_TRUE
+        .geometryShader = VK_TRUE,
+        .samplerAnisotropy = VK_TRUE
     };
 
     VkPhysicalDeviceFeatures2 features2 = {
@@ -173,8 +174,8 @@ void VulkanDevice::createDevice(VkSurfaceKHR surface){
         .flags = 0,
         .queueCreateInfoCount = static_cast<uint32>(queueCreateInfos.size()),
         .pQueueCreateInfos = queueCreateInfos.data(),
-        .enabledLayerCount = DEBUG ? m_validationLayerCount : 0,
-        .ppEnabledLayerNames = DEBUG ? m_validationLayers.data() : NULL,
+        .enabledLayerCount = SPR_DEBUG ? m_validationLayerCount : 0,
+        .ppEnabledLayerNames = SPR_DEBUG ? m_validationLayers.data() : NULL,
         .enabledExtensionCount = m_deviceExtensionCount,
         .ppEnabledExtensionNames = m_deviceExtensionNames.data(),
         .pEnabledFeatures = NULL,
@@ -461,7 +462,7 @@ void VulkanDevice::getExtensions(SprWindow& window){
     
     // [instance]
     // add debug extension (if applicable)
-    if (DEBUG){
+    if (SPR_DEBUG){
         if (!hasExtension(m_instanceExtensionNames, "VK_EXT_debug_utils")){
             m_instanceExtensionNames.push_back("VK_EXT_debug_utils");
             m_instanceExtensionCount++;
@@ -482,7 +483,7 @@ bool VulkanDevice::hasLayer(std::vector<VkLayerProperties> layers, const char* r
 
 void VulkanDevice::enableValidationLayers(VkDebugUtilsMessengerCreateInfoEXT& debugCreateInfo){
     // enable validation layers if in debug
-    if (!DEBUG)
+    if (!SPR_DEBUG)
         return;
 
     // get validation layers
