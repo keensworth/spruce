@@ -3,6 +3,7 @@
 #include "Mesh.h"
 #include "../../resource/SprResourceManager.h"
 #include "../../debug/SprLog.h"
+#include "vulkan/TextureTranscoder.h"
 
 namespace spr::gfx {
 
@@ -18,9 +19,10 @@ GfxAssetLoader::~GfxAssetLoader(){
         clear();
 }
 
-MeshInfoMap GfxAssetLoader::loadAssets(SprResourceManager& rm){
+MeshInfoMap GfxAssetLoader::loadAssets(SprResourceManager& rm, VulkanDevice* device){
     std::vector<uint32>& modelIds = rm.getModelIds();
     std::vector<uint32>& textureIds = rm.getTextureIds();
+    m_transcoder = TextureTranscoder(device);
 
     MeshInfoMap map;
 
@@ -152,12 +154,14 @@ void GfxAssetLoader::loadMaterial(SprResourceManager& rm, Mesh* mesh, MeshInfo& 
 }
 
 uint32 GfxAssetLoader::loadTexture(SprResourceManager& rm, uint32 textureId, bool srgb){
+    // texture handle
     Handle<spr::Texture> handle = rm.getHandle<spr::Texture>(textureId);
     if (!handle.isValid()){
         SprLog::warn("[GfxAssetLoader] [loadTexture] invalid texture");
         return 0;
     }
 
+    // texture data + buffer handle
     spr::Texture* texture = rm.getData<spr::Texture>(handle);
     Handle<spr::Buffer> texBufferHandle = rm.getHandle<spr::Buffer>(texture->bufferId);
     if (!texBufferHandle.isValid()){
@@ -169,9 +173,14 @@ uint32 GfxAssetLoader::loadTexture(SprResourceManager& rm, uint32 textureId, boo
         return m_textureIds[texture->bufferId];
     }
 
+    // texture buffer data
     spr::Buffer* texBuffer = rm.getData<spr::Buffer>(texBufferHandle);
-    TempBuffer<uint8> textureBuffer(texBuffer->data.size());
-    textureBuffer.insert(texBuffer->data.data(), texBuffer->data.size());
+
+    // transcode from ktx2 to relevant format
+    TranscodeResult result = m_transcoder.transcode(texBuffer->data.data(), texBuffer->byteLength, texture->width, texture->height);
+
+    TempBuffer<uint8> textureBuffer(result.sizeBytes);
+    textureBuffer.insert(result.transcodedData, result.sizeBytes);
 
     uint32 texIndex = m_textures.size();
     m_textures.push_back({
@@ -179,6 +188,8 @@ uint32 GfxAssetLoader::loadTexture(SprResourceManager& rm, uint32 textureId, boo
         .height = texture->height,
         .width = texture->width,
         .components = texture->components,
+        .format = result.format,
+        .mipCount = result.mips,
         .srgb = srgb});
 
     m_counts.textureCount++;

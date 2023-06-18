@@ -5,7 +5,7 @@
 #include "../../external/volk/volk.h"
 
 
-#define DEBUG true
+#define SPR_DEBUG true
 
 // #define VK_CHECK(call)                 \
 // 	do {                               \

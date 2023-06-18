@@ -3,6 +3,7 @@
 #include "../../core/memory/TempBuffer.h"
 #include "../../external/flat_hash_map/flat_hash_map.hpp"
 #include "Mesh.h"
+#include "vulkan/TextureTranscoder.h"
 
 namespace spr {
     class SprResourceManager;
@@ -23,6 +24,8 @@ typedef struct TextureInfo {
     uint32 height;
     uint32 width;
     uint32 components;
+    uint32 format;
+    uint32 mipCount;
     bool srgb;
 } TextureInfo;
 
@@ -38,7 +41,7 @@ public:
     GfxAssetLoader();
     ~GfxAssetLoader();
 
-    MeshInfoMap loadAssets(SprResourceManager& rm);
+    MeshInfoMap loadAssets(SprResourceManager& rm, VulkanDevice* device);
     void clear();
 
     PrimitiveCounts getPrimitiveCounts();
@@ -51,6 +54,7 @@ public:
 
 private:
     SprResourceManager* m_rm;
+    TextureTranscoder m_transcoder;
     PrimitiveCounts m_counts;
 
     TempBuffer<VertexPosition> m_vertexPositions;
