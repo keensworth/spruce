@@ -329,7 +329,7 @@ Handle<Texture> VulkanResourceManager::create<Texture>(TextureDesc desc){
         .addressModeV  = (VkSamplerAddressMode)desc.sampler.addressing,
         .addressModeW  = (VkSamplerAddressMode)desc.sampler.addressing,
         .mipLodBias    = 0.f,
-        .anisotropyEnable = VK_FALSE,
+        .anisotropyEnable = VK_TRUE,
         .maxAnisotropy = desc.sampler.anisotropy,
         .compareEnable = VK_TRUE,
         .compareOp     = (VkCompareOp)desc.sampler.compare,
