@@ -7,6 +7,6 @@ target_sources(assetcreate PRIVATE
 
 target_include_directories(assetcreate PUBLIC ${CMAKE_CURRENT_LIST_DIR}/asset_create)
 
-target_link_libraries(assetcreate glm tinygltf imgui stb_image)
+target_link_libraries(assetcreate glm imgui stb_image ktx)
 target_compile_options(assetcreate PUBLIC)
 

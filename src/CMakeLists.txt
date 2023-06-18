@@ -84,6 +84,8 @@ target_sources(srcFiles PRIVATE
   render/vulkan/RenderPassRenderer.h
   render/vulkan/RenderPassRenderer.cpp
   render/vulkan/FrameRenderer.h
+  render/vulkan/TextureTranscoder.h
+  render/vulkan/TextureTranscoder.cpp
   render/scene/Material.h
   render/scene/GfxAssetLoader.cpp
   render/scene/Draw.h
@@ -115,7 +117,7 @@ target_include_directories(srcFiles
 )
 
 target_link_libraries(srcFiles PUBLIC vma glm volk imgui stb_image oof)
-target_link_libraries(srcFiles PUBLIC  sdl2)
+target_link_libraries(srcFiles PUBLIC  sdl2 ktx)
 target_compile_options(srcFiles PUBLIC -O0 -g)
 
 
