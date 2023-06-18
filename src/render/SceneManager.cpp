@@ -2,9 +2,11 @@
 #include "SDL_timer.h"
 #include "glm/ext/matrix_clip_space.hpp"
 #include "glm/ext/matrix_transform.hpp"
+#include "memory/TempBuffer.h"
 #include "scene/GfxAssetLoader.h"
 #include "scene/Material.h"
 #include "scene/Mesh.h"
+#include "vulkan/TextureTranscoder.h"
 #include "vulkan/gfx_vulkan_core.h"
 #include "vulkan/resource/ResourceFlags.h"
 #include "vulkan/resource/ResourceTypes.h"
@@ -15,6 +17,8 @@
 #include "scene/SceneData.h"
 #include "../debug/SprLog.h"
 #include <glm/ext/matrix_clip_space.hpp>
+#include "vulkan/TextureTranscoder.h"
+
 
 namespace spr::gfx {
 
@@ -245,11 +249,11 @@ Light& SceneManager::getSunLight(uint32 frame){
 
 
 void SceneManager::initializeAssets(SprResourceManager &rm, VulkanDevice* device){
-    m_meshInfo = m_assetLoader.loadAssets(rm);
+    m_meshInfo = m_assetLoader.loadAssets(rm, device);
 
     PrimitiveCounts counts = m_assetLoader.getPrimitiveCounts();
 
-    initTextures(counts.textureCount);
+    initTextures(counts.textureCount, device);
     initBuffers(counts, device);
     initDescriptorSets(device);
     
@@ -329,7 +333,7 @@ void SceneManager::initBuffers(PrimitiveCounts counts, VulkanDevice* device){
     });
 }
 
-void SceneManager::initTextures(uint32 textureCount){
+void SceneManager::initTextures(uint32 textureCount, VulkanDevice* device){
     m_textures.resize(textureCount);
     
     std::vector<TextureInfo>& textureData = m_assetLoader.getTextureData();
@@ -337,30 +341,16 @@ void SceneManager::initTextures(uint32 textureCount){
     for (uint32 i = 0; i < textureCount; i++){
         TextureInfo& info = textureData[i];
 
-        Flags::Format format;
-        if (info.components == 1){
-            format = info.srgb ? Flags::Format::R8_SRGB
-                               : Flags::Format::R8_UNORM;
-        } else if (info.components == 2){
-            format = info.srgb ? Flags::Format::RG8_SRGB
-                               : Flags::Format::RG8_UNORM;
-        } else if (info.components == 3){
-            format = info.srgb ? Flags::Format::RGB8_SRGB
-                               : Flags::Format::RGB8_UNORM;
-        } else {
-            format = info.srgb ? Flags::Format::RGBA8_SRGB
-                               : Flags::Format::RGBA8_UNORM;
-        }
-        
         m_textures[i] = m_rm->create<Texture>({
             .dimensions = {
                 info.width,
                 info.height,
                 1
             },
-            .format = format,
+            .format = info.format,
             .usage = Flags::ImageUsage::IU_SAMPLED |
-                     Flags::ImageUsage::IU_TRANSFER_DST
+                     Flags::ImageUsage::IU_TRANSFER_DST,
+            .view = { .mips = info.mipCount }
         });
     }
 }

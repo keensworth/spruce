@@ -68,7 +68,7 @@ private:
     bool m_destroyed = false;
 
     void initBuffers(PrimitiveCounts counts, VulkanDevice* device);
-    void initTextures(uint32 textureCount);
+    void initTextures(uint32 textureCount, VulkanDevice* device);
     void initDescriptorSets(VulkanDevice* device);
 
 private: // owning
