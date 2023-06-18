@@ -12,6 +12,20 @@
 typedef std::unordered_map<uint32_t, uint32_t> IdMap;
 
 namespace spr::tools{
+
+enum BufferData {
+    SPR_NONE = 0,
+    SPR_POSITION = 1,
+    SPR_INDICES = 2,
+    SPR_NORMALS = 3,
+    SPR_COLOR = 4,
+    SPR_TANGENTS = 5,
+    SPR_UV = 6,
+    SPR_TEXTURE_COLOR = 7,
+    SPR_TEXTURE_NORMAL = 8,
+    SPR_TEXTURE_OTHER = 9,
+};
+
 class GLTFParser {
 public:
     GLTFParser();
@@ -43,11 +57,11 @@ private:
         std::vector<uint8_t>& colorBuffer,
         glm::mat4& transform);
     uint32_t handleMaterial(const tinygltf::Material& material);
-    uint32_t handleTexture(const tinygltf::TextureInfo& texInfo);
+    uint32_t handleTexture(const tinygltf::TextureInfo& texInfo, BufferData dataType);
     uint32_t handleTexture(const tinygltf::NormalTextureInfo& texInfo);
     uint32_t handleTexture(const tinygltf::OcclusionTextureInfo& texInfo);
-    uint32_t handleTexture(const tinygltf::Texture& tex);
-    uint32_t handleAccessor(const tinygltf::Accessor& accessor, std::vector<uint8_t>& out, bool writeToFile, bool isPosition, glm::mat4& transform);
+    uint32_t handleTexture(const tinygltf::Texture& tex, BufferData dataType);
+    uint32_t handleAccessor(const tinygltf::Accessor& accessor, std::vector<uint8_t>& out, bool writeToFile, BufferData dataType, glm::mat4& transform);
     void handleBufferView(const tinygltf::BufferView& bufferView, 
         std::string association,
         uint32_t byteOffset, 
@@ -58,7 +72,7 @@ private:
         uint32_t bufferId,
         std::vector<uint8_t>& out,
         bool writeToFile,
-        bool isPosition,
+        BufferData dataType,
         glm::mat4& transform);
     void handleBuffer(
         const tinygltf::Buffer& buffer, 
@@ -72,8 +86,24 @@ private:
         uint32_t bufferId,
         std::vector<uint8_t>& out,
         bool writeToFile,
-        bool isPosition,
+        BufferData dataType,
         glm::mat4& transform);
+    void handleTextureBuffer(
+        const tinygltf::Buffer& buffer, 
+        std::string association,
+        uint32_t byteOffset, 
+        uint32_t byteLength, 
+        uint32_t bytesPerElement,
+        uint32_t elementCount,
+        uint32_t elementType, 
+        uint32_t componentType,
+        uint32_t bufferId,
+        std::vector<uint8_t>& out,
+        bool writeToFile,
+        BufferData dataType,
+        uint32_t width,
+        uint32_t height,
+        uint32_t components);
     void handleMIMEImageBuffer(
         const tinygltf::Buffer& buffer, 
         std::string association,
@@ -83,7 +113,24 @@ private:
         uint32_t elementCount,
         uint32_t elementType, 
         uint32_t componentType,
-        uint32_t bufferId);
+        uint32_t bufferId,
+        BufferData dataType);
+    void createMip(
+        unsigned char* in, 
+        uint32_t inSizeBytes, 
+        uint32_t inExtent, 
+        unsigned char* mipOut, 
+        uint32_t outSizeBytes, 
+        uint32_t outExtent);
+    void compressImageData(
+        unsigned char* data,
+        uint32_t dataSize,
+        unsigned char** outData,
+        uint32_t& outDataSize,
+        BufferData dataType,
+        uint32_t width,
+        uint32_t height,
+        uint32_t components);
     void handleBufferInterleaved(
         const tinygltf::Buffer& buffer, 
         std::string association,

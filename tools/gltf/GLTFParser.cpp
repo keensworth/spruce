@@ -2,13 +2,20 @@
 #include <fstream>
 #include "GLTFParser.h"
 
-
 #include "glm/gtc/matrix_inverse.hpp"
 #include "glm/gtc/type_ptr.hpp"
 #include "glm/gtx/quaternion.hpp"
 #include <glm/gtc/type_ptr.hpp>
+#include <vulkan/vulkan_core.h>
+#include "ktx.h"
+//#define STB_IMAGE_IMPLEMENTATION
 #include "stb_image.h"
+#define STB_IMAGE_RESIZE_IMPLEMENTATION
+#include "stb_image_resize.h"
 #include "glm/gtx/string_cast.hpp"
+
+#include "../../external/ktx/include/ktx.h"
+#include "../../external/ktx/lib/vk_format.h"
 
 namespace spr::tools{
 
@@ -315,14 +322,12 @@ void GLTFParser::handleBuffer(
         uint32_t bufferId,
         std::vector<uint8_t>& out,
         bool writeToFile,
-        bool isPosition,
+        BufferData dataType,
         glm::mat4& transform){    
-
-    
 
     // check if we need to pad position to vec4, if it isn't already
     bool needsPadding = false;
-    if (isPosition){
+    if (dataType == SPR_POSITION){
         assert (elementType == TINYGLTF_TYPE_VEC3 || elementType == TINYGLTF_TYPE_VEC4);
         if (elementType == TINYGLTF_TYPE_VEC3){
             byteLength = (4.f/3.f)*byteLength;
@@ -364,7 +369,7 @@ void GLTFParser::handleBuffer(
     }
 
     // apply transform to all positions
-    if (isPosition){
+    if (dataType == SPR_POSITION){
         for (uint32_t i = 0; i < byteLength; i += 16){
             glm::vec4 pos = glm::make_vec4((float*)(data + i));
             pos = transform * pos;
@@ -384,6 +389,157 @@ void GLTFParser::handleBuffer(
     delete[] data;
 }
 
+
+
+void GLTFParser::createMip(
+        unsigned char* in, 
+        uint32_t inSizeBytes, 
+        uint32_t inExtent, 
+        unsigned char* mipOut, 
+        uint32_t outSizeBytes, 
+        uint32_t outExtent)
+{
+    stbir_resize_uint8(in, inExtent, inExtent, 0, mipOut, outExtent, outExtent, 0, 4);
+}
+
+void GLTFParser::compressImageData(
+        unsigned char* data,
+        uint32_t dataSize,
+        unsigned char** outData,
+        uint32_t& outDataSize,
+        BufferData dataType,
+        uint32_t width,
+        uint32_t height,
+        uint32_t components)
+{
+    ktxTexture2* texture;
+    ktxTextureCreateInfo createInfo;
+    KTX_error_code result;
+    ktx_uint32_t level, layer, faceSlice;
+    ktx_size_t srcSize;
+    ktx_size_t outSize;
+    ktxBasisParams params = {0};
+    params.structSize = sizeof(params);
+    params.threadCount = 8;
+    
+    createInfo.glInternalformat = 0; 
+    createInfo.vkFormat = dataType == SPR_TEXTURE_COLOR ? VK_FORMAT_R8G8B8A8_SRGB : VK_FORMAT_R8G8B8A8_UNORM;
+    createInfo.baseWidth = width;
+    createInfo.baseHeight = height;
+    createInfo.baseDepth = 1;
+    createInfo.numDimensions = 2;
+    createInfo.numLevels = std::floor(log2(std::max(width, height))) + 1;
+    createInfo.numLayers = 1;
+    createInfo.numFaces = 1;
+    createInfo.isArray = KTX_FALSE;
+    createInfo.generateMipmaps = KTX_FALSE;
+    
+    result = ktxTexture2_Create(&createInfo, KTX_TEXTURE_CREATE_ALLOC_STORAGE, &texture);
+    if (result) {
+        std::cerr << "Failed to create KTX2 texture, code: " << ktxErrorString(result) << std::endl;
+    }
+
+    uint32_t levels = createInfo.numLevels;
+    uint32_t maxExtent = std::max(width, height);
+
+    // base level
+    srcSize = width*height*components;
+    level = 0;
+    layer = 0;
+    faceSlice = 0;                           
+    result = ktxTexture_SetImageFromMemory(ktxTexture(texture), level, layer, faceSlice, data, srcSize);
+    if (result) {
+        std::cerr << "Failed to set image from memory, code: " << ktxErrorString(result) << std::endl;
+    }
+
+    // mip chain
+    unsigned char* mipData[levels-1];
+    for (uint32_t i = 1; i < levels; i++){
+        uint32_t levelExtent = std::max(maxExtent / (1 << i), 1u);
+        mipData[i-1] = (unsigned char*)malloc(levelExtent*levelExtent*components);
+    }
+
+    for (uint32_t i = 1; i < levels; i++){
+        uint32_t currExtent = std::max(maxExtent / (1 << i), 1u);
+        uint32_t currSize = currExtent*currExtent*components;
+        level = i;
+        layer = 0;
+        faceSlice = 0;                           
+
+        createMip(data, srcSize, maxExtent, mipData[i-1], currSize, currExtent);
+        result = ktxTexture_SetImageFromMemory(ktxTexture(texture), level, layer, faceSlice, mipData[i-1], currSize);
+        if (result) {
+            std::cerr << "Failed to set (mip) image from memory, code: " << ktxErrorString(result) << std::endl;
+        }
+        
+        if (currExtent == 1)
+            break;
+    }
+    
+    // BasisU encode
+    if (dataType == SPR_TEXTURE_NORMAL){
+        params.normalMap = KTX_TRUE;
+        params.uastc = KTX_TRUE;
+        params.uastcFlags = KTX_PACK_UASTC_LEVEL_DEFAULT;
+        params.compressionLevel = KTX_ETC1S_DEFAULT_COMPRESSION_LEVEL;
+    } else {
+        params.uastc = KTX_FALSE;
+        params.normalMap = KTX_FALSE;
+        params.compressionLevel = KTX_ETC1S_DEFAULT_COMPRESSION_LEVEL;        
+    }
+    //result = ktxTexture2_CompressBasisEx(texture, &params);
+    // if (result) {
+    //     std::cerr << "Failed to compress texture, code: " << ktxErrorString(result) << std::endl;
+    // }
+
+    // cleanup
+    result = ktxTexture_WriteToMemory((ktxTexture*)(texture), outData, &outSize);
+    if (result) {
+        std::cerr << "Failed to write KTX texture to memory, code: " << ktxErrorString(result) << std::endl;
+    }
+    outDataSize = (uint32_t)outSize;
+    ktxTexture_Destroy(ktxTexture(texture));
+    for (uint32_t i = 1; i < levels; i++){
+        free(mipData[i-1]);
+    }
+}
+
+void GLTFParser::handleTextureBuffer(
+        const tinygltf::Buffer& buffer, 
+        std::string association,
+        uint32_t byteOffset, 
+        uint32_t byteLength, 
+        uint32_t bytesPerElement,
+        uint32_t elementCount,
+        uint32_t elementType, 
+        uint32_t componentType,
+        uint32_t bufferId,
+        std::vector<uint8_t>& out,
+        bool writeToFile,
+        BufferData dataType,
+        uint32_t width,
+        uint32_t height,
+        uint32_t components){    
+
+    // write slice of buffer into new buffer
+    const unsigned char* bufferData = buffer.data.data();
+    unsigned char* data = new unsigned char[byteLength];
+    for (int32_t i = 0; i < byteLength; i++){
+        data[i] = bufferData[i+byteOffset];
+    }
+
+    unsigned char* ktxTextureData = nullptr;
+    uint32_t ktxTextureDataSize;
+
+    // generate mips + compress
+    compressImageData(data, byteLength, &ktxTextureData, ktxTextureDataSize, dataType, width, height, 4);
+
+    writeBufferFile(ktxTextureData, association.data(), ktxTextureDataSize, elementType, componentType, bufferId);
+
+    free(ktxTextureData);
+    delete[] data;
+}
+
 void GLTFParser::handleMIMEImageBuffer(
         const tinygltf::Buffer& buffer, 
         std::string association,
@@ -393,39 +549,38 @@ void GLTFParser::handleMIMEImageBuffer(
         uint32_t elementCount,
         uint32_t elementType, 
         uint32_t componentType,
-        uint32_t bufferId){
+        uint32_t bufferId,
+        BufferData dataType){
 
     // buffer data
     const unsigned char* bufferData = buffer.data.data();
 
-    // check if we need to load image data ourselves
-    bool loadImage = (!association.compare("stex") && ((elementCount * bytesPerElement) != byteLength));
+    int width, height, numChannels;
+    unsigned char* pixels = stbi_load_from_memory(
+        reinterpret_cast<const stbi_uc*>(bufferData + byteOffset),
+        byteLength,
+        &width,
+        &height,
+        &numChannels,
+        STBI_rgb_alpha
+    );
 
-    if (loadImage) {
-        int width, height, numChannels;
-        unsigned char* pixels = stbi_load_from_memory(
-            reinterpret_cast<const stbi_uc*>(bufferData + byteOffset),
-            byteLength,
-            &width,
-            &height,
-            &numChannels,
-            STBI_rgb_alpha
-        );
-
-        byteLength = width * height * STBI_rgb_alpha;
-        
-        unsigned char* data = new unsigned char[byteLength];
-        for (int32_t i = 0; i < byteLength; i++)
-            data[i] = pixels[i];
-        writeBufferFile(data, association.data(), byteLength, elementType, componentType, bufferId);
-        free(pixels);
-        return;
-    }
-
+    byteLength = width * height * STBI_rgb_alpha;
+    
     unsigned char* data = new unsigned char[byteLength];
     for (int32_t i = 0; i < byteLength; i++)
-        data[i] = bufferData[i+byteOffset];
-    writeBufferFile(data, association.data(), byteLength, elementType, componentType, bufferId);
+        data[i] = pixels[i];
+    free(pixels);
+
+    unsigned char* ktxTextureData = nullptr;
+    uint32_t ktxTextureDataSize;
+
+    compressImageData(data, byteLength, &ktxTextureData, ktxTextureDataSize, dataType, width, height, 4); 
+
+    writeBufferFile(ktxTextureData, association.data(), ktxTextureDataSize, elementType, componentType, bufferId);
+
+    free(ktxTextureData);
+    delete[] data;
 }
 
 void GLTFParser::handleBufferInterleaved(
@@ -472,7 +627,7 @@ void GLTFParser::handleBufferView(
         uint32_t bufferId,
         std::vector<uint8_t>& out,
         bool writeToFile,
-        bool isPosition,
+        BufferData dataType,
         glm::mat4& transform){
     // properties
     uint32_t adjustedByteOffset = bufferView.byteOffset + byteOffset;
@@ -487,15 +642,15 @@ void GLTFParser::handleBufferView(
     // handle buffer
     if (byteStride == bytesPerElement){
         if (!association.compare("sbuf")) // normal case
-            handleBuffer(buffer, association, adjustedByteOffset, byteLength, bytesPerElement, elementCount, elementType, componentType, bufferId, out, writeToFile, isPosition, transform);
+            handleBuffer(buffer, association, adjustedByteOffset, byteLength, bytesPerElement, elementCount, elementType, componentType, bufferId, out, writeToFile, dataType, transform);
         else  // handle buffer that contains MIME image data
-            handleMIMEImageBuffer(buffer, association, adjustedByteOffset, byteLength, bytesPerElement, elementCount, elementType, componentType, bufferId);
+            handleMIMEImageBuffer(buffer, association, adjustedByteOffset, byteLength, bytesPerElement, elementCount, elementType, componentType, bufferId, dataType);
     } else
         handleBufferInterleaved(buffer, association, adjustedByteOffset, byteLength, byteStride, bytesPerElement, elementType, componentType, bufferId, out, writeToFile);
     
 }
 
-uint32_t GLTFParser::handleAccessor(const tinygltf::Accessor& accessor, std::vector<uint8_t>& out, bool writeToFile, bool isPosition, glm::mat4& transform){
+uint32_t GLTFParser::handleAccessor(const tinygltf::Accessor& accessor, std::vector<uint8_t>& out, bool writeToFile, BufferData dataType, glm::mat4& transform){
     uint32_t accessorId = m_id++;
 
     // properties
@@ -509,11 +664,11 @@ uint32_t GLTFParser::handleAccessor(const tinygltf::Accessor& accessor, std::vec
     const tinygltf::BufferView& bufferView = model.bufferViews[accessor.bufferView];
 
     // handle bufer view
-    handleBufferView(bufferView, std::string("sbuf"), byteOffset, bytesPerElement, elementCount, elementType, componentType, accessorId, out, writeToFile, isPosition, transform);
+    handleBufferView(bufferView, std::string("sbuf"), byteOffset, bytesPerElement, elementCount, elementType, componentType, accessorId, out, writeToFile, dataType, transform);
     return accessorId;
 }
 
-uint32_t GLTFParser::handleTexture(const tinygltf::Texture& tex){
+uint32_t GLTFParser::handleTexture(const tinygltf::Texture& tex, BufferData dataType){
     std::vector<uint8_t> out;
     
     // get image and sampler
@@ -562,7 +717,7 @@ uint32_t GLTFParser::handleTexture(const tinygltf::Texture& tex){
     glm::mat4 temp;
     if (image.bufferView >= 0){ // bufferview
         int32_t elementCount = image.width * image.height * image.component;
-        handleBufferView(model.bufferViews[image.bufferView], std::string("stex"), 0, 1, elementCount, elementType, componentType, bufferId, out, true, false, temp);
+        handleBufferView(model.bufferViews[image.bufferView], std::string("stex"), 0, 1, elementCount, elementType, componentType, bufferId, out, true, dataType, temp);
     } else { // direct buffer
         tinygltf::Buffer buffer;
         int32_t elementCount = image.image.size();
@@ -570,7 +725,7 @@ uint32_t GLTFParser::handleTexture(const tinygltf::Texture& tex){
         int32_t componentType = TINYGLTF_COMPONENT_TYPE_UNSIGNED_BYTE;
         buffer.data = image.image;
         uint32_t bytesPerElement = tinygltf::GetNumComponentsInType(elementType) * tinygltf::GetComponentSizeInBytes(componentType);
-        handleBuffer(buffer, std::string("stex"), 0, bytesPerElement*elementCount, bytesPerElement, elementCount, elementType, componentType, bufferId, out, true, false, temp);
+        handleTextureBuffer(buffer, std::string("stex"), 0, bytesPerElement*elementCount, bytesPerElement, elementCount, elementType, componentType, bufferId, out, true, dataType, image.width, image.height, components);
     }
 
     // write texture to file
@@ -578,13 +733,13 @@ uint32_t GLTFParser::handleTexture(const tinygltf::Texture& tex){
     return texId;
 }
 
-uint32_t GLTFParser::handleTexture(const tinygltf::TextureInfo& texInfo){
+uint32_t GLTFParser::handleTexture(const tinygltf::TextureInfo& texInfo, BufferData dataType){
     // get texture
     int32_t texIndex = texInfo.index;
     const tinygltf::Texture& tex = model.textures[texIndex];
 
     // handle texture
-    return handleTexture(tex);
+    return handleTexture(tex, dataType);
 }
 
 uint32_t GLTFParser::handleTexture(const tinygltf::NormalTextureInfo& texInfo){
@@ -593,7 +748,7 @@ uint32_t GLTFParser::handleTexture(const tinygltf::NormalTextureInfo& texInfo){
     const tinygltf::Texture& tex = model.textures[texIndex];
 
     // handle texture
-    return handleTexture(tex);
+    return handleTexture(tex, SPR_TEXTURE_NORMAL);
 }
 
 uint32_t GLTFParser::handleTexture(const tinygltf::OcclusionTextureInfo& texInfo){
@@ -602,7 +757,7 @@ uint32_t GLTFParser::handleTexture(const tinygltf::OcclusionTextureInfo& texInfo
     const tinygltf::Texture& tex = model.textures[texIndex];
 
     // handle texture
-    return handleTexture(tex);
+    return handleTexture(tex, SPR_TEXTURE_OTHER);
 }
 
 uint32_t GLTFParser::handleMaterial(const tinygltf::Material& material){
@@ -617,11 +772,11 @@ uint32_t GLTFParser::handleMaterial(const tinygltf::Material& material){
     const tinygltf::PbrMetallicRoughness& pbr = material.pbrMetallicRoughness;
     if (pbr.baseColorTexture.index >= 0){ // base color
         materialFlags |= 0b1;
-        texIds.push_back(handleTexture(pbr.baseColorTexture));
+        texIds.push_back(handleTexture(pbr.baseColorTexture, SPR_TEXTURE_COLOR));
     }
     if (pbr.metallicRoughnessTexture.index >= 0){ //metallicroughness
         materialFlags |= (0b1<<1);
-        texIds.push_back(handleTexture(pbr.metallicRoughnessTexture));
+        texIds.push_back(handleTexture(pbr.metallicRoughnessTexture, SPR_TEXTURE_OTHER));
     }
     // normal
     const tinygltf::NormalTextureInfo& normal = material.normalTexture;
@@ -639,7 +794,7 @@ uint32_t GLTFParser::handleMaterial(const tinygltf::Material& material){
     const tinygltf::TextureInfo& emissive = material.emissiveTexture;
     if (emissive.index >= 0){
         materialFlags |= (0b1<<4);
-        texIds.push_back(handleTexture(emissive));
+        texIds.push_back(handleTexture(emissive, SPR_TEXTURE_OTHER));
     }
     // alphamode
     std::string alpha = material.alphaMode;
@@ -671,7 +826,6 @@ uint32_t GLTFParser::interleaveVertexAttributes(
     uint32_t bytesPerTexCoord = 8;
     uint32_t bytesPerVertex = bytesPerNormal + bytesPerColor + bytesPerTexCoord;
 
-
     if (normalBuffer.size() != vertexCount * bytesPerNormal){
         normalBuffer.resize(vertexCount * bytesPerNormal);
     }
@@ -679,7 +833,7 @@ uint32_t GLTFParser::interleaveVertexAttributes(
         colorBuffer.resize(vertexCount * bytesPerColor);
         glm::vec3 defaultColor = {1.f, 1.f, 1.f};
         for (uint32_t i = 0; i < colorBuffer.size(); i+= bytesPerColor){
-            memcpy(((unsigned char*)colorBuffer.data()) + i, (unsigned char*)glm::value_ptr(defaultColor), bytesPerColor);
+            memcpy(((unsigned char*)colorBuffer.data() + i), (unsigned char*)glm::value_ptr(defaultColor), bytesPerColor);
         }
     }
     if (texCoordBuffer.size() != vertexCount * bytesPerTexCoord){
@@ -690,7 +844,7 @@ uint32_t GLTFParser::interleaveVertexAttributes(
     for (uint32_t i = 0; i < vertexCount*bytesPerNormal; i += bytesPerNormal){
         glm::vec3 normal = glm::make_vec3((float*)(normalBuffer.data() + i));
         normal = glm::mat3(transform) * normal;
-        memcpy((unsigned char*)(normalBuffer.data() + i), ((unsigned char*)glm::value_ptr(normal)), 16);
+        memcpy((unsigned char*)(normalBuffer.data() + i), ((unsigned char*)glm::value_ptr(normal)), bytesPerNormal);
     }
 
     // interleave into attributes buffer
@@ -700,66 +854,33 @@ uint32_t GLTFParser::interleaveVertexAttributes(
     //      [ vec3 | vec2.x ]    OR    [ normal | texCoord.U ]
     //      [ vec3 | vec2.y ]          [ color  | texCoord.V ]
     //
+    
     for (uint32_t vertex = 0; vertex < vertexCount; vertex++){
-        if (vertex < 0) {
-            uint32_t offset = vertex*bytesPerVertex;
-            // copy normal 
-            for(uint32_t normal = 0; normal < bytesPerNormal; normal++){
-                result[offset + normal] = normalBuffer[vertex*bytesPerNormal + normal];
-                if (vertex < 16){
-                }
-            }
-            offset += bytesPerNormal;
-
-            // copy texCoord.U
-            for(uint32_t tex = 0; tex < bytesPerTexCoord/2; tex++){
-                result[offset + tex] = texCoordBuffer[vertex*bytesPerTexCoord + tex];
-                if (vertex < 16){
-                }
-            }
-            offset += bytesPerTexCoord/2;
-
-            // copy color
-            for(uint32_t color = 0; color < bytesPerColor; color++){
-                result[offset + color] = colorBuffer[vertex*bytesPerColor + color];
-                if (vertex < 16){
-                }
-            }
-            offset += bytesPerColor;
-            
-            // copy texCoord.V
-            for(uint32_t tex = 0; tex < bytesPerTexCoord/2; tex++){
-                result[offset + tex] = texCoordBuffer[vertex*bytesPerTexCoord + tex];
-                if (vertex < 16){
-                }
-            }
-            offset += bytesPerTexCoord/2;
-        } else {
-            uint32_t offset = vertex*bytesPerVertex;
-            // copy normal 
-            for(uint32_t normal = 0; normal < bytesPerNormal; normal++){
-                result[offset + normal] = normalBuffer[vertex*bytesPerNormal + normal];
-            }
-            offset += bytesPerNormal;
-
-            // copy texCoord.U
-            for(uint32_t tex = 0; tex < bytesPerTexCoord/2; tex++){
-                result[offset + tex] = texCoordBuffer[vertex*bytesPerTexCoord + tex];
-            }
-            offset += bytesPerTexCoord/2;
-
-            // copy color
-            for(uint32_t color = 0; color < bytesPerColor; color++){
-                result[offset + color] = colorBuffer[vertex*bytesPerColor + color];
-            }
-            offset += bytesPerColor;
-            
-            // copy texCoord.V
-            for(uint32_t tex = 0; tex < bytesPerTexCoord/2; tex++){
-                result[offset + tex] = texCoordBuffer[vertex*bytesPerTexCoord + tex + bytesPerTexCoord/2];
-            }
-            offset += bytesPerTexCoord/2;
+        uint32_t offset = vertex*bytesPerVertex;
+        // copy normal 
+        for(uint32_t normal = 0; normal < bytesPerNormal; normal++){
+            result[offset + normal] = normalBuffer[vertex*bytesPerNormal + normal];
         }
+        offset += bytesPerNormal;
+
+        // copy texCoord.U
+        for(uint32_t tex = 0; tex < bytesPerTexCoord/2; tex++){
+            result[offset + tex] = texCoordBuffer[vertex*bytesPerTexCoord + tex];
+        }
+        offset += bytesPerTexCoord/2;
+
+        // copy color
+        for(uint32_t color = 0; color < bytesPerColor; color++){
+            result[offset + color] = colorBuffer[vertex*bytesPerColor + color];
+        }
+        offset += bytesPerColor;
+        
+        // copy texCoord.V
+        for(uint32_t tex = 0; tex < bytesPerTexCoord/2; tex++){
+            result[offset + tex] = texCoordBuffer[vertex*bytesPerTexCoord + tex + bytesPerTexCoord/2];
+        }
+        offset += bytesPerTexCoord/2;
+        
     }
 
     // write to buffer
@@ -800,7 +921,7 @@ uint32_t GLTFParser::handlePrimitive(const tinygltf::Primitive& primitive, glm::
 
     // handle accessors
     // indices
-    int32_t indicesId = handleAccessor(model.accessors[indicesAccessorIndex], tempOut, true, false, transform);
+    int32_t indicesId = handleAccessor(model.accessors[indicesAccessorIndex], tempOut, true, SPR_INDICES, transform);
     assert(indicesId >= 0);
     
     // position
@@ -808,7 +929,7 @@ uint32_t GLTFParser::handlePrimitive(const tinygltf::Primitive& primitive, glm::
     uint32_t vertexCount = 0;
     if (positionAccessorIndex >= 0){
         vertexCount = model.accessors[positionAccessorIndex].count;
-        positionId = handleAccessor(model.accessors[positionAccessorIndex], tempOut, true, true, transform);
+        positionId = handleAccessor(model.accessors[positionAccessorIndex], tempOut, true, SPR_POSITION, transform);
     }
     assert(positionId >= 0);
 
@@ -816,32 +937,31 @@ uint32_t GLTFParser::handlePrimitive(const tinygltf::Primitive& primitive, glm::
     int32_t normalId = -1;
     std::vector<uint8_t> outNormal;
     if (normalAccessorIndex >= 0){
-        normalId = handleAccessor(model.accessors[normalAccessorIndex], outNormal, false, false, transform);
+        normalId = handleAccessor(model.accessors[normalAccessorIndex], outNormal, false, SPR_NORMALS, transform);
     }
 
     // tangent
     int32_t tangentId = -1;
     std::vector<uint8_t> outTangent;
     if (tangentAccessorIndex >= 0){
-        tangentId = handleAccessor(model.accessors[tangentAccessorIndex], outTangent, false, false, transform);
+        tangentId = handleAccessor(model.accessors[tangentAccessorIndex], outTangent, false, SPR_TANGENTS, transform);
     }
 
     // texcoords
     int32_t texCoordId = -1;
     std::vector<uint8_t> outTexCoord;
     if (texcoordAccessorIndex >= 0) {
-        texCoordId = handleAccessor(model.accessors[texcoordAccessorIndex], outTexCoord, false, false, transform);
+        texCoordId = handleAccessor(model.accessors[texcoordAccessorIndex], outTexCoord, false, SPR_UV, transform);
     }
 
     // colors
     int32_t colorId = -1;
     std::vector<uint8_t> outColor;
     if (colorAccessorIndex >= 0) {
-        colorId = handleAccessor(model.accessors[colorAccessorIndex], outColor, false, false, transform);
+        colorId = handleAccessor(model.accessors[colorAccessorIndex], outColor, false, SPR_COLOR, transform);
     }
 
     uint32_t attributesId = interleaveVertexAttributes(vertexCount, outNormal, outTangent, outTexCoord, outColor, transform);
-
 
     // handle material
     uint32_t materialId = 0;
@@ -850,7 +970,6 @@ uint32_t GLTFParser::handlePrimitive(const tinygltf::Primitive& primitive, glm::
 
     // write prim (mesh) to file
     writeMeshFile(materialId, indicesId, positionId, attributesId, meshId);
-
     return meshId;
 }
 
@@ -934,6 +1053,7 @@ void GLTFParser::parse(){
     // assume one scene
     const tinygltf::Scene& scene = model.scenes[0];
     std::vector<uint32_t> meshIds;
+    meshIds.reserve(256);
     // process top level nodes
     for (int32_t i = 0; i < scene.nodes.size(); i++){
         const tinygltf::Node& currNode = model.nodes[scene.nodes[i]];
