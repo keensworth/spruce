@@ -26,6 +26,7 @@ typedef struct TextureInfo {
     uint32 components;
     uint32 format;
     uint32 mipCount;
+    uint32 layerCount;
     bool srgb;
 } TextureInfo;
 
@@ -34,6 +35,7 @@ typedef struct PrimitiveCounts {
     uint32 indexCount    = 0;
     uint32 materialCount = 0;
     uint32 textureCount  = 0;
+    uint32 cubemapCount  = 0;
 } PrimitiveCounts;
 
 class GfxAssetLoader {
@@ -51,6 +53,7 @@ public:
     TempBuffer<uint16>& getVertexIndicesData();
     TempBuffer<MaterialData>& getMaterialData();
     std::vector<TextureInfo>& getTextureData();
+    std::vector<TextureInfo>& getCubemapData();
 
 private:
     SprResourceManager* m_rm;
@@ -62,6 +65,7 @@ private:
     TempBuffer<uint16> m_vertexIndices;
     TempBuffer<MaterialData> m_materials;
     std::vector<TextureInfo> m_textures;
+    std::vector<TextureInfo> m_cubemaps;
     bool m_cleared = false;
 
     void loadVertexData(SprResourceManager& rm, Mesh* mesh, MeshInfo& info);
@@ -70,5 +74,6 @@ private:
     void loadBuiltinAssets(SprResourceManager& rm, MeshInfoMap& meshes);
 
     ska::flat_hash_map<uint32, uint32> m_textureIds;
+    ska::flat_hash_map<uint32, uint32> m_cubemapIds;
 };
 }

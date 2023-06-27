@@ -52,9 +52,9 @@ MeshInfoMap GfxAssetLoader::loadAssets(SprResourceManager& rm, VulkanDevice* dev
     }
 
     // iterate over non-subresource textures
-    // for (uint32 texId : textureIds){
-    //     uint32 textureIndex = loadTexture(rm, texId, true);
-    // }
+    for (uint32 texId : textureIds){
+        loadTexture(rm, texId, true);
+    }
 
     return map;
 }
@@ -172,6 +172,9 @@ uint32 GfxAssetLoader::loadTexture(SprResourceManager& rm, uint32 textureId, boo
     if (m_textureIds.count(texture->bufferId) > 0){
         return m_textureIds[texture->bufferId];
     }
+    if (m_cubemapIds.count(texture->bufferId) > 0){
+        return m_cubemapIds[texture->bufferId];
+    }
 
     // texture buffer data
     spr::Buffer* texBuffer = rm.getData<spr::Buffer>(texBufferHandle);
@@ -182,20 +185,36 @@ uint32 GfxAssetLoader::loadTexture(SprResourceManager& rm, uint32 textureId, boo
     TempBuffer<uint8> textureBuffer(result.sizeBytes);
     textureBuffer.insert(result.transcodedData, result.sizeBytes);
 
-    uint32 texIndex = m_textures.size();
-    m_textures.push_back({
-        .data = textureBuffer,
-        .height = texture->height,
-        .width = texture->width,
-        .components = texture->components,
-        .format = result.format,
-        .mipCount = result.mips,
-        .srgb = srgb});
+    uint32 index = 0;
+    if (result.layers == 6){
+        index = m_cubemaps.size();
+        m_cubemaps.push_back({
+            .data = textureBuffer,
+            .height = texture->height,
+            .width = texture->width,
+            .components = texture->components,
+            .format = result.format,
+            .mipCount = result.mips,
+            .layerCount = result.layers,
+            .srgb = srgb});
+        m_counts.cubemapCount++;
+        m_cubemapIds[texture->bufferId] = index;
+    } else {
+        index = m_textures.size();
+        m_textures.push_back({
+            .data = textureBuffer,
+            .height = texture->height,
+            .width = texture->width,
+            .components = texture->components,
+            .format = result.format,
+            .mipCount = result.mips,
+            .layerCount = result.layers,
+            .srgb = srgb});
+        m_counts.textureCount++;
+        m_textureIds[texture->bufferId] = index;
+    }
 
-    m_counts.textureCount++;
-    m_textureIds[texture->bufferId] = texIndex;
-
-    return texIndex;
+    return index;
 }
 
 void GfxAssetLoader::loadBuiltinAssets(SprResourceManager& rm, MeshInfoMap& meshes){
@@ -233,13 +252,13 @@ void GfxAssetLoader::loadBuiltinAssets(SprResourceManager& rm, MeshInfoMap& mesh
         {{ 1.0f,  1.0f, 0.0f, 1.0f}}
     };
     std::vector<VertexAttributes> quadAttr = {
-        {{0.0f, 0.0f, 1.0f, 0.0f},{1.0f, 1.0f, 1.0f, 1.0f}},
-        {{0.0f, 0.0f, 1.0f, 0.0f},{1.0f, 1.0f, 1.0f, 1.0f}},
-        {{0.0f, 0.0f, 1.0f, 0.0f},{1.0f, 1.0f, 1.0f, 1.0f}},
-        {{0.0f, 0.0f, 1.0f, 0.0f},{1.0f, 1.0f, 1.0f, 1.0f}}
+        {{0.0f, 0.0f, 1.0f, 0.0f}, {1.0f, 1.0f, 1.0f, 1.0f}},
+        {{0.0f, 0.0f, 1.0f, 0.0f}, {1.0f, 1.0f, 1.0f, 1.0f}},
+        {{0.0f, 0.0f, 1.0f, 0.0f}, {1.0f, 1.0f, 1.0f, 1.0f}},
+        {{0.0f, 0.0f, 1.0f, 0.0f}, {1.0f, 1.0f, 1.0f, 1.0f}}
     };
     std::vector<uint16> quadIndices = {
-        0,1,3,3,1,2
+        0, 1, 3, 3, 1, 2
     };
 
     MeshInfo quadInfo;
@@ -250,14 +269,110 @@ void GfxAssetLoader::loadBuiltinAssets(SprResourceManager& rm, MeshInfoMap& mesh
     m_counts.indexCount += quadInfo.indexCount;
     m_counts.vertexCount += quadPos.size();
     meshes[1] = quadInfo;
+
+    // create built-in cube mesh
+    std::vector<VertexPosition> cubePos = {
+        // Z-
+        
+        {{ 1.0f,  1.0f,  1.0f, 1.0f}},
+        {{ 1.0f,  1.0f, -1.0f, 1.0f}},
+        {{-1.0f,  1.0f, -1.0f, 1.0f}},
+        {{-1.0f,  1.0f,  1.0f, 1.0f}},
+        // Z+
+        
+        {{-1.0f, -1.0f,  1.0f, 1.0f}},
+        {{-1.0f, -1.0f, -1.0f, 1.0f}},
+        {{ 1.0f, -1.0f, -1.0f, 1.0f}},
+        {{ 1.0f, -1.0f,  1.0f, 1.0f}},
+        // X+
+        {{ 1.0f,  1.0f,  1.0f, 1.0f}},
+        {{ 1.0f, -1.0f,  1.0f, 1.0f}},
+        {{ 1.0f, -1.0f, -1.0f, 1.0f}},
+        {{ 1.0f,  1.0f, -1.0f, 1.0f}},
+        
+        // X-
+        {{-1.0f, -1.0f,  1.0f, 1.0f}},
+        {{-1.0f,  1.0f,  1.0f, 1.0f}},
+        {{-1.0f,  1.0f, -1.0f, 1.0f}},
+        {{-1.0f, -1.0f, -1.0f, 1.0f}},
+        
+        // Y+
+        
+        {{-1.0f,  1.0f,  1.0f, 1.0f}},
+        {{-1.0f, -1.0f,  1.0f, 1.0f}},
+        {{ 1.0f, -1.0f,  1.0f, 1.0f}},
+        {{ 1.0f,  1.0f,  1.0f, 1.0f}},
+        // Y-
+        
+        {{ 1.0f,  1.0f, -1.0f, 1.0f}},
+        {{ 1.0f, -1.0f, -1.0f, 1.0f}},
+        {{-1.0f, -1.0f, -1.0f, 1.0f}},
+        {{-1.0f,  1.0f, -1.0f, 1.0f}},
+        
+    };
+    std::vector<VertexAttributes> cubeAttr = {
+        // Z-
+        {{ 0.0f,  0.0f, -1.0f, 0.0f}, {1.0f, 1.0f, 1.0f, 0.0f}},
+        {{ 0.0f,  0.0f, -1.0f, 1.0f}, {1.0f, 1.0f, 1.0f, 0.0f}},
+        {{ 0.0f,  0.0f, -1.0f, 1.0f}, {1.0f, 1.0f, 1.0f, 1.0f}},
+        {{ 0.0f,  0.0f, -1.0f, 0.0f}, {1.0f, 1.0f, 1.0f, 1.0f}},
+        // Z+
+        {{ 0.0f,  0.0f,  1.0f, 0.0f}, {1.0f, 1.0f, 1.0f, 0.0f}},
+        {{ 0.0f,  0.0f,  1.0f, 1.0f}, {1.0f, 1.0f, 1.0f, 0.0f}},
+        {{ 0.0f,  0.0f,  1.0f, 1.0f}, {1.0f, 1.0f, 1.0f, 1.0f}},
+        {{ 0.0f,  0.0f,  1.0f, 0.0f}, {1.0f, 1.0f, 1.0f, 1.0f}},
+        // X+
+        {{ 1.0f,  0.0f,  0.0f, 0.0f}, {1.0f, 1.0f, 1.0f, 0.0f}},
+        {{ 1.0f,  0.0f,  0.0f, 1.0f}, {1.0f, 1.0f, 1.0f, 0.0f}},
+        {{ 1.0f,  0.0f,  0.0f, 1.0f}, {1.0f, 1.0f, 1.0f, 1.0f}},
+        {{ 1.0f,  0.0f,  0.0f, 0.0f}, {1.0f, 1.0f, 1.0f, 1.0f}},
+        // X-
+        {{-1.0f,  0.0f,  0.0f, 0.0f}, {1.0f, 1.0f, 1.0f, 0.0f}},
+        {{-1.0f,  0.0f,  0.0f, 1.0f}, {1.0f, 1.0f, 1.0f, 0.0f}},
+        {{-1.0f,  0.0f,  0.0f, 1.0f}, {1.0f, 1.0f, 1.0f, 1.0f}},
+        {{-1.0f,  0.0f,  0.0f, 0.0f}, {1.0f, 1.0f, 1.0f, 1.0f}},
+        // Y+
+        {{ 0.0f,  1.0f,  0.0f, 0.0f}, {1.0f, 1.0f, 1.0f, 0.0f}},
+        {{ 0.0f,  1.0f,  0.0f, 1.0f}, {1.0f, 1.0f, 1.0f, 0.0f}},
+        {{ 0.0f,  1.0f,  0.0f, 1.0f}, {1.0f, 1.0f, 1.0f, 1.0f}},
+        {{ 0.0f,  1.0f,  0.0f, 0.0f}, {1.0f, 1.0f, 1.0f, 1.0f}},
+        // Y-
+        {{ 0.0f, -1.0f,  0.0f, 0.0f}, {1.0f, 1.0f, 1.0f, 0.0f}},
+        {{ 0.0f, -1.0f,  0.0f, 1.0f}, {1.0f, 1.0f, 1.0f, 0.0f}},
+        {{ 0.0f, -1.0f,  0.0f, 1.0f}, {1.0f, 1.0f, 1.0f, 1.0f}},
+        {{ 0.0f, -1.0f,  0.0f, 0.0f}, {1.0f, 1.0f, 1.0f, 1.0f}}
+    };
+    std::vector<uint16> cubeIndices = {
+        0,  1,  3,  3,  1,  2,
+        4,  5,  7,  7,  5,  6,
+        8,  9,  11, 11, 9,  10, 
+        12, 13, 15, 15, 13, 14,
+        16, 17, 19, 19, 17, 18,
+        20, 21, 23, 23, 21, 22
+    };
+
+    MeshInfo cubeInfo;
+    cubeInfo.indexCount = cubeIndices.size();
+    cubeInfo.firstIndex = m_vertexIndices.insert((uint16*)(cubeIndices.data()), cubeIndices.size()); 
+    cubeInfo.vertexOffset = m_vertexPositions.insert((VertexPosition*)(cubePos.data()), cubePos.size());
+    m_vertexAttributes.insert((VertexAttributes*)(cubeAttr.data()), cubeAttr.size());
+    m_counts.indexCount += cubeInfo.indexCount;
+    m_counts.vertexCount += cubePos.size();
+    meshes[2] = cubeInfo;
 }
 
 void GfxAssetLoader::clear(){
+    if (m_cleared)
+        return;
+
     m_vertexPositions.reset();
     m_vertexAttributes.reset();
     m_vertexIndices.reset();
     m_materials.reset();
     m_textures.clear();
+    m_cubemaps.clear();
+    m_transcoder.reset();
+
     m_cleared = true;
 }
 
@@ -283,6 +398,10 @@ TempBuffer<MaterialData>& GfxAssetLoader::getMaterialData(){
 
 std::vector<TextureInfo>& GfxAssetLoader::getTextureData(){
     return m_textures;
+}
+
+std::vector<TextureInfo>& GfxAssetLoader::getCubemapData(){
+    return m_cubemaps;
 }
 
 }

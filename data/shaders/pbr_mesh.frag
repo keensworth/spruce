@@ -133,9 +133,14 @@ void main() {
 		// ws_frag -> ws_lightPos
 		vec3 L;
 		float attenuation;
+		float shadow = 1.0;
 		if (lights[i].type == DIRECTIONAL){
-        	L = -lights[i].dir;
+			if (i != sceneData.sunOffset )
+				continue;
+
+        	L = -lights[sceneData.sunOffset].dir;
 			attenuation = 1.0;
+			shadow = calculateShadow(N, lights[sceneData.sunOffset].dir);
 		} else {
 			L = normalize(lights[i].pos - pos.rgb);
 			float d = length(lights[i].pos - pos.rgb);
@@ -172,7 +177,7 @@ void main() {
 		vec3 specularBRDF = (F * D * G) / max(0.00001, 4.0 * NdL * NdV);
 
 		// Total contribution for this light.
-		directLighting += (diffuseBRDF + specularBRDF) * Lr * NdL;
+		directLighting += (diffuseBRDF + specularBRDF) * Lr * NdL * shadow;
     }
 
 	vec3 ambientLighting;
@@ -183,21 +188,16 @@ void main() {
 		vec2 uv = vec2(gl_FragCoord.xy / textureSize(occlusionMap, 0));
 		vec3 visibility = texture(occlusionMap, uv).rgb;
 		visibility = gtaoMultiBounce(visibility.x, baseColor.rgb);
+
+		vec3 F = fresnelSchlick(F0, NdV);
+		vec3 kd = mix(vec3(1.0) - F, vec3(0.0), mapMetal);
+
+		vec3 diffuseIBL = kd * baseColor.rgb;
 		
-		// vec3 irradiance = vec3(1.0, 0.9098, 0.6706) * 0.3;
-
-		// vec3 F = fresnelSchlick(F0, cosV);
-		// vec3 kd = mix(vec3(1.0) - F, vec3(0.0), mapMetal);
-
-		// vec3 diffuseIBL = kd * baseColor.rgb * irradiance;
-		// vec3 specularIBL = vec3(0.0,0.0,0.0);
-
-		ambientLighting = vec3(0.3) * baseColor.rgb;
+		ambientLighting = diffuseIBL;
 		ambientLighting *= visibility;
 		ambientLighting += mapEmissive;
 	}
-    
-	float shadow = calculateShadow(N, lights[sceneData.sunOffset].dir);
 	
-    FragColor = vec4((directLighting * shadow) + ambientLighting, 1.0);
+    FragColor = vec4(directLighting + ambientLighting, 1.0);
 }

@@ -87,15 +87,19 @@ TranscodeResult TextureTranscoder::transcode(uint8* data, uint32 size, uint32 wi
         }
     }
 
-    uint32 mipLevels = std::floor(log2(std::max(width, height))) + 1;
+    uint32 mipLevels = texture->numLevels;//std::floor(log2(std::max(width, height))) + 1;
+    uint32 layers = texture->numFaces;
     ktx_size_t offset = 0;
 
     VkFormat format = ktxTexture2_GetVkFormat(texture);
     uint32 sizeBytes = ktxTexture_GetDataSize(ktxTexture(texture));
     ktx_uint8_t* transcodedData = ktxTexture_GetData(ktxTexture(texture)) + offset;
 
-    ktxTexture_Destroy(ktxTexture(texture));
-    return {format, mipLevels, sizeBytes, transcodedData};
+    m_deletionQueue.push_function([=]() {
+        ktxTexture_Destroy(ktxTexture(texture));
+    });
+    
+    return {format, mipLevels, layers, sizeBytes, transcodedData};
 }
 
 bool TextureTranscoder::formatSupported(VkFormat format){
@@ -103,6 +107,10 @@ bool TextureTranscoder::formatSupported(VkFormat format){
     vkGetPhysicalDeviceFormatProperties(m_device->getPhysicalDevice(), format, &properties);
 
     return (properties.optimalTilingFeatures & VK_FORMAT_FEATURE_SAMPLED_IMAGE_BIT);
+}
+
+void TextureTranscoder::reset(){
+    m_deletionQueue.execute();
 }
 
 }

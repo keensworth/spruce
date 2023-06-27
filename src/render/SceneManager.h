@@ -68,7 +68,7 @@ private:
     bool m_destroyed = false;
 
     void initBuffers(PrimitiveCounts counts, VulkanDevice* device);
-    void initTextures(uint32 textureCount, VulkanDevice* device);
+    void initTextures(PrimitiveCounts counts, VulkanDevice* device);
     void initDescriptorSets(VulkanDevice* device);
 
 private: // owning
@@ -87,6 +87,7 @@ private: // owning
     Handle<Buffer> m_indexBuffer;
     Handle<Buffer> m_materialsBuffer;
     std::vector<Handle<Texture>> m_textures;
+    std::vector<Handle<Texture>> m_cubemaps;
     Handle<DescriptorSetLayout> m_globalDescriptorSetLayout;
     Handle<DescriptorSet> m_globalDescriptorSet;
 

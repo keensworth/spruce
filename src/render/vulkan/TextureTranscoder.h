@@ -2,6 +2,7 @@
 
 #include "gfx_vulkan_core.h"
 #include "VulkanDevice.h"
+#include "core/util/FunctionQueue.h"
 
 namespace spr {
     class SprWindow;
@@ -12,6 +13,7 @@ namespace spr::gfx{
 struct TranscodeResult {
     VkFormat format;
     uint32 mips;
+    uint32 layers;
     uint32 sizeBytes;
     uint8* transcodedData;
 };
@@ -23,11 +25,14 @@ public:
     ~TextureTranscoder();
 
     TranscodeResult transcode(uint8* data, uint32 size, uint32 width, uint32 height);
+    void reset();
     bool formatSupported(VkFormat format);
 
 private:
     VulkanDevice* m_device;
     VkPhysicalDeviceFeatures m_features;
+
+    FunctionQueue m_deletionQueue;
 
     struct FormatSupport {
         bool ETC2 = false;

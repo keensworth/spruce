@@ -68,7 +68,7 @@ public:
             .colorAttachments = {
                 {
                     .texture = m_attachment,
-                    .finalLayout = Flags::ImageLayout::READ_ONLY
+                    .finalLayout = Flags::ImageLayout::ATTACHMENT
                 }
             }
         });
@@ -186,5 +186,7 @@ private: // non-owning
     Handle<DescriptorSetLayout> m_globalDescSetLayout;
     Handle<DescriptorSet> m_frameDescSets;
     Handle<DescriptorSetLayout> m_frameDescSetLayout;
+
+    friend class RenderCoordinator;
 };
 }

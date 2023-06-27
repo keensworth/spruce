@@ -281,11 +281,12 @@ Handle<Texture> VulkanResourceManager::create<Texture>(TextureDesc desc){
     
     // build image create info
     VkImageCreateInfo imageInfo {
-        .sType       = VK_STRUCTURE_TYPE_IMAGE_CREATE_INFO,
-        .pNext       = NULL,
-        .imageType   = VK_IMAGE_TYPE_2D,
-        .format      = (VkFormat)desc.format,
-        .extent      = {
+        .sType      = VK_STRUCTURE_TYPE_IMAGE_CREATE_INFO,
+        .pNext      = NULL,
+        .flags      = desc.view.layers > 1 ? VK_IMAGE_CREATE_CUBE_COMPATIBLE_BIT : 0u,
+        .imageType  = VK_IMAGE_TYPE_2D,
+        .format     = (VkFormat)desc.format,
+        .extent     = {
             dimensions.x,
             dimensions.y,
             dimensions.z
@@ -351,9 +352,9 @@ Handle<Texture> VulkanResourceManager::create<Texture>(TextureDesc desc){
     VkImageViewCreateInfo viewInfo {
         .sType      = VK_STRUCTURE_TYPE_IMAGE_VIEW_CREATE_INFO,
         .pNext      = NULL,
-        .flags      = 0,
+        .flags      = 0u,
         .image      = textureResource->image,
-        .viewType   = VK_IMAGE_VIEW_TYPE_2D,
+        .viewType   = desc.view.layers == 1 ? VK_IMAGE_VIEW_TYPE_2D : VK_IMAGE_VIEW_TYPE_CUBE,
         .format     = (VkFormat)desc.format,
         .components = {
             .r = VK_COMPONENT_SWIZZLE_R,

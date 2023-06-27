@@ -19,6 +19,8 @@ layout(std430,set = 0, binding = 2) readonly buffer Materials {
 };
 
 layout(set = 0, binding = 3) uniform sampler2D textures[1024];
+
+layout(set = 0, binding = 4) uniform samplerCube cubemaps[16];
 #endif // SPR_GLOBAL_BINDINGS
 
 

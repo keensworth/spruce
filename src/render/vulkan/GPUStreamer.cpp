@@ -165,36 +165,39 @@ void GPUStreamer::transfer(TextureTransfer data) {
     // build buffer image copy and perform copy command
     // TODO: compensate for block formats
     uint32 offset = 0;
-    for (uint32 i = 0; i < data.dst->mips; i++){
-        uint32 mipLevel = (data.dst->mips-1-i);//data.dst->subresourceRange.baseMipLevel;
-        uint32 width = std::max(1u, data.dst->dimensions.x / (1 << mipLevel));
-        uint32 height = std::max(1u, data.dst->dimensions.y / (1 << mipLevel));
-        m_imageCopyCmdQueue.push_function([=](){
-            VkBuffer stageBuffer = stage->buffer;
-            VkImage dstImage = data.dst->image;
-            uint32 aspectMask = data.dst->subresourceRange.aspectMask;
-            uint32 baseArrayLayer = data.dst->subresourceRange.baseArrayLayer;
-            uint32 layerCount = data.dst->subresourceRange.layerCount;
-            VkExtent3D extent = {
-                width,
-                height,
-                data.dst->dimensions.z};
-            VkBufferImageCopy imageRegion = {
-                .bufferOffset = offset,
-                .bufferRowLength = 0,
-                .bufferImageHeight = 0,
-                .imageSubresource = {
-                    .aspectMask = aspectMask,
-                    .mipLevel   = mipLevel,
-                    .baseArrayLayer = baseArrayLayer,
-                    .layerCount = layerCount
-                },
-                .imageOffset = {0, 0, 0},
-                .imageExtent = extent
-            };
-            vkCmdCopyBufferToImage(m_transferCommandBuffer->getCommandBuffer(), stageBuffer, dstImage, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, 1, &imageRegion);
-        });
-        offset += 4 * width * height;
+    for (uint32 i = 0; i < data.dst->layers; i++){ // for each layer
+        for (uint32 j = 0; j < data.dst->mips; j++){ // for each mip level
+
+            uint32 mipLevel = (data.dst->mips-1-j);
+            uint32 width = std::max(1u, data.dst->dimensions.x / (1 << mipLevel));
+            uint32 height = std::max(1u, data.dst->dimensions.y / (1 << mipLevel));
+
+            m_imageCopyCmdQueue.push_function([=](){
+                VkBuffer stageBuffer = stage->buffer;
+                VkImage dstImage = data.dst->image;
+                uint32 aspectMask = data.dst->subresourceRange.aspectMask;
+                VkExtent3D extent = {
+                    width,
+                    height,
+                    data.dst->dimensions.z};
+                VkBufferImageCopy imageRegion = {
+                    .bufferOffset = offset,
+                    .bufferRowLength = 0,
+                    .bufferImageHeight = 0,
+                    .imageSubresource = {
+                        .aspectMask = aspectMask,
+                        .mipLevel   = mipLevel,
+                        .baseArrayLayer = i,
+                        .layerCount = 1
+                    },
+                    .imageOffset = {0, 0, 0},
+                    .imageExtent = extent
+                };
+                vkCmdCopyBufferToImage(m_transferCommandBuffer->getCommandBuffer(), stageBuffer, dstImage, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, 1, &imageRegion);
+            });
+
+            offset += 4 * width * height;
+        }
     }
 
     // build barriers (transfer/graphics)

@@ -177,6 +177,7 @@ void SceneManager::updateCamera(uint32 frame, glm::vec2 screenDim, const Camera&
     glm::mat4 proj = glm::perspectiveFovZO(camera.fov, screenDim.x, screenDim.y, camera.far, camera.near);
     Scene& scene = m_sceneData[frame % MAX_FRAME_COUNT][0];
     scene.view = view;
+    scene.proj = proj;
     scene.viewProj = {proj * view};
     scene.screenDimX = screenDim.x;
     scene.screenDimY = screenDim.y;
@@ -193,6 +194,11 @@ void SceneManager::uploadGlobalResources(UploadHandler& uploadHandler){
     std::vector<TextureInfo>& textures = m_assetLoader.getTextureData();
     for (uint32 i = 0; i < m_assetLoader.getPrimitiveCounts().textureCount; i++){
         uploadHandler.uploadTexture(textures[i].data, m_textures[i]);
+    }
+
+    std::vector<TextureInfo>& cubemaps = m_assetLoader.getCubemapData();
+    for (uint32 i = 0; i < m_assetLoader.getPrimitiveCounts().cubemapCount; i++){
+        uploadHandler.uploadTexture(cubemaps[i].data, m_cubemaps[i]);
     }
 }
 
@@ -253,7 +259,7 @@ void SceneManager::initializeAssets(SprResourceManager &rm, VulkanDevice* device
 
     PrimitiveCounts counts = m_assetLoader.getPrimitiveCounts();
 
-    initTextures(counts.textureCount, device);
+    initTextures(counts, device);
     initBuffers(counts, device);
     initDescriptorSets(device);
     
@@ -263,6 +269,12 @@ void SceneManager::initializeAssets(SprResourceManager &rm, VulkanDevice* device
             .firstIndex = m_meshInfo[1].firstIndex,
             .drawCount = 1
         }, m_meshInfo[1].vertexOffset);
+
+        m_batchManagers[i].setCubeInfo({
+            .indexCount = m_meshInfo[2].indexCount,
+            .firstIndex = m_meshInfo[2].firstIndex,
+            .drawCount = 1
+        }, m_meshInfo[2].vertexOffset);
     }
 }
 
@@ -333,12 +345,10 @@ void SceneManager::initBuffers(PrimitiveCounts counts, VulkanDevice* device){
     });
 }
 
-void SceneManager::initTextures(uint32 textureCount, VulkanDevice* device){
-    m_textures.resize(textureCount);
-    
+void SceneManager::initTextures(PrimitiveCounts counts, VulkanDevice* device){
+    m_textures.resize(counts.textureCount);
     std::vector<TextureInfo>& textureData = m_assetLoader.getTextureData();
-
-    for (uint32 i = 0; i < textureCount; i++){
+    for (uint32 i = 0; i < counts.textureCount; i++){
         TextureInfo& info = textureData[i];
 
         m_textures[i] = m_rm->create<Texture>({
@@ -350,7 +360,31 @@ void SceneManager::initTextures(uint32 textureCount, VulkanDevice* device){
             .format = info.format,
             .usage = Flags::ImageUsage::IU_SAMPLED |
                      Flags::ImageUsage::IU_TRANSFER_DST,
-            .view = { .mips = info.mipCount }
+            .view = { 
+                .mips = info.mipCount,
+                .layers = info.layerCount
+            }
+        });
+    }
+
+    m_cubemaps.resize(counts.cubemapCount);
+    std::vector<TextureInfo>& cubemapData = m_assetLoader.getCubemapData();
+    for (uint32 i = 0; i < counts.cubemapCount; i++){
+        TextureInfo& info = cubemapData[i];
+
+        m_cubemaps[i] = m_rm->create<Texture>({
+            .dimensions = {
+                info.width,
+                info.height,
+                1
+            },
+            .format = info.format,
+            .usage = Flags::ImageUsage::IU_SAMPLED |
+                     Flags::ImageUsage::IU_TRANSFER_DST,
+            .view = { 
+                .mips = info.mipCount,
+                .layers = info.layerCount
+            }
         });
     }
 }
@@ -360,6 +394,7 @@ void SceneManager::initDescriptorSets(VulkanDevice* device){
     m_globalDescriptorSetLayout = m_rm->create<DescriptorSetLayout>({
         .textures = {
             {.binding = 3, .count = (uint32)m_textures.size()},
+            {.binding = 4, .count = (uint32)m_cubemaps.size()},
         },
         .buffers = {
             {.binding = 0, .type = Flags::DescriptorType::STORAGE_BUFFER},
@@ -369,7 +404,8 @@ void SceneManager::initDescriptorSets(VulkanDevice* device){
     });
     m_globalDescriptorSet = m_rm->create<DescriptorSet>({
         .textures = {
-            {.textures = m_textures}
+            {.textures = m_textures},
+            {.textures = m_cubemaps}
         },
         .buffers = {
             {.buffer = m_positionsBuffer},
@@ -416,7 +452,7 @@ void SceneManager::reset(uint32 frame) {
     m_drawData[frame % MAX_FRAME_COUNT].reset();
     m_sceneData[frame % MAX_FRAME_COUNT].reset();
     m_sceneData[frame % MAX_FRAME_COUNT].insert({});
-    // m_assetLoader.clear(); TODO
+    m_assetLoader.clear();
 }
 
 void SceneManager::destroy(){
@@ -449,6 +485,8 @@ void SceneManager::destroy(){
     m_rm->remove<Buffer>(m_materialsBuffer);
     for (Handle<Texture> texture : m_textures)
         m_rm->remove<Texture>(texture);
+    for (Handle<Texture> cubemap : m_cubemaps)
+        m_rm->remove<Texture>(cubemap);
     m_rm->remove<DescriptorSet>(m_globalDescriptorSet);
     m_rm->remove<DescriptorSetLayout>(m_globalDescriptorSetLayout);
     
