@@ -12,6 +12,7 @@ public:
     ~AssetCreator();
 
     void createTexture(std::string path);
+    void createCubemapTexture(std::string facePaths[6]);
 private:
     enum BufferData {
         SPR_NONE = 0,
@@ -48,6 +49,15 @@ private:
         unsigned char* mipOut, 
         uint32_t outSizeBytes, 
         uint32_t outExtent);
+    void layerImageData(
+        unsigned char* data[6],
+        uint32_t dataSize,
+        unsigned char** outData,
+        uint32_t& outDataSize,
+        BufferData dataType,
+        uint32_t width,
+        uint32_t height,
+        uint32_t components);
 };
 
 }
