@@ -108,7 +108,7 @@ int main() {
 
         start = std::chrono::high_resolution_clock::now();
         
-        //insert models using their ids directly
+        // insert models using their ids directly
         renderer.insertModel(data::helmet, {
             .position = {0.f, 0.f, 0.f}, 
             .rotation = angleAxis((pi<float>()/2)*(frame/240.f), vec3{1.f, 0.f, 0.f}), 
@@ -121,11 +121,12 @@ int main() {
         });
         renderer.insertModel(data::waterbottle, {
             .position = {3.f, 0.f, 0.f}, 
-            .rotation = angleAxis(0.f, vec3{1.f, 0.f, 0.f}), 
+            .rotation = angleAxis((pi<float>()/2), vec3{1.f, 0.f, 0.f}), 
             .scale = 3.f
         });
         renderer.insertModel(data::boomboxwithaxes, {
             .position = {-2.5f, 0.f, -1.f}, 
+            .rotation = angleAxis(0.f, vec3{1.f, 0.f, 0.f}), 
             .scale = 10.f
         });
         renderer.insertModel(data::sponza, {
@@ -133,9 +134,13 @@ int main() {
             .rotation = angleAxis(pi<float>()/2, vec3{1.f, 0.f, 0.f}), 
             .scale = 0.012f
         });
+
         
         // lights
-        //renderer.insertLight({.pos = {3.f, 0.f, -1.f}, .intensity = 16.f, .range = 16.f});
+        renderer.insertLight({.pos = {13.f, 5.6f, 3.f}, .intensity = 8.f, .range = 16.f, .color = {0.9f, 0.55f, 0.89f}});
+        renderer.insertLight({.pos = {13.f, -5.6f, 3.f}, .intensity = 8.f, .range = 16.f, .color = {0.225f, 0.91f, 0.33f}});
+        renderer.insertLight({.pos = {-13.f, 5.6f, 3.f}, .intensity = 8.f, .range = 16.f, .color = {0.27f, 0.88f, 0.94f}});
+        renderer.insertLight({.pos = {-13.f, -5.6f, 3.f}, .intensity = 8.f, .range = 16.f, .color = {0.98f, 0.66f, 0.0f}});
         //renderer.insertLight({.pos = {5.f*glm::cos((frame/400.f)), 0.f, -1.f}, .intensity = 16.f, .range = 16.f});
         renderer.insertLight({.intensity = 4.f, .dir = glm::normalize(vec3(0.3f, 1.f, -2.f)), .type = gfx::DIRECTIONAL});
 
@@ -159,6 +164,7 @@ int main() {
             SprLog::info("[MAIN] frame: ", frame);
             SprLog::info("[MAIN] fps: " + std::to_string(fps) );
             SprLog::info("[MAIN] dt: " + std::to_string(dt) );
+            SprLog::info("[MAIN] pos: " + glm::to_string(pos) );
         }
         frame++;
     }
@@ -368,24 +374,24 @@ int main() {
                 .scale = 0.012f}));
         
         // lights
-        ecs.createEntity(
-            ecs.add<LightC>(gfx::Light{
-                .pos = {3.f, 0.f, -1.f}, 
-                .intensity = 1.f, 
-                .range = 16.f
-            }));
+        // ecs.createEntity(
+        //     ecs.add<LightC>(gfx::Light{
+        //         .pos = {3.f, 0.f, -1.f}, 
+        //         .intensity = 1.f, 
+        //         .range = 16.f
+        //     }));
+
+        // ecs.createEntity(
+        //     ecs.add<LightC>(gfx::Light{
+        //         .pos = {-3.f, 0.f, -1.f}, 
+        //         .intensity = 1.f, 
+        //         .range = 16.f
+        //     }));
 
         ecs.createEntity(
             ecs.add<LightC>(gfx::Light{
-                .pos = {-3.f, 0.f, -1.f}, 
-                .intensity = 1.f, 
-                .range = 16.f
-            }));
-
-        ecs.createEntity(
-            ecs.add<LightC>(gfx::Light{
-                .intensity = 1.2f, 
-                .dir = {0.2f, 0.f, -1.f}, 
+                .intensity = 4.f, 
+                .dir = glm::normalize(vec3(0.3f, 1.f, -2.f)), 
                 .type = gfx::DIRECTIONAL
             }));
 
