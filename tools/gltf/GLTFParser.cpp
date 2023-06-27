@@ -459,6 +459,8 @@ void GLTFParser::compressImageData(
         mipData[i-1] = (unsigned char*)malloc(levelExtent*levelExtent*components);
     }
 
+    uint32_t prevExtent = maxExtent;
+    uint32_t prevSize = srcSize;
     for (uint32_t i = 1; i < levels; i++){
         uint32_t currExtent = std::max(maxExtent / (1 << i), 1u);
         uint32_t currSize = currExtent*currExtent*components;
@@ -466,12 +468,15 @@ void GLTFParser::compressImageData(
         layer = 0;
         faceSlice = 0;                           
 
-        createMip(data, srcSize, maxExtent, mipData[i-1], currSize, currExtent);
+        createMip(i == 1 ? data : mipData[i-2], prevSize, prevExtent, mipData[i-1], currSize, currExtent);
         result = ktxTexture_SetImageFromMemory(ktxTexture(texture), level, layer, faceSlice, mipData[i-1], currSize);
         if (result) {
             std::cerr << "Failed to set (mip) image from memory, code: " << ktxErrorString(result) << std::endl;
         }
-        
+
+        prevExtent = currExtent;
+        prevSize = currSize;
+
         if (currExtent == 1)
             break;
     }
