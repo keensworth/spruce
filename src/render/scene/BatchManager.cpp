@@ -34,13 +34,26 @@ uint32 BatchManager::getQuadVertexOffset(){
     return m_quadVertexOffset;
 }
 
-uint32 BatchManager::getDrawCount(){
-    return m_drawCount;
-}
-
 void BatchManager::setQuadInfo(Batch quadBatch, uint32 quadVertexOffset){
     m_quadBatch = quadBatch;
     m_quadVertexOffset = quadVertexOffset;
+}
+
+Batch BatchManager::getCubeBatch(){
+    return m_cubeBatch;
+}
+
+uint32 BatchManager::getCubeVertexOffset(){
+    return m_cubeVertexOffset;
+}
+
+void BatchManager::setCubeInfo(Batch cubeBatch, uint32 cubeVertexOffset){
+    m_cubeBatch = cubeBatch;
+    m_cubeVertexOffset = cubeVertexOffset;
+}
+
+uint32 BatchManager::getDrawCount(){
+    return m_drawCount;
 }
 
 void BatchManager::reset(){
