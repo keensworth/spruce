@@ -97,10 +97,12 @@ struct Camera {
 
 struct Scene {
     mat4 view;
+    mat4 proj;
     mat4 viewProj;
     uint lightCount;
     uint sunOffset;
     uint screenDimX;
     uint screenDimY;
     uint time;
+    float exposure;
 };

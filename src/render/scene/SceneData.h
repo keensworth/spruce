@@ -61,12 +61,14 @@ typedef struct Camera {
 
 typedef struct Scene {
     glm::mat4 view;
+    glm::mat4 proj;
     glm::mat4 viewProj;
     uint32 lightCount = 0;
     uint32 sunOffset  = 0;
     uint32 screenDimX = 0;
     uint32 screenDimY = 0;
-    uint32 time = 0;
+    uint32 time   = 0;
+    float exposure = 5.f;
 } Scene;
 
 static const uint32 MAX_CASCADES = 4;
