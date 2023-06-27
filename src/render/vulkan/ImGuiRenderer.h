@@ -38,6 +38,7 @@ struct RenderState {
 
     uint32 shadowSelection = 0;
     float cascadeLambda = 0.80f;
+    float exposure = 5.f;
     glm::vec3 lightColor = {1.f, 1.f, 1.f};
     glm::vec3 lightDir = glm::normalize(vec3(0.3f, 1.f, -2.f));
 };
@@ -131,7 +132,17 @@ private:
             return;
         }
 
-        if (!ImGui::CollapsingHeader("Output")){
+        if (!ImGui::CollapsingHeader("Scene", ImGuiTreeNodeFlags_DefaultOpen)){
+            ImGui::End();
+            return;
+        }
+
+        state.dirtyLight |= ImGui::SliderFloat3("light dir", glm::value_ptr(state.lightDir), -1.0f, 1.0f);
+        state.dirtyLight |= ImGui::ColorEdit3("light color", glm::value_ptr(state.lightColor));
+        ImGui::SliderFloat("cascade lambda", &state.cascadeLambda, 0.0f, 1.0f, "lambda = %.3f");
+        ImGui::SliderFloat("exposure", &state.exposure, 0.0f, 10.f, "exposure = %.3f");
+
+        if (!ImGui::CollapsingHeader("Output", ImGuiTreeNodeFlags_DefaultOpen)){
             ImGui::End();
             return;
         }
@@ -139,23 +150,19 @@ private:
         static int visible = RenderState::LIT_MESH;
         bool reload = ImGui::Button("Reload Shader");
         static int cascade = 0;
-        ImGui::RadioButton("Test", &visible, RenderState::TEST);
-        ImGui::RadioButton("Debug Mesh", &visible, RenderState::DEBUG_MESH);
-        ImGui::RadioButton("Debug Normals", &visible, RenderState::DEBUG_NORMALS);
+        ImGui::RadioButton("Lit Mesh", &visible, RenderState::LIT_MESH);
+        ImGui::RadioButton("Unlit Mesh", &visible, RenderState::UNLIT_MESH);
         ImGui::RadioButton("Depth Prepass", &visible, RenderState::DEPTH_PREPASS);
+        ImGui::RadioButton("GTAO Pass", &visible, RenderState::GTAO_PASS);
+        ImGui::RadioButton("Blur Pass", &visible, RenderState::BLUR_PASS);
         ImGui::RadioButton("Cascaded Shadows", &visible, RenderState::SHADOW_CASCADES);
         if (visible & RenderState::SHADOW_CASCADES){
             ImGui::SliderInt("cascade #", &cascade, 0, MAX_CASCADES-1);
         }
-        ImGui::RadioButton("GTAO Pass", &visible, RenderState::GTAO_PASS);
-        ImGui::RadioButton("Blur Pass", &visible, RenderState::BLUR_PASS);
-        ImGui::RadioButton("Unlit Mesh", &visible, RenderState::UNLIT_MESH);
-        ImGui::RadioButton("Lit Mesh", &visible, RenderState::LIT_MESH);
-        if (visible & RenderState::LIT_MESH){
-            state.dirtyLight |= ImGui::SliderFloat3("light dir", glm::value_ptr(state.lightDir), -1.0f, 1.0f);
-            state.dirtyLight |= ImGui::ColorEdit3("light color", glm::value_ptr(state.lightColor));
-            ImGui::SliderFloat("cascade lambda", &state.cascadeLambda, 0.0f, 1.0f, "lambda = %.3f");
-        }
+        ImGui::RadioButton("Debug Mesh", &visible, RenderState::DEBUG_MESH);
+        ImGui::RadioButton("Debug Normals", &visible, RenderState::DEBUG_NORMALS);
+        ImGui::RadioButton("Test", &visible, RenderState::TEST);
+    
         if ((uint32)visible != (uint32)state.visible){
             state.visible = (RenderState::Shader)visible;
             state.dirtyOutput = true;

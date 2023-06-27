@@ -6,6 +6,7 @@
 #include "renderers/GTAORenderer.h"
 #include "renderers/UnlitMeshRenderer.h"
 #include "renderers/LitMeshRenderer.h"
+#include "renderers/SkyboxRenderer.h"
 #include "renderers/TestRenderer.h"
 #include "renderers/DebugMeshRenderer.h"
 #include "renderers/SunShadowRenderer.h"
@@ -47,6 +48,8 @@ private:
     
     void uploadSceneData(SceneManager& sceneManager);
 
+    void updateUI(CommandBuffer& offscreenCB);
+
 private:
     // MAIN renderer
     FrameRenderer m_frameRenderer;
@@ -61,6 +64,7 @@ private:
     SunShadowRenderer m_sunShadowRenderer;
     UnlitMeshRenderer m_unlitMeshRenderer;
     LitMeshRenderer m_litMeshRenderer;
+    SkyboxRenderer m_skyboxRenderer;
     ImGuiRenderer m_imguiRenderer;
 };
 }

@@ -2,7 +2,9 @@
 #include "glm/geometric.hpp"
 #include "renderers/DebugMeshRenderer.h"
 #include "renderers/GTAORenderer.h"
+#include "renderers/SkyboxRenderer.h"
 #include "renderers/SunShadowRenderer.h"
+#include "vulkan/ImGuiRenderer.h"
 #include "vulkan/gfx_vulkan_core.h"
 #include "vulkan/resource/ResourceTypes.h"
 #include "SceneManager.h"
@@ -50,16 +52,23 @@ void RenderCoordinator::render(SceneManager& sceneManager){
 
         // render currently enabled output renderer
         uint32 visible = m_imguiRenderer.state.visible;
-        if (visible & RenderState::LIT_MESH)
+        
+        if (visible & RenderState::LIT_MESH) {
             m_litMeshRenderer.render(offscreenCB, batchManager);
-        else if (visible & RenderState::DEBUG_MESH)
+            m_skyboxRenderer.render(offscreenCB, batchManager);
+        } 
+        else if (visible & RenderState::DEBUG_MESH) {
             m_debugMeshRenderer.render(offscreenCB, batchManager);
-        else if (visible & RenderState::DEBUG_NORMALS)
+        }
+        else if (visible & RenderState::DEBUG_NORMALS) {
             m_debugNormalsRenderer.render(offscreenCB, batchManager);
-        else if (visible & RenderState::UNLIT_MESH)
+        }
+        else if (visible & RenderState::UNLIT_MESH) {
             m_unlitMeshRenderer.render(offscreenCB, batchManager);
-        else // TEST
+        }
+        else { // TEST
             m_testRenderer.render(offscreenCB, batchManager);
+        }
         
         // render imgui
         m_imguiRenderer.render(offscreenCB, batchManager);
@@ -78,6 +87,38 @@ void RenderCoordinator::render(SceneManager& sceneManager){
     m_renderer->present(frame);
     m_frameId = m_renderer->getFrameId();
 
+    updateUI(offscreenCB);
+}
+
+
+void RenderCoordinator::uploadSceneData(SceneManager& sceneManager){
+    UploadHandler& uploadHandler = m_renderer->beginTransferCommands();
+
+    // global data
+    if (!m_sceneInitialized){
+        m_sceneInitialized = true;
+        sceneManager.uploadGlobalResources(uploadHandler);
+    }
+
+    // get and update scene data
+    Scene& scene = sceneManager.getScene(m_frameId);
+    Camera& camera = sceneManager.getCamera(m_frameId);
+    Light& sunLight = sceneManager.getSunLight(m_frameId);
+    // override w/ imgui input
+    sunLight.color = m_imguiRenderer.state.lightColor;
+    sunLight.dir = glm::normalize(m_imguiRenderer.state.lightDir);
+    scene.exposure = m_imguiRenderer.state.exposure;
+
+    // per-frame data
+    sceneManager.uploadPerFrameResources(uploadHandler, m_frameId);
+
+    // renderer specific
+    m_sunShadowRenderer.uploadData(scene, camera, sunLight, uploadHandler, m_imguiRenderer.state.cascadeLambda);
+
+    uploadHandler.submit();
+}
+
+void RenderCoordinator::updateUI(CommandBuffer& offscreenCB){
     // need to change input to copy shader
     if (m_imguiRenderer.state.dirtyOutput){
         Handle<TextureAttachment> output;
@@ -141,37 +182,14 @@ void RenderCoordinator::render(SceneManager& sceneManager){
 
         offscreenCB.waitFence();
         m_rm->recreate<Shader>(reload, true);
+        
+        if (visible & RenderState::LIT_MESH)
+            m_rm->recreate<Shader>(m_skyboxRenderer.getShader(), true);
+
         m_imguiRenderer.state.dirtyShader = false;
     }
 }
 
-
-void RenderCoordinator::uploadSceneData(SceneManager& sceneManager){
-    UploadHandler& uploadHandler = m_renderer->beginTransferCommands();
-
-    // global data
-    if (!m_sceneInitialized){
-        m_sceneInitialized = true;
-        sceneManager.uploadGlobalResources(uploadHandler);
-    }
-
-    // get and update scene data
-    Scene& scene = sceneManager.getScene(m_frameId);
-    Camera& camera = sceneManager.getCamera(m_frameId);
-    Light& sunLight = sceneManager.getSunLight(m_frameId);
-    // override w/ imgui input
-    sunLight.color = m_imguiRenderer.state.lightColor;
-    sunLight.dir = glm::normalize(m_imguiRenderer.state.lightDir);
-
-
-    // per-frame data
-    sceneManager.uploadPerFrameResources(uploadHandler, m_frameId);
-
-    // renderer specific
-    m_sunShadowRenderer.uploadData(scene, camera, sunLight, uploadHandler, m_imguiRenderer.state.cascadeLambda);
-
-    uploadHandler.submit();
-}
 
 void RenderCoordinator::initRenderers(SceneManager& sceneManager){
     glm::uvec3 windowDim = {m_window->width(), m_window->height(), 1};
@@ -252,6 +270,17 @@ void RenderCoordinator::initRenderers(SceneManager& sceneManager){
         m_sunShadowRenderer.getDepthAttachments(),
         m_sunShadowRenderer.getShadowData());
 
+    m_skyboxRenderer = SkyboxRenderer(*m_rm, *m_renderer, windowDim);
+    m_skyboxRenderer.init(
+        globalDescSet,
+        globalDescSetLayout,
+        frameDescSets,
+        frameDescSetLayout,
+        m_litMeshRenderer.m_descriptorSet,
+        m_litMeshRenderer.m_descriptorSetLayout,
+        m_depthPrepassRenderer.getDepthAttachment(),
+        m_litMeshRenderer.m_attachment);
+
     m_imguiRenderer = ImGuiRenderer(*m_rm, *m_renderer, m_window, windowDim);
     m_imguiRenderer.init(
         globalDescSet,
@@ -282,6 +311,7 @@ void RenderCoordinator::destroy(){
     // teardown renderers
     m_frameRenderer.destroy();
     m_imguiRenderer.destroy();
+    m_skyboxRenderer.destroy();
     m_testRenderer.destroy();
     m_debugMeshRenderer.destroy();
     m_debugNormalsRenderer.destroy();
