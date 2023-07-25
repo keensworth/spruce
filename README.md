@@ -49,7 +49,7 @@ The gfx-user-land API uses C++20 designated initializers to create render resour
 
 Creation of resources returns a handle to that resource (such as `Handle<Buffer>`), which is just two integers: an index into that resource type's array, and a generation number (which increments as a new resource is created at a given index) to verify the resource is still valid.
 
- ```C++20
+ ```cpp
 // buffer
 Handle<Buffer> buffer = rm->create<Buffer>({
     .byteSize = (uint32) (count * sizeof(ExampleStruct)),
@@ -152,13 +152,13 @@ Handle<Shader> shader = rm->create<Shader>({
 ```
 
 To retrieve a pointer to the resource:
- ```C++20
+ ```cpp
 Buffer* buffer = rm->get<Buffer>(handle);
 ...
    ```
 
 Uploading resources (buffers, textures) to device is done with the `UploadHandler`, which provides the following:
- ```C++20
+ ```cpp
 void uploadBuffer(TempBuffer<T>& src, Handle<Buffer> dst);
 void uploadDyanmicBuffer(TempBuffer<T>& src, Handle<Buffer> dst);
 void uploadTexture(TempBuffer<T>& src, Handle<Texture> dst);
