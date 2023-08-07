@@ -45,7 +45,7 @@ This makes it trivial to create and order the execution of different passes, and
 ![normals](https://i.imgur.com/SWQ0lMA.png)
 
 ### API (gfx)
-The gfx-user-land API uses C++20 designated initializers to create render resources. Underneath, these are backed by a custom span type that accepts initializer lists. This allows concise and structured construction of resources (with an unknown or varying number of parameters) without relying on a dynamic memory backed type such as `std::vector`. 
+The gfx-user-land API uses C++20 designated initializers to create render resources. Underneath, these are backed by a custom span type that accepts initializer lists. This allows concise and structured construction of resources (with an unknown or varying number of arguments) without relying on a dynamic memory backed type such as `std::vector`. 
 
 Creation of resources returns a handle to that resource (such as `Handle<Buffer>`), which is just two integers: an index into that resource type's array, and a generation number (which increments as a new resource is created at a given index) to verify the resource is still valid.
 
