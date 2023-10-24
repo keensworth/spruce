@@ -141,6 +141,11 @@ public:
         return m_capacity;
     }
 
+    void clear(){
+        m_offsetPointer = m_data;
+        m_size = 0;
+    }
+
     void reset(){
         free(m_data);
         m_data = static_cast<T*>(malloc(m_capacity * sizeof(T)));
