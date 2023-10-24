@@ -446,11 +446,11 @@ void SceneManager::initDescriptorSets(VulkanDevice* device){
 
 void SceneManager::reset(uint32 frame) {
     m_batchManagers[frame % MAX_FRAME_COUNT].reset();
-    m_cameras[frame % MAX_FRAME_COUNT].reset();
-    m_transforms[frame % MAX_FRAME_COUNT].reset();
-    m_lights[frame % MAX_FRAME_COUNT].reset();
-    m_drawData[frame % MAX_FRAME_COUNT].reset();
-    m_sceneData[frame % MAX_FRAME_COUNT].reset();
+    m_cameras[frame % MAX_FRAME_COUNT].clear();
+    m_transforms[frame % MAX_FRAME_COUNT].clear();
+    m_lights[frame % MAX_FRAME_COUNT].clear();
+    m_drawData[frame % MAX_FRAME_COUNT].clear();
+    m_sceneData[frame % MAX_FRAME_COUNT].clear();
     m_sceneData[frame % MAX_FRAME_COUNT].insert({});
     m_assetLoader.clear();
 }

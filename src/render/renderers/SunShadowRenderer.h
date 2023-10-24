@@ -125,7 +125,7 @@ public:
 
     void uploadData(Scene& scene, Camera& camera, Light& light, UploadHandler& uploadHandler, float splitLambda){
         uint32 frameId = m_renderer->getFrameId();
-        m_shadowTemp[frameId % MAX_FRAME_COUNT].reset();
+        m_shadowTemp[frameId % MAX_FRAME_COUNT].clear();
         m_shadowTemp[frameId % MAX_FRAME_COUNT].insert({});
 
         float cascadeSplitLambda = splitLambda;
