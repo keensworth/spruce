@@ -84,6 +84,10 @@ void UploadHandler::submit() {
     for (GPUStreamer::BufferTransfer upload : m_dynamicBufferUploadQueue) {
         m_streamer.transferDynamic(upload, m_frameId);
     }
+    // upload sparse pieces of data to and from various offsets
+    for (GPUStreamer::SparseBufferTransfer upload : m_sparseBufferUploadQueue) {
+        m_streamer.transferDynamic(upload, m_frameId);
+    }
     // upload textures/images
     for (GPUStreamer::TextureTransfer upload : m_textureUploadQueue) {
         m_streamer.transfer(upload);
@@ -107,6 +111,8 @@ void UploadHandler::reset() {
     m_bufferUploadQueue.reserve(32);
     m_dynamicBufferUploadQueue = std::vector<GPUStreamer::BufferTransfer>();
     m_dynamicBufferUploadQueue.reserve(32);
+    m_sparseBufferUploadQueue = std::vector<GPUStreamer::SparseBufferTransfer>();
+    m_sparseBufferUploadQueue.reserve(32);
     m_textureUploadQueue = std::vector<GPUStreamer::TextureTransfer>();
     m_textureUploadQueue.reserve(32);
     m_streamer.reset();

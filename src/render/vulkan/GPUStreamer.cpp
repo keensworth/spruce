@@ -355,6 +355,30 @@ void GPUStreamer::transferDynamic(BufferTransfer data, uint32 frame) {
     });
 }
 
+template<>
+void GPUStreamer::transferDynamic(SparseBufferTransfer data, uint32 frame) {
+    uint32 baseDstOffset = ((data.dst->byteSize)/MAX_FRAME_COUNT) * (frame % MAX_FRAME_COUNT);
+
+    uint32 srcOffsetBytes = data.srcOffset * data.size;
+    uint32 dstOffsetBytes = data.dstOffset * data.size;
+
+    uint32 dstOffset = baseDstOffset + dstOffsetBytes;
+
+    std::memcpy((unsigned char*)data.dst->allocInfo.pMappedData + dstOffset, data.pSrc + srcOffsetBytes, data.size);
+    // https://github.com/KhronosGroup/Vulkan-Docs/wiki/Synchronization-Examples
+    uint32_t alignedSize = (data.size-1) - ((data.size-1) % m_nonCoherentAtomSize) + m_nonCoherentAtomSize;
+
+    // build staging range and flush cache
+    VkMappedMemoryRange stagingRange = {
+        .sType  = VK_STRUCTURE_TYPE_MAPPED_MEMORY_RANGE,
+        .memory = data.dst->allocInfo.deviceMemory,
+        .offset = dstOffset,
+        .size   = alignedSize
+    };
+    
+    vkFlushMappedMemoryRanges(m_device->getDevice(), 1, &stagingRange);
+}
+
 void GPUStreamer::flush() {
     // buffer transfer barrier dependencies
     std::vector<VkBufferMemoryBarrier2KHR> transferBufferBarriers;

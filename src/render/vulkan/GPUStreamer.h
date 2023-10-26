@@ -42,6 +42,14 @@ private:
         Texture* dst;
     };
 
+    struct SparseBufferTransfer {
+        unsigned char* pSrc;
+        uint32 size = 0;
+        Buffer* dst;
+        uint32 srcOffset;
+        uint32 dstOffset;
+    };
+
     // utility members (non-owning)
     VulkanDevice* m_device;
     VulkanResourceManager* m_rm;
@@ -77,5 +85,5 @@ private:
 template<> void GPUStreamer::transfer(BufferTransfer data);
 template<> void GPUStreamer::transfer(TextureTransfer data);
 template<> void GPUStreamer::transferDynamic(BufferTransfer data, uint32 frame);
-
+template<> void GPUStreamer::transferDynamic(SparseBufferTransfer data, uint32 frame);
 }

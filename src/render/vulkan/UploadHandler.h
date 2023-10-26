@@ -49,6 +49,21 @@ public:
     }
 
     template <typename T>
+    void uploadSparseBuffer(TempBuffer<T>& src, Handle<Buffer> dst, uint32 srcOffset, uint32 dstOffset) {
+        if (src.getSize() == 0)
+            return;
+        Buffer* dstBuffer = m_rm->get<Buffer>(dst);
+        GPUStreamer::SparseBufferTransfer transfer = {
+            .pSrc = (unsigned char*)src.getBytes(),
+            .size = sizeof(T),
+            .dst = dstBuffer,
+            .srcOffset = srcOffset,
+            .dstOffset = dstOffset
+        };
+        m_sparseBufferUploadQueue.push_back(transfer);
+    }
+
+    template <typename T>
     void uploadTexture(TempBuffer<T>& src, Handle<Texture> dst) {
         if (src.getSize() == 0)
             return;
@@ -74,6 +89,7 @@ private:
 
     std::vector<GPUStreamer::BufferTransfer> m_bufferUploadQueue;
     std::vector<GPUStreamer::BufferTransfer> m_dynamicBufferUploadQueue;
+    std::vector<GPUStreamer::SparseBufferTransfer> m_sparseBufferUploadQueue;
     std::vector<GPUStreamer::TextureTransfer> m_textureUploadQueue;
 
     bool m_initialized = false;
