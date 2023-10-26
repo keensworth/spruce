@@ -17,13 +17,13 @@ public:
     }
 
     //add
-    void add(Entity entity);
+    void add(Entity& entity);
     //remove
-    void remove(Entity entity);
+    void remove(Entity& entity);
     //get
     Container<Entity> get(uint64 key);
     //get_accum
-    void getAccum(uint64 key, Container<Entity>& out);
+    void getAccum(uint64 key, std::vector<Entity>& out);
 
     uint32 getHeight(){
         return m_height;
@@ -36,8 +36,8 @@ private:
     std::vector<Container<Entity>> m_leafData;
     bool m_initialized;
 
-    void addLeafData(uint32 key, Entity entity);
-    void removeLeafData(uint32 key, Entity entity);
+    void addLeafData(uint32 key, Entity& entity);
+    void removeLeafData(uint32 key, Entity& entity);
     Container<Entity>& getLeafData(uint32 key);
 
     void buildBranch(uint32 branchIndex, uint32 height);

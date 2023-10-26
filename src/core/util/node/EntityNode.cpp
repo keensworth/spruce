@@ -21,7 +21,7 @@ EntityNode::EntityNode(uint32 height){
 
 
 //add
-void EntityNode::add(Entity entity){
+void EntityNode::add(Entity& entity){
     uint64 currIndex;
     EntityNode* currNode = this;
 
@@ -41,7 +41,7 @@ void EntityNode::add(Entity entity){
 }
 
 //remove
-void EntityNode::remove(Entity entity){
+void EntityNode::remove(Entity& entity){
     uint32 currIndex;
     EntityNode* currNode = this;
 
@@ -76,7 +76,7 @@ Container<Entity> EntityNode::get(uint64 key){
     return currNode->getLeafData(currIndex);
 }
 
-void EntityNode::getAccum(uint64 key, Container<Entity>& out){
+void EntityNode::getAccum(uint64 key, std::vector<Entity>& out){
     uint32 currIndex = subIndex(key, m_height);
     for (uint32 i = 0; i < 16; i++){
         if (m_height > 0){
@@ -89,15 +89,15 @@ void EntityNode::getAccum(uint64 key, Container<Entity>& out){
             if (!((currIndex & i) == currIndex && m_initialized)){
                 continue;
             }
-            out.append(getLeafData(i));
+            out.insert(out.end(), getLeafData(i).vector().begin(), getLeafData(i).vector().end());
         }
     }
 }
 
-void EntityNode::addLeafData(uint32 key, Entity entity){
+void EntityNode::addLeafData(uint32 key, Entity& entity){
     m_leafData.at(key).add(entity);
 }
-void EntityNode::removeLeafData(uint32 key, Entity entity){
+void EntityNode::removeLeafData(uint32 key, Entity& entity){
     m_leafData.at(key).eraseData(entity);
 }
 Container<Entity>& EntityNode::getLeafData(uint32 key){
