@@ -54,6 +54,10 @@ public:
         return m_data.at(index);
     }
 
+    T& operator[](int32 index){
+        return m_data.at(index);
+    }
+
     T* data(){
         return m_data.data();
     }
