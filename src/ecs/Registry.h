@@ -14,19 +14,19 @@ typedef enum {
 class Registry {
 public:
     Registry();
-    Registry(int size);
+    Registry(uint32 size);
     Registry(SprRegType registryType);
-    Registry(int size, SprRegType registryType);
+    Registry(uint32 size, SprRegType registryType);
     ~Registry() {}
 
-    int getIndex(Entity entity);
+    int getIndex(Entity& entity);
     int getIndex(uint32 id);
-    void addItem(Entity entity, int32 index);
+    void addItem(Entity& entity, int32 index);
     void addItem(uint32 id, int32 index);
 
-    int getSize();
+    uint32 size();
 private:
-    int m_regType;
+    uint32 m_regType;
     IndexNode m_indicesDense;
     std::vector<int32> m_indicesSparse;
 };

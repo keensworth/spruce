@@ -3,11 +3,11 @@
 namespace spr {
     Registry::Registry() : Registry(512, SPR_REG_SPARSE){}
 
-    Registry::Registry(int size) : Registry(size, SPR_REG_SPARSE) {}
+    Registry::Registry(uint32 size) : Registry(size, SPR_REG_SPARSE) {}
 
     Registry::Registry(SprRegType registryType) : Registry(512, registryType) {}
 
-    Registry::Registry(int size, SprRegType registryType){
+    Registry::Registry(uint32 size, SprRegType registryType){
         m_regType = registryType;
         if (registryType == SPR_REG_DENSE){
             m_indicesDense = IndexNode(8);
@@ -16,11 +16,11 @@ namespace spr {
         }
     }
 
-    int32 Registry::getSize(){
+    uint32 Registry::size(){
         return m_indicesSparse.size();
     }
 
-    int32 Registry::getIndex(Entity entity){
+    int32 Registry::getIndex(Entity& entity){
         if (m_regType == SPR_REG_DENSE){
             return m_indicesDense.get(entity.id);
         } else {
@@ -36,7 +36,7 @@ namespace spr {
         }
     }
 
-    void Registry::addItem(Entity entity, int32 index){ 
+    void Registry::addItem(Entity& entity, int32 index){ 
         if (m_regType == SPR_REG_DENSE){
             m_indicesDense.add(entity.id, index);
         } else {

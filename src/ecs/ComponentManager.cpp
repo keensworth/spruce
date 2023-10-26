@@ -3,13 +3,12 @@
 namespace spr{
 
 ComponentManager::ComponentManager(){
-    m_components = std::vector<Component*>();
-    m_typeMap = tmap();
     m_componentIndex = 0;
+    m_trackingMask = 0;
 }
 
 uint64 ComponentManager::getMask(std::vector<Component*> components){
-    uint64 mask = 0L;
+    uint64 mask = 0LL;
     // for each component arg
     for (int32 i = 0; i < components.size(); i++){
         // for each registered component
@@ -22,7 +21,7 @@ uint64 ComponentManager::getMask(std::vector<Component*> components){
         }
         // set mask bit relative to reg comp index
         if (j < m_components.size())
-            mask |= (0b1 << j);
+            mask |= (1LL << j);
     }
     return mask;
 }

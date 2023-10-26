@@ -9,20 +9,20 @@ class SprECS {
 public:
     // ---------------- sprecs ------------------ 
     SprECS() {
-        entityManager = EntityManager();
-        componentManager = ComponentManager();
-        systemManager = SystemManager();
-
         m_entityId = 0;
     }
+    
     ~SprECS() {}
 
     void update(float dt){
-        // create/destroy entites from last frame
+        // create/destroy queued entities from last frame
         entityManager.update();
 
         // update all systems
         systemManager.update(dt);    
+
+        // unregister queued entities from last frame
+        componentManager.update();
     }
     
 
@@ -35,12 +35,10 @@ public:
         uint64 mask = componentManager.getMask<T,Args...>();
         
         // create entity
-        Entity entity = Entity(m_entityId, mask);
+        Entity entity{m_entityId, mask};
         
-
         // register entity 
         entityManager.addEntity(entity);
-        
 
         // register entity with components
         componentManager.registerEntity(entity, t, args...);
@@ -54,35 +52,13 @@ public:
         // remove entity 
         entityManager.removeEntity(entity);
 
-        // register entity with components
+        // unregister entity
         componentManager.unregisterEntity(entity);
     }
 
     // get a collection of entities with given templated components
     template <typename Arg, typename ...Args>
-    Container<Entity> getEntities(){
-        // get mask from components
-        uint64 mask = componentManager.getMask<Arg, Args...>();
-
-        // get entities that have all components in mask
-        Container<Entity> entities;
-        entityManager.getEntities(mask, entities);
-        return entities;
-    }
-
-    template <typename Arg, typename ...Args>
-    std::vector<Entity> getEntities(){
-        // get mask from components
-        uint64 mask = componentManager.getMask<Arg, Args...>();
-
-        // get entities that have all components in mask
-        Container<Entity> entities;
-        entityManager.getEntities(mask, entities);
-        return entities.vector();
-    }
-
-    template <typename Arg, typename ...Args>
-    void getEntities(Container<Entity>& out){
+    void getEntities(std::vector<Entity>& out){
         // get mask from components
         uint64 mask = componentManager.getMask<Arg, Args...>();
 
@@ -90,13 +66,25 @@ public:
         entityManager.getEntities(mask, out);
     }
 
+    // filter entities for those with a set dirty flag on given component
+    template <typename Arg>
+    void getDirtyEntities(std::vector<Entity>& in, std::vector<Entity>& out){
+        componentManager.getDirtyEntities<Arg>(in, out);
+    }
+
+    // check if an entity's component is dirty
+    template <typename Arg>
+    bool isDirty(Entity& entity){
+        return componentManager.isDirty<Arg>(entity);
+    }
+
 
     // ---------------- component ---------------
 
     // add component to manager
     template <typename T>
-    void createComponent(Component& component){
-        componentManager.addComponent<T>(component);
+    void createComponent(Component& component, bool enableDirtyFlagTracking = false){
+        componentManager.addComponent<T>(component, enableDirtyFlagTracking);
     }
 
     // add new component to entity directly

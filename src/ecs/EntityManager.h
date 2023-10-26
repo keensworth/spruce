@@ -10,12 +10,12 @@ public:
     EntityManager();
     ~EntityManager() {}
 
-    void addEntity(Entity entity);
-    void removeEntity(Entity entity);
+    void addEntity(Entity& entity);
+    void removeEntity(Entity& entity);
 
     void update();
 
-    void getEntities(uint64 components, Container<Entity>& out);
+    void getEntities(uint64 components, std::vector<Entity>& out);
     
 private:
     // entity storage
@@ -26,6 +26,8 @@ private:
     std::vector<Entity> m_entitiesRemove;
 
     void getEntities(){}
+
+    friend class SprECS;
 };
 
 }
