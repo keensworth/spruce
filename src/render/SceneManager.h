@@ -23,6 +23,11 @@ struct DescriptorSetLayout;
 struct Buffer;
 struct Texture;
 
+typedef struct TransformUpdate {
+    uint32 index = 0;
+    uint32 budget = MAX_FRAME_COUNT;
+} TransformUpdate;
+
 class SceneManager {
 public:
     SceneManager();
@@ -30,13 +35,20 @@ public:
 
     void init(VulkanResourceManager& rm);
 
-    void insertLights(uint32 frame, Span<const Light> lights);
-    void updateCamera(uint32 frame, glm::vec2 screenDim, const Camera& camera);
+    void insertDraws(uint32 frame, uint32 id, Span<uint32> meshIds, Span<uint32> materialsFlags, uint32 transformIndex, bool sharedMaterial);
 
-    void insertMeshes(uint32 frame, Span<uint32> meshIds, Span<uint32> materialsFlags, Span<const Transform> transforms);
-    void insertMeshes(uint32 frame, Span<uint32> meshIds, Span<uint32> materialsFlags,      const Transform& transform );
-    void insertMeshes(uint32 frame, Span<uint32> meshIds,      uint32 materialFlags  , Span<const Transform> transforms);
-    void insertMeshes(uint32 frame, Span<uint32> meshIds,      uint32 materialFlags  ,      const Transform& transform );
+    void insertMeshes(uint32 frame, uint32 id, Span<uint32> meshIds, Span<uint32> materialsFlags, const Transform& transform);
+    void insertMeshes(uint32 frame, uint32 id, Span<uint32> meshIds, uint32 materialFlags, const Transform& transform);
+
+    void insertMeshes(uint32 frame, uint32 id, Span<uint32> meshIds, Span<uint32> materialsFlags);
+    void insertMeshes(uint32 frame, uint32 id, Span<uint32> meshIds, uint32 materialFlags);
+
+    void updateMeshes(uint32 frame, uint32 id, Span<uint32> meshIds, Span<uint32> materialsFlags, const Transform& transform);
+    void updateMeshes(uint32 frame, uint32 id, Span<uint32> meshIds, uint32 materialFlags , const Transform& transform);
+
+    void insertLights(uint32 frame, Span<const Light> lights);
+    
+    void updateCamera(uint32 frame, glm::vec2 screenDim, const Camera& camera);
     
     void reset(uint32 frame);
 
@@ -67,9 +79,15 @@ private:
     MeshInfoMap m_meshInfo;
     bool m_destroyed = false;
 
+    ska::flat_hash_map<uint32, uint32> m_idTransformIndexMap;
+    std::vector<TransformUpdate> m_transformUpdates;
+    std::deque<uint32> m_updatesFreelist;
+
     void initBuffers(PrimitiveCounts counts, VulkanDevice* device);
     void initTextures(PrimitiveCounts counts, VulkanDevice* device);
     void initDescriptorSets(VulkanDevice* device);
+
+    void queueTransformUpdate(uint32 index);
 
 private: // owning
     // per frame resource handles

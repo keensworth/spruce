@@ -47,38 +47,7 @@ void SceneManager::init(VulkanResourceManager& rm){
 }
 
 
-void SceneManager::insertMeshes(uint32 frame, Span<uint32> meshIds, Span<uint32> materialsFlags, Span<const Transform> transforms){
-    bool sharedMaterial = (meshIds.size() != materialsFlags.size() && materialsFlags.size() == 1);
-
-    for (uint32 i = 0; i < meshIds.size(); i++){
-        // get mesh data and fill draw
-        MeshInfo& meshInfo = m_meshInfo[meshIds[i]];
-        DrawData draw = {
-            .vertexOffset   = meshInfo.vertexOffset,  
-            .materialIndex  = meshInfo.materialIndex, 
-            .transformIndex = m_transforms[frame % MAX_FRAME_COUNT].insert(transforms[i])
-        };
-
-        // fill out batch info, which will either initialize
-        // a new batch or update an existing one
-        Batch batchInfo = {
-            .meshId         = meshIds[i],
-            .materialFlags  = !sharedMaterial ? materialsFlags[i] : materialsFlags[0],
-            .indexCount     = meshInfo.indexCount,
-            .firstIndex     = meshInfo.firstIndex,
-            .drawDataOffset = 0,
-            .drawCount      = 1
-        };
-
-        m_batchManagers[frame % MAX_FRAME_COUNT].addDraw(draw, batchInfo);
-    }
-}
-
-void SceneManager::insertMeshes(uint32 frame, Span<uint32> meshIds, Span<uint32> materialsFlags, const Transform& transform ){
-    bool sharedMaterial = (meshIds.size() != materialsFlags.size() && materialsFlags.size() == 1);
-
-    uint32 transformIndex = m_transforms[frame % MAX_FRAME_COUNT].insert(transform);
-
+void SceneManager::insertDraws(uint32 frame, uint32 id, Span<uint32> meshIds, Span<uint32> materialsFlags, uint32 transformIndex, bool sharedMaterial){
     for (uint32 i = 0; i < meshIds.size(); i++){
         // get mesh data and fill draw
         MeshInfo& meshInfo = m_meshInfo[meshIds[i]];
@@ -103,56 +72,77 @@ void SceneManager::insertMeshes(uint32 frame, Span<uint32> meshIds, Span<uint32>
     }
 }
 
-void SceneManager::insertMeshes(uint32 frame, Span<uint32> meshIds, uint32 materialFlags , Span<const Transform> transforms){
-    for (uint32 i = 0; i < meshIds.size(); i++){
-        // get mesh data and fill draw
-        MeshInfo& meshInfo = m_meshInfo[meshIds[i]];
-        DrawData draw = {
-            .vertexOffset   = meshInfo.vertexOffset,  
-            .materialIndex  = meshInfo.materialIndex, 
-            .transformIndex = m_transforms[frame % MAX_FRAME_COUNT].insert(transforms[i])
-        };
 
-        // fill out batch info, which will either initialize
-        // a new batch or update an existing one
-        Batch batchInfo = {
-            .meshId         = meshIds[i],
-            .materialFlags  = materialFlags,
-            .indexCount     = meshInfo.indexCount,
-            .firstIndex     = meshInfo.firstIndex,
-            .drawDataOffset = 0,
-            .drawCount      = 1
-        };
+void SceneManager::insertMeshes(uint32 frame, uint32 id, Span<uint32> meshIds, Span<uint32> materialsFlags, const Transform& transform){
+    bool sharedMaterial = (meshIds.size() != materialsFlags.size() && materialsFlags.size() == 1);
 
-        m_batchManagers[frame % MAX_FRAME_COUNT].addDraw(draw, batchInfo);
+    uint32 transformIndex = m_transforms[frame % MAX_FRAME_COUNT].insert(transform);
+    m_idTransformIndexMap[id] = transformIndex;
+    for (uint32 i = 1; i < MAX_FRAME_COUNT; i++){
+        m_transforms[(frame + i) % MAX_FRAME_COUNT].insert(transform);
     }
+
+    if (frame >= MAX_FRAME_COUNT)
+        queueTransformUpdate(transformIndex);
+
+    insertDraws(frame, id, meshIds, materialsFlags, transformIndex, sharedMaterial);
 }
 
-void SceneManager::insertMeshes(uint32 frame, Span<uint32> meshIds, uint32 materialFlags , const Transform& transform){
+void SceneManager::insertMeshes(uint32 frame, uint32 id, Span<uint32> meshIds, uint32 materialFlags , const Transform& transform){
     uint32 transformIndex = m_transforms[frame % MAX_FRAME_COUNT].insert(transform);
-
-    for (uint32 i = 0; i < meshIds.size(); i++){
-        // get mesh data and fill draw
-        MeshInfo& meshInfo = m_meshInfo[meshIds[i]];
-        DrawData draw = {
-            .vertexOffset   = meshInfo.vertexOffset,  
-            .materialIndex  = meshInfo.materialIndex, 
-            .transformIndex = transformIndex
-        };
-
-        // fill out batch info, which will either initialize
-        // a new batch or update an existing one
-        Batch batchInfo = {
-            .meshId         = meshIds[i],
-            .materialFlags  = materialFlags,
-            .indexCount     = meshInfo.indexCount,
-            .firstIndex     = meshInfo.firstIndex,
-            .drawDataOffset = 0,
-            .drawCount      = 1
-        };
-
-        m_batchManagers[frame % MAX_FRAME_COUNT].addDraw(draw, batchInfo);
+    m_idTransformIndexMap[id] = transformIndex;
+    for (uint32 i = 1; i < MAX_FRAME_COUNT; i++){
+        m_transforms[(frame + i) % MAX_FRAME_COUNT].insert(transform);
     }
+
+    if (frame >= MAX_FRAME_COUNT)
+        queueTransformUpdate(transformIndex);
+
+    insertDraws(frame, id, meshIds, {materialFlags}, transformIndex, true);
+}
+
+
+void SceneManager::insertMeshes(uint32 frame, uint32 id, Span<uint32> meshIds, Span<uint32> materialsFlags){
+    bool sharedMaterial = (meshIds.size() != materialsFlags.size() && materialsFlags.size() == 1);
+
+    uint32 transformIndex = m_idTransformIndexMap[id];
+
+    insertDraws(frame, id, meshIds, materialsFlags, transformIndex, sharedMaterial);
+}
+
+void SceneManager::insertMeshes(uint32 frame, uint32 id, Span<uint32> meshIds, uint32 materialFlags){
+    uint32 transformIndex = m_idTransformIndexMap[id];
+
+    insertDraws(frame, id, meshIds, {materialFlags}, transformIndex, true);
+}
+
+
+void SceneManager::updateMeshes(uint32 frame, uint32 id, Span<uint32> meshIds, Span<uint32> materialsFlags, const Transform& transform){
+    bool sharedMaterial = (meshIds.size() != materialsFlags.size() && materialsFlags.size() == 1);
+
+    uint32 transformIndex = m_idTransformIndexMap[id];
+    m_transforms[frame % MAX_FRAME_COUNT][transformIndex] = transform;
+    for (uint32 i = 1; i < MAX_FRAME_COUNT; i++){
+        m_transforms[(frame + i) % MAX_FRAME_COUNT][transformIndex] = transform;
+    }
+
+    if (frame >= MAX_FRAME_COUNT)
+        queueTransformUpdate(transformIndex);
+
+    insertDraws(frame, id, meshIds, materialsFlags, transformIndex, sharedMaterial);
+}
+
+void SceneManager::updateMeshes(uint32 frame, uint32 id, Span<uint32> meshIds, uint32 materialFlags , const Transform& transform){
+    uint32 transformIndex = m_idTransformIndexMap[id];
+    m_transforms[frame % MAX_FRAME_COUNT][transformIndex] = transform;
+    for (uint32 i = 1; i < MAX_FRAME_COUNT; i++){
+        m_transforms[(frame + i) % MAX_FRAME_COUNT][transformIndex] = transform;
+    }
+
+    if (frame >= MAX_FRAME_COUNT)
+        queueTransformUpdate(transformIndex);
+
+    insertDraws(frame, id, meshIds, {materialFlags}, transformIndex, true);
 }
 
 
@@ -206,10 +196,49 @@ void SceneManager::uploadPerFrameResources(UploadHandler& uploadHandler, uint32 
     uploadHandler.uploadDyanmicBuffer(m_sceneData[frame % MAX_FRAME_COUNT], m_sceneBuffer);
     uploadHandler.uploadDyanmicBuffer(m_cameras[frame % MAX_FRAME_COUNT], m_cameraBuffer);
     uploadHandler.uploadDyanmicBuffer(m_lights[frame % MAX_FRAME_COUNT], m_lightsBuffer);
-    uploadHandler.uploadDyanmicBuffer(m_transforms[frame % MAX_FRAME_COUNT], m_transformBuffer);
+
+    if (frame < MAX_FRAME_COUNT){
+        uploadHandler.uploadDyanmicBuffer(m_transforms[frame % MAX_FRAME_COUNT], m_transformBuffer);
+    } else {
+        for (TransformUpdate& update : m_transformUpdates){
+            if (update.budget <= 0)
+                continue;
+            uploadHandler.uploadSparseBuffer(m_transforms[frame % MAX_FRAME_COUNT], m_transformBuffer, update.index, update.index);
+            update.budget--;
+        }
+    }
     
     m_batchManagers[frame % MAX_FRAME_COUNT].getDrawData(m_drawData[frame % MAX_FRAME_COUNT]);
     uploadHandler.uploadDyanmicBuffer(m_drawData[frame % MAX_FRAME_COUNT], m_drawDataBuffer);
+}
+
+
+void SceneManager::queueTransformUpdate(uint32 index){
+    // check to see if this index is already being updated
+    bool found = false;
+    uint32 updatesIndex = 0;
+    for (TransformUpdate& update : m_transformUpdates){
+        if (update.index == index){
+            found = true;
+            update.budget = MAX_FRAME_COUNT;
+            return;
+        }
+
+        if (update.budget <= 0) // passively remove completed updates
+            m_updatesFreelist.push_back(updatesIndex);
+        
+        updatesIndex++;
+    }
+
+    // not found, add it
+    if (!found){
+        if (m_updatesFreelist.size()){
+            m_transformUpdates[m_updatesFreelist.back()] = {index, MAX_FRAME_COUNT};
+            m_updatesFreelist.pop_back();
+        } else {
+            m_transformUpdates.push_back({index, MAX_FRAME_COUNT});
+        }
+    }
 }
 
 
@@ -447,7 +476,7 @@ void SceneManager::initDescriptorSets(VulkanDevice* device){
 void SceneManager::reset(uint32 frame) {
     m_batchManagers[frame % MAX_FRAME_COUNT].reset();
     m_cameras[frame % MAX_FRAME_COUNT].clear();
-    m_transforms[frame % MAX_FRAME_COUNT].clear();
+    //m_transforms[frame % MAX_FRAME_COUNT].clear();
     m_lights[frame % MAX_FRAME_COUNT].clear();
     m_drawData[frame % MAX_FRAME_COUNT].clear();
     m_sceneData[frame % MAX_FRAME_COUNT].clear();

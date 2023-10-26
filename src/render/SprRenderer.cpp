@@ -39,6 +39,12 @@ SprRenderer::~SprRenderer(){
     SprLog::info("[SprRenderer] [destroy] destroyed...");
 }
 
+void SprRenderer::loadAssets(SprResourceManager& rm){
+    m_srm = &rm;
+    m_sceneManager.initializeAssets(rm, &m_renderer.getDevice());
+    m_renderCoordinator.initRenderers(m_sceneManager);
+}
+
 
 // ╔══════════════════════════════════════════════════════════════════════════╗
 // ║     render                                                               ║
@@ -63,17 +69,24 @@ void SprRenderer::render(){
 // ╔══════════════════════════════════════════════════════════════════════════╗
 // ║     Light                                                                ║
 // ╚══════════════════════════════════════════════════════════════════════════╝
-void SprRenderer::insertLight(const gfx::Light& light){
+
+void SprRenderer::insertLight(uint32 id, const gfx::Light& light){
     m_sceneManager.insertLights(m_frameId, {light});
 }
 
-void SprRenderer::insertLights(Span<const gfx::Light> lights){
+void SprRenderer::insertLights(Span<uint32> ids, Span<const gfx::Light> lights){
     m_sceneManager.insertLights(m_frameId, lights);
 }
+
+void SprRenderer::updateLight(uint32 id, const gfx::Light& light){
+    
+}
+
 
 // ╔══════════════════════════════════════════════════════════════════════════╗
 // ║     Camera                                                               ║
 // ╚══════════════════════════════════════════════════════════════════════════╝
+
 void SprRenderer::updateCamera(const gfx::Camera& camera){
     m_sceneManager.updateCamera(m_frameId, {m_window->width(), m_window->height()}, camera);
 }
@@ -83,194 +96,65 @@ void SprRenderer::updateCamera(const gfx::Camera& camera){
 // ║     Models                                                               ║
 // ╚══════════════════════════════════════════════════════════════════════════╝
 
-void SprRenderer::insertModel(uint32 modelId, const TransformInfo& transformInfo){
+void SprRenderer::insertModel(uint32 id, uint32 modelId, const TransformInfo& transformInfo){
+    insertModel(id, modelId, buildTransform(transformInfo));
+}
+
+void SprRenderer::insertModel(uint32 id, uint32 modelId, uint32 materialFlags, const TransformInfo& transformInfo){
+    insertModel(id, modelId, materialFlags, buildTransform(transformInfo));
+}
+
+void SprRenderer::insertModel(uint32 id, uint32 modelId, const gfx::Transform& transform){
     spr::Model* model = m_srm->getData<Model>(modelId);
-    insertMeshes(model->meshIds, transformInfo);
-}
-
-void SprRenderer::insertModel(uint32 modelId, uint32 materialFlags, const TransformInfo& transformInfo){
-    spr::Model* model = m_srm->getData<Model>(modelId);
-    insertMeshes(model->meshIds, materialFlags, transformInfo);
-}
-
-void SprRenderer::insertModel(uint32 modelId, const gfx::Transform& transform){
-    spr::Model* model = m_srm->getData<Model>(modelId);
-    insertMeshes(model->meshIds, transform);
-}
-
-void SprRenderer::insertModel(uint32 modelId, uint32 materialFlags, const gfx::Transform& transform){
-    spr::Model* model = m_srm->getData<Model>(modelId);
-    insertMeshes(model->meshIds, materialFlags, transform);
-}
-
-
-// ╔══════════════════════════════════════════════════════════════════════════╗
-// ║     Meshes                                                               ║
-// ╚══════════════════════════════════════════════════════════════════════════╝
-
-// single mesh
-void SprRenderer::insertMesh(uint32 meshId, const TransformInfo& transformInfo){
-    uint32 materialFlags = m_srm->getData<Mesh>(meshId)->materialFlags;
-    m_sceneManager.insertMeshes(m_frameId, {meshId}, materialFlags, buildTransform(transformInfo));
-}
-
-// batch meshes, shared transform
-void SprRenderer::insertMeshes(Span<uint32> meshIds, const TransformInfo& transformInfo){
-    uint32 materialsFlags[meshIds.size()];
-    for(uint32 i = 0; i < meshIds.size(); i++)
-        materialsFlags[i] = m_srm->getData<Mesh>(meshIds[i])->materialFlags;
-
-    m_sceneManager.insertMeshes(m_frameId, meshIds, {materialsFlags, meshIds.size()}, buildTransform(transformInfo));
-}
-
-// batch meshes
-void SprRenderer::insertMeshes(Span<uint32> meshIds, Span<const TransformInfo> transformInfos){
-    if (!meshIds.size() || !transformInfos.size())
-        SprLog::error("[SprRenderer] [insertMeshes] must provide at least 1 of each parameter");
-
-    if (meshIds.size() != transformInfos.size())
-        SprLog::error("[SprRenderer] [insertMeshes] size mismatch between meshIds and transformInfos");
-
-    uint32 materialsFlags[meshIds.size()];
-    for(uint32 i = 0; i < meshIds.size(); i++)
-        materialsFlags[i] = m_srm->getData<Mesh>(meshIds[i])->materialFlags;
-
-    gfx::Transform transforms[meshIds.size()];
-    for(uint32 i = 0; i < meshIds.size(); i++)
-        transforms[i] = buildTransform(transformInfos[i]);
-
-    m_sceneManager.insertMeshes(m_frameId, meshIds, {materialsFlags, meshIds.size()}, {transforms, meshIds.size()});
-}
-
-// single mesh
-void SprRenderer::insertMesh(uint32 meshId, uint32 materialFlags, const TransformInfo& transformInfo){
-    m_sceneManager.insertMeshes(m_frameId, {meshId}, materialFlags, buildTransform(transformInfo));
-}
-
-// batch meshes, shared material, shared transform
-void SprRenderer::insertMeshes(Span<uint32> meshIds, uint32 materialFlags, const TransformInfo& transformInfo){
-    m_sceneManager.insertMeshes(m_frameId, meshIds, materialFlags, buildTransform(transformInfo));
-}
-
-// batch meshes, shared material
-void SprRenderer::insertMeshes(Span<uint32> meshIds, uint32 materialFlags, Span<const TransformInfo> transformInfos){
-    if (!meshIds.size() || !transformInfos.size())
-        SprLog::error("[SprRenderer] [insertMeshes] must provide at least 1 of each parameter");
-
-    if (meshIds.size() != transformInfos.size())
-        SprLog::error("[SprRenderer] [insertMeshes] size mismatch between meshIds and transformInfos");
+    Span<uint32> meshIds = model->meshIds;
     
-    gfx::Transform transforms[meshIds.size()];
-    for (uint32 i = 0; i < meshIds.size(); i++){
-        transforms[i] = buildTransform(transformInfos[i]);
-    }
+    uint32 materialsFlags[meshIds.size()];
+    for(uint32 i = 0; i < meshIds.size(); i++)
+        materialsFlags[i] = m_srm->getData<Mesh>(meshIds[i])->materialFlags;
 
-    m_sceneManager.insertMeshes(m_frameId, meshIds, materialFlags, {transforms, meshIds.size()});
+    m_sceneManager.insertMeshes(m_frameId, id, meshIds, {materialsFlags, meshIds.size()}, transform);
 }
 
-// batch meshes, shared transform
-void SprRenderer::insertMeshes(Span<uint32> meshIds, Span<uint32> materialsFlags, const TransformInfo& transformInfo){
-    if (!meshIds.size() || !materialsFlags.size())
-        SprLog::error("[SprRenderer] [insertMeshes] must provide at least 1 of each parameter");
+void SprRenderer::insertModel(uint32 id, uint32 modelId, uint32 materialFlags, const gfx::Transform& transform){
+    spr::Model* model = m_srm->getData<Model>(modelId);
+    Span<uint32> meshIds = model->meshIds;
 
-    if (meshIds.size() != materialsFlags.size())
-        SprLog::error("[SprRenderer] [insertMeshes] size mismatch between meshIds and materialsFlags");
-
-    m_sceneManager.insertMeshes(m_frameId, meshIds, materialsFlags, buildTransform(transformInfo));
+    m_sceneManager.insertMeshes(m_frameId, id, meshIds, materialFlags, transform);
 }
 
-// batch meshes
-void SprRenderer::insertMeshes(Span<uint32> meshIds, Span<uint32> materialsFlags, Span<const TransformInfo> transformInfos){
-    if (!meshIds.size() || !materialsFlags.size() || !transformInfos.size())
-        SprLog::error("[SprRenderer] [insertMeshes] must provide at least 1 of each parameter");
 
-    if (meshIds.size() != transformInfos.size())
-        SprLog::error("[SprRenderer] [insertMeshes] size mismatch between meshIds and materialsFlags");
+void SprRenderer::insertModel(uint32 id, uint32 modelId){
+    spr::Model* model = m_srm->getData<Model>(modelId);
+    Span<uint32> meshIds = model->meshIds;
     
-    gfx::Transform transforms[meshIds.size()];
-    for (uint32 i = 0; i < meshIds.size(); i++){
-        transforms[i] = buildTransform(transformInfos[i]);
-    }
-
-    m_sceneManager.insertMeshes(m_frameId, meshIds, materialsFlags, {transforms, meshIds.size()});
-}
-
-// single mesh
-void SprRenderer::insertMesh(uint32 meshId, const gfx::Transform& transform){
-    spr::Mesh* mesh = m_srm->getData<spr::Mesh>(meshId);
-    m_sceneManager.insertMeshes(m_frameId, {meshId}, mesh->materialFlags, transform);
-}
-
-// batch meshes, shared transform
-void SprRenderer::insertMeshes(Span<uint32> meshIds, const gfx::Transform& transform){
     uint32 materialsFlags[meshIds.size()];
     for(uint32 i = 0; i < meshIds.size(); i++)
         materialsFlags[i] = m_srm->getData<Mesh>(meshIds[i])->materialFlags;
-    m_sceneManager.insertMeshes(m_frameId, meshIds, {materialsFlags, meshIds.size()}, transform);
+
+    m_sceneManager.insertMeshes(m_frameId, id, meshIds, {materialsFlags, meshIds.size()});
 }
 
-// batch meshes
-void SprRenderer::insertMeshes(Span<uint32> meshIds, Span<const gfx::Transform> transforms){
-    if (!meshIds.size() || !transforms.size())
-        SprLog::error("[SprRenderer] [insertMeshes] must provide at least 1 of each parameter");
+void SprRenderer::insertModel(uint32 id, uint32 modelId, uint32 materialFlags){
+    spr::Model* model = m_srm->getData<Model>(modelId);
+    Span<uint32> meshIds = model->meshIds;
 
-    if (meshIds.size() != transforms.size())
-        SprLog::error("[SprRenderer] [insertMeshes] size mismatch between meshIds and transforms");
+    m_sceneManager.insertMeshes(m_frameId, id, meshIds, materialFlags);
+}
 
+
+void SprRenderer::updateModel(uint32 id, uint32 modelId, const TransformInfo& transformInfo){
+    updateModel(id, modelId, buildTransform(transformInfo));
+}
+
+void SprRenderer::updateModel(uint32 id, uint32 modelId, const gfx::Transform& transform){
+    spr::Model* model = m_srm->getData<Model>(modelId);
+    Span<uint32> meshIds = model->meshIds;
+    
     uint32 materialsFlags[meshIds.size()];
     for(uint32 i = 0; i < meshIds.size(); i++)
         materialsFlags[i] = m_srm->getData<Mesh>(meshIds[i])->materialFlags;
-    m_sceneManager.insertMeshes(m_frameId, meshIds, {materialsFlags, meshIds.size()}, transforms);
-}
 
-// single mesh
-void SprRenderer::insertMesh(uint32 meshId, uint32 materialFlags, const gfx::Transform& transform){
-    m_sceneManager.insertMeshes(m_frameId, {meshId}, materialFlags, transform);
-}
-
-// batch meshes, shared material, shared transform
-void SprRenderer::insertMeshes(Span<uint32> meshIds, uint32 materialFlags, const gfx::Transform& transform){
-    m_sceneManager.insertMeshes(m_frameId, meshIds, materialFlags, transform);
-}
-
-// batch meshes, shared material
-void SprRenderer::insertMeshes(Span<uint32> meshIds, uint32 materialFlags, Span<const gfx::Transform> transforms){
-    if (!meshIds.size() || !transforms.size())
-        SprLog::error("[SprRenderer] [insertMeshes] must provide at least 1 of each parameter");
-
-    if (meshIds.size() != transforms.size())
-        SprLog::error("[SprRenderer] [insertMeshes] size mismatch between meshIds and transforms");
-
-    m_sceneManager.insertMeshes(m_frameId, meshIds, materialFlags, transforms);
-}
-
-// batch meshes, shared transform
-void SprRenderer::insertMeshes(Span<uint32> meshIds, Span<uint32> materialsFlags, const gfx::Transform& transform){
-    if (!meshIds.size() || !materialsFlags.size())
-        SprLog::error("[SprRenderer] [insertMeshes] must provide at least 1 of each parameter");
-
-    if (meshIds.size() != materialsFlags.size())
-        SprLog::error("[SprRenderer] [insertMeshes] size mismatch between meshIds and materialsFlags");
-
-    m_sceneManager.insertMeshes(m_frameId, meshIds, materialsFlags, transform);
-}
-
-// batch meshes
-void SprRenderer::insertMeshes(Span<uint32> meshIds, Span<uint32> materialsFlags, Span<const gfx::Transform> transforms){
-    if (!meshIds.size() || !materialsFlags.size() || !transforms.size())
-        SprLog::error("[SprRenderer] [insertMeshes] must provide at least 1 of each parameter");
-
-    if (meshIds.size() != transforms.size())
-        SprLog::error("[SprRenderer] [insertMeshes] size mismatch between meshIds and transforms");
-
-    m_sceneManager.insertMeshes(m_frameId, meshIds, materialsFlags, transforms);
-}
-
-
-void SprRenderer::loadAssets(SprResourceManager& rm){
-    m_srm = &rm;
-    m_sceneManager.initializeAssets(rm, &m_renderer.getDevice());
-    m_renderCoordinator.initRenderers(m_sceneManager);
+    m_sceneManager.updateMeshes(m_frameId, id, meshIds, {materialsFlags, meshIds.size()}, transform);
 }
 
 
