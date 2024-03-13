@@ -10,19 +10,20 @@ typedef enum {
 
     // === Imported Resources ===
     // models:
-    boomboxwithaxes = 16,
-    default_model = 734,
-    sponza = 82,
-    helmet = 66,
-    triangle = 11,
+    boomboxwithaxes = 8530,
+    default_model = 8596,
+    cube = 8515,
+    helmet = 8580,
+    bistro = 11,
+    triangle = 8525,
     duck = 3,
-    waterbottle = 52,
+    waterbottle = 8566,
 
     // textures:
-    default_input_white = 746,
-    default_color = 742,
-    px = 740,
-    default_input_black = 744,
+    default_input_white = 8608,
+    default_color = 8604,
+    px = 8602,
+    default_input_black = 8606,
 
     // shaders:
     // audio:
@@ -34,18 +35,19 @@ public:
     ska::flat_hash_map<std::string, uint32_t> idMap = 
     {
         // models
-        {"BoomBoxWithAxes", 16},
-        {"default_model", 734},
-        {"sponza", 82},
-        {"helmet", 66},
-        {"Triangle", 11},
+        {"BoomBoxWithAxes", 8530},
+        {"default_model", 8596},
+        {"Cube", 8515},
+        {"helmet", 8580},
+        {"bistro", 11},
+        {"Triangle", 8525},
         {"Duck", 3},
-        {"WaterBottle", 52},
+        {"WaterBottle", 8566},
         // textures
-        {"default_input_white", 746},
-        {"default_color", 742},
-        {"px", 740},
-        {"default_input_black", 744},
+        {"default_input_white", 8608},
+        {"default_color", 8604},
+        {"px", 8602},
+        {"default_input_black", 8606},
     };
 
     uint32_t getIdFromName(std::string name){
