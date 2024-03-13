@@ -9,7 +9,7 @@ ResourceLoader::ResourceLoader(){
 }
 
 template <typename T>
-T ResourceLoader::loadFromMetadata(ResourceMetadata metadata){
+void ResourceLoader::loadFromMetadata(ResourceMetadata metadata, T& data){
     // log unknown resource
     SprLog::error("[ResourceLoader] Unkown resource");
 }
@@ -30,7 +30,7 @@ T ResourceLoader::loadFromMetadata(ResourceMetadata metadata){
 // ║                 ...               ║
 // ╚═══════════════════════════════════╝
 template <>
-Model ResourceLoader::loadFromMetadata<Model>(ResourceMetadata metadata){
+void ResourceLoader::loadFromMetadata<Model>(ResourceMetadata metadata, Model& model){
     // open file
     std::ifstream f(
         ResourceTypes::getPath(metadata.resourceType)+
@@ -39,7 +39,6 @@ Model ResourceLoader::loadFromMetadata<Model>(ResourceMetadata metadata){
         std::ios::binary);
     if (!f.is_open()){
         SprLog::warn("[ResourceLoader] Model not found");
-        return Model();
     }
 
     uint32 meshCount;
@@ -60,15 +59,12 @@ Model ResourceLoader::loadFromMetadata<Model>(ResourceMetadata metadata){
     f.close();
 
     // ---- create Model ----
-    Model model;
     // instance data
     model.id = m_instanceId++;
     model.resourceId = metadata.resourceId;
     // resource data
     model.meshCount = meshCount;
     model.meshIds = meshIds;
-
-    return model;
 }
 
 
@@ -85,7 +81,7 @@ Model ResourceLoader::loadFromMetadata<Model>(ResourceMetadata metadata){
 // ║     attribute buffer id (4)       ║ // attributes buffer file
 // ╚═══════════════════════════════════╝
 template <>
-Mesh ResourceLoader::loadFromMetadata<Mesh>(ResourceMetadata metadata){
+void ResourceLoader::loadFromMetadata<Mesh>(ResourceMetadata metadata, Mesh& mesh){
     // open file
     std::ifstream f(
         ResourceTypes::getPath(metadata.resourceType)+
@@ -94,7 +90,6 @@ Mesh ResourceLoader::loadFromMetadata<Mesh>(ResourceMetadata metadata){
         std::ios::binary);
     if (!f.is_open()){
         SprLog::warn("[ResourceLoader] Mesh not found");
-        return Mesh();
     }
 
     uint32 materialId;
@@ -118,7 +113,6 @@ Mesh ResourceLoader::loadFromMetadata<Mesh>(ResourceMetadata metadata){
     f.close();
 
     // ---- create Mesh ----
-    Mesh mesh;
     // instance data
     mesh.id = m_instanceId++;
     mesh.resourceId = metadata.resourceId;
@@ -127,8 +121,6 @@ Mesh ResourceLoader::loadFromMetadata<Mesh>(ResourceMetadata metadata){
     mesh.indexBufferId = indexBufferId;
     mesh.positionBufferId = positionBufferId;
     mesh.attributesBufferId = attributesBufferId;
-
-    return mesh;
 }
 
 
@@ -189,7 +181,7 @@ Mesh ResourceLoader::loadFromMetadata<Mesh>(ResourceMetadata metadata){
 // ║     sentinel (4)                  ║ // terminate
 // ╚═══════════════════════════════════╝
 template <>
-Material ResourceLoader::loadFromMetadata<Material>(ResourceMetadata metadata){
+void ResourceLoader::loadFromMetadata<Material>(ResourceMetadata metadata, Material& material){
     uint32 materialFlags = 0;
 
     uint32 baseColorTexId = 0;
@@ -220,7 +212,6 @@ Material ResourceLoader::loadFromMetadata<Material>(ResourceMetadata metadata){
         std::ios::binary);
     if (!f.is_open()){
         SprLog::warn("[ResourceLoader] Material not found");
-        return Material();
     }
     bool keepParsing = true;
     while(!f.eof()){
@@ -286,7 +277,6 @@ Material ResourceLoader::loadFromMetadata<Material>(ResourceMetadata metadata){
     f.close();
 
     // ---- create Material ----
-    Material material;
     // instance data
     material.id = m_instanceId++;
     material.resourceId = metadata.resourceId;
@@ -319,7 +309,6 @@ Material ResourceLoader::loadFromMetadata<Material>(ResourceMetadata metadata){
     if (materialFlags & (0b1<<6)){ // double-sided
         material.doubleSided = true;
     }
-    return material;
 }
 
 
@@ -336,7 +325,7 @@ Material ResourceLoader::loadFromMetadata<Material>(ResourceMetadata metadata){
 // ║     components (4)                ║ // 1 - grey | 2 - grey,red | 3 - rgb | 4 - rgba
 // ╚═══════════════════════════════════╝
 template <>
-Texture ResourceLoader::loadFromMetadata<Texture>(ResourceMetadata metadata){
+void ResourceLoader::loadFromMetadata<Texture>(ResourceMetadata metadata, Texture& texture){
     // open file
     std::ifstream f(
         ResourceTypes::getPath(metadata.resourceType)+
@@ -345,7 +334,6 @@ Texture ResourceLoader::loadFromMetadata<Texture>(ResourceMetadata metadata){
         std::ios::binary);
     if (!f.is_open()){
         SprLog::warn("[ResourceLoader] Texture not found");
-        return Texture();
     }
 
     uint32 bufferId;
@@ -369,7 +357,6 @@ Texture ResourceLoader::loadFromMetadata<Texture>(ResourceMetadata metadata){
     f.close();
 
     // ---- create Texture ----
-    Texture texture;
     // instance data
     texture.id = m_instanceId++;
     texture.resourceId = metadata.resourceId;
@@ -378,8 +365,6 @@ Texture ResourceLoader::loadFromMetadata<Texture>(ResourceMetadata metadata){
     texture.height = height;
     texture.width = width;
     texture.components = components;
-
-    return texture;
 }
 
 
@@ -400,7 +385,7 @@ Texture ResourceLoader::loadFromMetadata<Texture>(ResourceMetadata metadata){
 // ║                 ...               ║
 // ╚═══════════════════════════════════╝
 template <>
-Buffer ResourceLoader::loadFromMetadata<Buffer>(ResourceMetadata metadata){
+void ResourceLoader::loadFromMetadata<Buffer>(ResourceMetadata metadata, Buffer& buffer){
     // open file
     std::ifstream f(
         ResourceTypes::getPath(metadata.resourceType)+
@@ -409,14 +394,12 @@ Buffer ResourceLoader::loadFromMetadata<Buffer>(ResourceMetadata metadata){
         std::ios::binary);
     if (!f.is_open()){
         SprLog::warn("[ResourceLoader] Buffer not found, id: " + std::to_string(metadata.resourceId) + ", name: " + metadata.name);
-        return Buffer();
     }
 
     unsigned char association[4];
     uint32 elementType;
     uint32 componentType;
     uint32 byteLength;
-    std::vector<uint8> data;
 
     // read association
     f.read((char*)&association, sizeof(uint32));
@@ -431,14 +414,13 @@ Buffer ResourceLoader::loadFromMetadata<Buffer>(ResourceMetadata metadata){
     f.read((char*)&byteLength, sizeof(uint32));
 
     // read data
-    data = std::vector<uint8>(byteLength);
-    f.read((char*)data.data(), byteLength);    
+    buffer.data.resize(byteLength);
+    f.read((char*)buffer.data.data(), byteLength);   
 
     // close file
     f.close();
 
     // ---- create Buffer ----
-    Buffer buffer;
     // instance data
     buffer.id = m_instanceId++;
     buffer.resourceId = metadata.resourceId;
@@ -446,9 +428,6 @@ Buffer ResourceLoader::loadFromMetadata<Buffer>(ResourceMetadata metadata){
     buffer.elementType = elementType;
     buffer.componentType = componentType;
     buffer.byteLength = byteLength;
-    buffer.data = data;
-
-    return buffer;
 }
 
 
@@ -456,8 +435,7 @@ Buffer ResourceLoader::loadFromMetadata<Buffer>(ResourceMetadata metadata){
 //    Audio - .***
 //    iw
 template <>
-Audio ResourceLoader::loadFromMetadata<Audio>(ResourceMetadata metadata){
-    return Audio();
+void ResourceLoader::loadFromMetadata<Audio>(ResourceMetadata metadata, Audio& audio){
 }
 
 
@@ -465,8 +443,7 @@ Audio ResourceLoader::loadFromMetadata<Audio>(ResourceMetadata metadata){
 //    Shader - .glsl
 //    iw
 template <>
-Shader ResourceLoader::loadFromMetadata<Shader>(ResourceMetadata metadata){
-    return Shader();
+void ResourceLoader::loadFromMetadata<Shader>(ResourceMetadata metadata, Shader& shader){
 }
 
 }

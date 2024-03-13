@@ -17,7 +17,7 @@ public:
     ~ResourceLoader(){}
 
     template <typename T>
-    T loadFromMetadata(ResourceMetadata metadata);
+    void loadFromMetadata(ResourceMetadata metadata, T& data);
 
 private:
     // instance id

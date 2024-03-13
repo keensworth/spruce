@@ -135,6 +135,9 @@ typedef struct Texture : ResourceInstance {
 
 // buffer
 typedef struct Buffer : ResourceInstance {
+    ~Buffer(){
+        
+    }
     uint32 elementType   = 0;
     uint32 componentType = 0;
     uint32 byteLength    = 0;

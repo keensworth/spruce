@@ -20,6 +20,10 @@ public:
     SprResourceManager();
     ~SprResourceManager();
 
+    uint32 getSize(){
+        return m_resourceMap[typeid(Buffer)]->getSize();
+    }
+
     // U := ResourceType
     template <typename U>
     Handle<U> getHandle(uint32 id){
@@ -43,6 +47,27 @@ public:
         auto typedCache = dynamic_cast<TypedResourceCache<U>*>(resourceCache);
         auto handle = typedCache->getHandle(id);
         return typedCache->getData(handle);
+    }
+
+    // U := ResourceType
+    template <typename U>
+    void deleteData(uint32 id){
+        auto resourceCache = m_resourceMap[typeid(U)];
+        auto typedCache = dynamic_cast<TypedResourceCache<U>*>(resourceCache);
+        auto handle = typedCache->getHandle(id);
+        return typedCache->deleteData(handle);
+    }
+
+    // U := ResourceType
+    template <typename U>
+    void deleteData(Handle<U> handle){
+        auto resourceCache = m_resourceMap[typeid(U)];
+        auto typedCache = dynamic_cast<TypedResourceCache<U>*>(resourceCache);
+        return typedCache->deleteData(handle);
+    }
+
+    void destroyBuffers(){
+        m_resourceMap[typeid(Buffer)]->destroy();
     }
 
     std::vector<uint32>& getModelIds();

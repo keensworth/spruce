@@ -19,6 +19,13 @@ public:
 
     // get resource's data from handle
     auto getData(auto handle);
+
+    // delete resource's data from handle
+    void deleteData(auto handle);
+
+    virtual uint32 getSize() = 0;
+
+    virtual void destroy() = 0;
 };
 
 template <typename T>
@@ -46,16 +53,32 @@ public:
             return handle;
         
         // handle isn't valid or isn't up-to-date in pool, load data and update
-        T data = m_resourceLoader.loadFromMetadata<T>(m_metadata[id]);
+        T data;
+        m_resourceLoader.loadFromMetadata<T>(m_metadata[id], data);
         handle = m_data.insert(data);
         m_handles[id] = handle;
 
         return handle;
     }
 
+    uint32 getSize(){
+        return m_data.getSize();
+    }
+
     // get data from pool with handle
     T* getData(Handle<T> handle){
         return m_data.get(handle);    
+    }
+
+    void deleteData(Handle<T> handle){
+        if (!handle.isValid() || !m_data.isValidHandle(handle)){
+            return;
+        }
+        m_data.remove(handle);
+    }
+
+    void destroy(){
+        m_data.destroy();
     }
 
     friend class SprResourceManager;
