@@ -30,7 +30,8 @@ public:
         Handle<TextureAttachment> depthAttachment,
         Handle<TextureAttachment> visibilityTexture,
         Handle<TextureAttachment> shadowCascades[MAX_CASCADES],
-        Handle<Buffer> shadowData)
+        Handle<Buffer> shadowData,
+        Handle<TextureAttachment> volumetricLighting)
     {
         m_globalDescSet = globalDescSet;
         m_globalDescSetLayout = globalDescSetLayout;
@@ -68,7 +69,7 @@ public:
             .colorAttachments = {
                 {
                     .texture = m_attachment,
-                    .finalLayout = Flags::ImageLayout::ATTACHMENT
+                    .finalLayout = Flags::ImageLayout::READ_ONLY
                 }
             }
         });
@@ -78,7 +79,8 @@ public:
             .textures = {
                 {.binding = 0}, // depth
                 {.binding = 1}, // visibility (ao)
-                {.binding = 2, .count = MAX_CASCADES}  // shadow cascade depth
+                {.binding = 2, .count = MAX_CASCADES}, // shadow cascade depth
+                {.binding = 4} // volumetric lighting/scattering
             },
             .buffers = {
                 {.binding = 3} // sun shadow data
@@ -116,7 +118,11 @@ public:
                 {
                     .attachments = {shadowCascades, MAX_CASCADES},
                     .layout = Flags::ImageLayout::READ_ONLY
-                }
+                },
+                {
+                    .attachment = volumetricLighting,
+                    .layout = Flags::ImageLayout::READ_ONLY
+                },
             },
             .buffers = {
                 {
@@ -129,11 +135,11 @@ public:
     }
 
 
-    void render(CommandBuffer& cb, BatchManager& batchManager){
+    void render(CommandBuffer& cb, std::vector<Batch>& batches){
         RenderPassRenderer& passRenderer = cb.beginRenderPass(m_renderPass, glm::vec4(0.45098f,0.52549f,0.47058f,1.f));
         
-        std::vector<Batch> batches;
-        batchManager.getBatches({.hasAny = MTL_ALL}, batches);
+        // std::vector<Batch> batches;
+        // batchManager.getBatches({.hasAny = MTL_ALL}, batches);
 
         passRenderer.drawSubpass({
             .shader = m_shader, 
