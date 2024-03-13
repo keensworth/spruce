@@ -42,7 +42,17 @@ debugCallback(VkDebugUtilsMessageSeverityFlagBitsEXT messageSeverity,
             const VkDebugUtilsMessengerCallbackDataEXT* pCallbackData,
             void* pUserData) {
     
-    SprLog::info("[VK VALIDATION LAYERS]: " + std::string(pCallbackData->pMessage));
+    if (messageType & VK_DEBUG_UTILS_MESSAGE_SEVERITY_VERBOSE_BIT_EXT)
+        SprLog::info("[VK VALIDATION LAYERS]: " + std::string(pCallbackData->pMessage));
+    else if (messageType & VK_DEBUG_UTILS_MESSAGE_SEVERITY_INFO_BIT_EXT)
+        SprLog::info("[VK VALIDATION LAYERS]: " + std::string(pCallbackData->pMessage));
+    else if (messageType & VK_DEBUG_UTILS_MESSAGE_SEVERITY_WARNING_BIT_EXT)
+        SprLog::warn("[VK VALIDATION LAYERS]: " + std::string(pCallbackData->pMessage));
+    else if (messageType & VK_DEBUG_UTILS_MESSAGE_SEVERITY_ERROR_BIT_EXT)
+        SprLog::error("[VK VALIDATION LAYERS]: " + std::string(pCallbackData->pMessage), false);
+    else 
+        SprLog::warn("[VK VALIDATION LAYERS]: " + std::string(pCallbackData->pMessage));
+    
 
     return VK_FALSE;
 }
