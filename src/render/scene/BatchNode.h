@@ -17,9 +17,11 @@ public:
     ~BatchNode();
 
     void add(DrawData draw, Batch batchInfo);
+    void remove(DrawData draw, Batch batchInfo);
     void remove(uint32 materialFlags);
     void getBatches(MaterialQuery query, std::vector<Batch>& result);
     void getDraws(MaterialQuery query, TempBuffer<DrawData>& result);
+    void reset();
 
     uint32 getHeight(){
         return m_height;
@@ -44,6 +46,7 @@ private:
     void getDrawsRec(MaterialQuery query, TempBuffer<DrawData>& result, QueryType queryType);
 
     void addLeafData(uint32 branchIndex, DrawData draw, Batch batchInfo);
+    void removeLeafData(uint32 branchIndex, DrawData draw, Batch batchInfo);
     void removeLeafData(uint32 branchIndex);
     void getLeafBatches(uint32 branchIndex, std::vector<Batch>& dst);
     void getLeafDraws(uint32 branchIndex, TempBuffer<DrawData>& dst);

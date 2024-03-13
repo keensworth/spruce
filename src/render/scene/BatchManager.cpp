@@ -18,6 +18,11 @@ void BatchManager::addDraw(DrawData draw, Batch batchInfo){
     m_drawCount++;
 }
 
+void BatchManager::removeDraw(DrawData draw, Batch batchInfo){
+    m_batches.remove(draw, batchInfo);
+    m_drawCount--;
+}
+
 void BatchManager::getDrawData(TempBuffer<DrawData>& result){
     m_batches.getDraws({.excludes = MTL_NONE}, result);
 }
@@ -57,8 +62,8 @@ uint32 BatchManager::getDrawCount(){
 }
 
 void BatchManager::reset(){
-    m_batches = BatchNode();
-    m_drawCount = 0;
+    //m_batches.reset();
+    //m_drawCount = 0;
 }
 
 void BatchManager::destroy(){

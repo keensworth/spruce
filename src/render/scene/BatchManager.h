@@ -33,6 +33,7 @@ private:
     uint32 m_cubeVertexOffset;
 
     void addDraw(DrawData draw, Batch batchInfo);
+    void removeDraw(DrawData draw, Batch batchInfo);
     void getDrawData(TempBuffer<DrawData>& result);
     void setQuadInfo(Batch quadBatch, uint32 quadVertexOffset);
     void setCubeInfo(Batch cubeBatch, uint32 cubeVertexOffset);

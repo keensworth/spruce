@@ -44,6 +44,23 @@ void BatchNode::add(DrawData draw, Batch batchInfo){
     currNode->addLeafData(currIndex, draw, batchInfo);
 }
 
+void BatchNode::remove(DrawData draw, Batch batchInfo){
+    uint32 currIndex;
+    BatchNode* currNode = this;
+    for (uint32 height = m_height; height > 0; height--){
+        currIndex = subIndex(batchInfo.materialFlags, height);
+
+        if (!currNode->branchInitialized(currIndex)){
+            currNode->buildBranch(currIndex, height);
+        }
+
+        currNode = currNode->getBranch(currIndex);
+    }
+
+    currIndex = subIndex(batchInfo.materialFlags, currNode->getHeight());
+    currNode->removeLeafData(currIndex, draw, batchInfo);
+}
+
 
 void BatchNode::remove(uint32 materialFlags){
     uint32 currIndex;
@@ -130,6 +147,20 @@ void BatchNode::getDraws(MaterialQuery query, TempBuffer<DrawData>& result){
 }
 
 
+void BatchNode::reset(){
+    for(uint32 branchMask = 0; branchMask < 16; branchMask++){
+        if (!branchInitialized(branchMask))
+            continue;
+
+        if (m_height > 0){
+            m_nodeData[branchMask]->reset();
+        } else {
+            m_leafData[branchMask].clear();
+        }
+    }
+}
+
+
 void BatchNode::getDrawsRec(MaterialQuery query, TempBuffer<DrawData>& result, QueryType queryType){
     uint32 hasAllMask     = subIndex(query.hasAll, m_height);
     uint32 hasAnyMask     = subIndex(query.hasAny, m_height);
@@ -184,6 +215,29 @@ void BatchNode::addLeafData(uint32 branchIndex, DrawData draw, Batch batchInfo){
 
     // add draw to existing draw batch 
     leafNode[batchInfo.meshId].draws.push_back(draw);
+}
+
+void BatchNode::removeLeafData(uint32 branchIndex, DrawData draw, Batch batchInfo){
+    ska::flat_hash_map<uint32, DrawBatch>& leafNode = m_leafData.at(branchIndex);
+
+    if (leafNode.empty()){
+        return;
+    }
+    // insert a new drawbatch if none exists for this material/mesh pair
+    if (!leafNode.count(batchInfo.meshId)) {
+        return;
+    } else {
+        //leafNode[batchInfo.meshId].draws.erase(leafNode[batchInfo.meshId].draws.);
+        uint32 index = 0;
+        for (DrawData& drawItem : leafNode[batchInfo.meshId].draws){
+            if (drawItem.transformIndex == draw.transformIndex){
+                leafNode[batchInfo.meshId].draws.erase(leafNode[batchInfo.meshId].draws.begin()+index);
+                break;
+            }
+            index++;
+        }
+        leafNode[batchInfo.meshId].batch.drawCount--;
+    }
 }
 
 void BatchNode::removeLeafData(uint32 branchIndex){
