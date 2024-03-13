@@ -324,27 +324,49 @@ void GLTFParser::handleBuffer(
         bool writeToFile,
         BufferData dataType,
         glm::mat4& transform){    
-
     // check if we need to pad position to vec4, if it isn't already
-    bool needsPadding = false;
+    bool needsPosPadding = false;
     if (dataType == SPR_POSITION){
         assert (elementType == TINYGLTF_TYPE_VEC3 || elementType == TINYGLTF_TYPE_VEC4);
         if (elementType == TINYGLTF_TYPE_VEC3){
             byteLength = (4.f/3.f)*byteLength;
             elementType = TINYGLTF_TYPE_VEC4;
-            needsPadding = true;
+            needsPosPadding = true;
         }
     }
+
+    bool needsIndicesPadding = false;
+    if (dataType == SPR_INDICES){
+        if (componentType == TINYGLTF_COMPONENT_TYPE_UNSIGNED_SHORT){
+            byteLength = 2*byteLength;
+            elementType = TINYGLTF_TYPE_SCALAR;
+            componentType = TINYGLTF_COMPONENT_TYPE_UNSIGNED_INT;
+            needsIndicesPadding = true;
+        }
+    }
+
+
 
     // write slice of buffer into new buffer
     const unsigned char* bufferData = buffer.data.data();
     unsigned char* data = new unsigned char[byteLength];
-    if (!needsPadding) {
-        for (int32_t i = 0; i < byteLength; i++){
-            data[i] = bufferData[i+byteOffset];
+    if (!needsPosPadding) {
+        if (!needsIndicesPadding){
+            for (int32_t i = 0; i < byteLength; i++){
+                data[i] = bufferData[i+byteOffset];
+            }
+        } else {
+            uint32_t index = 0;
+            for (int32_t i = 0; i < byteLength; i++){
+                if (i%4 >= 2){ 
+                    data[i] = 0;
+                } else {
+                    data[i] = bufferData[index+byteOffset];
+                    index++;
+                }
+            }
         }
     } else { // pad vec3 to vec4
-
         // get 1.0f as byte array
         char float1fByteArray[4];
         union {
@@ -428,7 +450,7 @@ void GLTFParser::compressImageData(
     createInfo.baseHeight = height;
     createInfo.baseDepth = 1;
     createInfo.numDimensions = 2;
-    createInfo.numLevels = std::floor(log2(std::max(width, height))) + 1;
+    createInfo.numLevels = width == height ? std::floor(log2(std::max(width, height))) + 1 : 1;
     createInfo.numLayers = 1;
     createInfo.numFaces = 1;
     createInfo.isArray = KTX_FALSE;
@@ -454,31 +476,33 @@ void GLTFParser::compressImageData(
 
     // mip chain
     unsigned char* mipData[levels-1];
-    for (uint32_t i = 1; i < levels; i++){
-        uint32_t levelExtent = std::max(maxExtent / (1 << i), 1u);
-        mipData[i-1] = (unsigned char*)malloc(levelExtent*levelExtent*components);
-    }
-
-    uint32_t prevExtent = maxExtent;
-    uint32_t prevSize = srcSize;
-    for (uint32_t i = 1; i < levels; i++){
-        uint32_t currExtent = std::max(maxExtent / (1 << i), 1u);
-        uint32_t currSize = currExtent*currExtent*components;
-        level = i;
-        layer = 0;
-        faceSlice = 0;                           
-
-        createMip(i == 1 ? data : mipData[i-2], prevSize, prevExtent, mipData[i-1], currSize, currExtent);
-        result = ktxTexture_SetImageFromMemory(ktxTexture(texture), level, layer, faceSlice, mipData[i-1], currSize);
-        if (result) {
-            std::cerr << "Failed to set (mip) image from memory, code: " << ktxErrorString(result) << std::endl;
+    if (width == height){
+        for (uint32_t i = 1; i < levels; i++){
+            uint32_t levelExtent = std::max(maxExtent / (1 << i), 1u);
+            mipData[i-1] = (unsigned char*)malloc(levelExtent*levelExtent*components);
         }
 
-        prevExtent = currExtent;
-        prevSize = currSize;
+        uint32_t prevExtent = maxExtent;
+        uint32_t prevSize = srcSize;
+        for (uint32_t i = 1; i < levels; i++){
+            uint32_t currExtent = std::max(maxExtent / (1 << i), 1u);
+            uint32_t currSize = currExtent*currExtent*components;
+            level = i;
+            layer = 0;
+            faceSlice = 0;                           
 
-        if (currExtent == 1)
-            break;
+            createMip(i == 1 ? data : mipData[i-2], prevSize, prevExtent, mipData[i-1], currSize, currExtent);
+            result = ktxTexture_SetImageFromMemory(ktxTexture(texture), level, layer, faceSlice, mipData[i-1], currSize);
+            if (result) {
+                std::cerr << "Failed to set (mip) image from memory, code: " << ktxErrorString(result) << std::endl;
+            }
+
+            prevExtent = currExtent;
+            prevSize = currSize;
+
+            if (currExtent == 1)
+                break;
+        }
     }
     
     // BasisU encode
@@ -504,8 +528,10 @@ void GLTFParser::compressImageData(
     }
     outDataSize = (uint32_t)outSize;
     ktxTexture_Destroy(ktxTexture(texture));
-    for (uint32_t i = 1; i < levels; i++){
-        free(mipData[i-1]);
+    if (width == height){
+        for (uint32_t i = 1; i < levels; i++){
+            free(mipData[i-1]);
+        }
     }
 }
 
@@ -635,9 +661,12 @@ void GLTFParser::handleBufferView(
         BufferData dataType,
         glm::mat4& transform){
     // properties
+
     uint32_t adjustedByteOffset = bufferView.byteOffset + byteOffset;
-    uint32_t byteLength = bufferView.byteLength - byteOffset;
+    //uint32_t byteLength = bufferView.byteLength - byteOffset;
+    uint32_t byteLength = elementCount * bytesPerElement;
     uint32_t byteStride = bufferView.byteStride;
+
     if (byteStride == 0)
         byteStride = bytesPerElement;
 
@@ -646,13 +675,14 @@ void GLTFParser::handleBufferView(
 
     // handle buffer
     if (byteStride == bytesPerElement){
-        if (!association.compare("sbuf")) // normal case
+        if (!association.compare("sbuf")){ // normal case
             handleBuffer(buffer, association, adjustedByteOffset, byteLength, bytesPerElement, elementCount, elementType, componentType, bufferId, out, writeToFile, dataType, transform);
-        else  // handle buffer that contains MIME image data
+        }else{  // handle buffer that contains MIME image data
             handleMIMEImageBuffer(buffer, association, adjustedByteOffset, byteLength, bytesPerElement, elementCount, elementType, componentType, bufferId, dataType);
-    } else
+        }
+    } else{
         handleBufferInterleaved(buffer, association, adjustedByteOffset, byteLength, byteStride, bytesPerElement, elementType, componentType, bufferId, out, writeToFile);
-    
+    }
 }
 
 uint32_t GLTFParser::handleAccessor(const tinygltf::Accessor& accessor, std::vector<uint8_t>& out, bool writeToFile, BufferData dataType, glm::mat4& transform){
@@ -825,7 +855,6 @@ uint32_t GLTFParser::interleaveVertexAttributes(
         std::vector<uint8_t>& colorBuffer,
         glm::mat4& transform){
     uint32_t attributesId = m_id++;
-
     uint32_t bytesPerNormal = 12;
     uint32_t bytesPerColor = 12;
     uint32_t bytesPerTexCoord = 8;
@@ -970,8 +999,9 @@ uint32_t GLTFParser::handlePrimitive(const tinygltf::Primitive& primitive, glm::
 
     // handle material
     uint32_t materialId = 0;
-    if (materialIndex >= 0)
+    if (materialIndex >= 0){
         materialId = handleMaterial(model.materials[materialIndex]);
+    }
 
     // write prim (mesh) to file
     writeMeshFile(materialId, indicesId, positionId, attributesId, meshId);
