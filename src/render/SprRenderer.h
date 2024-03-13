@@ -54,6 +54,7 @@ public:
 
     // insert model (recurring)
     void insertModel(uint32 id, uint32 modelId);
+    void removeModel(uint32 id, uint32 modelId);
     void insertModel(uint32 id, uint32 modelId, uint32 materialFlags);
 
     // update existing model's transform

@@ -6,6 +6,7 @@
 #include "scene/SceneData.h"
 #include "glm/ext/matrix_transform.hpp"
 #include "glm/gtx/quaternion.hpp"
+#include "vulkan/gfx_vulkan_core.h"
 #include <glm/gtc/matrix_inverse.hpp>
 
 namespace spr {
@@ -111,8 +112,10 @@ void SprRenderer::insertModel(uint32 id, uint32 modelId, const gfx::Transform& t
     uint32 materialsFlags[meshIds.size()];
     for(uint32 i = 0; i < meshIds.size(); i++)
         materialsFlags[i] = m_srm->getData<Mesh>(meshIds[i])->materialFlags;
-
-    m_sceneManager.insertMeshes(m_frameId, id, meshIds, {materialsFlags, meshIds.size()}, transform);
+    
+    for (uint32 i = 0; i < gfx::MAX_FRAME_COUNT; i++){
+        m_sceneManager.insertMeshes(m_frameId+i, id, meshIds, {materialsFlags, meshIds.size()}, transform);
+    }
 }
 
 void SprRenderer::insertModel(uint32 id, uint32 modelId, uint32 materialFlags, const gfx::Transform& transform){
@@ -139,6 +142,17 @@ void SprRenderer::insertModel(uint32 id, uint32 modelId, uint32 materialFlags){
     Span<uint32> meshIds = model->meshIds;
 
     m_sceneManager.insertMeshes(m_frameId, id, meshIds, materialFlags);
+}
+
+void SprRenderer::removeModel(uint32 id, uint32 modelId){
+    spr::Model* model = m_srm->getData<Model>(modelId);
+    Span<uint32> meshIds = model->meshIds;
+    
+    uint32 materialsFlags[meshIds.size()];
+    for(uint32 i = 0; i < meshIds.size(); i++)
+        materialsFlags[i] = m_srm->getData<Mesh>(meshIds[i])->materialFlags;
+
+    m_sceneManager.removeMeshes(m_frameId, id, meshIds, {materialsFlags, meshIds.size()});
 }
 
 
