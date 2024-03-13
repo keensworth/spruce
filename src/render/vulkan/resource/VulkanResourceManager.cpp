@@ -109,7 +109,7 @@ void VulkanResourceManager::init(VulkanDevice& device, glm::uvec3 screenDim){
 void VulkanResourceManager::destroy(){
     // flush deletion queue
     for(uint32 i = 0; i < MAX_FRAME_COUNT; i++){
-        m_deletionQueue[i].execute();
+        flushDeletionQueue(i);
     }
 
     // delete buffer cache
@@ -188,7 +188,7 @@ void VulkanResourceManager::allocate(Handle<Buffer> handle, VkBufferCreateInfo& 
         };
     } else if (buffer->memType == DEVICE){
         // device local
-        uint32 dedicated = buffer->byteSize >= (1<<22) ? VMA_ALLOCATION_CREATE_DEDICATED_MEMORY_BIT : 0;
+        uint32 dedicated = buffer->byteSize >= (1<<26) ? VMA_ALLOCATION_CREATE_DEDICATED_MEMORY_BIT : 0;
         allocationInfo = {
             .flags = dedicated,
             .usage = VMA_MEMORY_USAGE_AUTO_PREFER_DEVICE
@@ -204,6 +204,14 @@ void VulkanResourceManager::allocate(Handle<Buffer> handle, VkBufferCreateInfo& 
     
     // create/allocate buffer
     VK_CHECK(vmaCreateBuffer(m_allocator, &info, &allocationInfo, &(buffer->buffer), &(buffer->alloc), &(buffer->allocInfo)));
+
+    VkMemoryPropertyFlags memPropFlags;
+    vmaGetAllocationMemoryProperties(m_allocator, buffer->alloc, &memPropFlags);
+ 
+    if(memPropFlags & VK_MEMORY_PROPERTY_HOST_COHERENT_BIT && buffer->memType == DEVICE){
+        SprLog::debug("=========================== BUFFER HOST VISIBLE, size: ", buffer->byteSize);
+        SprLog::debug("                                             indended: ", buffer->memType);
+    }
 
     return;
 }
@@ -226,6 +234,13 @@ void VulkanResourceManager::allocate(Handle<Texture> handle, VkImageCreateInfo& 
 
     // create/allocate texture
     VK_CHECK(vmaCreateImage(m_allocator, &info, &allocationInfo, &texture->image, &texture->alloc, &texture->allocInfo));
+
+    VkMemoryPropertyFlags memPropFlags;
+    vmaGetAllocationMemoryProperties(m_allocator, texture->alloc, &memPropFlags);
+ 
+    if(memPropFlags & VK_MEMORY_PROPERTY_HOST_COHERENT_BIT){
+        SprLog::debug("=========================== ~~~~~~~~ TEXTURE HOST VISIBLE");
+    }
     return;
 }
 
@@ -334,8 +349,8 @@ Handle<Texture> VulkanResourceManager::create<Texture>(TextureDesc desc){
         .maxAnisotropy = desc.sampler.anisotropy,
         .compareEnable = VK_TRUE,
         .compareOp     = (VkCompareOp)desc.sampler.compare,
-        .minLod        = 0,
-        .maxLod        = VK_LOD_CLAMP_NONE,
+        .minLod        = 0.f,
+        .maxLod        = desc.view.mips > 1 ? VK_LOD_CLAMP_NONE : 0.f,
         .borderColor   = VK_BORDER_COLOR_INT_TRANSPARENT_BLACK,
         .unnormalizedCoordinates = VK_FALSE
     };
@@ -1875,7 +1890,6 @@ template<>
 void VulkanResourceManager::remove<Buffer>(Handle<Buffer> handle){
     BufferCache* resourceCache = ((BufferCache*) m_resourceMap[typeid(Buffer)]);
     Buffer* buffer = get<Buffer>(handle);
-
     m_deletionQueue[m_frameId % MAX_FRAME_COUNT].push_function([=]() {
         vmaDestroyBuffer(m_allocator, buffer->buffer, buffer->alloc);
         resourceCache->remove(handle);
