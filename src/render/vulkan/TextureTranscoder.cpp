@@ -3,6 +3,7 @@
 #include "debug/SprLog.h"
 #include "ktx.h"
 #include "ktxvulkan.h"
+#include <cstring>
 
 namespace spr::gfx {
 
@@ -95,11 +96,14 @@ TranscodeResult TextureTranscoder::transcode(uint8* data, uint32 size, uint32 wi
     uint32 sizeBytes = ktxTexture_GetDataSize(ktxTexture(texture));
     ktx_uint8_t* transcodedData = ktxTexture_GetData(ktxTexture(texture)) + offset;
 
-    m_deletionQueue.push_function([=]() {
-        ktxTexture_Destroy(ktxTexture(texture));
-    });
-    
-    return {format, mipLevels, layers, sizeBytes, transcodedData};
+    // m_deletionQueue.push_function([=]() {
+    //     ktxTexture_Destroy(ktxTexture(texture));
+    // });
+    std::vector<uint8> dataVec;
+    dataVec.resize(sizeBytes);
+    std::memcpy(dataVec.data(), transcodedData, sizeBytes);
+    ktxTexture_Destroy(ktxTexture(texture));
+    return {format, mipLevels, layers, sizeBytes, dataVec};
 }
 
 bool TextureTranscoder::formatSupported(VkFormat format){

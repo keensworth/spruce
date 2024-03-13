@@ -15,7 +15,7 @@ struct TranscodeResult {
     uint32 mips;
     uint32 layers;
     uint32 sizeBytes;
-    uint8* transcodedData;
+    std::vector<uint8> transcodedData;
 };
 
 class TextureTranscoder{
