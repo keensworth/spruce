@@ -3,6 +3,7 @@
 #include "renderers/BlurRenderer.h"
 #include "renderers/DebugNormalsRenderer.h"
 #include "renderers/DepthPrepassRenderer.h"
+#include "renderers/FXAARenderer.h"
 #include "renderers/GTAORenderer.h"
 #include "renderers/UnlitMeshRenderer.h"
 #include "renderers/LitMeshRenderer.h"
@@ -10,6 +11,7 @@
 #include "renderers/TestRenderer.h"
 #include "renderers/DebugMeshRenderer.h"
 #include "renderers/SunShadowRenderer.h"
+#include "renderers/VolumetricLightRenderer.h"
 #include "vulkan/FrameRenderer.h"
 #include "vulkan/ImGuiRenderer.h"
 
@@ -61,7 +63,9 @@ private:
     DepthPrepassRenderer m_depthPrepassRenderer;
     GTAORenderer m_gtaoRenderer;
     BlurRenderer m_blurRenderer;
+    FXAARenderer m_fxaaRenderer;
     SunShadowRenderer m_sunShadowRenderer;
+    VolumetricLightRenderer m_volumetricLightRenderer;
     UnlitMeshRenderer m_unlitMeshRenderer;
     LitMeshRenderer m_litMeshRenderer;
     SkyboxRenderer m_skyboxRenderer;
