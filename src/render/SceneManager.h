@@ -36,12 +36,14 @@ public:
     void init(VulkanResourceManager& rm);
 
     void insertDraws(uint32 frame, uint32 id, Span<uint32> meshIds, Span<uint32> materialsFlags, uint32 transformIndex, bool sharedMaterial);
+    void removeDraws(uint32 frame, uint32 id, Span<uint32> meshIds, Span<uint32> materialsFlags, uint32 transformIndex);
 
     void insertMeshes(uint32 frame, uint32 id, Span<uint32> meshIds, Span<uint32> materialsFlags, const Transform& transform);
     void insertMeshes(uint32 frame, uint32 id, Span<uint32> meshIds, uint32 materialFlags, const Transform& transform);
 
     void insertMeshes(uint32 frame, uint32 id, Span<uint32> meshIds, Span<uint32> materialsFlags);
     void insertMeshes(uint32 frame, uint32 id, Span<uint32> meshIds, uint32 materialFlags);
+    void removeMeshes(uint32 frame, uint32 id, Span<uint32> meshIds, Span<uint32> materialsFlags);
 
     void updateMeshes(uint32 frame, uint32 id, Span<uint32> meshIds, Span<uint32> materialsFlags, const Transform& transform);
     void updateMeshes(uint32 frame, uint32 id, Span<uint32> meshIds, uint32 materialFlags , const Transform& transform);

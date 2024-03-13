@@ -18,6 +18,8 @@
 #include "../debug/SprLog.h"
 #include <glm/ext/matrix_clip_space.hpp>
 #include "vulkan/TextureTranscoder.h"
+#include <iostream>
+#include<unistd.h>  
 
 
 namespace spr::gfx {
@@ -72,15 +74,37 @@ void SceneManager::insertDraws(uint32 frame, uint32 id, Span<uint32> meshIds, Sp
     }
 }
 
+void SceneManager::removeDraws(uint32 frame, uint32 id, Span<uint32> meshIds, Span<uint32> materialsFlags, uint32 transformIndex){
+    for (uint32 i = 0; i < meshIds.size(); i++){
+        // get mesh data and fill draw
+        MeshInfo& meshInfo = m_meshInfo[meshIds[i]];
+        DrawData draw = {
+            .vertexOffset   = meshInfo.vertexOffset,  
+            .materialIndex  = meshInfo.materialIndex, 
+            .transformIndex = transformIndex
+        };
+
+        // fill out batch info, which will either initialize
+        // a new batch or update an existing one
+        Batch batchInfo = {
+            .meshId         = meshIds[i],
+            .materialFlags  = materialsFlags[i],
+            .indexCount     = meshInfo.indexCount,
+            .firstIndex     = meshInfo.firstIndex,
+            .drawDataOffset = 0,
+            .drawCount      = 1
+        };
+
+        m_batchManagers[frame % MAX_FRAME_COUNT].removeDraw(draw, batchInfo);
+    }
+}
+
 
 void SceneManager::insertMeshes(uint32 frame, uint32 id, Span<uint32> meshIds, Span<uint32> materialsFlags, const Transform& transform){
     bool sharedMaterial = (meshIds.size() != materialsFlags.size() && materialsFlags.size() == 1);
 
     uint32 transformIndex = m_transforms[frame % MAX_FRAME_COUNT].insert(transform);
     m_idTransformIndexMap[id] = transformIndex;
-    for (uint32 i = 1; i < MAX_FRAME_COUNT; i++){
-        m_transforms[(frame + i) % MAX_FRAME_COUNT].insert(transform);
-    }
 
     if (frame >= MAX_FRAME_COUNT)
         queueTransformUpdate(transformIndex);
@@ -91,9 +115,6 @@ void SceneManager::insertMeshes(uint32 frame, uint32 id, Span<uint32> meshIds, S
 void SceneManager::insertMeshes(uint32 frame, uint32 id, Span<uint32> meshIds, uint32 materialFlags , const Transform& transform){
     uint32 transformIndex = m_transforms[frame % MAX_FRAME_COUNT].insert(transform);
     m_idTransformIndexMap[id] = transformIndex;
-    for (uint32 i = 1; i < MAX_FRAME_COUNT; i++){
-        m_transforms[(frame + i) % MAX_FRAME_COUNT].insert(transform);
-    }
 
     if (frame >= MAX_FRAME_COUNT)
         queueTransformUpdate(transformIndex);
@@ -116,6 +137,12 @@ void SceneManager::insertMeshes(uint32 frame, uint32 id, Span<uint32> meshIds, u
     insertDraws(frame, id, meshIds, {materialFlags}, transformIndex, true);
 }
 
+void SceneManager::removeMeshes(uint32 frame, uint32 id, Span<uint32> meshIds, Span<uint32> materialsFlags){
+    uint32 transformIndex = m_idTransformIndexMap[id];
+
+    removeDraws(frame, id, meshIds, materialsFlags, transformIndex);
+}
+
 
 void SceneManager::updateMeshes(uint32 frame, uint32 id, Span<uint32> meshIds, Span<uint32> materialsFlags, const Transform& transform){
     bool sharedMaterial = (meshIds.size() != materialsFlags.size() && materialsFlags.size() == 1);
@@ -129,7 +156,7 @@ void SceneManager::updateMeshes(uint32 frame, uint32 id, Span<uint32> meshIds, S
     if (frame >= MAX_FRAME_COUNT)
         queueTransformUpdate(transformIndex);
 
-    insertDraws(frame, id, meshIds, materialsFlags, transformIndex, sharedMaterial);
+    //insertDraws(frame, id, meshIds, materialsFlags, transformIndex, sharedMaterial);
 }
 
 void SceneManager::updateMeshes(uint32 frame, uint32 id, Span<uint32> meshIds, uint32 materialFlags , const Transform& transform){
@@ -142,7 +169,7 @@ void SceneManager::updateMeshes(uint32 frame, uint32 id, Span<uint32> meshIds, u
     if (frame >= MAX_FRAME_COUNT)
         queueTransformUpdate(transformIndex);
 
-    insertDraws(frame, id, meshIds, {materialFlags}, transformIndex, true);
+    //insertDraws(frame, id, meshIds, {materialFlags}, transformIndex, true);
 }
 
 
@@ -176,20 +203,29 @@ void SceneManager::updateCamera(uint32 frame, glm::vec2 screenDim, const Camera&
 
 
 void SceneManager::uploadGlobalResources(UploadHandler& uploadHandler){
-    uploadHandler.uploadBuffer(m_assetLoader.getVertexPositionData(), m_positionsBuffer);
-    uploadHandler.uploadBuffer(m_assetLoader.getVertexAttributeData(), m_attributesBuffer);
-    uploadHandler.uploadBuffer(m_assetLoader.getMaterialData(), m_materialsBuffer);
-    uploadHandler.uploadBuffer(m_assetLoader.getVertexIndicesData(), m_indexBuffer);
-
     std::vector<TextureInfo>& textures = m_assetLoader.getTextureData();
     for (uint32 i = 0; i < m_assetLoader.getPrimitiveCounts().textureCount; i++){
         uploadHandler.uploadTexture(textures[i].data, m_textures[i]);
     }
+    m_assetLoader.clearTextures();
 
     std::vector<TextureInfo>& cubemaps = m_assetLoader.getCubemapData();
     for (uint32 i = 0; i < m_assetLoader.getPrimitiveCounts().cubemapCount; i++){
         uploadHandler.uploadTexture(cubemaps[i].data, m_cubemaps[i]);
     }
+    m_assetLoader.clearCubemaps();
+
+    uploadHandler.uploadBuffer(m_assetLoader.getVertexAttributeData(), m_attributesBuffer);
+    m_assetLoader.clearVertexAttributes();
+    
+    uploadHandler.uploadBuffer(m_assetLoader.getVertexPositionData(), m_positionsBuffer);
+    m_assetLoader.clearVertexPositions();
+
+    uploadHandler.uploadBuffer(m_assetLoader.getVertexIndicesData(), m_indexBuffer);
+    m_assetLoader.clearVertexIndices();
+    
+    uploadHandler.uploadBuffer(m_assetLoader.getMaterialData(), m_materialsBuffer);
+    m_assetLoader.clearMaterials();
 }
 
 void SceneManager::uploadPerFrameResources(UploadHandler& uploadHandler, uint32 frame){
@@ -207,6 +243,12 @@ void SceneManager::uploadPerFrameResources(UploadHandler& uploadHandler, uint32 
             update.budget--;
         }
     }
+    // for (TransformUpdate& update : m_transformUpdates){
+    //     if (update.budget < 0)
+    //         continue;
+    //     uploadHandler.uploadSparseBuffer(m_transforms[frame % MAX_FRAME_COUNT], m_transformBuffer, update.index, update.index);
+    //     update.budget--;
+    // }
     
     m_batchManagers[frame % MAX_FRAME_COUNT].getDrawData(m_drawData[frame % MAX_FRAME_COUNT]);
     uploadHandler.uploadDyanmicBuffer(m_drawData[frame % MAX_FRAME_COUNT], m_drawDataBuffer);
@@ -285,6 +327,9 @@ Light& SceneManager::getSunLight(uint32 frame){
 
 void SceneManager::initializeAssets(SprResourceManager &rm, VulkanDevice* device){
     m_meshInfo = m_assetLoader.loadAssets(rm, device);
+    //m_assetLoader.unloadBuffers(rm);
+
+    rm.destroyBuffers();
 
     PrimitiveCounts counts = m_assetLoader.getPrimitiveCounts();
 
@@ -360,7 +405,7 @@ void SceneManager::initBuffers(PrimitiveCounts counts, VulkanDevice* device){
     });
     
     m_indexBuffer = m_rm->create<Buffer>({
-        .byteSize = (uint32) (counts.indexCount * sizeof(uint16)),
+        .byteSize = (uint32) (counts.indexCount * sizeof(uint32)),
         .usage = Flags::BufferUsage::BU_INDEX_BUFFER   |
                  Flags::BufferUsage::BU_TRANSFER_DST,
         .memType = DEVICE
@@ -491,11 +536,11 @@ void SceneManager::destroy(){
 
     // destroy per-frame tempbuffers
     for (uint32 i = 0; i < MAX_FRAME_COUNT; i++){
-        m_drawData[i].reset();
-        m_cameras[i].reset();
-        m_sceneData[i].reset();
-        m_lights[i].reset();
-        m_transforms[i].reset();
+        m_drawData[i].destroy();
+        m_cameras[i].destroy();
+        m_sceneData[i].destroy();
+        m_lights[i].destroy();
+        m_transforms[i].destroy();
     }
 
     // destroy per-frame resources
