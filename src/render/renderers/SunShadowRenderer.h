@@ -203,7 +203,7 @@ public:
             glm::vec3 eye = frustumCenter - lightDir * -minExtents.z;
             
 			glm::mat4 lightViewMatrix = glm::lookAt(eye, frustumCenter, glm::vec3(0.0f, 1.0f, 0.0f));
-			glm::mat4 lightOrthoMatrix = glm::orthoRH_ZO(minExtents.x, maxExtents.y, minExtents.x, maxExtents.y, maxExtents.z-minExtents.z, -8.f);
+			glm::mat4 lightOrthoMatrix = glm::orthoRH_ZO(minExtents.x, maxExtents.y, minExtents.x, maxExtents.y, maxExtents.z-minExtents.z, -32.f);
 
 			// Store split distance and matrix in cascade
             SunShadowData& shadowData = m_shadowTemp[frameId % MAX_FRAME_COUNT][0];
@@ -219,9 +219,9 @@ public:
     }
 
 
-    void render(CommandBuffer& cb, BatchManager& batchManager){
-        std::vector<Batch> batches;
-        batchManager.getBatches({.hasAny = MTL_ALL}, batches);
+    void render(CommandBuffer& cb, std::vector<Batch>& batches){
+        // std::vector<Batch> batches;
+        // batchManager.getBatches({.hasAny = MTL_ALL}, batches);
 
         // render first shadow map (renderpass owns 1st framebuffer)
         RenderPassRenderer& passRenderer = cb.beginRenderPass(m_renderPass);
@@ -279,7 +279,7 @@ public:
         m_rm->remove<Buffer>(m_shadowBuffer);
 
         for (uint32 i = 0; i < MAX_FRAME_COUNT; i++)
-            m_shadowTemp[i].reset();
+            m_shadowTemp[i].destroy();
         
         SprLog::info("[SunShadowRenderer] [destroy] destroyed...");
     }
