@@ -63,7 +63,7 @@ void SprLog::warn(std::string msg){
     std::cout << oof::reset_formatting() << std::endl;
 }
 
-void SprLog::error(std::string msg){
+void SprLog::error(std::string msg, bool terminate){
     std::cout << oof::fg_color({0,153,76});
     std::cout << getTime();
     std::cout << oof::fg_color({255,51,51});
@@ -72,7 +72,8 @@ void SprLog::error(std::string msg){
     std::cout << msg;
     std::cout << oof::reset_formatting() << std::endl;
     //throw SpruceErrorException();
-    std::terminate();
+    if (terminate)
+        std::terminate();
 }
 
 void SprLog::fatal(std::string msg){

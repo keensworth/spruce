@@ -42,7 +42,7 @@ public:
     static void debug(std::string msg);
     static void info(std::string msg);
     static void warn(std::string msg);
-    static void error(std::string msg);
+    static void error(std::string msg, bool terminate = true);
     static void fatal(std::string msg);
 
     
