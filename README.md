@@ -8,6 +8,7 @@ The renderer currently supports the following:
 - PBR materials, lighting (w/ acceptable defaults)
 - Ground Truth Ambient Occlusion (GTAO)
 - Cascaded shadow mapping
+- Anti-aliasing (FXAA)
 - Instancing by mesh/material batch
 - Mipmapping
 - Cubemaps
@@ -28,21 +29,21 @@ This makes it trivial to create and order the execution of different passes, and
 
 ### Output Samples
 [`PBR + CSM + GTAO (#1)`](https://github.com/keensworth/spruce/blob/main/src/render/renderers/LitMeshRenderer.h)
-![fullpass1](https://i.imgur.com/r6cOnkf.png)
+![fullpass1](https://imgur.com/0UkIoaV)
 [`PBR + CSM + GTAO (#2)`](https://github.com/keensworth/spruce/blob/main/src/render/renderers/LitMeshRenderer.h)
-![fullpass2](https://i.imgur.com/SSsUFWN.png)
+![fullpass2](https://imgur.com/KOkJT8I)
 
 [`PBR + CSM + GTAO (#3)`](https://github.com/keensworth/spruce/blob/main/src/render/renderers/LitMeshRenderer.h)
-![fullpass3](https://i.imgur.com/fj9ixfh.png)
+![fullpass3](https://i.imgur.com/r6cOnkf.png)
 
 [`GTAO (unfiltered)`](https://github.com/keensworth/spruce/blob/main/src/render/renderers/GTAORenderer.h)
-![gtao](https://i.imgur.com/6pCKHmH.png)
+![gtao](https://imgur.com/doi4pxT)
 
 [`Shadow Cascade`](https://github.com/keensworth/spruce/blob/main/src/render/renderers/SunShadowRenderer.h)
-![csm](https://i.imgur.com/MI6hQ6E.png)
+![csm](https://imgur.com/LWdJ9TU)
 
 [`Debug Normals`](https://github.com/keensworth/spruce/blob/main/src/render/renderers/DebugNormalsRenderer.h)
-![normals](https://i.imgur.com/SWQ0lMA.png)
+![normals](https://imgur.com/QOnImQ7)
 
 ### API (gfx)
 The gfx-user-land API uses C++20 designated initializers to create render resources. Underneath, these are backed by a custom span type that accepts initializer lists. This allows concise and structured construction of resources (with an unknown or varying number of arguments) without relying on a dynamic memory backed type such as `std::vector`. 
