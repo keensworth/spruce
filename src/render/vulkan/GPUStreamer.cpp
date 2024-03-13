@@ -53,11 +53,12 @@ void GPUStreamer::destroy(){
 
 template<>
 void GPUStreamer::transfer(BufferTransfer data) {
+    // https://github.com/KhronosGroup/Vulkan-Docs/wiki/Synchronization-Examples
+    uint32_t alignedSize = (data.size-1) - ((data.size-1) % m_nonCoherentAtomSize) + m_nonCoherentAtomSize;
+
     // shared, just upload
     if (data.memType == (HOST|DEVICE)) {
         std::memcpy(data.dst->allocInfo.pMappedData, data.pSrc, data.size);
-        // https://github.com/KhronosGroup/Vulkan-Docs/wiki/Synchronization-Examples
-        uint32_t alignedSize = (data.size-1) - ((data.size-1) % m_nonCoherentAtomSize) + m_nonCoherentAtomSize;
 
         // build staging range and flush cache
         VkMappedMemoryRange stagingRange = {
@@ -77,13 +78,10 @@ void GPUStreamer::transfer(BufferTransfer data) {
     }
 
     // device local, copy to staging buffer and upload
-    Handle<Buffer> stagingBuffer = m_stagingBuffers.getStagingBuffer(data.size);
+    Handle<Buffer> stagingBuffer = m_stagingBuffers.getStagingBuffer(alignedSize);
     Buffer* stage = m_rm->get<Buffer>(stagingBuffer);
 
     memcpy(stage->allocInfo.pMappedData, data.pSrc, data.size);
-
-    // https://github.com/KhronosGroup/Vulkan-Docs/wiki/Synchronization-Examples
-    uint32_t alignedSize = (data.size-1) - ((data.size-1) % m_nonCoherentAtomSize) + m_nonCoherentAtomSize;
 
     // build staging range and flush cache
     VkMappedMemoryRange stagingRange = {
@@ -145,13 +143,13 @@ void GPUStreamer::transfer(BufferTransfer data) {
 
 template<>
 void GPUStreamer::transfer(TextureTransfer data) {
-    // device local, copy to staging buffer and upload
-    Handle<Buffer> stagingBuffer = m_stagingBuffers.getStagingBuffer(data.size);
-    Buffer* stage = m_rm->get<Buffer>(stagingBuffer);
-    std::memcpy(stage->allocInfo.pMappedData, data.pSrc, data.size);
-
     // https://github.com/KhronosGroup/Vulkan-Docs/wiki/Synchronization-Examples
     uint32_t alignedSize = (data.size-1) - ((data.size-1) % m_nonCoherentAtomSize) + m_nonCoherentAtomSize;
+
+    // device local, copy to staging buffer and upload
+    Handle<Buffer> stagingBuffer = m_stagingBuffers.getStagingBuffer(alignedSize);
+    Buffer* stage = m_rm->get<Buffer>(stagingBuffer);
+    std::memcpy(stage->allocInfo.pMappedData, data.pSrc, data.size);
 
     // build staging range and flush cache
     VkMappedMemoryRange stagingRange = {
@@ -262,11 +260,12 @@ template<>
 void GPUStreamer::transferDynamic(BufferTransfer data, uint32 frame) {
     uint32 offset = ((data.dst->byteSize)/MAX_FRAME_COUNT) * (frame % MAX_FRAME_COUNT);
 
+    // https://github.com/KhronosGroup/Vulkan-Docs/wiki/Synchronization-Examples
+    uint32_t alignedSize = (data.size-1) - ((data.size-1) % m_nonCoherentAtomSize) + m_nonCoherentAtomSize;
+
     // shared, just upload
     if (data.memType == (HOST|DEVICE)) {
         std::memcpy((unsigned char*)data.dst->allocInfo.pMappedData + offset, data.pSrc, data.size);
-        // https://github.com/KhronosGroup/Vulkan-Docs/wiki/Synchronization-Examples
-        uint32_t alignedSize = (data.size-1) - ((data.size-1) % m_nonCoherentAtomSize) + m_nonCoherentAtomSize;
 
         // build staging range and flush cache
         VkMappedMemoryRange stagingRange = {
@@ -287,12 +286,9 @@ void GPUStreamer::transferDynamic(BufferTransfer data, uint32 frame) {
     }
 
     // device local, copy to staging buffer and upload
-    Handle<Buffer> stagingBuffer = m_stagingBuffers.getStagingBuffer(data.size);
+    Handle<Buffer> stagingBuffer = m_stagingBuffers.getStagingBuffer(alignedSize);
     Buffer* stage = m_rm->get<Buffer>(stagingBuffer);
     std::memcpy(stage->allocInfo.pMappedData, data.pSrc, data.size);
-
-    // https://github.com/KhronosGroup/Vulkan-Docs/wiki/Synchronization-Examples
-    uint32_t alignedSize = (data.size-1) - ((data.size-1) % m_nonCoherentAtomSize) + m_nonCoherentAtomSize;
 
     // build staging range and flush cache
     VkMappedMemoryRange stagingRange = {
