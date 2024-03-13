@@ -3,6 +3,8 @@
 #include <string>
 #include "resource/VulkanResourceManager.h"
 #include "../../debug/SprLog.h"
+#include <iostream>
+#include<unistd.h>  
 
 
 namespace spr::gfx {
@@ -138,7 +140,7 @@ void StagingBuffers::reset() {
 
     // destroy and deallocate extra staging buffers
     for (Handle<Buffer> buffer : m_overflowStages){
-        m_rm->remove(buffer);
+        m_rm->remove<Buffer>(buffer);
     }
     m_overflowStages = std::vector<Handle<Buffer>>();
     m_totalOverflowSizeBytes = 0;

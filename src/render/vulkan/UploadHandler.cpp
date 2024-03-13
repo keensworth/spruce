@@ -25,18 +25,12 @@ UploadHandler& UploadHandler::operator=(UploadHandler&& other) noexcept{
         m_rm = other.m_rm;
         m_transferCommandBuffer = other.m_transferCommandBuffer;
         m_graphicsCommandBuffer = other.m_graphicsCommandBuffer;
-        m_bufferUploadQueue = std::move(other.m_bufferUploadQueue);
-        m_dynamicBufferUploadQueue = std::move(other.m_dynamicBufferUploadQueue);
-        m_textureUploadQueue = std::move(other.m_textureUploadQueue);
         m_destroyed = other.m_destroyed;
 
         other.m_frameId = 0;
         other.m_rm = nullptr;
         other.m_transferCommandBuffer = nullptr;
         other.m_graphicsCommandBuffer = nullptr;
-        other.m_bufferUploadQueue.clear();
-        other.m_dynamicBufferUploadQueue.clear();
-        other.m_textureUploadQueue.clear();
         other.m_destroyed = false;
     }
     return *this;
@@ -49,9 +43,6 @@ UploadHandler& UploadHandler::operator=(const UploadHandler& other) {
         m_rm = other.m_rm;
         m_transferCommandBuffer = other.m_transferCommandBuffer;
         m_graphicsCommandBuffer = other.m_graphicsCommandBuffer;
-        m_bufferUploadQueue = other.m_bufferUploadQueue;
-        m_dynamicBufferUploadQueue = other.m_dynamicBufferUploadQueue;
-        m_textureUploadQueue = other.m_textureUploadQueue;
         m_destroyed = other.m_destroyed;
     }
     return *this;
@@ -76,23 +67,6 @@ void UploadHandler::destroy(){
 }
 
 void UploadHandler::submit() {
-    // upload buffers
-    for (GPUStreamer::BufferTransfer upload : m_bufferUploadQueue) {
-        m_streamer.transfer(upload);
-    }
-    // upload dynamic buffers (N-buffered)
-    for (GPUStreamer::BufferTransfer upload : m_dynamicBufferUploadQueue) {
-        m_streamer.transferDynamic(upload, m_frameId);
-    }
-    // upload sparse pieces of data to and from various offsets
-    for (GPUStreamer::SparseBufferTransfer upload : m_sparseBufferUploadQueue) {
-        m_streamer.transferDynamic(upload, m_frameId);
-    }
-    // upload textures/images
-    for (GPUStreamer::TextureTransfer upload : m_textureUploadQueue) {
-        m_streamer.transfer(upload);
-    }
-
     // flush uploads and submit transfer command buffer
     m_streamer.flush();
     m_transferCommandBuffer->submit();
@@ -107,14 +81,6 @@ void UploadHandler::setFrameId(uint32 frame){
 }
 
 void UploadHandler::reset() {
-    m_bufferUploadQueue = std::vector<GPUStreamer::BufferTransfer>();
-    m_bufferUploadQueue.reserve(32);
-    m_dynamicBufferUploadQueue = std::vector<GPUStreamer::BufferTransfer>();
-    m_dynamicBufferUploadQueue.reserve(32);
-    m_sparseBufferUploadQueue = std::vector<GPUStreamer::SparseBufferTransfer>();
-    m_sparseBufferUploadQueue.reserve(32);
-    m_textureUploadQueue = std::vector<GPUStreamer::TextureTransfer>();
-    m_textureUploadQueue.reserve(32);
     m_streamer.reset();
 }
 

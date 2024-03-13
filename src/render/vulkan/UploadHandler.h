@@ -31,7 +31,8 @@ public:
             .dst = dstBuffer,
             .memType = (MemoryType)dstBuffer->memType
         };
-        m_bufferUploadQueue.push_back(transfer);
+        m_streamer.transfer(transfer);
+        //m_bufferUploadQueue.push_back(transfer);
     }
 
     template <typename T>
@@ -45,7 +46,8 @@ public:
             .dst = dstBuffer,
             .memType = (MemoryType)dstBuffer->memType
         };
-        m_dynamicBufferUploadQueue.push_back(transfer);
+        m_streamer.transferDynamic(transfer, m_frameId);
+        //m_dynamicBufferUploadQueue.push_back(transfer);
     }
 
     template <typename T>
@@ -60,7 +62,8 @@ public:
             .srcOffset = srcOffset,
             .dstOffset = dstOffset
         };
-        m_sparseBufferUploadQueue.push_back(transfer);
+        m_streamer.transferDynamic(transfer, m_frameId);
+        //m_sparseBufferUploadQueue.push_back(transfer);
     }
 
     template <typename T>
@@ -73,7 +76,8 @@ public:
             .size = (uint32)(src.getSize() * sizeof(T)),
             .dst = dstTexture,
         };
-        m_textureUploadQueue.push_back(transfer);
+        m_streamer.transfer(transfer);
+        //m_textureUploadQueue.push_back(transfer);
     }
 
     void submit();
@@ -86,11 +90,6 @@ private:
     VulkanResourceManager* m_rm;
     CommandBuffer* m_transferCommandBuffer;
     CommandBuffer* m_graphicsCommandBuffer;
-
-    std::vector<GPUStreamer::BufferTransfer> m_bufferUploadQueue;
-    std::vector<GPUStreamer::BufferTransfer> m_dynamicBufferUploadQueue;
-    std::vector<GPUStreamer::SparseBufferTransfer> m_sparseBufferUploadQueue;
-    std::vector<GPUStreamer::TextureTransfer> m_textureUploadQueue;
 
     bool m_initialized = false;
     bool m_destroyed = false;
