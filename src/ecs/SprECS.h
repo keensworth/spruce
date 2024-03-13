@@ -23,6 +23,9 @@ public:
 
         // unregister queued entities from last frame
         componentManager.update();
+
+        // remove tracked created/destryed entites from last frame
+        entityManager.cleanUp();
     }
     
 
@@ -66,10 +69,49 @@ public:
         entityManager.getEntities(mask, out);
     }
 
+    // filter entities queued for removal/deletion for those with given components
+    template <typename Arg, typename ...Args>
+    void getDeletedEntities(std::vector<Entity>& out){
+        // get mask from components
+        uint64 mask = componentManager.getMask<Arg, Args...>();
+
+        // get queued entities
+        std::vector<Entity>& queuedEntities = entityManager.m_entitiesRemove;
+
+        for (Entity& entity : queuedEntities){
+            if (entity.components & mask){
+                out.push_back(entity);
+            }
+        }
+    }
+
+    // filter entities queued for removal/deletion for those with given components
+    template <typename Arg, typename ...Args>
+    void getCreatedEntities(std::vector<Entity>& out){
+        // get mask from components
+        uint64 mask = componentManager.getMask<Arg, Args...>();
+
+        // get queued entities
+        std::vector<Entity>& queuedEntities = entityManager.m_entitiesAdd;
+
+        for (Entity& entity : queuedEntities){
+            if (entity.components & mask){
+                out.push_back(entity);
+            }
+        }
+    }
+
     // filter entities for those with a set dirty flag on given component
     template <typename Arg>
     void getDirtyEntities(std::vector<Entity>& in, std::vector<Entity>& out){
         componentManager.getDirtyEntities<Arg>(in, out);
+    }
+
+    // filter entities queued for removal/deletion for those with given component
+    template <typename Arg>
+    std::vector<uint32>& getDirtyEntityIds(){
+        // get dirty entities
+        return componentManager.getDirtyEntityIds<Arg>();        
     }
 
     // check if an entity's component is dirty
@@ -123,6 +165,11 @@ public:
     template <typename T>
     auto& get(Entity& entity){
         return componentManager.getEntityComponent<T>(entity);
+    }
+
+    template <typename T>
+    auto& get(uint32 entityId){
+        return componentManager.getEntityComponent<T>(entityId);
     }
 
 

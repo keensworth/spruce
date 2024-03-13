@@ -12,11 +12,14 @@ void EntityManager::update(){
         for (Entity& entity : m_entitiesRemove){
             m_entities.remove(entity);
         }
-        if (m_entitiesAdd.size() > 0)
-            m_entitiesAdd.clear();
-        if (m_entitiesRemove.size() > 0)
-            m_entitiesRemove.clear();
     }
+}
+
+void EntityManager::cleanUp(){
+    if (m_entitiesAdd.size() > 0)
+        m_entitiesAdd.clear();
+    if (m_entitiesRemove.size() > 0)
+        m_entitiesRemove.clear();
 }
 
 void EntityManager::addEntity(Entity& entity){
