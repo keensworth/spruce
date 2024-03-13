@@ -8,9 +8,9 @@
 namespace spr::gfx {
 
 GfxAssetLoader::GfxAssetLoader() : 
-    m_vertexPositions(10000000),
-    m_vertexAttributes(10000000),
-    m_vertexIndices(10000000),
+    m_vertexPositions(100000000),
+    m_vertexAttributes(100000000),
+    m_vertexIndices(100000000),
     m_materials(2048){
 }
 
@@ -60,6 +60,7 @@ MeshInfoMap GfxAssetLoader::loadAssets(SprResourceManager& rm, VulkanDevice* dev
 }
 
 void GfxAssetLoader::loadVertexData(SprResourceManager& rm, Mesh* mesh, MeshInfo& info){
+    std::vector<Handle<spr::Buffer>> vertexBuffers;
     // indices
     if (mesh->indexBufferId > 0){
         Handle<spr::Buffer> indicesHandle = rm.getHandle<spr::Buffer>(mesh->indexBufferId);
@@ -67,11 +68,14 @@ void GfxAssetLoader::loadVertexData(SprResourceManager& rm, Mesh* mesh, MeshInfo
             SprLog::warn("[GfxAssetLoader] [loadVertexData] invalid indices");
             return;
         }
+        vertexBuffers.push_back(indicesHandle);
+
         spr::Buffer* indicesBuffer = rm.getData<spr::Buffer>(indicesHandle);
-        uint32 typedSize = (indicesBuffer->byteLength)/sizeof(uint16);
+        uint32 typedSize = (indicesBuffer->byteLength)/sizeof(uint32);
         info.indexCount = typedSize;
-        info.firstIndex = m_vertexIndices.insert((uint16*)(indicesBuffer->data.data()), typedSize); 
+        info.firstIndex = m_vertexIndices.insert((uint32*)(indicesBuffer->data.data()), typedSize); 
         m_counts.indexCount += info.indexCount;
+        m_counts.bytes += indicesBuffer->byteLength;
     }
 
     // position
@@ -82,10 +86,13 @@ void GfxAssetLoader::loadVertexData(SprResourceManager& rm, Mesh* mesh, MeshInfo
             SprLog::warn("[GfxAssetLoader] [loadVertexData] invalid positions");
             return;
         }
+        vertexBuffers.push_back(positionHandle);
+
         spr::Buffer* positionBuffer = rm.getData<spr::Buffer>(positionHandle);
         uint32 typedSize = (positionBuffer->byteLength)/sizeof(VertexPosition);
         info.vertexOffset = m_vertexPositions.insert((VertexPosition*)(positionBuffer->data.data()), typedSize);
         m_counts.vertexCount += typedSize;
+        m_counts.bytes += positionBuffer->byteLength;
         vertexCount = typedSize;
     }
 
@@ -96,10 +103,17 @@ void GfxAssetLoader::loadVertexData(SprResourceManager& rm, Mesh* mesh, MeshInfo
             SprLog::warn("[GfxAssetLoader] [loadVertexData] invalid attributes");
             return;
         }
+        vertexBuffers.push_back(attributesHandle);
+
         spr::Buffer* attributesBuffer = rm.getData<spr::Buffer>(attributesHandle);
         uint32 typedSize = (attributesBuffer->byteLength)/sizeof(VertexAttributes);
         uint32 offset = m_vertexAttributes.insert((VertexAttributes*)(attributesBuffer->data.data()), typedSize);
+        m_counts.bytes += attributesBuffer->byteLength;
     } 
+
+    for (Handle<Buffer> handle : vertexBuffers){
+        rm.deleteData(handle);
+    }
 }
 
 void GfxAssetLoader::loadMaterial(SprResourceManager& rm, Mesh* mesh, MeshInfo& info){
@@ -168,6 +182,7 @@ uint32 GfxAssetLoader::loadTexture(SprResourceManager& rm, uint32 textureId, boo
         SprLog::warn("[GfxAssetLoader] [loadTexture] invalid buffer");
         return 0;
     }
+    //m_bufferHandles.push_back(texBufferHandle);
 
     if (m_textureIds.count(texture->bufferId) > 0){
         return m_textureIds[texture->bufferId];
@@ -183,7 +198,8 @@ uint32 GfxAssetLoader::loadTexture(SprResourceManager& rm, uint32 textureId, boo
     TranscodeResult result = m_transcoder.transcode(texBuffer->data.data(), texBuffer->byteLength, texture->width, texture->height);
 
     TempBuffer<uint8> textureBuffer(result.sizeBytes);
-    textureBuffer.insert(result.transcodedData, result.sizeBytes);
+    textureBuffer.insert(result.transcodedData.data(), result.sizeBytes);
+    m_counts.bytes += result.sizeBytes;
 
     uint32 index = 0;
     if (result.layers == 6){
@@ -213,6 +229,10 @@ uint32 GfxAssetLoader::loadTexture(SprResourceManager& rm, uint32 textureId, boo
         m_counts.textureCount++;
         m_textureIds[texture->bufferId] = index;
     }
+
+    m_transcoder.reset();
+
+    rm.deleteData(texBufferHandle);
 
     return index;
 }
@@ -257,13 +277,13 @@ void GfxAssetLoader::loadBuiltinAssets(SprResourceManager& rm, MeshInfoMap& mesh
         {{0.0f, 0.0f, 1.0f, 0.0f}, {1.0f, 1.0f, 1.0f, 1.0f}},
         {{0.0f, 0.0f, 1.0f, 0.0f}, {1.0f, 1.0f, 1.0f, 1.0f}}
     };
-    std::vector<uint16> quadIndices = {
+    std::vector<uint32> quadIndices = {
         0, 1, 3, 3, 1, 2
     };
 
     MeshInfo quadInfo;
     quadInfo.indexCount = quadIndices.size();
-    quadInfo.firstIndex = m_vertexIndices.insert((uint16*)(quadIndices.data()), quadIndices.size()); 
+    quadInfo.firstIndex = m_vertexIndices.insert((uint32*)(quadIndices.data()), quadIndices.size()); 
     quadInfo.vertexOffset = m_vertexPositions.insert((VertexPosition*)(quadPos.data()), quadPos.size());
     m_vertexAttributes.insert((VertexAttributes*)(quadAttr.data()), quadAttr.size());
     m_counts.indexCount += quadInfo.indexCount;
@@ -342,7 +362,7 @@ void GfxAssetLoader::loadBuiltinAssets(SprResourceManager& rm, MeshInfoMap& mesh
         {{ 0.0f, -1.0f,  0.0f, 1.0f}, {1.0f, 1.0f, 1.0f, 1.0f}},
         {{ 0.0f, -1.0f,  0.0f, 0.0f}, {1.0f, 1.0f, 1.0f, 1.0f}}
     };
-    std::vector<uint16> cubeIndices = {
+    std::vector<uint32> cubeIndices = {
         0,  1,  3,  3,  1,  2,
         4,  5,  7,  7,  5,  6,
         8,  9,  11, 11, 9,  10, 
@@ -353,7 +373,7 @@ void GfxAssetLoader::loadBuiltinAssets(SprResourceManager& rm, MeshInfoMap& mesh
 
     MeshInfo cubeInfo;
     cubeInfo.indexCount = cubeIndices.size();
-    cubeInfo.firstIndex = m_vertexIndices.insert((uint16*)(cubeIndices.data()), cubeIndices.size()); 
+    cubeInfo.firstIndex = m_vertexIndices.insert((uint32*)(cubeIndices.data()), cubeIndices.size()); 
     cubeInfo.vertexOffset = m_vertexPositions.insert((VertexPosition*)(cubePos.data()), cubePos.size());
     m_vertexAttributes.insert((VertexAttributes*)(cubeAttr.data()), cubeAttr.size());
     m_counts.indexCount += cubeInfo.indexCount;
@@ -361,18 +381,52 @@ void GfxAssetLoader::loadBuiltinAssets(SprResourceManager& rm, MeshInfoMap& mesh
     meshes[2] = cubeInfo;
 }
 
+void GfxAssetLoader::unloadBuffers(SprResourceManager& rm){
+    for (Handle<Buffer> handle : m_bufferHandles){
+        rm.deleteData(handle);
+    }
+}
+
+void GfxAssetLoader::clearCubemaps(){
+    for (TextureInfo& textureInfo : m_cubemaps){
+        textureInfo.data.destroy();
+    }
+    m_cubemaps.clear();
+}
+
+void GfxAssetLoader::clearTextures(){
+    for (TextureInfo& textureInfo : m_textures){
+        textureInfo.data.destroy();
+    }
+    m_textures.clear();
+}
+
+void GfxAssetLoader::clearMaterials(){
+    m_materials.destroy();
+}
+
+void GfxAssetLoader::clearVertexIndices(){
+    m_vertexIndices.destroy();
+}
+
+void GfxAssetLoader::clearVertexAttributes(){
+    m_vertexAttributes.destroy();
+}
+
+void GfxAssetLoader::clearVertexPositions(){
+    m_vertexPositions.destroy();
+}
+
+
 void GfxAssetLoader::clear(){
     if (m_cleared)
         return;
-
-    m_vertexPositions.reset();
-    m_vertexAttributes.reset();
-    m_vertexIndices.reset();
-    m_materials.reset();
+    m_vertexPositions.destroy();
+    m_vertexAttributes.destroy();
+    m_vertexIndices.destroy();
+    m_materials.destroy();
     m_textures.clear();
     m_cubemaps.clear();
-    m_transcoder.reset();
-
     m_cleared = true;
 }
 
@@ -388,7 +442,7 @@ TempBuffer<VertexAttributes>& GfxAssetLoader::getVertexAttributeData(){
     return m_vertexAttributes;
 }
 
-TempBuffer<uint16>& GfxAssetLoader::getVertexIndicesData(){
+TempBuffer<uint32>& GfxAssetLoader::getVertexIndicesData(){
     return m_vertexIndices;
 }
 

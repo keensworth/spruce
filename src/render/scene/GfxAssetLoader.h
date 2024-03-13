@@ -8,6 +8,9 @@
 namespace spr {
     class SprResourceManager;
     struct Mesh;
+    struct Buffer;
+    template <class T = Buffer>
+    struct Handle;
 }
 
 namespace spr::gfx {
@@ -36,6 +39,7 @@ typedef struct PrimitiveCounts {
     uint32 materialCount = 0;
     uint32 textureCount  = 0;
     uint32 cubemapCount  = 0;
+    uint64 bytes         = 0;
 } PrimitiveCounts;
 
 class GfxAssetLoader {
@@ -44,29 +48,39 @@ public:
     ~GfxAssetLoader();
 
     MeshInfoMap loadAssets(SprResourceManager& rm, VulkanDevice* device);
+    void unloadBuffers(SprResourceManager& rm);
     void clear();
 
     PrimitiveCounts getPrimitiveCounts();
 
     TempBuffer<VertexPosition>& getVertexPositionData();
     TempBuffer<VertexAttributes>& getVertexAttributeData();
-    TempBuffer<uint16>& getVertexIndicesData();
+    TempBuffer<uint32>& getVertexIndicesData();
     TempBuffer<MaterialData>& getMaterialData();
     std::vector<TextureInfo>& getTextureData();
     std::vector<TextureInfo>& getCubemapData();
 
+    void clearCubemaps();
+    void clearTextures();
+    void clearMaterials();
+    void clearVertexIndices();
+    void clearVertexAttributes();
+    void clearVertexPositions();
+
 private:
-    SprResourceManager* m_rm;
     TextureTranscoder m_transcoder;
     PrimitiveCounts m_counts;
 
+    // copy of asset data for upload to GPU
     TempBuffer<VertexPosition> m_vertexPositions;
     TempBuffer<VertexAttributes> m_vertexAttributes;
-    TempBuffer<uint16> m_vertexIndices;
+    TempBuffer<uint32> m_vertexIndices;
     TempBuffer<MaterialData> m_materials;
     std::vector<TextureInfo> m_textures;
     std::vector<TextureInfo> m_cubemaps;
     bool m_cleared = false;
+
+    std::vector<Handle<Buffer>> m_bufferHandles;
 
     void loadVertexData(SprResourceManager& rm, Mesh* mesh, MeshInfo& info);
     void loadMaterial(SprResourceManager& rm, Mesh* mesh, MeshInfo& info);
