@@ -42,20 +42,30 @@ public:
     ~RenderSystem(){}
 
     void update(float dt){
-        // models
-        std::vector<Entity> models;
-        m_ecs->getEntities<ModelC, TransformC>(models);
-        for (Entity& entity : models){
+        // add created entities
+        std::vector<Entity> createdEntities;
+        m_ecs->getCreatedEntities<ModelC, TransformC>(createdEntities);
+        for (Entity& entity : createdEntities){
             uint32 modelId = m_ecs->get<ModelC>(entity);
             TransformInfo& transform = m_ecs->get<TransformC>(entity);
+            m_renderer.insertModel(entity.id, modelId, transform);
+        }
 
-            if (m_ecs->isDirty<ModelC>(entity)){
-                m_renderer.insertModel(entity.id, modelId, transform);
-            } else if (m_ecs->isDirty<TransformC>(entity)){
-                m_renderer.updateModel(entity.id, modelId, transform);
-            } else {
-                m_renderer.insertModel(entity.id, modelId);
-            }
+        // remove deleted entities
+        std::vector<Entity> deletedEntities;
+        m_ecs->getDeletedEntities<ModelC, TransformC>(deletedEntities);
+        for (Entity& entity : deletedEntities){
+            uint32 modelId = m_ecs->get<ModelC>(entity);
+            m_renderer.removeModel(entity.id, modelId);
+        }
+
+        // update models with changed transform
+        std::vector<uint32>& dirtyModels = m_ecs->getDirtyEntityIds<TransformC>();
+        for(uint32 entityId : dirtyModels){
+            uint32 modelId = m_ecs->get<ModelC>(entityId);
+            TransformInfo& transform = m_ecs->get<TransformC>(entityId);
+            m_renderer.updateModel(entityId, modelId, transform);
+            // SprLog::debug("    updating, id: ", entityId);
         }
 
         // lights
@@ -223,26 +233,33 @@ int main() {
                 .rotation = angleAxis(pi<float>()/2.f, vec3{1.f, 0.f, 0.f}), 
                 .scale = 10.f}));
 
-        ecs.createEntity(
-            ecs.add<ModelC>(data::sponza),
-            ecs.add<TransformC>(TransformInfo{
-                .position = {0.f, 0.f, -5.f}, 
-                .rotation = angleAxis(pi<float>()/2, vec3{1.f, 0.f, 0.f}), 
-                .scale = 0.012f}));
+        // ecs.createEntity(
+        //     ecs.add<ModelC>(data::sponza),
+        //     ecs.add<TransformC>(TransformInfo{
+        //         .position = {0.f, 0.f, -5.f}, 
+        //         .rotation = angleAxis(pi<float>()/2, vec3{1.f, 0.f, 0.f}), 
+        //         .scale = 0.012f}));
 
-        uint32 dim = 10;
-        for (uint32 x = 0; x < dim; x++){
-            for (uint32 y = 0; y < dim; y++){
-                for (uint32 z = 0; z < dim; z++){
-                    ecs.createEntity(
-                        ecs.add<ModelC>(data::waterbottle),
-                        ecs.add<TransformC>(TransformInfo{
-                            .position = {15.f+x, 15.f+y, 15.f+z}, 
-                            .rotation = angleAxis(0.f, vec3{1.f, 0.f, 0.f}), 
-                            .scale = 3.f}));
-                }
-            }
-        }
+        ecs.createEntity(
+            ecs.add<ModelC>(data::bistro),
+            ecs.add<TransformC>(TransformInfo{
+                .position = {2.f, 4.f, -2.f}, 
+                .rotation = angleAxis(pi<float>()/2, vec3{1.f, 0.f, 0.f}), 
+                .scale = 1.f}));
+
+        // uint32 dim = 50;
+        // for (uint32 x = 0; x < dim; x++){
+        //     for (uint32 y = 0; y < dim; y++){
+        //         for (uint32 z = 0; z < dim; z++){
+        //             ecs.createEntity(
+        //                 ecs.add<ModelC>(data::cube),
+        //                 ecs.add<TransformC>(TransformInfo{
+        //                     .position = {15.f+x, 15.f+y, 15.f+z}, 
+        //                     .rotation = angleAxis(0.f, vec3{1.f, 0.f, 0.f}), 
+        //                     .scale = 0.1f}));
+        //         }
+        //     }
+        // }
         
         // lights
         ecs.createEntity(
@@ -314,7 +331,7 @@ int main() {
             printTime = std::chrono::high_resolution_clock::now();
             SprLog::info("[MAIN] frame: ", frame);
             SprLog::info("[MAIN] fps: " + std::to_string(fps) );
-            SprLog::info("[MAIN] dt: " + std::to_string(dt) );
+            SprLog::info("[MAIN] dt: " + std::to_string(dt*1000) + "ms");
         }
         frame++;
     }
