@@ -29,21 +29,22 @@ This makes it trivial to create and order the execution of different passes, and
 
 ### Output Samples
 [`PBR + CSM + GTAO (#1)`](https://github.com/keensworth/spruce/blob/main/src/render/renderers/LitMeshRenderer.h)
-![fullpass1](https://imgur.com/0UkIoaV)
+![fullpass1](https://imgur.com/0UkIoaV.png)
+
 [`PBR + CSM + GTAO (#2)`](https://github.com/keensworth/spruce/blob/main/src/render/renderers/LitMeshRenderer.h)
-![fullpass2](https://imgur.com/KOkJT8I)
+![fullpass2](https://imgur.com/KOkJT8I.png)
 
 [`PBR + CSM + GTAO (#3)`](https://github.com/keensworth/spruce/blob/main/src/render/renderers/LitMeshRenderer.h)
 ![fullpass3](https://i.imgur.com/r6cOnkf.png)
 
 [`GTAO (unfiltered)`](https://github.com/keensworth/spruce/blob/main/src/render/renderers/GTAORenderer.h)
-![gtao](https://imgur.com/doi4pxT)
+![gtao](https://imgur.com/doi4pxT.png)
 
 [`Shadow Cascade`](https://github.com/keensworth/spruce/blob/main/src/render/renderers/SunShadowRenderer.h)
-![csm](https://imgur.com/LWdJ9TU)
+![csm](https://imgur.com/LWdJ9TU.png)
 
 [`Debug Normals`](https://github.com/keensworth/spruce/blob/main/src/render/renderers/DebugNormalsRenderer.h)
-![normals](https://imgur.com/QOnImQ7)
+![normals](https://imgur.com/QOnImQ7.png)
 
 ### API (gfx)
 The gfx-user-land API uses C++20 designated initializers to create render resources. Underneath, these are backed by a custom span type that accepts initializer lists. This allows concise and structured construction of resources (with an unknown or varying number of arguments) without relying on a dynamic memory backed type such as `std::vector`. 
