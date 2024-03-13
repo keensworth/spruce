@@ -28,12 +28,15 @@ struct RenderState {
         DEPTH_PREPASS = 0b1 << 5,
         GTAO_PASS = 0b1 << 6,
         BLUR_PASS = 0b1 << 7,
-        SHADOW_CASCADES = 0b1 << 8
+        SHADOW_CASCADES = 0b1 << 8,
+        VOLUMETRIC_LIGHT = 0b1 << 9,
+        FXAA = 0b1 << 10
     };
 
-    Shader visible = LIT_MESH;
+    Shader visible = FXAA;
     bool dirtyOutput = false;
     bool dirtyShader = false;
+    Shader shaderToReload = TEST;
     bool dirtyLight = false;
 
     uint32 shadowSelection = 0;
@@ -127,7 +130,7 @@ private:
         ImGui::SetNextWindowPos(ImVec2(main_viewport->WorkPos.x + 650, main_viewport->WorkPos.y + 20), ImGuiCond_FirstUseEver);
         ImGui::SetNextWindowSize(ImVec2(550, 680), ImGuiCond_FirstUseEver);
 
-        if (!ImGui::Begin("Spruce")){
+        if (!ImGui::Begin("spruce")){
             ImGui::End();
             return;
         }
@@ -137,42 +140,185 @@ private:
             return;
         }
 
+        ImGui::SeparatorText("Sun");
         state.dirtyLight |= ImGui::SliderFloat3("light dir", glm::value_ptr(state.lightDir), -1.0f, 1.0f);
         state.dirtyLight |= ImGui::ColorEdit3("light color", glm::value_ptr(state.lightColor));
+        ImGui::SeparatorText("Shadow");
         ImGui::SliderFloat("cascade lambda", &state.cascadeLambda, 0.0f, 1.0f, "lambda = %.3f");
+        ImGui::SeparatorText("Skybox");
         ImGui::SliderFloat("exposure", &state.exposure, 0.0f, 10.f, "exposure = %.3f");
 
-        if (!ImGui::CollapsingHeader("Output", ImGuiTreeNodeFlags_DefaultOpen)){
+        if (!ImGui::CollapsingHeader("Renderer", ImGuiTreeNodeFlags_DefaultOpen)){
             ImGui::End();
             return;
         }
-            
-        static int visible = RenderState::LIT_MESH;
-        bool reload = ImGui::Button("Reload Shader");
+
+        static int visible = RenderState::FXAA;
+        //bool reload = ImGui::Button("Reload Shader");
         static int cascade = 0;
-        ImGui::RadioButton("Lit Mesh", &visible, RenderState::LIT_MESH);
-        ImGui::RadioButton("Unlit Mesh", &visible, RenderState::UNLIT_MESH);
-        ImGui::RadioButton("Depth Prepass", &visible, RenderState::DEPTH_PREPASS);
-        ImGui::RadioButton("GTAO Pass", &visible, RenderState::GTAO_PASS);
-        ImGui::RadioButton("Blur Pass", &visible, RenderState::BLUR_PASS);
-        ImGui::RadioButton("Cascaded Shadows", &visible, RenderState::SHADOW_CASCADES);
-        if (visible & RenderState::SHADOW_CASCADES){
-            ImGui::SliderInt("cascade #", &cascade, 0, MAX_CASCADES-1);
+
+        if (ImGui::TreeNode("Debug View")){
+            ImGui::RadioButton("Lit Mesh", &visible, RenderState::FXAA);
+            ImGui::RadioButton("Unlit Mesh", &visible, RenderState::UNLIT_MESH);
+            ImGui::RadioButton("Depth Prepass", &visible, RenderState::DEPTH_PREPASS);
+            ImGui::RadioButton("GTAO Pass", &visible, RenderState::GTAO_PASS);
+            ImGui::RadioButton("Blur Pass", &visible, RenderState::BLUR_PASS);
+            ImGui::RadioButton("Cascaded Shadows", &visible, RenderState::SHADOW_CASCADES);
+            if (visible & RenderState::SHADOW_CASCADES){
+                ImGui::SliderInt("cascade #", &cascade, 0, MAX_CASCADES-1);
+            }
+            ImGui::RadioButton("Volumetric Light", &visible, RenderState::VOLUMETRIC_LIGHT);
+            ImGui::RadioButton("Debug Mesh", &visible, RenderState::DEBUG_MESH);
+            ImGui::RadioButton("Debug Normals", &visible, RenderState::DEBUG_NORMALS);
+            ImGui::RadioButton("Test", &visible, RenderState::TEST);
+        
+            if ((uint32)visible != (uint32)state.visible){
+                state.visible = (RenderState::Shader)visible;
+                state.dirtyOutput = true;
+            }
+            if ((uint32)cascade != state.shadowSelection){
+                state.shadowSelection = cascade;
+                state.dirtyOutput = true;
+            }
+
+            ImGui::TreePop();
         }
-        ImGui::RadioButton("Debug Mesh", &visible, RenderState::DEBUG_MESH);
-        ImGui::RadioButton("Debug Normals", &visible, RenderState::DEBUG_NORMALS);
-        ImGui::RadioButton("Test", &visible, RenderState::TEST);
-    
-        if ((uint32)visible != (uint32)state.visible){
-            state.visible = (RenderState::Shader)visible;
-            state.dirtyOutput = true;
-        }
-        if ((uint32)cascade != state.shadowSelection){
-            state.shadowSelection = cascade;
-            state.dirtyOutput = true;
-        }
-        if (reload){
-            state.dirtyShader = true;
+
+        if (ImGui::TreeNode("Shaders")){
+            static ImGuiTableFlags flags = ImGuiTableFlags_SizingFixedFit | ImGuiTableFlags_RowBg | ImGuiTableFlags_Borders | ImGuiTableFlags_Resizable | ImGuiTableFlags_Reorderable | ImGuiTableFlags_Hideable;
+
+            if (ImGui::BeginTable("table1", 3, flags)){
+                ImGui::TableSetupColumn("Name", ImGuiTableColumnFlags_WidthFixed);
+                ImGui::TableSetupColumn("Path (.frag/.vert)", ImGuiTableColumnFlags_WidthStretch);
+                ImGui::TableSetupColumn("Reload", ImGuiTableColumnFlags_WidthFixed);
+                ImGui::TableHeadersRow();
+
+                ImGui::TableNextRow();
+                ImGui::TableSetColumnIndex(0);
+                ImGui::Text("PBR Mesh");
+                ImGui::TableSetColumnIndex(1);
+                ImGui::Text("data/shaders/pbr_mesh");
+                ImGui::TableSetColumnIndex(2);
+                if (ImGui::Button("Reload##1")){
+                    state.dirtyShader = true;
+                    state.shaderToReload = RenderState::LIT_MESH;
+                    SprLog::debug("trying to reload pbr :(");
+                }
+
+                ImGui::TableNextRow();
+                ImGui::TableSetColumnIndex(0);
+                ImGui::Text("Unlit Mesh");
+                ImGui::TableSetColumnIndex(1);
+                ImGui::Text("data/shaders/unlit_mesh");
+                ImGui::TableSetColumnIndex(2);
+                if (ImGui::Button("Reload##2")){
+                    state.dirtyShader = true;
+                    state.shaderToReload = RenderState::UNLIT_MESH;
+                }
+
+                ImGui::TableNextRow();
+                ImGui::TableSetColumnIndex(0);
+                ImGui::Text("Depth Prepass");
+                ImGui::TableSetColumnIndex(1);
+                ImGui::Text("data/shaders/depth_pass");
+                ImGui::TableSetColumnIndex(2);
+                if (ImGui::Button("Reload##3")){
+                    state.dirtyShader = true;
+                    state.shaderToReload = RenderState::DEPTH_PREPASS;
+                }
+
+                ImGui::TableNextRow();
+                ImGui::TableSetColumnIndex(0);
+                ImGui::Text("GTAO");
+                ImGui::TableSetColumnIndex(1);
+                ImGui::Text("data/shaders/gtao");
+                ImGui::TableSetColumnIndex(2);
+                if (ImGui::Button("Reload##4")){
+                    state.dirtyShader = true;
+                    state.shaderToReload = RenderState::GTAO_PASS;
+                }
+
+                ImGui::TableNextRow();
+                ImGui::TableSetColumnIndex(0);
+                ImGui::Text("Blur");
+                ImGui::TableSetColumnIndex(1);
+                ImGui::Text("data/shaders/blur");
+                ImGui::TableSetColumnIndex(2);
+                if (ImGui::Button("Reload##5")){
+                    state.dirtyShader = true;
+                    state.shaderToReload = RenderState::BLUR_PASS;
+                }
+
+                ImGui::TableNextRow();
+                ImGui::TableSetColumnIndex(0);
+                ImGui::Text("Shadow Cascades");
+                ImGui::TableSetColumnIndex(1);
+                ImGui::Text("data/shaders/shadow_cascades");
+                ImGui::TableSetColumnIndex(2);
+                if (ImGui::Button("Reload##6")){
+                    state.dirtyShader = true;
+                    state.shaderToReload = RenderState::SHADOW_CASCADES;
+                }
+
+                ImGui::TableNextRow();
+                ImGui::TableSetColumnIndex(0);
+                ImGui::Text("Volumetric Light");
+                ImGui::TableSetColumnIndex(1);
+                ImGui::Text("data/shaders/volumetric_light");
+                ImGui::TableSetColumnIndex(2);
+                if (ImGui::Button("Reload##7")){
+                    state.dirtyShader = true;
+                    state.shaderToReload = RenderState::VOLUMETRIC_LIGHT;
+                }
+
+                ImGui::TableNextRow();
+                ImGui::TableSetColumnIndex(0);
+                ImGui::Text("FXAA");
+                ImGui::TableSetColumnIndex(1);
+                ImGui::Text("data/shaders/fxaa");
+                ImGui::TableSetColumnIndex(2);
+                if (ImGui::Button("Reload##8")){
+                    state.dirtyShader = true;
+                    state.shaderToReload = RenderState::FXAA;
+                    SprLog::debug("trying to reload fxaa :(");
+                }
+
+                ImGui::TableNextRow();
+                ImGui::TableSetColumnIndex(0);
+                ImGui::Text("Debug Mesh");
+                ImGui::TableSetColumnIndex(1);
+                ImGui::Text("data/shaders/debug_mesh");
+                ImGui::TableSetColumnIndex(2);
+                if (ImGui::Button("Reload##9")){
+                    state.dirtyShader = true;
+                    state.shaderToReload = RenderState::DEBUG_MESH;
+                }
+
+                ImGui::TableNextRow();
+                ImGui::TableSetColumnIndex(0);
+                ImGui::Text("Debug Normals");
+                ImGui::TableSetColumnIndex(1);
+                ImGui::Text("data/shaders/debug_normals");
+                ImGui::TableSetColumnIndex(2);
+                if (ImGui::Button("Reload##10")){
+                    state.dirtyShader = true;
+                    state.shaderToReload = RenderState::DEBUG_NORMALS;
+                }
+
+                ImGui::TableNextRow();
+                ImGui::TableSetColumnIndex(0);
+                ImGui::Text("Test");
+                ImGui::TableSetColumnIndex(1);
+                ImGui::Text("data/shaders/test");
+                ImGui::TableSetColumnIndex(2);
+                if (ImGui::Button("Reload##11")){
+                    state.dirtyShader = true;
+                    state.shaderToReload = RenderState::TEST;
+                }
+
+                ImGui::EndTable();
+            }
+            ImGui::TreePop();
         }
 
         ImGui::End();
