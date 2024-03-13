@@ -39,6 +39,10 @@ public:
         return m_container[m_reg.getIndex(entity)];
     }
 
+    T& get(uint32 id) {
+        return m_container[m_reg.getIndex(id)];
+    }
+
     // set entity's component data
     void set(Entity& entity, T data){
         m_container.set(m_reg.getIndex(entity), data);
@@ -56,8 +60,8 @@ public:
     void addEntity(Entity& entity){
         m_reg.addItem(entity.id, m_container.lastWriteIndex);
 
-        if (m_trackDirty)
-            dirty(entity.id);
+        // if (m_trackDirty)
+        //     dirty(entity.id);
     }
 
     // remove entity from registry
@@ -84,12 +88,16 @@ public:
         return dirtyMask & (1LL << (id % 64));
     }
 
+    std::vector<uint32>& getDirtyIds(){
+        return m_dirtyIds;
+    }
+
     void update(){
         if (!m_trackDirty)
             return;
 
-        uint32 size = m_dirty.size();
-        m_dirty = std::vector<uint64>(size, 0);
+        std::fill(m_dirty.begin(), m_dirty.end(), 0);
+        m_dirtyIds.clear();
     }
 
     void clean(uint32 id){
@@ -112,12 +120,15 @@ public:
         }
 
         m_dirty[id / 64] |= (1LL << (id % 64));
+
+        m_dirtyIds.push_back(id);
     }
     
 private:
     void trackDirty(){
         m_trackDirty = true;
         m_dirty = std::vector<uint64>(16);
+        m_dirtyIds.reserve(64);
     }
     friend class ComponentManager;
 
@@ -131,6 +142,7 @@ private:
     // dirty flags for new/edited components
     bool m_trackDirty = false;
     std::vector<uint64> m_dirty;
+    std::vector<uint32> m_dirtyIds;
 };
 
 }

@@ -65,6 +65,13 @@ public:
         return comp->get(entity);
     }
 
+    template <typename T>
+    auto& getEntityComponent(uint32 entityId){
+        uint32 index = m_typeMap[typeid(T)];
+        T* comp = ((T*) dynamic_cast<T*>(m_components.at(index)));
+        return comp->get(entityId);
+    }
+
     // set data for component T, associated with entity
     template <typename T>
     void setEntityComponent(Entity& entity, auto data){
@@ -135,9 +142,18 @@ public:
         T* comp = ((T*) dynamic_cast<T*>(m_components.at(index)));
 
         for (Entity& entity : in){
-            if (!comp->isDirty(entity))
+            if (!comp->isDirty(entity.id))
                 out.push_back(entity);
         }
+    }
+
+    // filter entities for those with a set dirty flag on given component
+    template <typename T>
+    std::vector<uint32>& getDirtyEntityIds(){
+        uint32 index = m_typeMap[typeid(T)];
+        T* comp = ((T*) dynamic_cast<T*>(m_components.at(index)));
+
+        return comp->getDirtyIds();
     }
 
     // check if an entity's component is dirty
