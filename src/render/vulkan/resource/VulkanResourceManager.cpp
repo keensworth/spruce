@@ -205,14 +205,6 @@ void VulkanResourceManager::allocate(Handle<Buffer> handle, VkBufferCreateInfo& 
     // create/allocate buffer
     VK_CHECK(vmaCreateBuffer(m_allocator, &info, &allocationInfo, &(buffer->buffer), &(buffer->alloc), &(buffer->allocInfo)));
 
-    VkMemoryPropertyFlags memPropFlags;
-    vmaGetAllocationMemoryProperties(m_allocator, buffer->alloc, &memPropFlags);
- 
-    if(memPropFlags & VK_MEMORY_PROPERTY_HOST_COHERENT_BIT && buffer->memType == DEVICE){
-        SprLog::debug("=========================== BUFFER HOST VISIBLE, size: ", buffer->byteSize);
-        SprLog::debug("                                             indended: ", buffer->memType);
-    }
-
     return;
 }
 
@@ -234,13 +226,6 @@ void VulkanResourceManager::allocate(Handle<Texture> handle, VkImageCreateInfo& 
 
     // create/allocate texture
     VK_CHECK(vmaCreateImage(m_allocator, &info, &allocationInfo, &texture->image, &texture->alloc, &texture->allocInfo));
-
-    VkMemoryPropertyFlags memPropFlags;
-    vmaGetAllocationMemoryProperties(m_allocator, texture->alloc, &memPropFlags);
- 
-    if(memPropFlags & VK_MEMORY_PROPERTY_HOST_COHERENT_BIT){
-        SprLog::debug("=========================== ~~~~~~~~ TEXTURE HOST VISIBLE");
-    }
     return;
 }
 
