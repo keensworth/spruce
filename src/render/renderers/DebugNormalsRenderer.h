@@ -87,11 +87,11 @@ public:
     }
 
 
-    void render(CommandBuffer& cb, BatchManager& batchManager){
+    void render(CommandBuffer& cb, std::vector<Batch>& batches){
         RenderPassRenderer& passRenderer = cb.beginRenderPass(m_renderPass, glm::vec4(0.45098f,0.52549f,0.47058f,1.f));
         
-        std::vector<Batch> batches;
-        batchManager.getBatches({.hasAny = MTL_ALL}, batches);
+        // std::vector<Batch> batches;
+        // batchManager.getBatches({.hasAny = MTL_ALL}, batches);
 
         passRenderer.drawSubpass({
             .shader = m_shader, 
