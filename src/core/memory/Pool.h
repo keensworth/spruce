@@ -39,6 +39,9 @@ public:
     }
 
     ~Pool() {
+        if (m_destroyed)
+            return;
+
         for (int i = 0 ; i < m_size; i++){
             if (m_data + i)
                 (m_data + i)->~T();
@@ -49,7 +52,6 @@ public:
 
 private:
     void resize(){
-        assert(false);
         // allocate new memory
         uint32 newCapacity = m_capacity * 2;
         T* newData = static_cast<T*>(malloc(newCapacity * sizeof(T)));
@@ -64,14 +66,15 @@ private:
         }
 
         // delete old mem
-        for (int i = 0 ; i < m_size; i++){
-            if (m_data + i)
-                (m_data + i)->~T();
-        }
+        // for (int i = 0 ; i < m_size; i++){
+        //     if (m_data + i)
+        //         (m_data + i)->~T();
+        // }
         free(m_data);
 
         // set pointer to new mem
         m_data = newData;
+        m_capacity = newCapacity;
     }
 
     template <typename... Args>
@@ -98,6 +101,9 @@ public:
     }
 
     Handle<T> remove(Handle<T> handle){
+        if (m_destroyed)
+            return Handle<T>();
+
         // return early if data is null or handle isn't valid
         if (!(m_data + handle.m_index)){
             SprLog::warn("[Pool] [remove] null address");
@@ -123,12 +129,11 @@ public:
             m_freeListIndex--;
         m_freeList[m_freeListIndex] = handle.m_index;
         m_size--;
-
         return Handle<T>();
     }
 
     T* get(Handle<T> handle){
-        if (!isValidHandle(handle))
+        if (!isValidHandle(handle) || m_destroyed)
             return nullptr;
         return (m_data + handle.m_index);
     }
@@ -137,11 +142,28 @@ public:
         return (m_generations.at(handle.m_index) == handle.m_generation);
     }
 
+    uint32 getSize(){
+        return m_size;
+    }
+
+    void destroy(){
+        for (int i = 0 ; i < m_size; i++){
+            if (m_data + i)
+                (m_data + i)->~T();
+        }
+        free(m_data);
+        m_data = nullptr;
+
+        m_destroyed = true;
+        m_size = 0;
+    }
+
 
 private:
     T* m_data;
     uint32 m_capacity;
     uint32 m_size = 0;
+    bool m_destroyed = false;
 
     // freelist allows us to recycle 
     // indices in the data array 

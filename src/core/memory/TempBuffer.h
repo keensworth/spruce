@@ -34,7 +34,14 @@ public:
     }
 
     ~TempBuffer() {
+        if (m_destroyed)
+            return;
+        
         free(m_data);
+        m_data = nullptr;
+        m_destroyed = true;
+        m_offsetPointer = m_data;
+        m_size = 0;
     }
 
     // copy constructor
@@ -80,6 +87,8 @@ public:
     // Output: 
     //      uint32 ofst - offset (T) of data in buffer
     inline uint32 insert(const T* data, uint32 size){
+        if (m_destroyed)
+            SprLog::fatal("come on");
         // current offset
         uint32 offset = m_size;
         
@@ -100,6 +109,8 @@ public:
     }
 
     inline uint32 insert(const T& data){
+        if (m_destroyed)
+            SprLog::fatal("come on");
         // current offset
         uint32 offset = m_size;
         
@@ -146,9 +157,13 @@ public:
         m_size = 0;
     }
 
-    void reset(){
+    void destroy(){
+        if (m_destroyed)
+            return;
+
         free(m_data);
-        m_data = static_cast<T*>(malloc(m_capacity * sizeof(T)));
+        m_data = nullptr;
+        m_destroyed = true;
         m_offsetPointer = m_data;
         m_size = 0;
     }
@@ -159,6 +174,7 @@ private:
     T* m_offsetPointer;
     uint32 m_capacity;
     uint32 m_size = 0;
+    bool m_destroyed = false;
 };
 
 }
