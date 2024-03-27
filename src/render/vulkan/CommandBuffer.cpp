@@ -198,6 +198,7 @@ void CommandBuffer::submit(){
     };
 
     VK_CHECK(vkQueueSubmit(m_queue, 1, &submitInfo, m_fence));
+    m_fenceInUse = true;
 }
 
 
@@ -221,11 +222,15 @@ bool CommandBuffer::isRecording(){
 void CommandBuffer::waitFence(){
     if (!m_initialized)
         SprLog::error("[CommandBuffer] [waitFence] CB not initialized");
+    if (!m_fenceInUse)
+        return;
     VK_CHECK(vkWaitForFences(m_device->getDevice(), 1, &m_fence, VK_TRUE, UINT64_MAX));
+    m_fenceInUse = false;
 }
 
 void CommandBuffer::resetFence(){
     VK_CHECK(vkResetFences(m_device->getDevice(), 1, &m_fence));
+    m_fenceInUse = false;
 }
 
 

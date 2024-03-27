@@ -32,13 +32,17 @@ void RenderCoordinator::init(VulkanRenderer* renderer, VulkanResourceManager* rm
 void RenderCoordinator::render(SceneManager& sceneManager){
     // begin frame
     RenderFrame& frame = m_renderer->beginFrame(m_rm);
+
+    // early return if invalid swapchain detected
+    if (m_renderer->invalidSwapchain())
+        return;
+
     BatchManager& batchManager = sceneManager.getBatchManager(m_frameId);
     uploadSceneData(sceneManager);
 
     // get common batches
     std::vector<Batch> allMaterialBatches;
     batchManager.getBatches({.hasAny = MTL_ALL}, allMaterialBatches);
-
 
     // render offscreen renderpasses
     CommandBuffer& offscreenCB = m_renderer->beginGraphicsCommands(CommandType::OFFSCREEN);
@@ -181,7 +185,6 @@ void RenderCoordinator::updateUI(CommandBuffer& offscreenCB){
             reload = m_volumetricLightRenderer.getShader();
         } else if (shaderToReload == RenderState::FXAA){
             reload = m_fxaaRenderer.getShader();
-            SprLog::debug("RELOADING FXAA");
         }else if (shaderToReload == RenderState::BLUR_PASS){
             reload = m_blurRenderer.getShader();
         } else if (shaderToReload == RenderState::UNLIT_MESH){
@@ -329,12 +332,52 @@ void RenderCoordinator::initRenderers(SceneManager& sceneManager){
 
 
 void RenderCoordinator::onResize(){
+    // wait on all GPU work to cease
+    m_renderer->wait();
+
+    // destroy framebuffer built over swapchin
+    m_frameRenderer.destroyFramebuffer();
+
+    // rebuild swapchain and image views
     m_renderer->onResize();
 
     glm::uvec2 windowDim = {m_window->width(), m_window->height()};
+    m_rm->updateScreenDim(windowDim);
 
-    // rebuild all framebuffers
+    // rebuild all screen-sized framebuffers
+    m_frameRenderer.updateImageViews(m_renderer->getDisplay().getImageViews());
     m_rm->recreate<RenderPass>(m_frameRenderer.getRenderPass(), windowDim);
+    m_rm->recreate<RenderPass>(m_depthPrepassRenderer.getRenderPass(), windowDim);
+    m_rm->recreate<RenderPass>(m_imguiRenderer.getRenderPass(), windowDim);
+    m_rm->recreate<RenderPass>(m_skyboxRenderer.getRenderPass(), windowDim);
+    m_rm->recreate<RenderPass>(m_testRenderer.getRenderPass(), windowDim);
+    m_rm->recreate<RenderPass>(m_debugMeshRenderer.getRenderPass(), windowDim);
+    m_rm->recreate<RenderPass>(m_debugNormalsRenderer.getRenderPass(), windowDim);
+    m_rm->recreate<RenderPass>(m_sunShadowRenderer.getRenderPass(), windowDim);
+    m_rm->recreate<RenderPass>(m_volumetricLightRenderer.getRenderPass(), windowDim);
+    m_rm->recreate<RenderPass>(m_blurRenderer.getRenderPass(), windowDim);
+    m_rm->recreate<RenderPass>(m_gtaoRenderer.getRenderPass(), windowDim);
+    m_rm->recreate<RenderPass>(m_fxaaRenderer.getRenderPass(), windowDim);
+    m_rm->recreate<RenderPass>(m_unlitMeshRenderer.getRenderPass(), windowDim);
+    m_rm->recreate<RenderPass>(m_litMeshRenderer.getRenderPass(), windowDim);
+
+    // make updates to descriptors
+    m_frameRenderer.setInput(m_imguiRenderer.getAttachment());
+    m_imguiRenderer.setInput(m_fxaaRenderer.getAttachment());
+    m_volumetricLightRenderer.updateDescriptorSet(
+        m_depthPrepassRenderer.getDepthAttachment(),
+        m_sunShadowRenderer.getDepthAttachments(),
+        m_sunShadowRenderer.getShadowData());
+    m_blurRenderer.updateDescriptorSet(m_gtaoRenderer.getAttachment());
+    m_gtaoRenderer.updateDescriptorSet(m_depthPrepassRenderer.getDepthAttachment());
+    m_litMeshRenderer.updateDescriptorSet(
+        m_depthPrepassRenderer.getDepthAttachment(),
+        m_blurRenderer.getAttachment(),
+        m_sunShadowRenderer.getDepthAttachments(),
+        m_sunShadowRenderer.getShadowData(),
+        m_volumetricLightRenderer.getAttachment());
+    m_fxaaRenderer.updateDescriptorSet(m_litMeshRenderer.getAttachment());
+    m_skyboxRenderer.updateDescriptorSet(m_litMeshRenderer.m_descriptorSet);
 }
 
 

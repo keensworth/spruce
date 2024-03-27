@@ -132,6 +132,20 @@ public:
         return m_shader;
     }
 
+    void updateDescriptorSet(Handle<TextureAttachment> depthInput){
+        m_rm->remove<DescriptorSet>(m_descriptorSet);
+
+        // descriptor set
+        m_descriptorSet = m_rm->create<DescriptorSet>({
+            .textures = {
+                {
+                    .attachment = depthInput,
+                    .layout = Flags::ImageLayout::READ_ONLY
+                }
+            },
+            .layout = m_descriptorSetLayout
+        });
+    }
 
     void destroy(){
         m_rm->remove<DescriptorSet>(m_descriptorSet);

@@ -7,6 +7,7 @@
 #include <string>
 #include "../../external/volk/volk.h"
 #include "../../debug/SprLog.h"
+#include "vulkan/gfx_vulkan_core.h"
 
 namespace spr::gfx {
 
@@ -155,6 +156,7 @@ RenderFrame& VulkanRenderer::beginFrame(VulkanResourceManager* rm){
     offscreenCB.resetFence();
     mainCB.resetFence();
     
+    
     // acquire swapchain image index
     VkResult result = vkAcquireNextImageKHR(
                             m_device.getDevice(), 
@@ -267,19 +269,20 @@ void VulkanRenderer::validateSwapchain(VkResult result, SwapchainStage stage){
     // will need to recreate swapchain, as we know 
     // either OUT_OF_DATE or SUBOPTIMAL are true
     if (stage == PRESENT || (stage == ACQUIRE && result == VK_ERROR_OUT_OF_DATE_KHR)){
-        recreateSwapchain();
+        m_dirtySwapchain = true;
     }
+
+    m_dirtySwapchain = false;
 }
 
 
 void VulkanRenderer::onResize(){
-    wait();
-    cleanup();
     recreateSwapchain();
 }
 
 
 void VulkanRenderer::recreateSwapchain(){
+    m_display.cleanup(m_device.getDevice());
     m_display.createSwapchain(m_device.getPhysicalDevice(), m_device.getDevice(), m_device.getQueueFamilies());
     m_display.createImageViews(m_device.getDevice());
 }
@@ -287,6 +290,21 @@ void VulkanRenderer::recreateSwapchain(){
 
 void VulkanRenderer::wait(){
     vkDeviceWaitIdle(m_device.getDevice());
+    for (uint32 i = 0; i < MAX_FRAME_COUNT; i++){
+        CommandPool& gfxCommandPool = m_gfxCommandPools[i];
+        CommandPool& transferCommandPool = m_transferCommandPools[i];
+
+        // wait for fences, so we can reset pools
+        CommandBuffer& transferCB = transferCommandPool.getCommandBuffer(CommandType::TRANSFER);
+        CommandBuffer& offscreenCB = gfxCommandPool.getCommandBuffer(CommandType::OFFSCREEN);
+        CommandBuffer& mainCB = gfxCommandPool.getCommandBuffer(CommandType::MAIN);
+        transferCB.waitFence();
+        offscreenCB.waitFence();
+        mainCB.waitFence();
+        transferCB.resetFence();
+        offscreenCB.resetFence();
+        mainCB.resetFence();
+    }
 }
 
 }

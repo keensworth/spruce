@@ -7,6 +7,7 @@
 #include "../vulkan/resource/ResourceFlags.h"
 #include "../../debug/SprLog.h"
 #include "../scene/Material.h"
+#include <vulkan/vulkan_core.h>
 
 namespace spr::gfx {
 class SkyboxRenderer {
@@ -107,6 +108,10 @@ public:
 
     Handle<Shader> getShader(){
         return m_shader;
+    }
+
+    void updateDescriptorSet(Handle<DescriptorSet> descriptorSet){
+        m_descriptorSet = descriptorSet;
     }
 
 

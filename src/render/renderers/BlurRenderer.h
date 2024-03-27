@@ -161,6 +161,31 @@ public:
         return m_shader;
     }
 
+    void updateDescriptorSet(Handle<TextureAttachment> input){
+        m_rm->remove<DescriptorSet>(m_descriptorSetY);
+        m_rm->remove<DescriptorSet>(m_descriptorSetX);
+
+        // descriptor set
+        m_descriptorSetX = m_rm->create<DescriptorSet>({
+            .textures = {
+                {
+                    .attachment = input,
+                    .layout = Flags::ImageLayout::READ_ONLY
+                }
+            },
+            .layout = m_descriptorSetLayout
+        });
+        m_descriptorSetY = m_rm->create<DescriptorSet>({
+            .textures = {
+                {
+                    .attachment = m_attachmentX,
+                    .layout = Flags::ImageLayout::READ_ONLY
+                }
+            },
+            .layout = m_descriptorSetLayout
+        });
+    }
+
     void destroy(){
         m_rm->remove<DescriptorSet>(m_descriptorSetX);
         m_rm->remove<DescriptorSet>(m_descriptorSetY);

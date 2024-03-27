@@ -275,7 +275,7 @@ Handle<Texture> VulkanResourceManager::create<Texture>(TextureDesc desc){
     TextureCache* textureCache = ((TextureCache*) m_resourceMap[typeid(Texture)]);
 
     // check if default resolution
-    bool defaultRes = !desc.dimensions.x && !desc.dimensions.y && !desc.dimensions.z;
+    bool defaultRes = (m_screenDim == desc.dimensions) || (!desc.dimensions.x && !desc.dimensions.y && !desc.dimensions.z);
     glm::uvec3 dimensions = defaultRes ? glm::uvec3(m_screenDim.x,m_screenDim.y,m_screenDim.z)
                                        : glm::uvec3(desc.dimensions.x,desc.dimensions.y,desc.dimensions.z);
     
@@ -1367,7 +1367,8 @@ Handle<RenderPass> VulkanResourceManager::recreate<RenderPass>(Handle<RenderPass
     
     // recreate framebuffer
     recreate<Framebuffer>(renderPass->framebuffer, FramebufferDesc{
-        .dimensions = {newDimensions.x, newDimensions.y, renderPass->dimensions.z}
+        .dimensions = {newDimensions.x, newDimensions.y, renderPass->dimensions.z},
+        .renderPass = handle
     });
     
     return handle;
@@ -1395,25 +1396,31 @@ Handle<Framebuffer> VulkanResourceManager::recreate<Framebuffer>(Handle<Framebuf
     // don't recreate if desired dimension == current
     if (desc.dimensions == framebuffer->dimensions)
         return handle;
-
+    
     // rebuild all textures that use default res,
     // assuming this renderpass doesnt use swapchain images
     if (!swapchainOverride){
+        // remove existing framebuffer
+        for (uint32 frame = 0; frame < MAX_FRAME_COUNT; frame++){
+            vkDestroyFramebuffer(m_device, framebuffer->framebuffers.at(frame), NULL);
+        }
         // color
         for (Framebuffer::ColorAttachment& attachment : colorAttachments){
             TextureAttachment* textureAttachment = get<TextureAttachment>(attachment.texture);
 
-            if (textureAttachment == nullptr)
+            if (textureAttachment == nullptr){
+                colorAttachmentCount--;
                 continue;
+            }
 
             // recreate attachment's images/views
             for(int frame = 0; frame < frameCount; frame++){
                 Handle<Texture> textureHandle = textureAttachment->textures[frame];
                 Texture* texture = get<Texture>(textureHandle);
 
-                // only need to create those that match screen res
-                if(!texture->defaultRes)
+                if (texture->dimensions == desc.dimensions){
                     continue;
+                }
                 
                 vkDestroyImageView(m_device, texture->view, NULL);
                 vmaDestroyImage(m_allocator, texture->image, texture->alloc);
@@ -1472,9 +1479,9 @@ Handle<Framebuffer> VulkanResourceManager::recreate<Framebuffer>(Handle<Framebuf
                 Handle<Texture> textureHandle = textureAttachment->textures[frame];
                 Texture* texture = get<Texture>(textureHandle);
 
-                // only need to create those that match screen res
-                if(!texture->defaultRes)
+                if (texture->dimensions == desc.dimensions){
                     continue;
+                }
                 
                 vkDestroyImageView(m_device, texture->view, NULL);
                 vmaDestroyImage(m_allocator, texture->image, texture->alloc);
@@ -1532,18 +1539,26 @@ Handle<Framebuffer> VulkanResourceManager::recreate<Framebuffer>(Handle<Framebuf
         if (swapchainOverride){
             // new sc views will already be provided by the time recreate is called
             vulkanAttachments[frame][0] = colorAttachments[0].swapchainImageViews[frame];
-            break;
-        }
-        // fetch provided attachments
-        for (uint32 i = 0; i < colorAttachmentCount; i++){
-            TextureAttachment* textureAttachment = get<TextureAttachment>(colorAttachments[i].texture);
-            Texture* texture = get<Texture>(textureAttachment->textures[frame]);
-            vulkanAttachments[frame][i] = texture->view;
-        }
-        if (hasDepthAttachment){
-            TextureAttachment* textureAttachment = get<TextureAttachment>(depthAttachment.texture);
-            Texture* texture = get<Texture>(textureAttachment->textures[frame]);
-            vulkanAttachments[frame][colorAttachmentCount] = texture->view;
+            colorAttachmentCount = 1;
+            hasDepthAttachment = false;
+        } else {
+            // fetch provided attachments
+            for (uint32 i = 0; i < colorAttachmentCount; i++){
+                TextureAttachment* textureAttachment = get<TextureAttachment>(colorAttachments[i].texture);
+                if (textureAttachment == nullptr)
+                    continue;
+                Texture* texture = get<Texture>(textureAttachment->textures[frame]);
+                vulkanAttachments[frame][i] = texture->view;
+            }
+            if (hasDepthAttachment){
+                TextureAttachment* textureAttachment = get<TextureAttachment>(depthAttachment.texture);
+                if (textureAttachment == nullptr)
+                    continue;
+                Texture* texture = get<Texture>(textureAttachment->textures[frame]);
+
+
+                vulkanAttachments[frame][colorAttachmentCount] = texture->view;
+            }
         }
 
         // build framebuffer create info
@@ -1560,7 +1575,8 @@ Handle<Framebuffer> VulkanResourceManager::recreate<Framebuffer>(Handle<Framebuf
         };
         
         // create vulkan framebuffer (write directly to Framebuffer object's framebuffers)
-        VK_CHECK(vkCreateFramebuffer(m_device, &framebufferInfo, NULL, &framebuffer->framebuffers.at(frame)));        
+        VK_CHECK(vkCreateFramebuffer(m_device, &framebufferInfo, NULL, &framebuffer->framebuffers.at(frame)));    
+        framebuffer->dimensions = desc.dimensions;
     }
 
     return handle;

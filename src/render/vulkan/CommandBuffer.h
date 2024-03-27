@@ -63,6 +63,7 @@ private: // non-owning
     bool m_initialized = false;
     bool m_destroyed = false;
     bool m_recording = false;
+    bool m_fenceInUse = false;
 
     void setFrameId(uint32 frameId);
     void begin();

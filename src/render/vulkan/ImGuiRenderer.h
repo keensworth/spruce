@@ -44,6 +44,10 @@ struct RenderState {
     float exposure = 5.f;
     glm::vec3 lightColor = {1.f, 1.f, 1.f};
     glm::vec3 lightDir = glm::normalize(vec3(0.3f, 1.f, -2.f));
+
+    uint32 windowDim = 1;
+    uint32 windowMode = 3;
+    bool dirtyWindow = false;
 };
 
 class ImGuiRenderer {
@@ -127,19 +131,59 @@ private:
 
     void buildLayout(){
         const ImGuiViewport* main_viewport = ImGui::GetMainViewport();
-        ImGui::SetNextWindowPos(ImVec2(main_viewport->WorkPos.x + 650, main_viewport->WorkPos.y + 20), ImGuiCond_FirstUseEver);
-        ImGui::SetNextWindowSize(ImVec2(550, 680), ImGuiCond_FirstUseEver);
+        ImGui::SetNextWindowPos(ImVec2(main_viewport->Size.x-370, main_viewport->WorkPos.y), ImGuiCond_Always);
+        ImGui::SetNextWindowSize(ImVec2(370, 680), ImGuiCond_Always);
 
         if (!ImGui::Begin("spruce")){
             ImGui::End();
             return;
         }
 
+        // window settings
+        if (!ImGui::CollapsingHeader("Window", ImGuiTreeNodeFlags_DefaultOpen)){
+            ImGui::End();
+            return;
+        }
+        const char* resolutions[] = { "2560x1440", "1920x1080", "1366x768", "1280x720" };
+        static int currentRes = 1;
+        ImGui::Combo("Resolution", &currentRes, resolutions, IM_ARRAYSIZE(resolutions));
+        if (currentRes != state.windowDim){
+            state.windowDim = currentRes;
+            if (currentRes == 0){
+                m_window->setResolution(2560, 1440);
+            } else if (currentRes == 1){
+                m_window->setResolution(1920, 1080);
+            } else if (currentRes == 2){
+                m_window->setResolution(1366, 768);
+            } else {
+                m_window->setResolution(1280, 720);
+            }
+        }
+
+        const char* displayModes[] = { "Fullscreen", "Fullscreen Windowed", "Windowed Borderless", "Windowed" };
+        static int currentMode = 3;
+        ImGui::Combo("Display Mode", &currentMode, displayModes, IM_ARRAYSIZE(displayModes));
+        if (currentMode != state.windowMode){
+            state.windowMode = currentMode;
+            if (currentMode == 0){
+                m_window->setFullscreen();
+            } else if (currentMode == 1){
+                m_window->setFullscreen();
+                m_window->setBorderless();
+            } else if (currentMode == 2){
+                m_window->setWindowed();
+                m_window->setBorderless();
+            } else {
+                m_window->setWindowed();
+                m_window->setBordered();
+            }
+        }
+
+        // scene settings
         if (!ImGui::CollapsingHeader("Scene", ImGuiTreeNodeFlags_DefaultOpen)){
             ImGui::End();
             return;
         }
-
         ImGui::SeparatorText("Sun");
         state.dirtyLight |= ImGui::SliderFloat3("light dir", glm::value_ptr(state.lightDir), -1.0f, 1.0f);
         state.dirtyLight |= ImGui::ColorEdit3("light color", glm::value_ptr(state.lightColor));
@@ -184,6 +228,7 @@ private:
             ImGui::TreePop();
         }
 
+        // shader settings
         if (ImGui::TreeNode("Shaders")){
             static ImGuiTableFlags flags = ImGuiTableFlags_SizingFixedFit | ImGuiTableFlags_RowBg | ImGuiTableFlags_Borders | ImGuiTableFlags_Resizable | ImGuiTableFlags_Reorderable | ImGuiTableFlags_Hideable;
 
@@ -202,7 +247,6 @@ private:
                 if (ImGui::Button("Reload##1")){
                     state.dirtyShader = true;
                     state.shaderToReload = RenderState::LIT_MESH;
-                    SprLog::debug("trying to reload pbr :(");
                 }
 
                 ImGui::TableNextRow();
@@ -280,7 +324,6 @@ private:
                 if (ImGui::Button("Reload##8")){
                     state.dirtyShader = true;
                     state.shaderToReload = RenderState::FXAA;
-                    SprLog::debug("trying to reload fxaa :(");
                 }
 
                 ImGui::TableNextRow();
@@ -391,6 +434,8 @@ public:
     void setInput(Handle<TextureAttachment> input){
         if (input == m_input)
             return;
+
+        m_rm->remove<DescriptorSet>(m_descriptorSet);
 
         m_descriptorSet = m_rm->create<DescriptorSet>({
             .textures = {

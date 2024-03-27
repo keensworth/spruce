@@ -75,9 +75,27 @@ public:
     }
 
 
+    void destroyFramebuffer(){
+        RenderPass* renderPass = m_rm->get<RenderPass>(m_renderPass);
+        Framebuffer* framebuffer = m_rm->get<Framebuffer>(renderPass->framebuffer);
+        for (uint32 frame = 0; frame < MAX_FRAME_COUNT; frame++){
+            vkDestroyFramebuffer(m_renderer->getDevice().getDevice(), framebuffer->framebuffers.at(frame), NULL);
+        }
+    }
+
+
+    void updateImageViews(std::vector<VkImageView>& swapchainImageViews){
+        RenderPass* renderPass = m_rm->get<RenderPass>(m_renderPass);
+        Framebuffer* framebuffer = m_rm->get<Framebuffer>(renderPass->framebuffer);
+        framebuffer->colorAttachments[0].swapchainImageViews = swapchainImageViews;
+    }
+
+
     void setInput(Handle<TextureAttachment> input){
         if (input == m_input)
             return;
+
+        m_rm->remove<DescriptorSet>(m_descriptorSet);
 
         m_descriptorSet = m_rm->create<DescriptorSet>({
             .textures = {

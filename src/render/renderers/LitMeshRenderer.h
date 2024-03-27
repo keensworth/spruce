@@ -164,6 +164,44 @@ public:
         return m_shader;
     }
 
+    void updateDescriptorSet(
+            Handle<TextureAttachment> depthAttachment,
+            Handle<TextureAttachment> visibilityTexture,
+            Handle<TextureAttachment> shadowCascades[MAX_CASCADES],
+            Handle<Buffer> shadowData,
+            Handle<TextureAttachment> volumetricLighting){
+        m_rm->remove<DescriptorSet>(m_descriptorSet);
+
+        // descriptor set
+        m_descriptorSet = m_rm->create<DescriptorSet>({
+            .textures = {
+                {
+                    .attachment = depthAttachment,
+                    .layout = Flags::ImageLayout::READ_ONLY
+                },
+                {
+                    .attachment = visibilityTexture,
+                    .layout = Flags::ImageLayout::READ_ONLY
+                },
+                {
+                    .attachments = {shadowCascades, MAX_CASCADES},
+                    .layout = Flags::ImageLayout::READ_ONLY
+                },
+                {
+                    .attachment = volumetricLighting,
+                    .layout = Flags::ImageLayout::READ_ONLY
+                },
+            },
+            .buffers = {
+                {
+                    .dynamicBuffer = shadowData, 
+                    .byteSize = (MAX_FRAME_COUNT * m_rm->alignedSize(sizeof(SunShadowData)))
+                }
+            },
+            .layout = m_descriptorSetLayout
+        });
+    }
+
 
     void destroy(){
         m_rm->remove<DescriptorSet>(m_descriptorSet);

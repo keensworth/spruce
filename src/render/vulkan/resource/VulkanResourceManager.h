@@ -29,6 +29,10 @@ public:
     void init(VulkanDevice& device, glm::uvec3 screenDim);
     void destroy();
 
+    void updateScreenDim(glm::uvec2 screenDim){
+        m_screenDim = {screenDim.x, screenDim.y, 1};
+    }
+
     // U := ResourceType
     template <typename U>
     U* get(Handle<U> handle){

@@ -30,6 +30,9 @@ public:
 
     void onResize();
     void wait();
+    bool invalidSwapchain(){
+        return m_dirtySwapchain;
+    }
     
     uint32 getFrameId();
     VulkanDevice& getDevice();
@@ -60,5 +63,7 @@ private:
 
     bool m_initialized = false;
     bool m_destroyed = false;
+    bool m_dirtySwapchain = false;
+    uint32 m_fenceDelay = 0;
 };
 }
