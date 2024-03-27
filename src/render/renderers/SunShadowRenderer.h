@@ -151,12 +151,10 @@ public:
 			float d = cascadeSplitLambda * (log - uniform) + uniform;
 			cascadeSplits[i] = (d - nearClip) / clipRange;
 		}
-
 		// Calculate orthographic projection matrix for each cascade
 		float lastSplitDist = 0.0f;
 		for (uint32_t i = 0; i < MAX_CASCADES; i++) {
 			float splitDist = cascadeSplits[i];
-
 			glm::vec3 frustumCorners[8] = {
 				glm::vec3(-1.0f,  1.0f, 1.0f),
 				glm::vec3( 1.0f,  1.0f, 1.0f),
@@ -200,12 +198,27 @@ public:
 
             glm::vec3 lightDir = glm::normalize(light.dir);  
 
+            // offset frustumCenter so it is texel-aligned
+            float texelsPerUnit = 4096.0f / (radius * 2.0f);
+            glm::vec3 scalar(texelsPerUnit);
+            glm::vec3 zero(0.f);
+            glm::vec3 baseLookAt(-lightDir);
+
+            glm::mat4 lookAt = glm::lookAt(zero, baseLookAt, glm::vec3(0.f, 1.f, 0.f));
+            lookAt = glm::scale(lookAt, scalar);
+            glm::mat4 lookAtInv = glm::inverse(lookAt);
+
+            frustumCenter = lookAt * glm::vec4(frustumCenter,1.f);
+            frustumCenter.x = glm::floor(frustumCenter.x);
+            frustumCenter.y = glm::floor(frustumCenter.y);
+            frustumCenter = lookAtInv * glm::vec4(frustumCenter,1.f);
+
+            // build shadow camera view/proj matrices
             glm::vec3 eye = frustumCenter - lightDir * -minExtents.z;
             
 			glm::mat4 lightViewMatrix = glm::lookAt(eye, frustumCenter, glm::vec3(0.0f, 1.0f, 0.0f));
-			glm::mat4 lightOrthoMatrix = glm::orthoRH_ZO(minExtents.x, maxExtents.y, minExtents.x, maxExtents.y, maxExtents.z-minExtents.z, -32.f);
+			glm::mat4 lightOrthoMatrix = glm::orthoRH_ZO(minExtents.x, maxExtents.y, minExtents.x, maxExtents.y, 6.f * maxExtents.z, 6.f * minExtents.z);
 
-			// Store split distance and matrix in cascade
             SunShadowData& shadowData = m_shadowTemp[frameId % MAX_FRAME_COUNT][0];
 			shadowData.cascadeSplit[0][i%4] = (nearClip + splitDist * clipRange); // world dist
             shadowData.cascadeSplit[1][i%4] = (splitDist); // normalized wrt clipRange

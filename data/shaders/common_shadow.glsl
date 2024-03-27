@@ -73,7 +73,7 @@ float filterPCF(vec4 shadowCoord, uint cascadeIndex, float bias) {
 
 	float shadowFactor = 0.0;
 	int count = 0;
-	int range = 1;
+	int range = 2;
 	
 	for (int x = -range; x <= range; x++) {
 		for (int y = -range; y <= range; y++) {

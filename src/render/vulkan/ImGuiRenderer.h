@@ -40,7 +40,7 @@ struct RenderState {
     bool dirtyLight = false;
 
     uint32 shadowSelection = 0;
-    float cascadeLambda = 0.80f;
+    float cascadeLambda = 0.92f;
     float exposure = 5.f;
     glm::vec3 lightColor = {1.f, 1.f, 1.f};
     glm::vec3 lightDir = glm::normalize(vec3(0.3f, 1.f, -2.f));
