@@ -12,6 +12,7 @@
 #include "renderers/DebugMeshRenderer.h"
 #include "renderers/SunShadowRenderer.h"
 #include "renderers/VolumetricLightRenderer.h"
+#include "renderers/DebugCascadesRenderer.h"
 #include "vulkan/FrameRenderer.h"
 #include "vulkan/ImGuiRenderer.h"
 
@@ -60,6 +61,7 @@ private:
     TestRenderer m_testRenderer;
     DebugMeshRenderer m_debugMeshRenderer;
     DebugNormalsRenderer m_debugNormalsRenderer;
+    DebugCascadesRenderer m_debugCascadesRenderer;
     DepthPrepassRenderer m_depthPrepassRenderer;
     GTAORenderer m_gtaoRenderer;
     BlurRenderer m_blurRenderer;

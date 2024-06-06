@@ -30,7 +30,8 @@ struct RenderState {
         BLUR_PASS = 0b1 << 7,
         SHADOW_CASCADES = 0b1 << 8,
         VOLUMETRIC_LIGHT = 0b1 << 9,
-        FXAA = 0b1 << 10
+        FXAA = 0b1 << 10,
+        DEBUG_SHADOW_CASCADES = 0b1 << 11
     };
 
     Shader visible = FXAA;
@@ -214,6 +215,7 @@ private:
             ImGui::RadioButton("Volumetric Light", &visible, RenderState::VOLUMETRIC_LIGHT);
             ImGui::RadioButton("Debug Mesh", &visible, RenderState::DEBUG_MESH);
             ImGui::RadioButton("Debug Normals", &visible, RenderState::DEBUG_NORMALS);
+            ImGui::RadioButton("Debug Cascades", &visible, RenderState::DEBUG_SHADOW_CASCADES);
             ImGui::RadioButton("Test", &visible, RenderState::TEST);
         
             if ((uint32)visible != (uint32)state.visible){
@@ -346,6 +348,17 @@ private:
                 if (ImGui::Button("Reload##10")){
                     state.dirtyShader = true;
                     state.shaderToReload = RenderState::DEBUG_NORMALS;
+                }
+
+                ImGui::TableNextRow();
+                ImGui::TableSetColumnIndex(0);
+                ImGui::Text("Debug Shadow Cascades");
+                ImGui::TableSetColumnIndex(1);
+                ImGui::Text("data/shaders/debug_cascades");
+                ImGui::TableSetColumnIndex(2);
+                if (ImGui::Button("Reload##12")){
+                    state.dirtyShader = true;
+                    state.shaderToReload = RenderState::DEBUG_SHADOW_CASCADES;
                 }
 
                 ImGui::TableNextRow();

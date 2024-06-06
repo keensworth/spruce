@@ -77,6 +77,9 @@ void RenderCoordinator::render(SceneManager& sceneManager){
         else if (visible & RenderState::DEBUG_NORMALS) {
             m_debugNormalsRenderer.render(offscreenCB, allMaterialBatches);
         }
+        else if (visible & RenderState::DEBUG_SHADOW_CASCADES) {
+            m_debugCascadesRenderer.render(offscreenCB, allMaterialBatches);
+        }
         else if (visible & RenderState::UNLIT_MESH) {
             m_unlitMeshRenderer.render(offscreenCB, allMaterialBatches);
         }
@@ -148,6 +151,8 @@ void RenderCoordinator::updateUI(CommandBuffer& offscreenCB){
             output = m_depthPrepassRenderer.getDepthAttachment();
         } else if (visible & RenderState::SHADOW_CASCADES){
             output = m_sunShadowRenderer.getDepthAttachments()[m_imguiRenderer.state.shadowSelection];
+        } else if (visible & RenderState::DEBUG_SHADOW_CASCADES){
+            output = m_debugCascadesRenderer.getAttachment();
         } else if (visible & RenderState::GTAO_PASS){
             output = m_gtaoRenderer.getAttachment();
         } else if (visible & RenderState::VOLUMETRIC_LIGHT){
@@ -179,6 +184,8 @@ void RenderCoordinator::updateUI(CommandBuffer& offscreenCB){
             reload = m_depthPrepassRenderer.getShader();
         } else if (shaderToReload == RenderState::SHADOW_CASCADES){
             reload = m_sunShadowRenderer.getShader();
+        } else if (shaderToReload == RenderState::DEBUG_SHADOW_CASCADES){
+            reload = m_debugCascadesRenderer.getShader();
         } else if (shaderToReload == RenderState::GTAO_PASS){
             reload = m_gtaoRenderer.getShader();
         } else if (shaderToReload == RenderState::VOLUMETRIC_LIGHT){
@@ -276,6 +283,15 @@ void RenderCoordinator::initRenderers(SceneManager& sceneManager){
         frameDescSetLayout,
         m_depthPrepassRenderer.getDepthAttachment());
 
+    m_debugCascadesRenderer = DebugCascadesRenderer(*m_rm, *m_renderer, windowDim);
+    m_debugCascadesRenderer.init(
+        globalDescSet,
+        globalDescSetLayout,
+        frameDescSets,
+        frameDescSetLayout,
+        m_depthPrepassRenderer.getDepthAttachment(),
+        m_sunShadowRenderer.getShadowData());
+
     m_unlitMeshRenderer = UnlitMeshRenderer(*m_rm, *m_renderer, windowDim);
     m_unlitMeshRenderer.init(
         globalDescSet,
@@ -353,6 +369,7 @@ void RenderCoordinator::onResize(){
     m_rm->recreate<RenderPass>(m_testRenderer.getRenderPass(), windowDim);
     m_rm->recreate<RenderPass>(m_debugMeshRenderer.getRenderPass(), windowDim);
     m_rm->recreate<RenderPass>(m_debugNormalsRenderer.getRenderPass(), windowDim);
+    m_rm->recreate<RenderPass>(m_debugCascadesRenderer.getRenderPass(), windowDim);
     m_rm->recreate<RenderPass>(m_sunShadowRenderer.getRenderPass(), windowDim);
     m_rm->recreate<RenderPass>(m_volumetricLightRenderer.getRenderPass(), windowDim);
     m_rm->recreate<RenderPass>(m_blurRenderer.getRenderPass(), windowDim);
@@ -389,6 +406,7 @@ void RenderCoordinator::destroy(){
     m_testRenderer.destroy();
     m_debugMeshRenderer.destroy();
     m_debugNormalsRenderer.destroy();
+    m_debugCascadesRenderer.destroy();
     m_depthPrepassRenderer.destroy();
     m_sunShadowRenderer.destroy();
     m_volumetricLightRenderer.destroy();
