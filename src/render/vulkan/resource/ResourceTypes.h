@@ -197,6 +197,7 @@ typedef struct Shader {
     std::vector<VkDescriptorSetLayout> emptyDescSetLayouts;
     VkShaderModule vertexModule = VK_NULL_HANDLE;
     VkShaderModule fragmentModule = VK_NULL_HANDLE;
+    VkShaderModule computeModule = VK_NULL_HANDLE;
     struct Desc;
     
     typedef struct GraphicsState {
@@ -208,6 +209,7 @@ typedef struct Shader {
 
     std::string vertexPath = "";
     std::string fragmentPath = "";
+    std::string computePath = "";
     std::vector<Handle<DescriptorSetLayout>> descSetLayouts;
     GraphicsState graphicsState;
 } Shader;
@@ -359,6 +361,10 @@ typedef struct RenderPass::Desc {
     
     DepthAttachment depthAttachment;
     spr::Span<ColorAttachment> colorAttachments{};
+
+    // for the sake of correct subpass dependencies,
+    // we must know if a buffer will be written to
+    bool bufferWrites = false;
 } RenderPassDesc;
 
 
@@ -380,7 +386,7 @@ typedef struct Shader::Desc {
 
     Shader vertexShader;
     Shader fragmentShader;
-    // Shader computeShader;
+    Shader computeShader;
     spr::Span<Handle<DescriptorSetLayout>> descriptorSets;
     GraphicsState graphicsState;
 } ShaderDesc;

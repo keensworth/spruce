@@ -28,6 +28,9 @@ public:
     void drawSubpass(PassContext context, std::vector<Batch>& batches);
     void drawSubpass(PassContext context, std::vector<Batch>& batches, uint32 vertexOffset);
     void drawSubpass(PassContext context, Batch batch, uint32 vertexOffset, uint32 firstInstance);
+
+    void dispatch(PassContext context, glm::uvec3 groupCount);
+
     void setFrameId(uint32 frameId);
     void setDimensions(glm::uvec3& dimensions);
 

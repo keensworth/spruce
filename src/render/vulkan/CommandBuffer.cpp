@@ -168,6 +168,40 @@ void CommandBuffer::endRenderPass(){
     vkCmdEndRenderPass(m_commandBuffer);
 }
 
+RenderPassRenderer& CommandBuffer::beginComputePass(){
+    // make sure user is accessing correct commandbuffer
+    if (m_type != CommandType::OFFSCREEN && m_type != CommandType::MAIN){
+        SprLog::warn("[CommandBuffer] Not a render command buffer");
+    }
+
+    return m_passRenderer;
+}
+
+void CommandBuffer::endComputePass(){
+    VkMemoryBarrier2KHR memoryBarrier {
+        .sType = VK_STRUCTURE_TYPE_MEMORY_BARRIER_2_KHR,
+        .pNext = NULL,
+        .srcStageMask = VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT,
+        .srcAccessMask = VK_ACCESS_SHADER_WRITE_BIT,
+        .dstStageMask = VK_PIPELINE_STAGE_VERTEX_SHADER_BIT | VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT,
+        .dstAccessMask = VK_ACCESS_SHADER_READ_BIT
+    };
+
+    VkDependencyInfoKHR dependencies = {
+        .sType = VK_STRUCTURE_TYPE_DEPENDENCY_INFO_KHR,
+        .pNext = NULL,
+        .dependencyFlags = 0,
+        .memoryBarrierCount = 1,
+        .pMemoryBarriers = &memoryBarrier,
+        .bufferMemoryBarrierCount = 1,
+        .pBufferMemoryBarriers = NULL,
+        .imageMemoryBarrierCount = 0,
+        .pImageMemoryBarriers = NULL
+    };
+
+    vkCmdPipelineBarrier2KHR(m_commandBuffer, &dependencies);
+}
+
 void CommandBuffer::bindIndexBuffer(Handle<Buffer> indexBuffer){
     Buffer* buffer = m_rm->get<Buffer>(indexBuffer);
     vkCmdBindIndexBuffer(m_commandBuffer, buffer->buffer, 0, VK_INDEX_TYPE_UINT32);

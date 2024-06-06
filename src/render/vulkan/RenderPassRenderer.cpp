@@ -4,6 +4,7 @@
 #include "../../external/volk/volk.h"
 #include "../scene/Draw.h"
 #include "../../debug/SprLog.h"
+#include <vulkan/vulkan_core.h>
 
 
 namespace spr::gfx {
@@ -133,6 +134,23 @@ void RenderPassRenderer::drawSubpass(PassContext context, Batch batch, uint32 ve
     
     // draw the batch:
     vkCmdDrawIndexed(m_commandBuffer, batch.indexCount, batch.drawCount, batch.firstIndex, vertexOffset, firstInstance);
+}
+
+// dispatch compute pipeline
+void RenderPassRenderer::dispatch(PassContext context, glm::uvec3 groupCount){  
+    // bind the current pipeline
+    Shader* shader = m_rm->get<Shader>(context.shader);
+    vkCmdBindPipeline(m_commandBuffer, VK_PIPELINE_BIND_POINT_COMPUTE, shader->pipeline);
+
+    // set and update descriptor bindings
+    m_descSetHandler.set(0, context.set0);
+    m_descSetHandler.set(1, context.set1);
+    m_descSetHandler.set(2, context.set2);
+    m_descSetHandler.set(3, context.set3);
+    m_descSetHandler.updateBindings(shader->layout, m_frameIndex);
+    
+    // draw the batch:
+    vkCmdDispatch(m_commandBuffer, groupCount.x, groupCount.y, groupCount.z);
 }
 
 void RenderPassRenderer::setFrameId(uint32 frameId){

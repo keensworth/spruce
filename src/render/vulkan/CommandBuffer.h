@@ -27,6 +27,9 @@ public:
     RenderPassRenderer& beginRenderPass(Handle<RenderPass> renderPass, Handle<Framebuffer> framebuffer, glm::vec4 clearColor = glm::vec4{0.45098f, 0.52549f, 0.47058f, 1.0f});
     void endRenderPass();
 
+    RenderPassRenderer& beginComputePass();
+    void endComputePass();
+    
     void bindIndexBuffer(Handle<Buffer> indexBuffer);
 
     void submit();

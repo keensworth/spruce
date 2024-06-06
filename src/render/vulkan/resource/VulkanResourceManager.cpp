@@ -902,26 +902,43 @@ Handle<RenderPass> VulkanResourceManager::create<RenderPass>(RenderPassDesc desc
             .dependencyFlags = 0
         };
     } else { // offscreen attachment dependencies
+        uint32 srcStageMask = 0;
+        uint32 dstStageMask = 0;
+        uint32 srcAccessMask = 0;
+        uint32 dstAccessMask = 0;
+
         if (colorAttachmentCount > 0){
-            inDependencyColor = {
-                .srcSubpass      = VK_SUBPASS_EXTERNAL,
-                .dstSubpass      = 0,
-                .srcStageMask    = VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT,
-                .dstStageMask    = VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT,
-                .srcAccessMask   = VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT,
-                .dstAccessMask   = VK_ACCESS_SHADER_READ_BIT,
-                .dependencyFlags = 0
-            };
-            outDependencyColor = {
-                .srcSubpass      = 0,
-                .dstSubpass      = VK_SUBPASS_EXTERNAL,
-                .srcStageMask    = VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT,
-                .dstStageMask    = VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT,
-                .srcAccessMask   = VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT,
-                .dstAccessMask   = VK_ACCESS_SHADER_READ_BIT,
-                .dependencyFlags = 0
-            };
+            srcStageMask  |= VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT;
+            dstStageMask  |= VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT;
+            srcAccessMask |= VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT;
+            dstAccessMask |= VK_ACCESS_SHADER_READ_BIT;
         }
+
+        if (desc.bufferWrites){
+            srcStageMask  |= VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT;
+            dstStageMask  |= VK_PIPELINE_STAGE_VERTEX_SHADER_BIT | VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT;
+            srcAccessMask |= VK_ACCESS_SHADER_WRITE_BIT;
+            dstAccessMask |= VK_ACCESS_SHADER_READ_BIT;
+        }
+
+        inDependencyColor = {
+            .srcSubpass      = VK_SUBPASS_EXTERNAL,
+            .dstSubpass      = 0,
+            .srcStageMask    = srcStageMask,
+            .dstStageMask    = dstStageMask,
+            .srcAccessMask   = srcAccessMask,
+            .dstAccessMask   = dstAccessMask,
+            .dependencyFlags = 0
+        };
+        outDependencyColor = {
+            .srcSubpass      = 0,
+            .dstSubpass      = VK_SUBPASS_EXTERNAL,
+            .srcStageMask    = srcStageMask,
+            .dstStageMask    = dstStageMask,
+            .srcAccessMask   = srcAccessMask,
+            .dstAccessMask   = dstAccessMask,
+            .dependencyFlags = 0
+        };
 
         if (hasDepthAttachment){
             VkAttachmentDescription& depthDesc = layout->attachmentDescriptions[colorAttachmentCount];
@@ -1124,7 +1141,39 @@ Handle<Shader> VulkanResourceManager::create<Shader>(ShaderDesc desc){
 
         // create shader module
         VK_CHECK(vkCreateShaderModule(m_device, &shaderModuleInfo, NULL, &fragmentShader));
+    }
 
+    // create fragment shader module
+    VkShaderModule computeShader = VK_NULL_HANDLE;
+    bool hasComputeShader = false;
+    if (!desc.computeShader.path.empty()){
+        hasComputeShader = true;
+
+        // get shader bytes
+        std::ifstream instream(desc.computeShader.path, std::ios::in | std::ios::binary);
+        if (!instream){
+            std::string message = "[VulkanResourceManager] [create<Shader>] Shader (CS) not found: ";
+            message += desc.computeShader.path;
+            SprLog::error(message);
+        }
+        std::vector<uint8> bytes = std::vector<uint8>((std::istreambuf_iterator<char>(instream)), std::istreambuf_iterator<char>());
+        uint32 size = bytes.size();
+
+        // build shader module info
+        VkShaderModuleCreateInfo shaderModuleInfo {
+            .sType    = VK_STRUCTURE_TYPE_SHADER_MODULE_CREATE_INFO,
+            .pNext    = NULL,
+            .flags    = 0,
+            .codeSize = size,
+            .pCode    = reinterpret_cast<const uint32_t*>(bytes.data())
+        };
+
+        // create shader module
+        VK_CHECK(vkCreateShaderModule(m_device, &shaderModuleInfo, NULL, &computeShader));
+    }
+
+    if (hasComputeShader && (hasVertexShader || hasFragmentShader)){
+        SprLog::error("[VulkanResourceManager] [create<Shader>] Shader cannont be created with a compute stage and vertex/fragment stage");
     }
 
     // create shader stages
@@ -1141,6 +1190,13 @@ Handle<Shader> VulkanResourceManager::create<Shader>(ShaderDesc desc){
             .sType  = VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO,
             .stage  = VK_SHADER_STAGE_FRAGMENT_BIT,
             .module = fragmentShader,
+            .pName  = "main"
+        });
+    if (hasFragmentShader) // compute
+        shaderStages.push_back({
+            .sType  = VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO,
+            .stage  = VK_SHADER_STAGE_COMPUTE_BIT,
+            .module = computeShader,
             .pName  = "main"
         });
 
@@ -1180,6 +1236,42 @@ Handle<Shader> VulkanResourceManager::create<Shader>(ShaderDesc desc){
     VkPipelineLayout pipelineLayout;
     VK_CHECK(vkCreatePipelineLayout(m_device, &pipelineLayoutInfo, NULL, &pipelineLayout));
 
+    // check for and create compute pipeline
+    if (hasComputeShader){
+        VkComputePipelineCreateInfo pipelineInfo = {
+            .sType  = VK_STRUCTURE_TYPE_COMPUTE_PIPELINE_CREATE_INFO,
+            .pNext  = NULL,
+            .flags  = 0,
+            .stage  = shaderStages[0],
+            .layout = pipelineLayout
+        };
+
+        VkPipeline vulkanPipeline;
+        VK_CHECK(vkCreateComputePipelines(m_device, VK_NULL_HANDLE, 1, &pipelineInfo, NULL, &vulkanPipeline));
+
+        // create shader resource, return handle
+        Shader shader {
+            .layout = pipelineLayout,
+            .pipeline = vulkanPipeline,
+            .emptyDescSetLayouts = emptyLayouts,
+            .vertexModule = vertexShader,
+            .fragmentModule = fragmentShader,
+            .computeModule = computeShader,
+            .vertexPath = desc.vertexShader.path,
+            .fragmentPath = desc.fragmentShader.path,
+            .computePath = desc.computeShader.path,
+            .descSetLayouts = desc.descriptorSets.toVec(),
+            .graphicsState = {
+                .depthTest = desc.graphicsState.depthTest,
+                .depthTestEnabled = desc.graphicsState.depthTestEnabled,
+                .depthWriteEnabled = desc.graphicsState.depthWriteEnabled,
+                .renderPass = desc.graphicsState.renderPass
+            }
+        };
+        return shaderCache->insert(shader);
+    }
+
+    // proceed with creating graphics pipeline
     // graphics state meta
     std::vector<VkPipelineColorBlendAttachmentState> colorBlendAttachments(renderPassLayout->colorReferences.size());
     std::vector<VkDynamicState> dynamicStates = {
@@ -1329,8 +1421,10 @@ Handle<Shader> VulkanResourceManager::create<Shader>(ShaderDesc desc){
         .emptyDescSetLayouts = emptyLayouts,
         .vertexModule = vertexShader,
         .fragmentModule = fragmentShader,
+        .computeModule = computeShader,
         .vertexPath = desc.vertexShader.path,
         .fragmentPath = desc.fragmentShader.path,
+        .computePath = desc.computeShader.path,
         .descSetLayouts = desc.descriptorSets.toVec(),
         .graphicsState = {
             .depthTest = desc.graphicsState.depthTest,
