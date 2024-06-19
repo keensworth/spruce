@@ -193,7 +193,7 @@ void CommandBuffer::endComputePass(){
         .dependencyFlags = 0,
         .memoryBarrierCount = 1,
         .pMemoryBarriers = &memoryBarrier,
-        .bufferMemoryBarrierCount = 1,
+        .bufferMemoryBarrierCount = 0,
         .pBufferMemoryBarriers = NULL,
         .imageMemoryBarrierCount = 0,
         .pImageMemoryBarriers = NULL
