@@ -4,6 +4,7 @@
 #include "../scene/Draw.h"
 #include "resource/VulkanResourceManager.h"
 #include "../../debug/SprLog.h"
+#include <vulkan/vulkan_core.h>
 
 namespace spr::gfx {
 
@@ -37,6 +38,16 @@ void DescriptorSetHandler::updateBindings(VkPipelineLayout pipelineLayout, uint3
             DescriptorSet* descSet = m_rm->get<DescriptorSet>(m_sets[i]);
             VkDescriptorSet set = descSet->global ? descSet->descriptorSets[0] : descSet->descriptorSets[frameIndex];
             vkCmdBindDescriptorSets(m_commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, pipelineLayout, i, 1, &set, 0, NULL);
+        }
+    }
+}
+
+void DescriptorSetHandler::updateBindingsCompute(VkPipelineLayout pipelineLayout, uint32 frameIndex){
+    for (uint32 i = 0; i < 4; i++){
+        if (m_sets[i].isValid()){
+            DescriptorSet* descSet = m_rm->get<DescriptorSet>(m_sets[i]);
+            VkDescriptorSet set = descSet->global ? descSet->descriptorSets[0] : descSet->descriptorSets[frameIndex];
+            vkCmdBindDescriptorSets(m_commandBuffer, VK_PIPELINE_BIND_POINT_COMPUTE, pipelineLayout, i, 1, &set, 0, NULL);
         }
     }
 }

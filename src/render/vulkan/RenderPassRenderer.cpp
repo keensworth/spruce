@@ -147,7 +147,7 @@ void RenderPassRenderer::dispatch(PassContext context, glm::uvec3 groupCount){
     m_descSetHandler.set(1, context.set1);
     m_descSetHandler.set(2, context.set2);
     m_descSetHandler.set(3, context.set3);
-    m_descSetHandler.updateBindings(shader->layout, m_frameIndex);
+    m_descSetHandler.updateBindingsCompute(shader->layout, m_frameIndex);
     
     // draw the batch:
     vkCmdDispatch(m_commandBuffer, groupCount.x, groupCount.y, groupCount.z);

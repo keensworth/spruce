@@ -19,6 +19,7 @@ public:
 
     void set(uint32 set, Handle<DescriptorSet> handle);
     void updateBindings(VkPipelineLayout pipelineLayout, uint32 frameIndex);
+    void updateBindingsCompute(VkPipelineLayout pipelineLayout, uint32 frameIndex);
     void reset();
 
 private: // non-owning
