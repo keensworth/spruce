@@ -5,6 +5,7 @@
 #include "renderers/DepthPrepassRenderer.h"
 #include "renderers/FXAARenderer.h"
 #include "renderers/GTAORenderer.h"
+#include "renderers/LightCullCompute.h"
 #include "renderers/UnlitMeshRenderer.h"
 #include "renderers/LitMeshRenderer.h"
 #include "renderers/SkyboxRenderer.h"
@@ -72,5 +73,8 @@ private:
     LitMeshRenderer m_litMeshRenderer;
     SkyboxRenderer m_skyboxRenderer;
     ImGuiRenderer m_imguiRenderer;
+
+    // compute
+    LightCullCompute m_lightCullCompute;
 };
 }

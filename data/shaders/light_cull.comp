@@ -1,0 +1,166 @@
+#version 460
+
+layout(local_size_x = 16, local_size_y = 8) in;
+
+#define SPR_GLOBAL_BINDINGS 1
+#define SPR_FRAME_BINDINGS 1
+#include "common_bindings.glsl"
+
+struct Cluster {
+    uint offset;
+    uint count;
+};
+
+layout (std430, set = 2, binding = 0) buffer ClusterList {
+    Cluster clusters[];
+};
+
+layout (std430, set = 2, binding = 1) buffer LightList {
+    uint lightIndices[];
+};
+
+layout (std430, set = 2, binding = 2) buffer GlobalIndexCount {
+    uint globalIndexCount;
+};
+
+
+// how many clusters the view frustum
+// should be split into, by dimension 
+const uvec3 clusterCounts = {16, 8, 24};
+const uint MAX_LIGHTS_PER_CLUSTER = 256;
+
+struct ClusterAABB{
+    vec3 maxPos;
+    vec3 minPos;
+};
+
+
+float getSliceZ(float slice){
+    float zNear = camera.near;
+    float zFar = camera.far;
+    float sliceZ = zNear * pow((zFar / zNear), (slice / float(clusterCounts.z)));
+    return sliceZ;
+}
+
+vec3 lineIntersectionToZPlane(vec3 start, vec3 end, float zDistance){
+    vec3 normal = vec3(0.0, 0.0, -1.0);
+
+    vec3 dir =  end - start;
+
+    // distance from start to plane
+    float t = (zDistance - dot(normal, start)) / dot(normal, dir);
+
+    // vector from start that passes thru end to the plane
+    vec3 result = start + t * dir;
+
+    return result;
+}
+
+vec4 screenToView(vec4 screen, vec2 screenDim){
+    // NDC/clip space
+    vec2 texCoord = screen.xy / screenDim;
+    vec4 clip = vec4(vec2(texCoord.x, 1.0 - texCoord.y)* 2.0 - 1.0, screen.z, screen.w);
+
+    // view space
+    vec4 view = inverse(sceneData.proj) * clip;
+    view = view / view.w;
+
+    return view;
+}
+
+ClusterAABB buildAABB(vec3 clusterCoords){
+    const vec3 eyePos = vec3(0.0);
+
+    vec2 screenDim = vec2(sceneData.screenDimX, sceneData.screenDimY);
+    vec2 tileSizePx = vec2(screenDim.x / clusterCounts.x, screenDim.y / clusterCounts.y);
+
+    // screen space min/max points of cluster (invocation => x,y)
+    vec4 maxPoint_sS = vec4(vec2(clusterCoords.x + 1, clusterCoords.y + 1) * tileSizePx, 0.0, 1.0); // .z=0, Vulkan
+    vec4 minPoint_sS = vec4(clusterCoords.xy * tileSizePx, 0.0, 1.0); // .z=0, Vulkan
+    
+    // view space min/max points of cluster
+    vec3 maxPoint_vS = screenToView(maxPoint_sS, screenDim).xyz;
+    vec3 minPoint_vS = screenToView(minPoint_sS, screenDim).xyz;
+
+    // view space near/far values of cluster (workgroup => z)
+    float clusterNear = getSliceZ(clusterCoords.z);
+    float clusterFar  = getSliceZ(clusterCoords.z + 1);
+
+    // determine min/max points for both the near and far planes
+    vec3 minPointNear = lineIntersectionToZPlane(eyePos, minPoint_vS, clusterNear);
+    vec3 minPointFar  = lineIntersectionToZPlane(eyePos, minPoint_vS, clusterFar);
+    vec3 maxPointNear = lineIntersectionToZPlane(eyePos, maxPoint_vS, clusterNear);
+    vec3 maxPointFar  = lineIntersectionToZPlane(eyePos, maxPoint_vS, clusterFar);
+
+    // determine the ultimate min/max points of the cluster
+    vec3 minPointAABB = min(min(minPointNear, minPointFar),min(maxPointNear, maxPointFar));
+    vec3 maxPointAABB = max(max(minPointNear, minPointFar),max(maxPointNear, maxPointFar));
+
+    ClusterAABB aabb = {maxPointAABB, minPointAABB};
+    return aabb;
+}
+
+float sqDistPointAABB(vec3 point, ClusterAABB aabb){
+    float sqDist = 0.0;
+    for(int i = 0; i < 3; ++i){
+        float v = point[i];
+        if(v < aabb.minPos[i]){
+            sqDist += (aabb.minPos[i] - v) * (aabb.minPos[i] - v);
+        }
+        if(v > aabb.maxPos[i]){
+            sqDist += (v - aabb.maxPos[i]) * (v - aabb.maxPos[i]);
+        }
+    }
+
+    return sqDist;
+}
+
+bool testLightAABB(Light light, ClusterAABB aabb){
+    float radius = light.range;
+    vec3 center  = vec3(sceneData.view * vec4(light.pos, 1.0));
+    float squaredDistance = sqDistPointAABB(center, aabb);
+
+    return squaredDistance <= (radius * radius);
+}
+
+void main(){
+    uint clusterId = gl_LocalInvocationID.x +
+                     gl_LocalInvocationID.y * clusterCounts.x +
+                     gl_WorkGroupID.z * (clusterCounts.x * clusterCounts.y);
+
+    uint lightCount = sceneData.lightCount;
+    globalIndexCount = 0;
+
+    // build cluster (expanded to AABB) given the current invocation(x,y) and workgroup(z)
+    ClusterAABB clusterAABB = buildAABB(vec3(gl_LocalInvocationID.x, gl_LocalInvocationID.y, gl_WorkGroupID.z));
+
+    uint visibleLightCount = 0;
+    uint visibleLightIndices[MAX_LIGHTS_PER_CLUSTER];
+
+    // test all lights against current cluster (excluding sun/directional)
+    for (uint i = 0; i < sceneData.sunOffset; i++){
+        Light light = lights[i];
+        if (testLightAABB(light, clusterAABB)){
+            visibleLightIndices[visibleLightCount] = i;
+            visibleLightCount += 1;
+        }
+    }
+    for (uint i = sceneData.sunOffset + 1; i < lightCount; i++){
+        Light light = lights[i];
+        if (testLightAABB(light, clusterAABB)){
+            visibleLightIndices[visibleLightCount] = i;
+            visibleLightCount += 1;
+        }
+    }
+
+    barrier();
+
+    // store lights that intersect the current cluster
+    uint offset = atomicAdd(globalIndexCount, visibleLightCount);
+    for(uint i = 0; i < visibleLightCount; ++i){
+        lightIndices[offset + i] = visibleLightIndices[i];
+    }
+
+    clusters[clusterId].offset = offset;
+    clusters[clusterId].count = visibleLightCount;
+}

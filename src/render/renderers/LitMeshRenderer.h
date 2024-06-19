@@ -31,12 +31,16 @@ public:
         Handle<TextureAttachment> visibilityTexture,
         Handle<TextureAttachment> shadowCascades[MAX_CASCADES],
         Handle<Buffer> shadowData,
-        Handle<TextureAttachment> volumetricLighting)
+        Handle<TextureAttachment> volumetricLighting,
+        Handle<DescriptorSet> lightClusterDescSet,
+        Handle<DescriptorSetLayout> lightClusterDescSetLayout)
     {
         m_globalDescSet = globalDescSet;
         m_globalDescSetLayout = globalDescSetLayout;
         m_frameDescSets = frameDescSets;
         m_frameDescSetLayout = frameDescSetLayout;
+        m_lightClusterDescSet = lightClusterDescSet;
+        m_lightClusterDescSetLayout = lightClusterDescSetLayout;
 
         // color attachment
         m_attachment = m_rm ->create<TextureAttachment>({
@@ -69,7 +73,7 @@ public:
             .colorAttachments = {
                 {
                     .texture = m_attachment,
-                    .finalLayout = Flags::ImageLayout::READ_ONLY
+                    .finalLayout = Flags::ImageLayout::COLOR_ATTACHMENT
                 }
             }
         });
@@ -95,7 +99,7 @@ public:
                 { globalDescSetLayout },
                 { frameDescSetLayout },
                 { m_descriptorSetLayout },
-                { }  // unused
+                { lightClusterDescSetLayout }
             },
             .graphicsState = {
                 .depthTest = Flags::Compare::GREATER_OR_EQUAL,
@@ -145,7 +149,8 @@ public:
             .shader = m_shader, 
             .set0 =  m_globalDescSet,
             .set1 = m_frameDescSets, 
-            .set2 = m_descriptorSet},
+            .set2 = m_descriptorSet,
+            .set3 = m_lightClusterDescSet},
             batches);
 
         cb.endRenderPass();
@@ -230,6 +235,8 @@ private: // non-owning
     Handle<DescriptorSetLayout> m_globalDescSetLayout;
     Handle<DescriptorSet> m_frameDescSets;
     Handle<DescriptorSetLayout> m_frameDescSetLayout;
+    Handle<DescriptorSet> m_lightClusterDescSet;
+    Handle<DescriptorSetLayout> m_lightClusterDescSetLayout;
 
     friend class RenderCoordinator;
 };
