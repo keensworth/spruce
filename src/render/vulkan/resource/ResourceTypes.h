@@ -81,15 +81,17 @@ typedef struct TextureAttachment {
 typedef struct DescriptorSetLayout {
     typedef struct TextureBindingLayout {
         uint32 binding = 0;
-        uint32 stages  = Flags::DescriptorStage::FRAGMENT;
+        uint32 stages  = Flags::DescriptorStage::FRAGMENT |
+                         Flags::DescriptorStage::COMPUTE;
         uint32 type    = Flags::DescriptorType::COMBINED_IMAGE_SAMPLER;
         uint32 count   = 1; // only != 1 if using array of textures
     } TextureBindingLayout;
 
     typedef struct BufferBindingLayout {
         uint32 binding = 0;
-        uint32 stages  = Flags::DescriptorStage::VERTEX  |
-                         Flags::DescriptorStage::FRAGMENT;
+        uint32 stages  = Flags::DescriptorStage::VERTEX   |
+                         Flags::DescriptorStage::FRAGMENT |
+                         Flags::DescriptorStage::COMPUTE;
         uint32 type    = Flags::DescriptorType::UNIFORM_BUFFER;
     } BufferBindingLayout;     
 

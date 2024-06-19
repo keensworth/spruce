@@ -1082,9 +1082,6 @@ Handle<RenderPass> VulkanResourceManager::create<RenderPass>(RenderPassDesc desc
 template<>
 Handle<Shader> VulkanResourceManager::create<Shader>(ShaderDesc desc){
     ShaderCache* shaderCache = ((ShaderCache*) m_resourceMap[typeid(Shader)]);
-    // meta
-    RenderPass* renderPass = get<RenderPass>(desc.graphicsState.renderPass);
-    RenderPassLayout* renderPassLayout = get<RenderPassLayout>(renderPass->layout);
     // create vertex shader module
     VkShaderModule vertexShader = VK_NULL_HANDLE;
     bool hasVertexShader = false;
@@ -1192,7 +1189,7 @@ Handle<Shader> VulkanResourceManager::create<Shader>(ShaderDesc desc){
             .module = fragmentShader,
             .pName  = "main"
         });
-    if (hasFragmentShader) // compute
+    if (hasComputeShader) // compute
         shaderStages.push_back({
             .sType  = VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO,
             .stage  = VK_SHADER_STAGE_COMPUTE_BIT,
@@ -1260,19 +1257,15 @@ Handle<Shader> VulkanResourceManager::create<Shader>(ShaderDesc desc){
             .vertexPath = desc.vertexShader.path,
             .fragmentPath = desc.fragmentShader.path,
             .computePath = desc.computeShader.path,
-            .descSetLayouts = desc.descriptorSets.toVec(),
-            .graphicsState = {
-                .depthTest = desc.graphicsState.depthTest,
-                .depthTestEnabled = desc.graphicsState.depthTestEnabled,
-                .depthWriteEnabled = desc.graphicsState.depthWriteEnabled,
-                .renderPass = desc.graphicsState.renderPass
-            }
+            .descSetLayouts = desc.descriptorSets.toVec()
         };
         return shaderCache->insert(shader);
     }
 
     // proceed with creating graphics pipeline
     // graphics state meta
+    RenderPass* renderPass = get<RenderPass>(desc.graphicsState.renderPass);
+    RenderPassLayout* renderPassLayout = get<RenderPassLayout>(renderPass->layout);
     std::vector<VkPipelineColorBlendAttachmentState> colorBlendAttachments(renderPassLayout->colorReferences.size());
     std::vector<VkDynamicState> dynamicStates = {
             VK_DYNAMIC_STATE_VIEWPORT,
@@ -2115,6 +2108,7 @@ void VulkanResourceManager::remove<Shader>(Handle<Shader> handle){
         vkDestroyPipelineLayout(m_device, shader->layout, nullptr);
         vkDestroyShaderModule(m_device, shader->vertexModule, nullptr);
         vkDestroyShaderModule(m_device, shader->fragmentModule, nullptr);
+        vkDestroyShaderModule(m_device, shader->computeModule, nullptr);
         for (VkDescriptorSetLayout emptyLayout : shader->emptyDescSetLayouts)
             vkDestroyDescriptorSetLayout(m_device, emptyLayout, nullptr);
         resourceCache->remove(handle);
