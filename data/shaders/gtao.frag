@@ -191,5 +191,5 @@ void main()
 	
 	float visibility = mix(1.0, IntegrateArc(h1, h2, n), length(projectedNormal));
 	
-	FragColor = vec4(vec3(visibility), 1.0);
+	FragColor = vec4(vec3(visibility*visibility), 1.0);
 }
