@@ -60,7 +60,7 @@ public:
                 {
                     .texture = colorAttachment,
                     .loadOp = Flags::LoadOp::LOAD,
-                    .layout = Flags::ImageLayout::READ_ONLY,
+                    .layout = Flags::ImageLayout::COLOR_ATTACHMENT,
                     .finalLayout = Flags::ImageLayout::READ_ONLY
                 }
             }
