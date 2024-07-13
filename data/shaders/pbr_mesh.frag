@@ -256,7 +256,6 @@ void main() {
 		directLighting += calculateDirectLighting(params, light, L, attenuation, 1.0);
 	}
 
-	// direct lighting contribution from sun / directional light
 	{
 		Light light = lights[sceneData.sunOffset];
 		vec3 L = -light.dir;

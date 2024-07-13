@@ -153,6 +153,7 @@ void main(){
         }
     }
 
+    visibleLightCount = min(visibleLightCount, MAX_LIGHTS_PER_CLUSTER);
     barrier();
 
     // store lights that intersect the current cluster
