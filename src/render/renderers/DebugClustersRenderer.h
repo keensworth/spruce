@@ -11,15 +11,15 @@
 #include "vulkan/gfx_vulkan_core.h"
 
 namespace spr::gfx {
-class LitMeshRenderer {
+class DebugClustersRenderer {
 public:
-    LitMeshRenderer(){}
-    LitMeshRenderer(VulkanResourceManager& rm, VulkanRenderer& renderer, glm::uvec3 dimensions){
+    DebugClustersRenderer(){}
+    DebugClustersRenderer(VulkanResourceManager& rm, VulkanRenderer& renderer, glm::uvec3 dimensions){
         m_rm = &rm;
         m_renderer = &renderer;
         m_dim = dimensions;
     }
-    ~LitMeshRenderer(){}
+    ~DebugClustersRenderer(){}
 
 
     void init(
@@ -32,6 +32,8 @@ public:
         Handle<TextureAttachment> shadowCascades[MAX_CASCADES],
         Handle<Buffer> shadowData,
         Handle<TextureAttachment> volumetricLighting,
+        Handle<DescriptorSetLayout> descriptorSetLayout,
+        Handle<DescriptorSet> descriptorSet,
         Handle<DescriptorSet> lightClusterDescSet,
         Handle<DescriptorSetLayout> lightClusterDescSetLayout)
     {
@@ -39,6 +41,8 @@ public:
         m_globalDescSetLayout = globalDescSetLayout;
         m_frameDescSets = frameDescSets;
         m_frameDescSetLayout = frameDescSetLayout;
+        m_descriptorSetLayout = descriptorSetLayout;
+        m_descriptorSet = descriptorSet;
         m_lightClusterDescSet = lightClusterDescSet;
         m_lightClusterDescSetLayout = lightClusterDescSetLayout;
 
@@ -73,28 +77,15 @@ public:
             .colorAttachments = {
                 {
                     .texture = m_attachment,
-                    .finalLayout = Flags::ImageLayout::COLOR_ATTACHMENT
+                    .finalLayout = Flags::ImageLayout::READ_ONLY
                 }
-            }
-        });
-
-        // descriptor set layout
-        m_descriptorSetLayout = m_rm->create<DescriptorSetLayout>({
-            .textures = {
-                {.binding = 0}, // depth
-                {.binding = 1}, // visibility (ao)
-                {.binding = 2, .count = MAX_CASCADES}, // shadow cascade depth
-                {.binding = 4} // volumetric lighting/scattering
-            },
-            .buffers = {
-                {.binding = 3} // sun shadow data
             }
         });
         
         // shader
         m_shader = m_rm->create<Shader>({
-            .vertexShader   = {.path = "../data/shaders/spv/pbr_mesh.vert.spv"},
-            .fragmentShader = {.path = "../data/shaders/spv/pbr_mesh.frag.spv"},
+            .vertexShader   = {.path = "../data/shaders/spv/debug_clusters.vert.spv"},
+            .fragmentShader = {.path = "../data/shaders/spv/debug_clusters.frag.spv"},
             .descriptorSets = {
                 { globalDescSetLayout },
                 { frameDescSetLayout },
@@ -106,35 +97,6 @@ public:
                 .depthWriteEnabled = false,
                 .renderPass = m_renderPass,
             }
-        });
-
-        // descriptor set
-        m_descriptorSet = m_rm->create<DescriptorSet>({
-            .textures = {
-                {
-                    .attachment = depthAttachment,
-                    .layout = Flags::ImageLayout::READ_ONLY
-                },
-                {
-                    .attachment = visibilityTexture,
-                    .layout = Flags::ImageLayout::READ_ONLY
-                },
-                {
-                    .attachments = {shadowCascades, MAX_CASCADES},
-                    .layout = Flags::ImageLayout::READ_ONLY
-                },
-                {
-                    .attachment = volumetricLighting,
-                    .layout = Flags::ImageLayout::READ_ONLY
-                },
-            },
-            .buffers = {
-                {
-                    .dynamicBuffer = shadowData, 
-                    .byteSize = (MAX_FRAME_COUNT * m_rm->alignedSize(sizeof(SunShadowData)))
-                }
-            },
-            .layout = m_descriptorSetLayout
         });
     }
 
@@ -167,14 +129,6 @@ public:
 
     Handle<Shader> getShader(){
         return m_shader;
-    }
-
-    Handle<DescriptorSet> getDescSet(){
-        return m_descriptorSet;
-    }
-
-    Handle<DescriptorSetLayout> getDescSetLayout(){
-        return m_descriptorSetLayout;
     }
 
     void updateDescriptorSet(
@@ -217,21 +171,17 @@ public:
 
 
     void destroy(){
-        m_rm->remove<DescriptorSet>(m_descriptorSet);
         m_rm->remove<Shader>(m_shader);
-        m_rm->remove<DescriptorSetLayout>(m_descriptorSetLayout);
         m_rm->remove<RenderPass>(m_renderPass);
         m_rm->remove<RenderPassLayout>(m_renderPassLayout);
         m_rm->remove<TextureAttachment>(m_attachment);
-        SprLog::info("[LitMeshRenderer] [destroy] destroyed...");
+        SprLog::info("[DebugClustersRenderer] [destroy] destroyed...");
     }
 
 private: // owning
     Handle<TextureAttachment> m_attachment;
     Handle<RenderPassLayout> m_renderPassLayout;
     Handle<RenderPass> m_renderPass;
-    Handle<DescriptorSetLayout> m_descriptorSetLayout;
-    Handle<DescriptorSet> m_descriptorSet;
     Handle<Shader> m_shader;
 
 private: // non-owning
@@ -243,6 +193,8 @@ private: // non-owning
     Handle<DescriptorSetLayout> m_globalDescSetLayout;
     Handle<DescriptorSet> m_frameDescSets;
     Handle<DescriptorSetLayout> m_frameDescSetLayout;
+    Handle<DescriptorSetLayout> m_descriptorSetLayout;
+    Handle<DescriptorSet> m_descriptorSet;
     Handle<DescriptorSet> m_lightClusterDescSet;
     Handle<DescriptorSetLayout> m_lightClusterDescSetLayout;
 

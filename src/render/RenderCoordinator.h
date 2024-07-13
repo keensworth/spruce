@@ -1,6 +1,7 @@
 #pragma once
 
 #include "renderers/BlurRenderer.h"
+#include "renderers/DebugClustersRenderer.h"
 #include "renderers/DebugNormalsRenderer.h"
 #include "renderers/DepthPrepassRenderer.h"
 #include "renderers/FXAARenderer.h"
@@ -63,6 +64,7 @@ private:
     DebugMeshRenderer m_debugMeshRenderer;
     DebugNormalsRenderer m_debugNormalsRenderer;
     DebugCascadesRenderer m_debugCascadesRenderer;
+    DebugClustersRenderer m_debugClustersRenderer;
     DepthPrepassRenderer m_depthPrepassRenderer;
     GTAORenderer m_gtaoRenderer;
     BlurRenderer m_blurRenderer;

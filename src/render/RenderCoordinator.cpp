@@ -84,6 +84,9 @@ void RenderCoordinator::render(SceneManager& sceneManager){
         else if (visible & RenderState::DEBUG_SHADOW_CASCADES) {
             m_debugCascadesRenderer.render(offscreenCB, allMaterialBatches);
         }
+        else if (visible & RenderState::DEBUG_CLUSTERS) {
+            m_debugClustersRenderer.render(offscreenCB, allMaterialBatches);
+        }
         else if (visible & RenderState::UNLIT_MESH) {
             m_unlitMeshRenderer.render(offscreenCB, allMaterialBatches);
         }
@@ -157,6 +160,8 @@ void RenderCoordinator::updateUI(CommandBuffer& offscreenCB){
             output = m_sunShadowRenderer.getDepthAttachments()[m_imguiRenderer.state.shadowSelection];
         } else if (visible & RenderState::DEBUG_SHADOW_CASCADES){
             output = m_debugCascadesRenderer.getAttachment();
+        } else if (visible & RenderState::DEBUG_CLUSTERS){
+            output = m_debugClustersRenderer.getAttachment();
         } else if (visible & RenderState::GTAO_PASS){
             output = m_gtaoRenderer.getAttachment();
         } else if (visible & RenderState::VOLUMETRIC_LIGHT){
@@ -190,6 +195,8 @@ void RenderCoordinator::updateUI(CommandBuffer& offscreenCB){
             reload = m_sunShadowRenderer.getShader();
         } else if (shaderToReload == RenderState::DEBUG_SHADOW_CASCADES){
             reload = m_debugCascadesRenderer.getShader();
+        } else if (shaderToReload == RenderState::DEBUG_CLUSTERS){
+            reload = m_debugClustersRenderer.getShader();
         } else if (shaderToReload == RenderState::GTAO_PASS){
             reload = m_gtaoRenderer.getShader();
         } else if (shaderToReload == RenderState::VOLUMETRIC_LIGHT){
@@ -329,6 +336,22 @@ void RenderCoordinator::initRenderers(SceneManager& sceneManager){
         m_lightCullCompute.getDescSet(),
         m_lightCullCompute.getDescSetLayout());
     SprLog::debug("[initRenderers] LitMeshRenderer initialized");
+    m_debugClustersRenderer = DebugClustersRenderer(*m_rm, *m_renderer, windowDim);
+    m_debugClustersRenderer.init(
+        globalDescSet,
+        globalDescSetLayout,
+        frameDescSets,
+        frameDescSetLayout,
+        m_depthPrepassRenderer.getDepthAttachment(),
+        m_blurRenderer.getAttachment(),
+        m_sunShadowRenderer.getDepthAttachments(),
+        m_sunShadowRenderer.getShadowData(),
+        m_volumetricLightRenderer.getAttachment(),
+        m_litMeshRenderer.getDescSetLayout(),
+        m_litMeshRenderer.getDescSet(),
+        m_lightCullCompute.getDescSet(),
+        m_lightCullCompute.getDescSetLayout());
+    SprLog::debug("[initRenderers] DebugClustersRenderer initialized");
     m_skyboxRenderer = SkyboxRenderer(*m_rm, *m_renderer, windowDim);
     m_skyboxRenderer.init(
         globalDescSet,
@@ -388,6 +411,7 @@ void RenderCoordinator::onResize(){
     m_rm->recreate<RenderPass>(m_debugMeshRenderer.getRenderPass(), windowDim);
     m_rm->recreate<RenderPass>(m_debugNormalsRenderer.getRenderPass(), windowDim);
     m_rm->recreate<RenderPass>(m_debugCascadesRenderer.getRenderPass(), windowDim);
+    m_rm->recreate<RenderPass>(m_debugClustersRenderer.getRenderPass(), windowDim);
     m_rm->recreate<RenderPass>(m_sunShadowRenderer.getRenderPass(), windowDim);
     m_rm->recreate<RenderPass>(m_volumetricLightRenderer.getRenderPass(), windowDim);
     m_rm->recreate<RenderPass>(m_blurRenderer.getRenderPass(), windowDim);
@@ -434,6 +458,7 @@ void RenderCoordinator::destroy(){
     m_unlitMeshRenderer.destroy();
     m_litMeshRenderer.destroy();
     m_lightCullCompute.destroy();
+    m_debugClustersRenderer.destroy();
 }
 
 }
