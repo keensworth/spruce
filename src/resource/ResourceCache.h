@@ -1,18 +1,14 @@
 #pragma once
 
-//#//include "Registry.h"
-//#include "../core/util/Container.h"
-#include "../../data/asset_ids.h"
-#include "../../external/flat_hash_map/flat_hash_map.hpp"
-#include "../core/memory/Pool.h"
+#include "external/flat_hash_map/flat_hash_map.hpp"
+#include "core/memory/Pool.h"
 #include "ResourceLoader.h"
 
 namespace spr {
 
 class ResourceCache {
 public:
-    // register resource's metadata without loading data
-    virtual void registerResource(ResourceMetadata metadata) = 0;
+    virtual ~ResourceCache() = default;
 
     // get resource's handle from id
     auto getHandle(uint32 id);
@@ -36,12 +32,10 @@ public:
     ~TypedResourceCache(){
         // clear hashmaps
         m_handles.clear();
-        m_metadata.clear();
-        // m_data destructor
     }
 
     // get handle from hashmap with id
-    Handle<T> getHandle(uint32 id){
+    inline Handle<T> getHandle(uint32 id, ResourceLoader& resourceLoader, MetadataMap& metadataMap){
         Handle<T> handle;
 
         // verify handle exists
@@ -52,54 +46,41 @@ public:
         if (handle.isValid() && m_data.isValidHandle(handle))
             return handle;
         
-        // handle isn't valid or isn't up-to-date in pool, load data and update
+        // handle isn't valid or isn't up-to-date in pool, 
+        // load data and update
         T data;
-        m_resourceLoader.loadFromMetadata<T>(m_metadata[id], data);
+        resourceLoader.loadFromMetadata<T>(metadataMap, metadataMap[id], data);
         handle = m_data.insert(data);
         m_handles[id] = handle;
 
         return handle;
     }
 
-    uint32 getSize(){
-        return m_data.getSize();
-    }
-
     // get data from pool with handle
-    T* getData(Handle<T> handle){
+    inline T* getData(Handle<T> handle){
         return m_data.get(handle);    
     }
 
-    void deleteData(Handle<T> handle){
+    inline void deleteData(Handle<T> handle){
         if (!handle.isValid() || !m_data.isValidHandle(handle)){
             return;
         }
         m_data.remove(handle);
     }
-
+    
     void destroy(){
         m_data.destroy();
+    }
+
+    uint32 getSize(){
+        return m_data.getSize();
     }
 
     friend class SprResourceManager;
 
 private:
-    // Resource metadata
-    ska::flat_hash_map<uint32, ResourceMetadata> m_metadata;
-
-    // Resource handles
     ska::flat_hash_map<uint32, Handle<T>> m_handles;
-
-    // Resource data
     Pool<T> m_data;
-
-    // Resource loader
-    ResourceLoader m_resourceLoader;
-
-    // send metadata into hashmap with id
-    void registerResource(ResourceMetadata metadata){
-        m_metadata[metadata.resourceId] = metadata;
-    }
 };
 
 }

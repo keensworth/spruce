@@ -2,7 +2,7 @@
 
 #include "ResourceCache.h"
 #include "AssetLoader.h"
-#include "../../external/flat_hash_map/flat_hash_map.hpp"
+#include "external/flat_hash_map/flat_hash_map.hpp"
 
 
 namespace spr {
@@ -20,16 +20,13 @@ public:
     SprResourceManager();
     ~SprResourceManager();
 
-    uint32 getSize(){
-        return m_resourceMap[typeid(Buffer)]->getSize();
-    }
 
     // U := ResourceType
     template <typename U>
     Handle<U> getHandle(uint32 id){
         auto resourceCache = m_resourceMap[typeid(U)];
         auto typedCache = dynamic_cast<TypedResourceCache<U>*>(resourceCache);
-        return typedCache->getHandle(id);
+        return typedCache->getHandle(id, m_resourceLoader, m_metadata);
     }
 
     // U := ResourceType
@@ -45,7 +42,7 @@ public:
     U* getData(uint32 id){
         auto resourceCache = m_resourceMap[typeid(U)];
         auto typedCache = dynamic_cast<TypedResourceCache<U>*>(resourceCache);
-        auto handle = typedCache->getHandle(id);
+        auto handle = typedCache->getHandle(id, m_resourceLoader, m_metadata);
         return typedCache->getData(handle);
     }
 
@@ -54,7 +51,7 @@ public:
     void deleteData(uint32 id){
         auto resourceCache = m_resourceMap[typeid(U)];
         auto typedCache = dynamic_cast<TypedResourceCache<U>*>(resourceCache);
-        auto handle = typedCache->getHandle(id);
+        auto handle = typedCache->getHandle(id, m_resourceLoader, m_metadata);
         return typedCache->deleteData(handle);
     }
 
@@ -66,15 +63,39 @@ public:
         return typedCache->deleteData(handle);
     }
 
+    void getName(uint32 id, std::string& out){
+        if (m_names.count(id) > 0)
+            out = m_names[id];
+        else
+            out = "no-name";
+    }
+
     void destroyBuffers(){
         m_resourceMap[typeid(Buffer)]->destroy();
     }
 
-    std::vector<uint32>& getModelIds();
-    std::vector<uint32>& getTextureIds();
+    void disableLoader(){
+        m_resourceLoader.disable();
+    }
+
+    uint32 getSize(){
+        return m_resourceMap[typeid(Buffer)]->getSize();
+    }
+
+    std::vector<uint32>& getModelIds(){
+        return m_modelIds;
+    }
+
+    std::vector<uint32>& getTextureIds(){
+        return m_textureIds;
+    }
     
 private:
-    CacheMap m_resourceMap{
+    NameMap m_names;
+    MetadataMap m_metadata;
+    ResourceLoader m_resourceLoader;
+
+    CacheMap m_resourceMap {
         {typeid(Model), new ModelCache},
         {typeid(Mesh), new MeshCache},
         {typeid(Material), new MaterialCache},
@@ -84,15 +105,12 @@ private:
 
     std::vector<uint32> m_modelIds;
     std::vector<uint32> m_textureIds;
+    uint32 m_id = 0;
 
     void init();
 
-    // U := ResourceType
-    template <typename U>
-    void registerResource(ResourceMetadata metadata){
-        auto resourceCache = m_resourceMap[typeid(U)];
-        auto typedCache = dynamic_cast<TypedResourceCache<U>*>(resourceCache);
-        typedCache->registerResource(metadata);
+    void registerResource(ResourceMetadata& metadata){
+        m_metadata[metadata.resourceId] = metadata;
     }
 };
 }
