@@ -17,6 +17,7 @@ set(CMAKE_CXX_FLAGS  "${CMAKE_CXX_FLAGS} -Wno-deprecated-volatile -Wno-unused-co
 
 # project command is required to come after cmake_minimum_required command.
 project(Spruce VERSION 0.0.1 LANGUAGES C CXX)
+set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 
 
 # ------------------------------------------------------------------
@@ -60,6 +61,7 @@ set(BUILD_SHARED_LIBS ${SPRUCE_BUILD_SHARED}) # use 'SPRUCE_' naming convention
 add_subdirectory(src)
 add_executable(spruce main.cpp)
 target_include_directories(spruce PUBLIC
+  ${CMAKE_CURRENT_LIST_DIR}
   ${CMAKE_CURRENT_LIST_DIR}/src
   ${CMAKE_CURRENT_LIST_DIR}/external
 )
