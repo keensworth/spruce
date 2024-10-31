@@ -7,6 +7,6 @@ target_sources(gltfparser PRIVATE
 
 target_include_directories(gltfparser PUBLIC ${CMAKE_CURRENT_LIST_DIR}/gltfparser)
 
-target_link_libraries(gltfparser glm tinygltf imgui stb_image ktx)
+target_link_libraries(gltfparser glm tinygltf imgui stb_image ktx oof srcFiles)
 target_compile_options(gltfparser PUBLIC)
 

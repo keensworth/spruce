@@ -1,5 +1,7 @@
 #include "ResourceLoader.h"
-#include "../debug/SprLog.h"
+#include "debug/SprLog.h"
+#include "ResourceTypes.h"
+#include "SprResourceManager.h"
 #include <cstring>
 
 namespace spr{
@@ -9,61 +11,65 @@ ResourceLoader::ResourceLoader(){
 }
 
 template <typename T>
-void ResourceLoader::loadFromMetadata(ResourceMetadata metadata, T& data){
-    // log unknown resource
+void ResourceLoader::loadFromMetadata(MetadataMap& metadataMap, ResourceMetadata& metadata, T& data){
     SprLog::error("[ResourceLoader] Unkown resource");
+}
+
+void ResourceLoader::checkMapping(uint32 id){
+    if (!m_mmap.is_mapped()){
+        m_mmap.map(m_pathMap[id], m_error);
+        m_mappedId = id;
+        return;
+    }
+
+    if (m_mappedId != id){
+        m_mmap.unmap();
+        m_mmap.map(m_pathMap[id], m_error);
+        m_mappedId = id;
+        return;
+    }
+}
+
+void ResourceLoader::disable(){
+    if (m_mmap.is_mapped()){
+        m_mmap.unmap();
+    }
 }
 
 
 // ------------------------------------------------------------------------- //
 //    Model - .smdl                                                          // 
 // ------------------------------------------------------------------------- //
-// ╔═══════════════════════════════════╗
-// ║                 ...               ║
-// ╠     model name (32)               ╣ // name characters
-// ║                 ...               ║
-// ╠═══════════════════════════════════╣
-// ║     mesh count (4)                ║ // # meshes that make up model
-// ╠═══════════════════════════════════╣    (no anim)
-// ║                 ...               ║
-// ╠     mesh ids (mesh-count * 4)     ╣ // ids to mesh files
-// ║                 ...               ║
-// ╚═══════════════════════════════════╝
 template <>
-void ResourceLoader::loadFromMetadata<Model>(ResourceMetadata metadata, Model& model){
-    // open file
-    std::ifstream f(
-        ResourceTypes::getPath(metadata.resourceType)+
-        metadata.name+
-        ResourceTypes::getExtension(metadata.resourceType), 
-        std::ios::binary);
-    if (!f.is_open()){
-        SprLog::warn("[ResourceLoader] Model not found");
+void ResourceLoader::loadFromMetadata<Model>(MetadataMap& metadataMap, ResourceMetadata& metadata, Model& model){
+    checkMapping(metadata.parentId);
+
+    ModelHeader& modelHeader = ((ModelHeader*)(m_mmap.data() + 0))[0];
+    spr::Span<MeshLayout> meshLayouts = {(MeshLayout*) (m_mmap.data() + modelHeader.meshBufferOffset), modelHeader.meshCount};
+    
+    std::vector<uint32> meshIds;
+    meshIds.reserve(modelHeader.meshCount);
+    uint32 meshId = 0;
+    uint32 i = 0;
+    for (const MeshLayout& mesh : meshLayouts){
+        meshId = ++m_id;
+        metadataMap[meshId] = {
+            .resourceType = SPR_MESH,
+            .resourceId = meshId,
+            .parentId = metadata.parentId,
+            .sizeTotal  = mesh.attributeDataSizeBytes
+                        + mesh.positionDataSizeBytes
+                        + mesh.indexDataSizeBytes,
+            .byteOffset = modelHeader.meshBufferOffset,
+            .byteLength = 0,
+            .index = i++
+        };
+        meshIds.push_back(meshId);
     }
 
-    uint32 meshCount;
-
-    // read name (ignore)
-    f.ignore(32);
-
-    // read mesh count
-    f.read((char*)&meshCount, sizeof(uint32));
-
-    // read mesh ids
-    std::vector<uint32> meshIds(meshCount);
-    for (uint32 i = 0; i < meshCount; i++){
-        f.read((char*)&meshIds[i], sizeof(uint32));
-    }
-
-    // close file
-    f.close();
-
-    // ---- create Model ----
-    // instance data
-    model.id = m_instanceId++;
+    model.parentId = metadata.parentId;
     model.resourceId = metadata.resourceId;
-    // resource data
-    model.meshCount = meshCount;
+    model.meshCount = modelHeader.meshCount;
     model.meshIds = meshIds;
 }
 
@@ -71,240 +77,162 @@ void ResourceLoader::loadFromMetadata<Model>(ResourceMetadata metadata, Model& m
 // ------------------------------------------------------------------------- //
 //    Mesh - .smsh                                                           // 
 // ------------------------------------------------------------------------- //
-// ╔═══════════════════════════════════╗
-// ║     material id (4)               ║ // material file of mesh
-// ╠═══════════════════════════════════╣ 
-// ║     index buffer id (4)           ║ // index buffer file
-// ╠═══════════════════════════════════╣
-// ║     position buffer id (4)        ║ // position buffer file
-// ╠═══════════════════════════════════╣ 
-// ║     attribute buffer id (4)       ║ // attributes buffer file
-// ╚═══════════════════════════════════╝
 template <>
-void ResourceLoader::loadFromMetadata<Mesh>(ResourceMetadata metadata, Mesh& mesh){
-    // open file
-    std::ifstream f(
-        ResourceTypes::getPath(metadata.resourceType)+
-        metadata.name+
-        ResourceTypes::getExtension(metadata.resourceType), 
-        std::ios::binary);
-    if (!f.is_open()){
-        SprLog::warn("[ResourceLoader] Mesh not found");
-    }
+void ResourceLoader::loadFromMetadata<Mesh>(MetadataMap& metadataMap, ResourceMetadata& metadata, Mesh& mesh){
+    checkMapping(metadata.parentId);
+    
+    ModelHeader& modelHeader = ((ModelHeader*)(m_mmap.data() + 0))[0];
+    MeshLayout& meshLayout = ((MeshLayout*)(m_mmap.data() + modelHeader.meshBufferOffset))[metadata.index];    
+    
+    MaterialLayout& material = ((MaterialLayout*)(m_mmap.data() + modelHeader.materialBufferOffset))[meshLayout.materialIndex];
+    uint32 materialFlags = material.materialFlags;
+    uint32 materialId = ++m_id;
+    metadataMap[materialId] = {
+        .resourceType = SPR_MATERIAL,
+        .resourceId = materialId,
+        .parentId = metadata.parentId,
+        .byteOffset = modelHeader.materialBufferOffset,
+        .byteLength = 0,
+        .index = meshLayout.materialIndex
+    };
 
-    uint32 materialId;
-    uint32 indexBufferId;
-    uint32 positionBufferId;
-    uint32 attributesBufferId;
+    BlobHeader& blob = ((BlobHeader*)(m_mmap.data() + modelHeader.blobHeaderOffset))[0];
+    uint32 indexBufferId = ++m_id;
+    metadataMap[indexBufferId] = {
+        .resourceType = SPR_BUFFER,
+        .resourceId = indexBufferId,
+        .parentId = metadata.parentId,
+        .byteOffset = blob.indexRegionOffset + meshLayout.indexDataOffset,
+        .byteLength = meshLayout.indexDataSizeBytes,
+        .index = 0
+    };
 
-    // read material id
-    f.read((char*)&materialId, sizeof(uint32));
+    uint32 positionBufferId = ++m_id;
+    metadataMap[positionBufferId] = {
+        .resourceType = SPR_BUFFER,
+        .resourceId = positionBufferId,
+        .parentId = metadata.parentId,
+        .byteOffset = blob.positionRegionOffset + meshLayout.positionDataOffset,
+        .byteLength = meshLayout.positionDataSizeBytes,
+        .index = 0
+    };
 
-    // read index buffer id
-    f.read((char*)&indexBufferId, sizeof(uint32));
+    uint32 attributesBufferId = ++m_id;
+    metadataMap[attributesBufferId] = {
+        .resourceType = SPR_BUFFER,
+        .resourceId = attributesBufferId,
+        .parentId = metadata.parentId,
+        .byteOffset = blob.attributeRegionOffset + meshLayout.attributeDataOffset,
+        .byteLength = meshLayout.attributeDataSizeBytes,
+        .index = 0
+    };
 
-    // read position buffer id
-    f.read((char*)&positionBufferId, sizeof(uint32));
-
-    // read normal buffer id
-    f.read((char*)&attributesBufferId, sizeof(uint32));
-
-    // close file
-    f.close();
-
-    // ---- create Mesh ----
-    // instance data
-    mesh.id = m_instanceId++;
+    mesh.parentId = metadata.parentId;
     mesh.resourceId = metadata.resourceId;
-    // resource data
     mesh.materialId = materialId;
     mesh.indexBufferId = indexBufferId;
     mesh.positionBufferId = positionBufferId;
     mesh.attributesBufferId = attributesBufferId;
+    mesh.materialFlags = materialFlags;
 }
 
 
 // ------------------------------------------------------------------------- //
 //    Material - .smtl                                                       // 
 // ------------------------------------------------------------------------- //
-// ╔═══════════════════════════════════╗
-// ║     base color flag (4)           ║ // base color tex
-// ╠───────────────────────────────────╣ 
-// ║        - tex id (4)               ║
-// ╠───────────────────────────────────╣
-// ║                                   ║ 
-// ╠                                   ╣
-// ║                                   ║ 
-// ╠        - base color factor (4*4)  ╣ 
-// ║                                   ║ 
-// ╠                                   ╣
-// ║                                   ║ 
-// ╠═══════════════════════════════════╣
-// ║     metalroughness flag (4)       ║ // metallic roughness tex
-// ╠───────────────────────────────────╣ 
-// ║        - tex id (4)               ║ 
-// ╠───────────────────────────────────╣
-// ║        - metal factor (4)         ║ 
-// ╠───────────────────────────────────╣
-// ║        - roughness factor (4)     ║ 
-// ╠═══════════════════════════════════╣ 
-// ║     normal flag (4)               ║ // normal tex
-// ╠───────────────────────────────────╣ 
-// ║        - tex id (4)               ║
-// ╠───────────────────────────────────╣
-// ║        - normal scale (4)         ║ 
-// ╠═══════════════════════════════════╣
-// ║     occlusion flag (4)            ║ // occlusion tex
-// ╠───────────────────────────────────╣ 
-// ║        - tex id (4)               ║ 
-// ╠───────────────────────────────────╣
-// ║        - occlusion strength (4)   ║ 
-// ╠═══════════════════════════════════╣
-// ║     emissive flag (4)             ║ // emissive tex
-// ╠───────────────────────────────────╣ 
-// ║        - tex id (4)               ║
-// ╠───────────────────────────────────╣
-// ║                                   ║ 
-// ╠                                   ╣
-// ║        - emissive factor (3*4)    ║ 
-// ╠                                   ╣ 
-// ║                                   ║ 
-// ╠═══════════════════════════════════╣
-// ║     alpha flag (4)                ║ // alpha transparency
-// ╠───────────────────────────────────╣ 
-// ║        - alpha type (4)           ║ 
-// ╠───────────────────────────────────╣
-// ║        - alpha cutoff (4)         ║ 
-// ╠═══════════════════════════════════╣
-// ║     doublesided (4)               ║ // double sided
-// ╠═══════════════════════════════════╣ 
-// ║     sentinel (4)                  ║ // terminate
-// ╚═══════════════════════════════════╝
 template <>
-void ResourceLoader::loadFromMetadata<Material>(ResourceMetadata metadata, Material& material){
+void ResourceLoader::loadFromMetadata<Material>(MetadataMap& metadataMap, ResourceMetadata& metadata, Material& material){
+    checkMapping(metadata.parentId);
+    
     uint32 materialFlags = 0;
-
     uint32 baseColorTexId = 0;
-    glm::vec4 baseColorFactor;
-
     uint32 metalRoughTexId = 0;
-    float metalFactor;
-    float roughnessFactor;
-
     uint32 normalTexId = 0;
-    float normalScale;
-
     uint32 occlusionTexId = 0;
-    float occlusionStrength;
-
     uint32 emissiveTexId = 0;
-    glm::vec3 emissiveFactor;
 
-    uint32 alphaType;
-    float alphaCutoff;
+    ModelHeader& modelHeader = ((ModelHeader*)(m_mmap.data() + 0))[0];
+    MaterialLayout& materialLayout = ((MaterialLayout*)(m_mmap.data() + modelHeader.materialBufferOffset))[metadata.index];
+    materialFlags = materialLayout.materialFlags;
 
-    bool doubleSided;
-    // open file
-    std::ifstream f(
-        ResourceTypes::getPath(metadata.resourceType)+
-        metadata.name+
-        ResourceTypes::getExtension(metadata.resourceType), 
-        std::ios::binary);
-    if (!f.is_open()){
-        SprLog::warn("[ResourceLoader] Material not found");
-    }
-    bool keepParsing = true;
-    while(!f.eof()){
-        if (!keepParsing)
-            break;
-        uint32 materialType = 0;
-        if(!f.read((char*)&materialType, sizeof(uint32)))
-            break;
-        if (f.eof())
-            continue;
-        switch(materialType) {
-            case 1 : // base color
-                materialFlags |= 0b1;
-                f.read((char*)&baseColorTexId, sizeof(uint32));
-                f.read((char*)&baseColorFactor.x, sizeof(float));
-                f.read((char*)&baseColorFactor.y, sizeof(float));
-                f.read((char*)&baseColorFactor.z, sizeof(float));
-                f.read((char*)&baseColorFactor.w, sizeof(float));
-                break;
-            case 2 : // metalroughness
-                materialFlags |= (0b1<<1);
-                f.read((char*)&metalRoughTexId, sizeof(uint32));
-                f.read((char*)&metalFactor, sizeof(float));
-                f.read((char*)&roughnessFactor, sizeof(float));
-                break;
-            case 3 : // normal
-                materialFlags |= (0b1<<2);
-                f.read((char*)&normalTexId, sizeof(uint32));
-                f.read((char*)&normalScale, sizeof(float));
-                break;
-            case 4 : // occlusion
-                materialFlags |= (0b1<<3);
-                f.read((char*)&occlusionTexId, sizeof(uint32));
-                f.read((char*)&occlusionStrength, sizeof(float));
-                break;
-            case 5 : // emissive
-                materialFlags |= (0b1<<4);
-                f.read((char*)&emissiveTexId, sizeof(uint32));
-                f.read((char*)&emissiveFactor.x, sizeof(float));
-                f.read((char*)&emissiveFactor.y, sizeof(float));
-                f.read((char*)&emissiveFactor.z, sizeof(float));
-                break;
-            case 6 : // alpha
-                materialFlags |= (0b1<<5);
-                f.read((char*)&alphaType, sizeof(uint32));
-                f.read((char*)&alphaCutoff, sizeof(float));
-                break;
-            case 7 : // double-sided
-                materialFlags |= (0b1<<6);
-                doubleSided = true;
-                break;
-            case 0 : 
-                keepParsing = false;
-                break;
-            default: // unknown
-                break;
-        }
-        if (doubleSided && ((materialFlags | (0b1<<6)) == (0b1<<6))){
-            break;
-        }
-    }
-    // close file
-    f.close();
-
-    // ---- create Material ----
-    // instance data
-    material.id = m_instanceId++;
+    material.parentId = metadata.parentId;
     material.resourceId = metadata.resourceId;
-    // resource data
     material.materialFlags = materialFlags;
+
     if (materialFlags & 0b1){ // base color
+        baseColorTexId = ++m_id;
+        metadataMap[baseColorTexId] = {
+            .resourceType = SPR_TEXTURE,
+            .resourceId = baseColorTexId,
+            .parentId = metadata.parentId,
+            .sizeTotal = 0,
+            .byteOffset = modelHeader.textureBufferOffset,
+            .byteLength = 0,
+            .index = materialLayout.bc_textureIndex
+        };
         material.baseColorTexId = baseColorTexId;
-        material.baseColorFactor = baseColorFactor;
+        material.baseColorFactor = materialLayout.baseColorFactor;
     }
     if (materialFlags & (0b1<<1)){ // metallicroughness
+        metalRoughTexId = ++m_id;
+        metadataMap[metalRoughTexId] = {
+            .resourceType = SPR_TEXTURE,
+            .resourceId = metalRoughTexId,
+            .parentId = metadata.parentId,
+            .sizeTotal = 0,
+            .byteOffset = modelHeader.textureBufferOffset,
+            .byteLength = 0,
+            .index = materialLayout.mr_textureIndex
+        };
         material.metalRoughTexId = metalRoughTexId;
-        material.metalFactor = metalFactor;
+        material.metalFactor = materialLayout.metalFactor;
+        material.roughnessFactor = materialLayout.roughnessFactor;
     }
     if (materialFlags & (0b1<<2)){ // normal
+        normalTexId = ++m_id;
+        metadataMap[normalTexId] = {
+            .resourceType = SPR_TEXTURE,
+            .resourceId = normalTexId,
+            .parentId = metadata.parentId,
+            .sizeTotal = 0,
+            .byteOffset = modelHeader.textureBufferOffset,
+            .byteLength = 0,
+            .index = materialLayout.n_textureIndex
+        };
         material.normalTexId = normalTexId;
-        material.normalScale = normalScale;
+        material.normalScale = materialLayout.normalScale;
     }
     if (materialFlags & (0b1<<3)){ // occlusion
+        occlusionTexId = ++m_id;
+        metadataMap[occlusionTexId] = {
+            .resourceType = SPR_TEXTURE,
+            .resourceId = occlusionTexId,
+            .parentId = metadata.parentId,
+            .sizeTotal = 0,
+            .byteOffset = modelHeader.textureBufferOffset,
+            .byteLength = 0,
+            .index = materialLayout.o_textureIndex
+        };
         material.occlusionTexId = occlusionTexId;
-        material.occlusionStrength = occlusionStrength;
+        material.occlusionStrength = materialLayout.occlusionStrength;
     }
     if (materialFlags & (0b1<<4)){ // emissive
+        emissiveTexId = ++m_id;
+        metadataMap[emissiveTexId] = {
+            .resourceType = SPR_TEXTURE,
+            .resourceId = emissiveTexId,
+            .parentId = metadata.parentId,
+            .sizeTotal = 0,
+            .byteOffset = modelHeader.textureBufferOffset,
+            .byteLength = 0,
+            .index = materialLayout.e_textureIndex
+        };
         material.emissiveTexId = emissiveTexId;
-        material.emissiveFactor = emissiveFactor;
+        material.emissiveFactor = materialLayout.emissiveFactor;
     }
     if (materialFlags & (0b1<<5)){ // alpha
-        material.alphaType = alphaType;
-        material.alphaCutoff = alphaCutoff;
+        material.alphaType = materialLayout.alphaType;
+        material.alphaCutoff = materialLayout.alphaCutoff;
     }
     if (materialFlags & (0b1<<6)){ // double-sided
         material.doubleSided = true;
@@ -315,127 +243,64 @@ void ResourceLoader::loadFromMetadata<Material>(ResourceMetadata metadata, Mater
 // ------------------------------------------------------------------------- //
 //    Texture - .stex                                                        // 
 // ------------------------------------------------------------------------- //
-// ╔═══════════════════════════════════╗
-// ║     buffer id (4)                 ║ // buffer holding tex data
-// ╠═══════════════════════════════════╣
-// ║     height (4)                    ║ // texture height
-// ╠═══════════════════════════════════╣
-// ║     width  (4)                    ║ // texture width
-// ╠═══════════════════════════════════╣
-// ║     components (4)                ║ // 1 - grey | 2 - grey,red | 3 - rgb | 4 - rgba
-// ╚═══════════════════════════════════╝
 template <>
-void ResourceLoader::loadFromMetadata<Texture>(ResourceMetadata metadata, Texture& texture){
-    // open file
-    std::ifstream f(
-        ResourceTypes::getPath(metadata.resourceType)+
-        metadata.name+
-        ResourceTypes::getExtension(metadata.resourceType), 
-        std::ios::binary);
-    if (!f.is_open()){
-        SprLog::warn("[ResourceLoader] Texture not found");
+void ResourceLoader::loadFromMetadata<Texture>(MetadataMap& metadataMap, ResourceMetadata& metadata, Texture& texture){
+    checkMapping(metadata.parentId);
+    
+    ModelHeader& modelHeader = ((ModelHeader*)(m_mmap.data()))[0];
+    uint32 layoutOffset = 0;
+    if (metadata.sub){
+        layoutOffset = modelHeader.textureBufferOffset;
+    }
+    TextureLayout& textureLayout = ((TextureLayout*)(m_mmap.data() + layoutOffset))[metadata.index];
+
+    uint32 bufferId = ++m_id;
+    uint32 offset = 0;
+    if (metadata.sub){
+        BlobHeader& blob = ((BlobHeader*)(m_mmap.data() + modelHeader.blobHeaderOffset))[0];
+        offset = blob.textureRegionOffset + textureLayout.dataOffset;
+    } else {
+        offset = sizeof(TextureLayout);
     }
 
-    uint32 bufferId;
-    uint32 height;
-    uint32 width;
-    uint32 components;
+    metadataMap[bufferId] = {
+        .resourceType = SPR_BUFFER,
+        .resourceId = bufferId,
+        .parentId = metadata.parentId,
+        .byteOffset = offset,
+        .byteLength = textureLayout.dataSizeBytes,
+        .index = 0,
+        .sub = metadata.sub
+    };
 
-    // read buffer id
-    f.read((char*)&bufferId, sizeof(uint32));
-
-    // read image height
-    f.read((char*)&height, sizeof(uint32));
-
-    // read image width
-    f.read((char*)&width, sizeof(uint32));
-
-    // read image type
-    f.read((char*)&components, sizeof(uint32));
-
-    // close file
-    f.close();
-
-    // ---- create Texture ----
-    // instance data
-    texture.id = m_instanceId++;
+    texture.parentId = metadata.parentId;
     texture.resourceId = metadata.resourceId;
-    // resource data
     texture.bufferId = bufferId;
-    texture.height = height;
-    texture.width = width;
-    texture.components = components;
+    texture.height = textureLayout.height;
+    texture.width = textureLayout.width;
+    texture.components = textureLayout.components;
 }
 
 
 // ------------------------------------------------------------------------- //
 //    Buffer - .sbuf                                                         // 
 // ------------------------------------------------------------------------- //
-// ╔═══════════════════════════════════╗
-// ║     association (4)               ║ // parent type ('smtl', 'stex',..)
-// ╠═══════════════════════════════════╣
-// ║     element type (4)              ║ // element type (vec3,...)
-// ╠═══════════════════════════════════╣
-// ║     component type (4)            ║ // component type (f,i,s,...)
-// ╠═══════════════════════════════════╣
-// ║     byte length (4)               ║ // size of data
-// ╠═══════════════════════════════════╣ 
-// ║                 ...               ║
-// ╠     data (byte-length)            ╣ // stored data
-// ║                 ...               ║
-// ╚═══════════════════════════════════╝
 template <>
-void ResourceLoader::loadFromMetadata<Buffer>(ResourceMetadata metadata, Buffer& buffer){
-    // open file
-    std::ifstream f(
-        ResourceTypes::getPath(metadata.resourceType)+
-        metadata.name+
-        ResourceTypes::getExtension(metadata.resourceType), 
-        std::ios::binary);
-    if (!f.is_open()){
-        SprLog::warn("[ResourceLoader] Buffer not found, id: " + std::to_string(metadata.resourceId) + ", name: " + metadata.name);
-    }
+void ResourceLoader::loadFromMetadata<Buffer>(MetadataMap& metadataMap, ResourceMetadata& metadata, Buffer& buffer){
+    checkMapping(metadata.parentId);
 
-    unsigned char association[4];
-    uint32 elementType;
-    uint32 componentType;
-    uint32 byteLength;
-
-    // read association
-    f.read((char*)&association, sizeof(uint32));
-
-    // read element type
-    f.read((char*)&elementType, sizeof(uint32));
-
-    // read component type
-    f.read((char*)&componentType, sizeof(uint32));
-    
-    // read byte length
-    f.read((char*)&byteLength, sizeof(uint32));
-
-    // read data
-    buffer.data.resize(byteLength);
-    f.read((char*)buffer.data.data(), byteLength);   
-
-    // close file
-    f.close();
-
-    // ---- create Buffer ----
-    // instance data
-    buffer.id = m_instanceId++;
+    buffer.parentId = metadata.parentId;
     buffer.resourceId = metadata.resourceId;
-    // resource data
-    buffer.elementType = elementType;
-    buffer.componentType = componentType;
-    buffer.byteLength = byteLength;
+    buffer.byteLength = metadata.byteLength;
+    buffer.byteOffset = metadata.byteOffset;
+    buffer.data = {(uint8*)m_mmap.data() + metadata.byteOffset, metadata.byteLength};
 }
-
 
 // ----------------------------------------------------------------------------
 //    Audio - .***
 //    iw
 template <>
-void ResourceLoader::loadFromMetadata<Audio>(ResourceMetadata metadata, Audio& audio){
+void ResourceLoader::loadFromMetadata<Audio>(MetadataMap& metadataMap, ResourceMetadata& metadata, Audio& audio){
 }
 
 
@@ -443,7 +308,7 @@ void ResourceLoader::loadFromMetadata<Audio>(ResourceMetadata metadata, Audio& a
 //    Shader - .glsl
 //    iw
 template <>
-void ResourceLoader::loadFromMetadata<Shader>(ResourceMetadata metadata, Shader& shader){
+void ResourceLoader::loadFromMetadata<Shader>(MetadataMap& metadataMap, ResourceMetadata& metadata, Shader& shader){
 }
 
 }

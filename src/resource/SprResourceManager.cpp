@@ -1,5 +1,4 @@
 #include "SprResourceManager.h"
-#include "../debug/SprLog.h"
 
 namespace spr{
 
@@ -38,40 +37,15 @@ void SprResourceManager::init(){
 
     // register resources with metadata
     for (auto & metadata : resourceMetadata){
-        switch(metadata.resourceType) {
-            case SPR_MESH :
-                registerResource<Mesh>(metadata);
-                break;
-            case SPR_MODEL :
-                registerResource<Model>(metadata);
-                break;
-            case SPR_AUDIO :
-                //registerResource<AudioCache>(metadata);
-                break;
-            case SPR_SHADER :
-                //registerResource<ShaderCache>(metadata);
-                break;
-            case SPR_BUFFER :
-                registerResource<Buffer>(metadata);
-                break;
-            case SPR_TEXTURE :
-                registerResource<Texture>(metadata);
-                break;
-            case SPR_MATERIAL :
-                registerResource<Material>(metadata);
-                break;
-            default:
-                SprLog::warn("[SprResourceManager] ResourceType not recognized");
-                break;
-        }
+        registerResource(metadata);
+        m_id = glm::max(metadata.resourceId, m_id);
     }
+
+    m_names = assetLoader.getNames();
+    m_resourceLoader.updateId(m_id);
+    m_resourceLoader.updatePaths(assetLoader.getPaths());
 }
 
-std::vector<uint32>& SprResourceManager::getModelIds(){
-    return m_modelIds;
-}
-std::vector<uint32>& SprResourceManager::getTextureIds(){
-    return m_textureIds;
-}
+
 
 }

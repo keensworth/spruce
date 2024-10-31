@@ -1,15 +1,15 @@
 #pragma once
 
 #include "spruce_core.h"
-#include "memory/Handle.h"
-#include "memory/TempBuffer.h"
 #include "resource/ResourceTypes.h"
-#include "VulkanDevice.h"
 #include "StagingBufferBatch.h"
-#include "../../core/util/FunctionQueue.h"
-#include "CommandBuffer.h"
+#include "core/util/FunctionQueue.h"
 
 namespace spr::gfx {
+
+class CommandBuffer;
+class VulkanDevice;
+
 class GPUStreamer {
 public:
     GPUStreamer();
@@ -17,7 +17,7 @@ public:
     ~GPUStreamer();
     
     template <typename T>
-    void transfer(T data) {
+    void transfer(T data, bool managed) {
         SprLog::warn("[GPUStreamer] Upload not available for buffer of this type");
     }
 
@@ -31,15 +31,17 @@ public:
 private:
     struct BufferTransfer {
         unsigned char* pSrc;
-        uint32 size = 0;
+        Buffer* src;
         Buffer* dst;
+        uint32 size = 0;
         MemoryType memType = DEVICE;
     };
 
     struct TextureTransfer {
         unsigned char* pSrc;
-        uint32 size = 0;
+        Buffer* src;
         Texture* dst;
+        uint32 size = 0;
     };
 
     struct SparseBufferTransfer {
@@ -82,8 +84,8 @@ private:
     friend class UploadHandler;
 };
 
-template<> void GPUStreamer::transfer(BufferTransfer data);
-template<> void GPUStreamer::transfer(TextureTransfer data);
+template<> void GPUStreamer::transfer(BufferTransfer data, bool managed);
+template<> void GPUStreamer::transfer(TextureTransfer data, bool managed);
 template<> void GPUStreamer::transferDynamic(BufferTransfer data, uint32 frame);
 template<> void GPUStreamer::transferDynamic(SparseBufferTransfer data, uint32 frame);
 }

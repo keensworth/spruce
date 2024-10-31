@@ -1,7 +1,8 @@
 #include <cstring>
 #include <fstream>
 #include "GLTFParser.h"
-
+#include <stdio.h>
+#include "Resources.h"
 #include "glm/gtc/matrix_inverse.hpp"
 #include "glm/gtc/type_ptr.hpp"
 #include "glm/gtx/quaternion.hpp"
@@ -16,314 +17,67 @@
 
 #include "../../external/ktx/include/ktx.h"
 #include "../../external/ktx/lib/vk_format.h"
-
 namespace spr::tools{
 
 GLTFParser::GLTFParser(){}
 
-void GLTFParser::writeBufferFile(const unsigned char* data, std::string association, uint32_t byteLength, uint32_t elementType, uint32_t componentType, uint32_t bufferId){
-    // association (4)
-    // element type (4)
-    // component type (4)
-    // byte length (4)
-    // data (byte length)
-
-    // write to file
-    // open file
-    std::ofstream f("../data/buffers/"+(m_name+("_"+std::to_string(bufferId)))+".sbuf", std::ios::binary);
-    if (!f.is_open()){
-        // log error
-        std::cerr << "Failed to open/create file" << std::endl;
-        return ;
+OffsetSpan GLTFParser::writeBufferFile(const unsigned char* data, uint32 byteLength, DataRegion dataRegion){
+    OffsetSpan offsetSpan;
+    if (dataRegion == SPR_DR_INDEX){
+        m_indexDataStream.write((char*)data, byteLength);
+        offsetSpan = {byteLength, m_indicesOffset};
+        m_indicesOffset += byteLength;
+    } else if (dataRegion == SPR_DR_POSITION){
+        m_positionDataStream.write((char*)data, byteLength);
+        offsetSpan = {byteLength, m_positionOffset};
+        m_positionOffset += byteLength;
+    } else if (dataRegion == SPR_DR_ATTRIBUTE){
+        m_attributeDataStream.write((char*)data, byteLength);
+        offsetSpan = {byteLength, m_attributesOffset};
+        m_attributesOffset += byteLength;
+    } else if (dataRegion == SPR_DR_TEXTURE){
+        m_textureDataStream.write((char*)data, byteLength);
+        offsetSpan = {byteLength, m_textureDataOffset};
+        m_textureDataOffset += byteLength;
+    } else {
+        offsetSpan = {0, 0};
     }
 
-    // write association
-    f.write(association.data(), sizeof(uint32_t));
-
-    // write element type
-    f.write((char*)&elementType, sizeof(uint32_t));
-
-    // write component type
-    f.write((char*)&componentType, sizeof(uint32_t));
-
-    // write byte length
-    f.write((char*)&byteLength, sizeof(uint32_t));
-    
-    // write data 
-    f.write((char*)data, byteLength);
-
-    // close file
-    f.close();
+    return offsetSpan;
 }
 
-void GLTFParser::writeMeshFile(
-        uint32_t materialId, 
-        uint32_t indexBufferId, 
-        uint32_t posBufferId, 
-        uint32_t attributesBufferId,
-        uint32_t meshId){
-    // material id (4)
-    // index buffer id (4)
-    // position buffer id (4)
-    // attributes buffer id (4)
-
-
-    // write to file
-    // open file
-    std::ofstream f("../data/meshes/"+(m_name+("_"+std::to_string(meshId)))+".smsh", std::ios::binary);
-    if (!f.is_open()){
-        // log error
-        std::cerr << "Failed to open/create file" << std::endl;
-        return ;
-    }
-
-    // write material id
-    f.write((char*)&materialId, sizeof(uint32_t));
-
-    // write index buffer id
-    f.write((char*)&indexBufferId, sizeof(uint32_t));
-
-    // write position buffer id
-    f.write((char*)&posBufferId, sizeof(uint32_t));
-
-    // write attributes buffer id
-    f.write((char*)&attributesBufferId, sizeof(uint32_t));
-
-    // close file
-    f.close();
+uint32 GLTFParser::writeTextureFile(TextureLayout& texture){
+    m_textureStream.write((char*)&texture, sizeof(TextureLayout));
+    m_textureCount++;
+    return m_textureIndex++;
 }
 
-void GLTFParser::writeMaterialFile(
-        uint32_t materialFlags, 
-        const tinygltf::Material& material,
-        std::vector<uint32_t> texIds,
-        uint32_t materialId){
-    uint32_t currId = 0;
-    // write to file
-    // open file
-    std::ofstream f("../data/materials/"+(m_name+("_"+std::to_string(materialId)))+".smtl", std::ios::binary);
-    if (!f.is_open()){
-        // log error
-        std::cerr << "Failed to open/create file" << std::endl;
-        return ;
-    }
-
-    // base color (4)
-    //      tex id (4) (2 id, 2 min/mag filter)
-    //      factor (16)
-    if (materialFlags & 0b1){
-        // base color sentinel
-        uint32_t sentinel = 1;
-        f.write((char*)&sentinel, sizeof(uint32_t));
-        
-        // tex id
-        uint32_t baseColorTexId = texIds[currId++];
-        f.write((char*)&baseColorTexId, sizeof(uint32_t));
-        
-        // base color factor (x,y,z,w)
-        std::vector<double> baseColorFactorDouble = material.pbrMetallicRoughness.baseColorFactor;
-        std::vector<float> baseColorFactor(baseColorFactorDouble.begin(), baseColorFactorDouble.end());
-        //      x
-        f.write((char*)&baseColorFactor[0], sizeof(float));
-        //      y
-        f.write((char*)&baseColorFactor[1], sizeof(float));
-        //      z
-        f.write((char*)&baseColorFactor[2], sizeof(float));
-        //      w
-        f.write((char*)&baseColorFactor[3], sizeof(float));
-    }
-
-    // metalroughness (4)
-    //      tex id (4) (3 id, 1 min/mag filter)
-    //      factor (8) (m(4)/r(4))
-    if (materialFlags & (0b1<<1)){
-        // metalroughness sentinel
-        uint32_t sentinel = 2;
-        f.write((char*)&sentinel, sizeof(uint32_t));
-        
-        // tex id
-        uint32_t metalRoughnessTexId = texIds[currId++];
-        f.write((char*)&metalRoughnessTexId, sizeof(uint32_t));
-        
-        // metalness factor
-        float metalFactor = material.pbrMetallicRoughness.metallicFactor;
-        f.write((char*)&metalFactor, sizeof(float));
-        
-        // roughness factor
-        float roughnessFactor = material.pbrMetallicRoughness.roughnessFactor;
-        f.write((char*)&roughnessFactor, sizeof(float));
-    }
-
-    // normal (4)
-    //      tex id (4) (3 id, 1 min/mag filter)
-    //      scale (4)
-    if (materialFlags & (0b1<<2)){
-        // normal sentinel
-        uint32_t sentinel = 3;
-        f.write((char*)&sentinel, sizeof(uint32_t));
-        
-        // tex id
-        uint32_t normalTexId = texIds[currId++];
-        f.write((char*)&normalTexId, sizeof(uint32_t));
-        
-        // normal scale
-        float normalScale = material.normalTexture.scale;
-        f.write((char*)&normalScale, sizeof(float));
-    }
-
-    // occlusion (4)
-    //      tex id (4) (3 id, 1 min/mag filter)
-    //      strength (4)
-    if (materialFlags & (0b1<<3)){
-        // occlusion sentinel
-        uint32_t sentinel = 4;
-        f.write((char*)&sentinel, sizeof(uint32_t));
-        
-        // tex id
-        uint32_t occlusionTexId = texIds[currId++];
-        f.write((char*)&occlusionTexId, sizeof(uint32_t));
-        
-        // occlusion strength
-        float occlusionStrength = material.occlusionTexture.strength;
-        f.write((char*)&occlusionStrength, sizeof(float));
-    }
-
-    // emissive (4)
-    //      tex id (4) (3 id, 1 min/mag filter)
-    //      factor (12)
-    if (materialFlags & (0b1<<4)){
-        // emissive sentinel
-        uint32_t sentinel = 5;
-        f.write((char*)&sentinel, sizeof(uint32_t));
-
-        // tex id
-        uint32_t emissiveTexId = texIds[currId++];
-        f.write((char*)&emissiveTexId, sizeof(uint32_t));
-
-        // emissive factor (x,y,z);
-        std::vector<double> emissiveFactorDouble = material.emissiveFactor;
-        std::vector<float> emissiveFactor(emissiveFactorDouble.begin(), emissiveFactorDouble.end());
-        //      x
-        f.write((char*)&emissiveFactor[0], sizeof(float));
-        //      y
-        f.write((char*)&emissiveFactor[1], sizeof(float));
-        //      z
-        f.write((char*)&emissiveFactor[2], sizeof(float));
-    }
-
-    // alpha (4)
-    //      type (4)
-    //      cutoff (4)
-    if (materialFlags & (0b1<<5)){
-        // alpha sentinel
-        uint32_t sentinel = 6;
-        f.write((char*)&sentinel, sizeof(uint32_t));
-
-        // alpha type
-        uint32_t alphaType = 0; // blend by default
-        if (material.alphaMode == "MASK")
-            alphaType = 1;
-        f.write((char*)&alphaType, sizeof(uint32_t));
-
-        // alpha cutoff
-        float alphaCutoff = material.alphaCutoff;
-        f.write((char*)&alphaCutoff, sizeof(float));
-
-    }
-
-    // doublesided (4)
-    if (materialFlags & (0b1<<6)){
-        // doublesided sentinel
-        uint32_t sentinel = 7;
-        f.write((char*)&sentinel, sizeof(uint32_t));
-    }
-
-    // terminate
-    uint32_t terminate = 0;
-    f.write((char*)&terminate, sizeof(uint32_t));
-    
-    // close file
-    f.close();
+uint32 GLTFParser::writeMaterialFile(MaterialLayout& material){
+    m_materialStream.write((char*)&material, sizeof(MaterialLayout));
+    m_materialCount++;
+    return m_materialIndex++;
 }
 
-void GLTFParser::writeModelFile(uint32_t meshCount, std::vector<uint32_t> meshIds, uint32_t modelId){
-    // assuming no animations
-
-    // name (32)
-    // mesh count (4)
-    // mesh ids (4*count) 
-
-    // write to file
-    // open file
-    std::ofstream f("../data/models/"+m_name+".smdl", std::ios::binary);
-    if (!f.is_open()){
-        // log error
-        std::cerr << "Failed to open/create file" << std::endl;
-        return ;
-    }
-
-    // write name
-    m_name.resize(32);
-    f.write(m_name.c_str(), 32);
-
-    // write mesh count
-    f.write((char*)&meshCount, sizeof(uint32_t));
-
-    // write mesh ids
-    for (int i = 0; i < meshCount; i++){
-        f.write((char*)&meshIds[i], sizeof(uint32_t));
-    }
-
-    // close file
-    f.close();
+uint32 GLTFParser::writeMeshFile(MeshLayout& mesh){
+    m_meshStream.write((char*)&mesh, sizeof(MeshLayout));
+    m_meshCount++;
+    return m_meshIndex++;
 }
 
-void GLTFParser::writeTextureFile(uint32_t bufferId, uint32_t height, uint32_t width, uint32_t components, uint32_t texId){
-    // buffer id (4)
-    // height (4)
-    // width (4)
-    // components (4)
-
-
-    // write to file
-    // open file
-    std::ofstream f("../data/textures/"+(m_name+("_"+std::to_string(texId)))+".stex", std::ios::binary);
-    if (!f.is_open()){
-        // log error
-        std::cerr << "Failed to open/create file" << std::endl;
-        return ;
-    }
-    
-    // write buffer id
-    f.write((char*)&bufferId, sizeof(uint32_t));
-
-    // write image height
-    f.write((char*)&height, sizeof(uint32_t));
-
-    // write image width
-    f.write((char*)&width, sizeof(uint32_t));
-
-    // write image components
-    f.write((char*)&components, sizeof(uint32_t));
-
-    // close file
-    f.close();
-}
-
-void GLTFParser::handleBuffer(
+OffsetSpan GLTFParser::handleBuffer(
         const tinygltf::Buffer& buffer, 
         std::string association,
-        uint32_t byteOffset, 
-        uint32_t byteLength, 
-        uint32_t bytesPerElement,
-        uint32_t elementCount,
-        uint32_t elementType, 
-        uint32_t componentType,
-        uint32_t bufferId,
+        uint32 byteOffset, 
+        uint32 byteLength, 
+        uint32 bytesPerElement,
+        uint32 elementCount,
+        uint32 elementType, 
+        uint32 componentType,
         std::vector<uint8_t>& out,
         bool writeToFile,
         BufferData dataType,
-        glm::mat4& transform){    
+        glm::mat4& transform,
+        DataRegion region){    
     // check if we need to pad position to vec4, if it isn't already
     bool needsPosPadding = false;
     if (dataType == SPR_POSITION){
@@ -345,19 +99,17 @@ void GLTFParser::handleBuffer(
         }
     }
 
-
-
     // write slice of buffer into new buffer
     const unsigned char* bufferData = buffer.data.data();
     unsigned char* data = new unsigned char[byteLength];
     if (!needsPosPadding) {
         if (!needsIndicesPadding){
-            for (int32_t i = 0; i < byteLength; i++){
+            for (int32 i = 0; i < byteLength; i++){
                 data[i] = bufferData[i+byteOffset];
             }
         } else {
-            uint32_t index = 0;
-            for (int32_t i = 0; i < byteLength; i++){
+            uint32 index = 0;
+            for (int32 i = 0; i < byteLength; i++){
                 if (i%4 >= 2){ 
                     data[i] = 0;
                 } else {
@@ -377,8 +129,8 @@ void GLTFParser::handleBuffer(
         memcpy(float1fByteArray, floatToBytes.bytes, 4);
 
         // copy data, padding with 1.0f
-        uint32_t index = 0;
-        for (int32_t i = 0; i < byteLength; i++){
+        uint32 index = 0;
+        for (int32 i = 0; i < byteLength; i++){
             if (i%16 >= 12){ 
                 // write 1.0f to pos.w
                 data[i] = float1fByteArray[i%16 - 12];
@@ -392,16 +144,17 @@ void GLTFParser::handleBuffer(
 
     // apply transform to all positions
     if (dataType == SPR_POSITION){
-        for (uint32_t i = 0; i < byteLength; i += 16){
+        for (uint32 i = 0; i < byteLength; i += 16){
             glm::vec4 pos = glm::make_vec4((float*)(data + i));
             pos = transform * pos;
             memcpy((unsigned char*)(data + i), ((unsigned char*)glm::value_ptr(pos)), 16);
         }
     }
 
+    OffsetSpan offsetSpan {0, 0};
     if (writeToFile){
         // write slice to file
-        writeBufferFile(data, association.data(), byteLength, elementType, componentType, bufferId);
+        offsetSpan = writeBufferFile(data, byteLength, region);
     } else {
         // write slice to 'out'
         out.resize(byteLength);
@@ -409,30 +162,32 @@ void GLTFParser::handleBuffer(
     }
 
     delete[] data;
+
+    return offsetSpan;
 }
 
 
 
 void GLTFParser::createMip(
         unsigned char* in, 
-        uint32_t inSizeBytes, 
-        uint32_t inExtent, 
+        uint32 inSizeBytes, 
+        uint32 inExtent, 
         unsigned char* mipOut, 
-        uint32_t outSizeBytes, 
-        uint32_t outExtent)
+        uint32 outSizeBytes, 
+        uint32 outExtent)
 {
     stbir_resize_uint8(in, inExtent, inExtent, 0, mipOut, outExtent, outExtent, 0, 4);
 }
 
 void GLTFParser::compressImageData(
         unsigned char* data,
-        uint32_t dataSize,
+        uint32 dataSize,
         unsigned char** outData,
-        uint32_t& outDataSize,
+        uint32& outDataSize,
         BufferData dataType,
-        uint32_t width,
-        uint32_t height,
-        uint32_t components)
+        uint32 width,
+        uint32 height,
+        uint32 components)
 {
     ktxTexture2* texture;
     ktxTextureCreateInfo createInfo;
@@ -450,7 +205,7 @@ void GLTFParser::compressImageData(
     createInfo.baseHeight = height;
     createInfo.baseDepth = 1;
     createInfo.numDimensions = 2;
-    createInfo.numLevels = width == height ? std::floor(log2(std::max(width, height))) + 1 : 1;
+    createInfo.numLevels = width == height ? std::floor(std::log2(std::max(width, height))) + 1 : 1;
     createInfo.numLayers = 1;
     createInfo.numFaces = 1;
     createInfo.isArray = KTX_FALSE;
@@ -461,8 +216,8 @@ void GLTFParser::compressImageData(
         std::cerr << "Failed to create KTX2 texture, code: " << ktxErrorString(result) << std::endl;
     }
 
-    uint32_t levels = createInfo.numLevels;
-    uint32_t maxExtent = std::max(width, height);
+    uint32 levels = createInfo.numLevels;
+    uint32 maxExtent = std::max(width, height);
 
     // base level
     srcSize = width*height*components;
@@ -477,16 +232,16 @@ void GLTFParser::compressImageData(
     // mip chain
     unsigned char* mipData[levels-1];
     if (width == height){
-        for (uint32_t i = 1; i < levels; i++){
-            uint32_t levelExtent = std::max(maxExtent / (1 << i), 1u);
+        for (uint32 i = 1; i < levels; i++){
+            uint32 levelExtent = std::max(maxExtent / (1 << i), 1u);
             mipData[i-1] = (unsigned char*)malloc(levelExtent*levelExtent*components);
         }
 
-        uint32_t prevExtent = maxExtent;
-        uint32_t prevSize = srcSize;
-        for (uint32_t i = 1; i < levels; i++){
-            uint32_t currExtent = std::max(maxExtent / (1 << i), 1u);
-            uint32_t currSize = currExtent*currExtent*components;
+        uint32 prevExtent = maxExtent;
+        uint32 prevSize = srcSize;
+        for (uint32 i = 1; i < levels; i++){
+            uint32 currExtent = std::max(maxExtent / (1 << i), 1u);
+            uint32 currSize = currExtent*currExtent*components;
             level = i;
             layer = 0;
             faceSlice = 0;                           
@@ -526,61 +281,61 @@ void GLTFParser::compressImageData(
     if (result) {
         std::cerr << "Failed to write KTX texture to memory, code: " << ktxErrorString(result) << std::endl;
     }
-    outDataSize = (uint32_t)outSize;
+    outDataSize = (uint32)outSize;
     ktxTexture_Destroy(ktxTexture(texture));
     if (width == height){
-        for (uint32_t i = 1; i < levels; i++){
+        for (uint32 i = 1; i < levels; i++){
             free(mipData[i-1]);
         }
     }
 }
 
-void GLTFParser::handleTextureBuffer(
+OffsetSpan GLTFParser::handleTextureBuffer(
         const tinygltf::Buffer& buffer, 
         std::string association,
-        uint32_t byteOffset, 
-        uint32_t byteLength, 
-        uint32_t bytesPerElement,
-        uint32_t elementCount,
-        uint32_t elementType, 
-        uint32_t componentType,
-        uint32_t bufferId,
+        uint32 byteOffset, 
+        uint32 byteLength, 
+        uint32 bytesPerElement,
+        uint32 elementCount,
+        uint32 elementType, 
+        uint32 componentType,
         std::vector<uint8_t>& out,
         bool writeToFile,
         BufferData dataType,
-        uint32_t width,
-        uint32_t height,
-        uint32_t components){    
+        uint32 width,
+        uint32 height,
+        uint32 components){    
 
     // write slice of buffer into new buffer
     const unsigned char* bufferData = buffer.data.data();
     unsigned char* data = new unsigned char[byteLength];
-    for (int32_t i = 0; i < byteLength; i++){
+    for (int32 i = 0; i < byteLength; i++){
         data[i] = bufferData[i+byteOffset];
     }
 
     unsigned char* ktxTextureData = nullptr;
-    uint32_t ktxTextureDataSize;
+    uint32 ktxTextureDataSize;
 
     // generate mips + compress
     compressImageData(data, byteLength, &ktxTextureData, ktxTextureDataSize, dataType, width, height, 4);
 
-    writeBufferFile(ktxTextureData, association.data(), ktxTextureDataSize, elementType, componentType, bufferId);
+    OffsetSpan offsetSpan = writeBufferFile(ktxTextureData, ktxTextureDataSize, SPR_DR_TEXTURE);
 
     free(ktxTextureData);
     delete[] data;
+    
+    return offsetSpan;
 }
 
-void GLTFParser::handleMIMEImageBuffer(
+OffsetSpan GLTFParser::handleMIMEImageBuffer(
         const tinygltf::Buffer& buffer, 
         std::string association,
-        uint32_t byteOffset, 
-        uint32_t byteLength, 
-        uint32_t bytesPerElement,
-        uint32_t elementCount,
-        uint32_t elementType, 
-        uint32_t componentType,
-        uint32_t bufferId,
+        uint32 byteOffset, 
+        uint32 byteLength, 
+        uint32 bytesPerElement,
+        uint32 elementCount,
+        uint32 elementType, 
+        uint32 componentType,
         BufferData dataType){
 
     // buffer data
@@ -599,73 +354,75 @@ void GLTFParser::handleMIMEImageBuffer(
     byteLength = width * height * STBI_rgb_alpha;
     
     unsigned char* data = new unsigned char[byteLength];
-    for (int32_t i = 0; i < byteLength; i++)
+    for (int32 i = 0; i < byteLength; i++)
         data[i] = pixels[i];
     free(pixels);
 
     unsigned char* ktxTextureData = nullptr;
-    uint32_t ktxTextureDataSize;
+    uint32 ktxTextureDataSize;
 
     compressImageData(data, byteLength, &ktxTextureData, ktxTextureDataSize, dataType, width, height, 4); 
 
-    writeBufferFile(ktxTextureData, association.data(), ktxTextureDataSize, elementType, componentType, bufferId);
+    OffsetSpan offsetSpan = writeBufferFile(ktxTextureData, ktxTextureDataSize, SPR_DR_TEXTURE);
 
     free(ktxTextureData);
     delete[] data;
+
+    return offsetSpan;
 }
 
-void GLTFParser::handleBufferInterleaved(
+OffsetSpan GLTFParser::handleBufferInterleaved(
         const tinygltf::Buffer& buffer, 
         std::string association,
-        uint32_t byteOffset, 
-        uint32_t byteLength, 
-        uint32_t byteStride,
-        uint32_t bytesPerElement, 
-        uint32_t elementType, 
-        uint32_t componentType,
-        uint32_t bufferId,
+        uint32 byteOffset, 
+        uint32 byteLength, 
+        uint32 byteStride,
+        uint32 bytesPerElement, 
+        uint32 elementType, 
+        uint32 componentType,
         std::vector<uint8_t>& out,
-        bool writeToFile){
+        bool writeToFile,
+        DataRegion region){
     std::vector<unsigned char> bufferData = buffer.data;
     std::vector<unsigned char> data;
     // iterate over buffer, one stride at a time 
-    for (uint32_t i = byteOffset; i < byteOffset + byteLength; i+= byteStride){
+    for (uint32 i = byteOffset; i < byteOffset + byteLength; i+= byteStride){
         // grab neccessary bytes from stride (byte-by byte, may be slow)
-        for (uint32_t b = 0; b < bytesPerElement; b++){
+        for (uint32 b = 0; b < bytesPerElement; b++){
             data.push_back(bufferData[i+b]);
         }
     }
 
     if (writeToFile){
         // write data to file
-        writeBufferFile(data.data(), association.data(), byteLength, elementType, componentType, bufferId);
+        return writeBufferFile(data.data(), byteLength, region);
     } else {
         // write data to 'out'
         out.resize(byteLength);
         memcpy(out.data(), data.data(), byteLength);
     }
-    
+    return {0,0};
 }
 
-void GLTFParser::handleBufferView(
+OffsetSpan GLTFParser::handleBufferView(
         const tinygltf::BufferView& bufferView, 
         std::string association,
-        uint32_t byteOffset,
-        uint32_t bytesPerElement, 
-        uint32_t elementCount, 
-        uint32_t elementType, 
-        uint32_t componentType,
-        uint32_t bufferId,
+        uint32 byteOffset,
+        uint32 bytesPerElement, 
+        uint32 elementCount, 
+        uint32 elementType, 
+        uint32 componentType,
         std::vector<uint8_t>& out,
         bool writeToFile,
         BufferData dataType,
-        glm::mat4& transform){
+        glm::mat4& transform,
+        DataRegion region){
     // properties
 
-    uint32_t adjustedByteOffset = bufferView.byteOffset + byteOffset;
-    //uint32_t byteLength = bufferView.byteLength - byteOffset;
-    uint32_t byteLength = elementCount * bytesPerElement;
-    uint32_t byteStride = bufferView.byteStride;
+    uint32 adjustedByteOffset = bufferView.byteOffset + byteOffset;
+    //uint32 byteLength = bufferView.byteLength - byteOffset;
+    uint32 byteLength = elementCount * bytesPerElement;
+    uint32 byteStride = bufferView.byteStride;
 
     if (byteStride == 0)
         byteStride = bytesPerElement;
@@ -676,40 +433,36 @@ void GLTFParser::handleBufferView(
     // handle buffer
     if (byteStride == bytesPerElement){
         if (!association.compare("sbuf")){ // normal case
-            handleBuffer(buffer, association, adjustedByteOffset, byteLength, bytesPerElement, elementCount, elementType, componentType, bufferId, out, writeToFile, dataType, transform);
+            return handleBuffer(buffer, association, adjustedByteOffset, byteLength, bytesPerElement, elementCount, elementType, componentType, out, writeToFile, dataType, transform, region);
         }else{  // handle buffer that contains MIME image data
-            handleMIMEImageBuffer(buffer, association, adjustedByteOffset, byteLength, bytesPerElement, elementCount, elementType, componentType, bufferId, dataType);
+            return handleMIMEImageBuffer(buffer, association, adjustedByteOffset, byteLength, bytesPerElement, elementCount, elementType, componentType, dataType);
         }
     } else{
-        handleBufferInterleaved(buffer, association, adjustedByteOffset, byteLength, byteStride, bytesPerElement, elementType, componentType, bufferId, out, writeToFile);
+        return handleBufferInterleaved(buffer, association, adjustedByteOffset, byteLength, byteStride, bytesPerElement, elementType, componentType, out, writeToFile, region);
     }
 }
 
-uint32_t GLTFParser::handleAccessor(const tinygltf::Accessor& accessor, std::vector<uint8_t>& out, bool writeToFile, BufferData dataType, glm::mat4& transform){
-    uint32_t accessorId = m_id++;
-
+OffsetSpan GLTFParser::handleAccessor(const tinygltf::Accessor& accessor, std::vector<uint8_t>& out, bool writeToFile, BufferData dataType, glm::mat4& transform, DataRegion region){
     // properties
-    uint32_t byteOffset = accessor.byteOffset;
-    uint32_t elementCount = accessor.count;
-    uint32_t elementType = accessor.type;
-    uint32_t componentType = accessor.componentType;
-    uint32_t bytesPerElement = tinygltf::GetNumComponentsInType(elementType) * tinygltf::GetComponentSizeInBytes(componentType);
+    uint32 byteOffset = accessor.byteOffset;
+    uint32 elementCount = accessor.count;
+    uint32 elementType = accessor.type;
+    uint32 componentType = accessor.componentType;
+    uint32 bytesPerElement = tinygltf::GetNumComponentsInType(elementType) * tinygltf::GetComponentSizeInBytes(componentType);
 
     // buffer view
     const tinygltf::BufferView& bufferView = model.bufferViews[accessor.bufferView];
 
     // handle bufer view
-    handleBufferView(bufferView, std::string("sbuf"), byteOffset, bytesPerElement, elementCount, elementType, componentType, accessorId, out, writeToFile, dataType, transform);
-    return accessorId;
+    return handleBufferView(bufferView, std::string("sbuf"), byteOffset, bytesPerElement, elementCount, elementType, componentType, out, writeToFile, dataType, transform, region);
 }
 
-uint32_t GLTFParser::handleTexture(const tinygltf::Texture& tex, BufferData dataType){
+uint32 GLTFParser::handleTexture(const tinygltf::Texture& tex, BufferData dataType){
     std::vector<uint8_t> out;
-    
     // get image and sampler
-    int32_t sourceIndex = tex.source;
-    int32_t samplerIndex = tex.sampler;
-    int32_t minFilter;
+    int32 sourceIndex = tex.source;
+    int32 samplerIndex = tex.sampler;
+    int32 minFilter;
     tinygltf::Image image;
     tinygltf::Sampler sampler;
     if (sourceIndex == -1)
@@ -722,13 +475,13 @@ uint32_t GLTFParser::handleTexture(const tinygltf::Texture& tex, BufferData data
     }
 
     // create masked id (id + filter)
-    //uint32_t maskedTexId = (texId & 0xFFFF) | (minFilter << 16);
+    //uint32 maskedTexId = (texId & 0xFFFF) | (minFilter << 16);
 
     // get image
     image = model.images[sourceIndex];
 
     // get image components
-    uint32_t components = image.component;
+    uint32 components = image.component;
     if (components == 0)
         components = 4;
 
@@ -743,122 +496,171 @@ uint32_t GLTFParser::handleTexture(const tinygltf::Texture& tex, BufferData data
     minFilter = sampler.minFilter;
 
     // get data and write to buffer
-    int32_t elementType = TINYGLTF_TYPE_VEC4;
-    int32_t componentType = TINYGLTF_COMPONENT_TYPE_UNSIGNED_INT;
-    int32_t texId = m_id++;
-    int32_t bufferId = m_id++;
-    m_sourceTexIdMap[sourceIndex] = texId;
-    m_sourceBuffIdMap[sourceIndex] = bufferId;
+    int32 elementType = TINYGLTF_TYPE_VEC4;
+    int32 componentType = TINYGLTF_COMPONENT_TYPE_UNSIGNED_INT;
     glm::mat4 temp;
+
+    OffsetSpan textureOffset;
     if (image.bufferView >= 0){ // bufferview
-        int32_t elementCount = image.width * image.height * image.component;
-        handleBufferView(model.bufferViews[image.bufferView], std::string("stex"), 0, 1, elementCount, elementType, componentType, bufferId, out, true, dataType, temp);
+        int32 elementCount = image.width * image.height * image.component;
+        textureOffset = handleBufferView(model.bufferViews[image.bufferView], std::string("stex"), 0, 1, elementCount, elementType, componentType, out, true, dataType, temp, SPR_DR_TEXTURE);
     } else { // direct buffer
         tinygltf::Buffer buffer;
-        int32_t elementCount = image.image.size();
-        int32_t elementType = TINYGLTF_TYPE_SCALAR;
-        int32_t componentType = TINYGLTF_COMPONENT_TYPE_UNSIGNED_BYTE;
+        int32 elementCount = image.image.size();
+        int32 elementType = TINYGLTF_TYPE_SCALAR;
+        int32 componentType = TINYGLTF_COMPONENT_TYPE_UNSIGNED_BYTE;
         buffer.data = image.image;
-        uint32_t bytesPerElement = tinygltf::GetNumComponentsInType(elementType) * tinygltf::GetComponentSizeInBytes(componentType);
-        handleTextureBuffer(buffer, std::string("stex"), 0, bytesPerElement*elementCount, bytesPerElement, elementCount, elementType, componentType, bufferId, out, true, dataType, image.width, image.height, components);
+        uint32 bytesPerElement = tinygltf::GetNumComponentsInType(elementType) * tinygltf::GetComponentSizeInBytes(componentType);
+        textureOffset = handleTextureBuffer(buffer, std::string("stex"), 0, bytesPerElement*elementCount, bytesPerElement, elementCount, elementType, componentType, out, true, dataType, image.width, image.height, components);
     }
+    m_sourceTexIdMap[sourceIndex] = m_textureIndex;
+    m_sourceBuffIdMap[sourceIndex] = sourceIndex;
 
     // write texture to file
-    writeTextureFile(bufferId, image.height, image.width, components, texId);
-    return texId;
+    TextureLayout texture {
+        textureOffset.sizeBytes, 
+        textureOffset.offset, 
+        (uint32)image.height, 
+        (uint32)image.width, 
+        components
+    };
+
+    return writeTextureFile(texture);
 }
 
-uint32_t GLTFParser::handleTexture(const tinygltf::TextureInfo& texInfo, BufferData dataType){
+uint32 GLTFParser::handleTexture(const tinygltf::TextureInfo& texInfo, BufferData dataType){
     // get texture
-    int32_t texIndex = texInfo.index;
+    int32 texIndex = texInfo.index;
     const tinygltf::Texture& tex = model.textures[texIndex];
 
     // handle texture
     return handleTexture(tex, dataType);
 }
 
-uint32_t GLTFParser::handleTexture(const tinygltf::NormalTextureInfo& texInfo){
+uint32 GLTFParser::handleTexture(const tinygltf::NormalTextureInfo& texInfo){
     // get texture
-    int32_t texIndex = texInfo.index;
+    int32 texIndex = texInfo.index;
     const tinygltf::Texture& tex = model.textures[texIndex];
 
     // handle texture
     return handleTexture(tex, SPR_TEXTURE_NORMAL);
 }
 
-uint32_t GLTFParser::handleTexture(const tinygltf::OcclusionTextureInfo& texInfo){
+uint32 GLTFParser::handleTexture(const tinygltf::OcclusionTextureInfo& texInfo){
     // get texture
-    int32_t texIndex = texInfo.index;
+    int32 texIndex = texInfo.index;
     const tinygltf::Texture& tex = model.textures[texIndex];
 
     // handle texture
     return handleTexture(tex, SPR_TEXTURE_OTHER);
 }
 
-uint32_t GLTFParser::handleMaterial(const tinygltf::Material& material){
-    uint32_t materialId = m_id++;
-    // material flags
-    uint32_t materialFlags = 0;
-
-    // tex ids
-    std::vector<uint32_t> texIds;
-
-    // pbrmetallicroughness
+uint32 GLTFParser::handleMaterial(const tinygltf::Material& material, uint32& outMaterialFlags){
+    std::vector<uint32> texIndices;
+    // base color
+    uint32 bc_textureIndex = 0;
+    vec4 baseColorFactor = {1.f,1.f,1.f,1.f};
     const tinygltf::PbrMetallicRoughness& pbr = material.pbrMetallicRoughness;
     if (pbr.baseColorTexture.index >= 0){ // base color
-        materialFlags |= 0b1;
-        texIds.push_back(handleTexture(pbr.baseColorTexture, SPR_TEXTURE_COLOR));
+        outMaterialFlags |= 0b1;
+        bc_textureIndex = handleTexture(pbr.baseColorTexture, SPR_TEXTURE_COLOR);
     }
+
+    // metallicroughness
+    uint32 mr_textureIndex = 0;
+    float metalFactor = 1.0f;
+    float roughFactor = 1.0f;
     if (pbr.metallicRoughnessTexture.index >= 0){ //metallicroughness
-        materialFlags |= (0b1<<1);
-        texIds.push_back(handleTexture(pbr.metallicRoughnessTexture, SPR_TEXTURE_OTHER));
+        outMaterialFlags |= (0b1<<1);
+        mr_textureIndex = handleTexture(pbr.metallicRoughnessTexture, SPR_TEXTURE_OTHER);
     }
+
     // normal
+    uint32 n_textureIndex = 0;
+    float normalScale = 1.0f;
     const tinygltf::NormalTextureInfo& normal = material.normalTexture;
     if (normal.index >= 0){
-        materialFlags |= (0b1<<2);
-        texIds.push_back(handleTexture(normal));
+        outMaterialFlags |= (0b1<<2);
+        n_textureIndex = handleTexture(normal);
     }
+
     // occlusion
+    uint32 o_textureIndex = 0;
+    float occlusionStrength = 1.0f;
     const tinygltf::OcclusionTextureInfo& occlusion = material.occlusionTexture;
     if (occlusion.index >= 0){
-        materialFlags |= (0b1<<3);
-        texIds.push_back(handleTexture(occlusion));
+        outMaterialFlags |= (0b1<<3);
+        o_textureIndex = handleTexture(occlusion);
     }
+
     // emissive
+    uint32 e_textureIndex = 0;
+    vec3 emissiveFactor = {0.f,0.f,0.f};
     const tinygltf::TextureInfo& emissive = material.emissiveTexture;
     if (emissive.index >= 0){
-        materialFlags |= (0b1<<4);
-        texIds.push_back(handleTexture(emissive, SPR_TEXTURE_OTHER));
+        outMaterialFlags |= (0b1<<4);
+        e_textureIndex = handleTexture(emissive, SPR_TEXTURE_OTHER);
     }
+
     // alphamode
     std::string alpha = material.alphaMode;
+    uint32 alphaType = 0;
+    float alphaCutoff = material.alphaCutoff;
     if (alpha != "OPAQUE"){
-        materialFlags |= (0b1<<5);
+        outMaterialFlags |= (0b1<<5);
+        if (alpha == "MASK")
+            alphaType = 1;
+        else 
+            alphaType = 2;
     }
-    // doublesided 
-    if (material.doubleSided){
-        materialFlags |= (0b1<<6);
-    }
-    //TODO: check for specularglossiness + update flags
-    // write material to file
-    writeMaterialFile(materialFlags, material, texIds, materialId);
 
-    return materialId;
+    // doublesided 
+    uint32 doubleSided = 0;
+    if (material.doubleSided){
+        outMaterialFlags |= (0b1<<6);
+        doubleSided = 1;
+    }
+
+    // write material to file
+    MaterialLayout materialWrite {
+        outMaterialFlags,
+        bc_textureIndex,
+        baseColorFactor,
+
+        mr_textureIndex,
+        metalFactor,
+        roughFactor,
+
+        n_textureIndex,
+        normalScale,
+
+        o_textureIndex,
+        occlusionStrength,
+
+        e_textureIndex,
+        emissiveFactor,
+
+        alphaType,
+        alphaCutoff,
+
+        doubleSided
+    };
+
+    return writeMaterialFile(materialWrite);
 }
 
-uint32_t GLTFParser::interleaveVertexAttributes(
-        uint32_t vertexCount,
+OffsetSpan GLTFParser::interleaveVertexAttributes(
+        uint32 vertexCount,
         std::vector<uint8_t>& normalBuffer,
         std::vector<uint8_t>& tangentBuffer,
         std::vector<uint8_t>& texCoordBuffer,
         std::vector<uint8_t>& colorBuffer,
-        glm::mat4& transform){
-    uint32_t attributesId = m_id++;
-    uint32_t bytesPerNormal = 12;
-    uint32_t bytesPerColor = 12;
-    uint32_t bytesPerTexCoord = 8;
-    uint32_t bytesPerVertex = bytesPerNormal + bytesPerColor + bytesPerTexCoord;
+        glm::mat4& transform,
+        DataRegion region){
+    uint32 bytesPerNormal = 12;
+    uint32 bytesPerColor = 12;
+    uint32 bytesPerTexCoord = 8;
+    uint32 bytesPerVertex = bytesPerNormal + bytesPerColor + bytesPerTexCoord;
 
     if (normalBuffer.size() != vertexCount * bytesPerNormal){
         normalBuffer.resize(vertexCount * bytesPerNormal);
@@ -866,7 +668,7 @@ uint32_t GLTFParser::interleaveVertexAttributes(
     if (colorBuffer.size() != vertexCount * bytesPerColor){
         colorBuffer.resize(vertexCount * bytesPerColor);
         glm::vec3 defaultColor = {1.f, 1.f, 1.f};
-        for (uint32_t i = 0; i < colorBuffer.size(); i+= bytesPerColor){
+        for (uint32 i = 0; i < colorBuffer.size(); i+= bytesPerColor){
             memcpy(((unsigned char*)colorBuffer.data() + i), (unsigned char*)glm::value_ptr(defaultColor), bytesPerColor);
         }
     }
@@ -875,7 +677,7 @@ uint32_t GLTFParser::interleaveVertexAttributes(
     }
 
     // transform normals
-    for (uint32_t i = 0; i < vertexCount*bytesPerNormal; i += bytesPerNormal){
+    for (uint32 i = 0; i < vertexCount*bytesPerNormal; i += bytesPerNormal){
         glm::vec3 normal = glm::make_vec3((float*)(normalBuffer.data() + i));
         normal = glm::mat3(transform) * normal;
         memcpy((unsigned char*)(normalBuffer.data() + i), ((unsigned char*)glm::value_ptr(normal)), bytesPerNormal);
@@ -889,28 +691,28 @@ uint32_t GLTFParser::interleaveVertexAttributes(
     //      [ vec3 | vec2.y ]          [ color  | texCoord.V ]
     //
     
-    for (uint32_t vertex = 0; vertex < vertexCount; vertex++){
-        uint32_t offset = vertex*bytesPerVertex;
+    for (uint32 vertex = 0; vertex < vertexCount; vertex++){
+        uint32 offset = vertex*bytesPerVertex;
         // copy normal 
-        for(uint32_t normal = 0; normal < bytesPerNormal; normal++){
+        for(uint32 normal = 0; normal < bytesPerNormal; normal++){
             result[offset + normal] = normalBuffer[vertex*bytesPerNormal + normal];
         }
         offset += bytesPerNormal;
 
         // copy texCoord.U
-        for(uint32_t tex = 0; tex < bytesPerTexCoord/2; tex++){
+        for(uint32 tex = 0; tex < bytesPerTexCoord/2; tex++){
             result[offset + tex] = texCoordBuffer[vertex*bytesPerTexCoord + tex];
         }
         offset += bytesPerTexCoord/2;
 
         // copy color
-        for(uint32_t color = 0; color < bytesPerColor; color++){
+        for(uint32 color = 0; color < bytesPerColor; color++){
             result[offset + color] = colorBuffer[vertex*bytesPerColor + color];
         }
         offset += bytesPerColor;
         
         // copy texCoord.V
-        for(uint32_t tex = 0; tex < bytesPerTexCoord/2; tex++){
+        for(uint32 tex = 0; tex < bytesPerTexCoord/2; tex++){
             result[offset + tex] = texCoordBuffer[vertex*bytesPerTexCoord + tex + bytesPerTexCoord/2];
         }
         offset += bytesPerTexCoord/2;
@@ -918,25 +720,22 @@ uint32_t GLTFParser::interleaveVertexAttributes(
     }
 
     // write to buffer
-    writeBufferFile(result.data(), std::string("sbuf"), vertexCount*bytesPerVertex, TINYGLTF_TYPE_VEC4, TINYGLTF_COMPONENT_TYPE_FLOAT, attributesId);
-
-    return attributesId;
+    return writeBufferFile(result.data(), vertexCount*bytesPerVertex, region);
 }
 
-uint32_t GLTFParser::handlePrimitive(const tinygltf::Primitive& primitive, glm::mat4& transform){
-    uint32_t meshId = m_id++;
+uint32 GLTFParser::handlePrimitive(const tinygltf::Primitive& primitive, glm::mat4& transform){
     std::vector<uint8_t> tempOut;
 
     // material
-    int32_t materialIndex = primitive.material;
+    int32 materialIndexGLTF = primitive.material;
 
     // attributes (accessor indices)
-    int32_t indicesAccessorIndex = primitive.indices;
-    int32_t positionAccessorIndex = -1;
-    int32_t normalAccessorIndex = -1;
-    int32_t tangentAccessorIndex = -1;
-    int32_t texcoordAccessorIndex = -1;
-    int32_t colorAccessorIndex = -1;
+    int32 indicesAccessorIndex = primitive.indices;
+    int32 positionAccessorIndex = -1;
+    int32 normalAccessorIndex = -1;
+    int32 tangentAccessorIndex = -1;
+    int32 texcoordAccessorIndex = -1;
+    int32 colorAccessorIndex = -1;
 
     // iterate over primitive's attributes
     for (auto const& [key, val] : primitive.attributes){
@@ -955,61 +754,72 @@ uint32_t GLTFParser::handlePrimitive(const tinygltf::Primitive& primitive, glm::
 
     // handle accessors
     // indices
-    int32_t indicesId = handleAccessor(model.accessors[indicesAccessorIndex], tempOut, true, SPR_INDICES, transform);
-    assert(indicesId >= 0);
+    OffsetSpan indicesOffset = handleAccessor(model.accessors[indicesAccessorIndex], tempOut, true, SPR_INDICES, transform, SPR_DR_INDEX);
     
     // position
-    int32_t positionId = -1;
-    uint32_t vertexCount = 0;
+    OffsetSpan positionOffset;
+    uint32 vertexCount = 0;
     if (positionAccessorIndex >= 0){
         vertexCount = model.accessors[positionAccessorIndex].count;
-        positionId = handleAccessor(model.accessors[positionAccessorIndex], tempOut, true, SPR_POSITION, transform);
+        positionOffset = handleAccessor(model.accessors[positionAccessorIndex], tempOut, true, SPR_POSITION, transform, SPR_DR_POSITION);
     }
-    assert(positionId >= 0);
 
     // normal
-    int32_t normalId = -1;
+    OffsetSpan normalOffset;
     std::vector<uint8_t> outNormal;
     if (normalAccessorIndex >= 0){
-        normalId = handleAccessor(model.accessors[normalAccessorIndex], outNormal, false, SPR_NORMALS, transform);
+        normalOffset = handleAccessor(model.accessors[normalAccessorIndex], outNormal, false, SPR_NORMALS, transform, SPR_DR_ATTRIBUTE);
     }
 
     // tangent
-    int32_t tangentId = -1;
+    OffsetSpan tangentOffset;
     std::vector<uint8_t> outTangent;
     if (tangentAccessorIndex >= 0){
-        tangentId = handleAccessor(model.accessors[tangentAccessorIndex], outTangent, false, SPR_TANGENTS, transform);
+        tangentOffset = handleAccessor(model.accessors[tangentAccessorIndex], outTangent, false, SPR_TANGENTS, transform, SPR_DR_ATTRIBUTE);
     }
 
     // texcoords
-    int32_t texCoordId = -1;
+    OffsetSpan texCoordOffset;
     std::vector<uint8_t> outTexCoord;
     if (texcoordAccessorIndex >= 0) {
-        texCoordId = handleAccessor(model.accessors[texcoordAccessorIndex], outTexCoord, false, SPR_UV, transform);
+        texCoordOffset = handleAccessor(model.accessors[texcoordAccessorIndex], outTexCoord, false, SPR_UV, transform, SPR_DR_ATTRIBUTE);
     }
 
     // colors
-    int32_t colorId = -1;
+    OffsetSpan colorOffset;
     std::vector<uint8_t> outColor;
     if (colorAccessorIndex >= 0) {
-        colorId = handleAccessor(model.accessors[colorAccessorIndex], outColor, false, SPR_COLOR, transform);
+        colorOffset = handleAccessor(model.accessors[colorAccessorIndex], outColor, false, SPR_COLOR, transform, SPR_DR_ATTRIBUTE);
     }
 
-    uint32_t attributesId = interleaveVertexAttributes(vertexCount, outNormal, outTangent, outTexCoord, outColor, transform);
+    OffsetSpan attributesOffset = interleaveVertexAttributes(vertexCount, outNormal, outTangent, outTexCoord, outColor, transform, SPR_DR_ATTRIBUTE);
 
     // handle material
-    uint32_t materialId = 0;
-    if (materialIndex >= 0){
-        materialId = handleMaterial(model.materials[materialIndex]);
+    uint32 materialIndex = 0;
+    uint32 materialFlags = 0;
+    if (materialIndexGLTF >= 0){
+        materialIndex = handleMaterial(model.materials[materialIndexGLTF], materialFlags);
     }
 
     // write prim (mesh) to file
-    writeMeshFile(materialId, indicesId, positionId, attributesId, meshId);
-    return meshId;
+    MeshLayout meshWrite {
+        materialIndex,
+        materialFlags,
+
+        indicesOffset.sizeBytes,
+        indicesOffset.offset,
+
+        positionOffset.sizeBytes,
+        positionOffset.offset,
+    
+        attributesOffset.sizeBytes,
+        attributesOffset.offset
+    };
+    return writeMeshFile(meshWrite);
 }
 
-void GLTFParser::handleMesh(const tinygltf::Mesh& mesh, std::vector<uint32_t> &meshIds, glm::mat4& transform){
-    for (int32_t i = 0; i < mesh.primitives.size(); i++){
+void GLTFParser::handleMesh(const tinygltf::Mesh& mesh, std::vector<uint32> &meshIds, glm::mat4& transform){
+    for (int32 i = 0; i < mesh.primitives.size(); i++){
         const tinygltf::Primitive& primitive = mesh.primitives[i];
         if (primitive.mode == 4 || primitive.mode == -1){
             meshIds.push_back(handlePrimitive(primitive, transform));
@@ -1019,7 +829,7 @@ void GLTFParser::handleMesh(const tinygltf::Mesh& mesh, std::vector<uint32_t> &m
 
 void GLTFParser::vectorToMat4(const std::vector<double>& src, glm::mat4& dst){
     float mat[16];
-    for (uint32_t i = 0; i < 16; i++){
+    for (uint32 i = 0; i < 16; i++){
         mat[i] = (float)src.at(i);
     }
     dst = glm::make_mat4(mat);
@@ -1027,7 +837,7 @@ void GLTFParser::vectorToMat4(const std::vector<double>& src, glm::mat4& dst){
 
 void GLTFParser::vectorToQuat(const std::vector<double>& src, glm::quat& dst){
     float quat[4];
-    for (uint32_t i = 0; i < 4; i++){
+    for (uint32 i = 0; i < 4; i++){
         quat[i] = (float)src.at(i);
     }
     dst = glm::make_quat(quat);
@@ -1035,13 +845,13 @@ void GLTFParser::vectorToQuat(const std::vector<double>& src, glm::quat& dst){
 
 void GLTFParser::vectorToVec3(const std::vector<double>& src, glm::vec3& dst){
     float vec[3];
-    for (uint32_t i = 0; i < 3; i++){
+    for (uint32 i = 0; i < 3; i++){
         vec[i] = (float)src.at(i);
     }
     dst = glm::make_vec3(vec);
 }
 
-void GLTFParser::parseNode(const tinygltf::Node& node, std::vector<uint32_t> &meshIds, glm::mat4& transform){
+void GLTFParser::parseNode(const tinygltf::Node& node, std::vector<uint32> &meshIds, glm::mat4& transform){
     // get node transform matrix
     glm::mat4 nodeTransform = glm::mat4(1.0f);
     if (node.matrix.size() != 0){
@@ -1076,27 +886,131 @@ void GLTFParser::parseNode(const tinygltf::Node& node, std::vector<uint32_t> &me
     }
 
     // handle children
-    for (int32_t i = 0; i < node.children.size(); i++){
+    for (int32 i = 0; i < node.children.size(); i++){
         const tinygltf::Node& child = model.nodes[node.children[i]];
         parseNode(child, meshIds, nodeTransform);
     }
 }
 
 void GLTFParser::parse(){
+    init();
 
-    int32_t modelId = m_id++;
     // assume one scene
     const tinygltf::Scene& scene = model.scenes[0];
-    std::vector<uint32_t> meshIds;
+    std::vector<uint32> meshIds;
     meshIds.reserve(256);
+
     // process top level nodes
-    for (int32_t i = 0; i < scene.nodes.size(); i++){
+    for (int32 i = 0; i < scene.nodes.size(); i++){
         const tinygltf::Node& currNode = model.nodes[scene.nodes[i]];
         glm::mat4 identity = glm::mat4(1.0f);
         parseNode(currNode, meshIds, identity);
     }
+
+    consolidate();
+    cleanup();
+}
+
+void GLTFParser::init(){
+    m_modelStream.open("../data/temp/" + m_name + "_model.stmp", std::ios::binary);
+    m_meshStream.open("../data/temp/" + m_name + "_mesh.stmp", std::ios::binary);
+    m_materialStream.open("../data/temp/" + m_name + "_mtl.stmp", std::ios::binary);
+    m_textureStream.open("../data/temp/" + m_name + "_tex.stmp", std::ios::binary);
+    m_indexDataStream.open("../data/temp/" + m_name + "_indx.stmp", std::ios::binary);
+    m_positionDataStream.open("../data/temp/" + m_name + "_pos.stmp", std::ios::binary);
+    m_attributeDataStream.open("../data/temp/" + m_name + "_attr.stmp", std::ios::binary);
+    m_textureDataStream.open("../data/temp/" + m_name + "_tdata.stmp", std::ios::binary);
+}
+
+void GLTFParser::consolidate(){
     // write model file
-    writeModelFile(meshIds.size(), meshIds, modelId);
+    std::string modelName = m_name;
+    modelName.resize(32);
+    
+    ModelHeader modelHeader = {
+        .meshCount = m_meshCount,
+        .meshBufferOffset = 0,
+        .materialCount = m_materialCount,
+        .materialBufferOffset = 0,
+        .textureCount = m_textureCount,
+        .textureBufferOffset = 0,
+        .blobHeaderOffset = 0,
+        .blobDataOffset = 0
+    };
+    for (uint32 i = 0; i < 32; i++){
+        modelHeader.name[i] = modelName[i];
+    }
+    modelHeader.meshBufferOffset = sizeof(ModelHeader);
+    modelHeader.materialBufferOffset = modelHeader.meshBufferOffset + m_meshCount * sizeof(MeshLayout);
+    modelHeader.textureBufferOffset = modelHeader.materialBufferOffset + m_materialCount * sizeof(MaterialLayout);
+    modelHeader.blobHeaderOffset = modelHeader.textureBufferOffset + m_textureCount * sizeof(TextureLayout);
+    modelHeader.blobDataOffset = modelHeader.blobHeaderOffset + sizeof(BlobHeader);
+    m_modelStream.write((char*)&modelHeader, sizeof(ModelHeader));
+
+    // fill out blob header
+    BlobHeader blobHeader = {
+        .sizeBytes = m_indicesOffset + m_positionOffset + m_attributesOffset + m_textureDataOffset,
+        .indexRegionSizeBytes = m_indicesOffset,
+        .indexRegionOffset = modelHeader.blobDataOffset,
+        .positionRegionSizeBytes = m_positionOffset,
+        .positionRegionOffset = modelHeader.blobDataOffset + m_indicesOffset,
+        .attributeRegionSizeBytes = m_attributesOffset,
+        .attributeRegionOffset = modelHeader.blobDataOffset + m_indicesOffset + m_positionOffset,
+        .textureRegionSizeBytes = m_textureDataOffset,
+        .textureRegionOffset = modelHeader.blobDataOffset + m_indicesOffset + m_positionOffset + m_attributesOffset
+    };
+
+    m_modelStream.close();
+    m_meshStream.close();
+    m_materialStream.close();
+    m_textureStream.close();
+    m_indexDataStream.close();
+    m_positionDataStream.close();
+    m_attributeDataStream.close();
+    m_textureDataStream.close();
+
+    m_modelStreamI.open("../data/temp/" + m_name + "_model.stmp", std::ios::binary);
+    m_meshStreamI.open("../data/temp/" + m_name + "_mesh.stmp", std::ios::binary);
+    m_materialStreamI.open("../data/temp/" + m_name + "_mtl.stmp", std::ios::binary);
+    m_textureStreamI.open("../data/temp/" + m_name + "_tex.stmp", std::ios::binary);
+    m_indexDataStreamI.open("../data/temp/" + m_name + "_indx.stmp", std::ios::binary);
+    m_positionDataStreamI.open("../data/temp/" + m_name + "_pos.stmp", std::ios::binary);
+    m_attributeDataStreamI.open("../data/temp/" + m_name + "_attr.stmp", std::ios::binary);
+    m_textureDataStreamI.open("../data/temp/" + m_name + "_tdata.stmp", std::ios::binary);
+    m_outputStream.open("../data/assets/" + m_name + ".smdl", std::ios::binary);
+
+    // concat all streams into final temp output
+    m_outputStream << m_modelStreamI.rdbuf();
+    m_outputStream << m_meshStreamI.rdbuf();
+    m_outputStream << m_materialStreamI.rdbuf();
+    m_outputStream << m_textureStreamI.rdbuf();
+    m_outputStream.write((char*)&blobHeader, sizeof(BlobHeader));
+    m_outputStream << m_indexDataStreamI.rdbuf();
+    m_outputStream << m_positionDataStreamI.rdbuf();
+    m_outputStream << m_attributeDataStreamI.rdbuf();
+    m_outputStream << m_textureDataStreamI.rdbuf();
+    m_outputStream.flush();
+
+    m_modelStreamI.close();
+    m_meshStreamI.close();
+    m_materialStreamI.close();
+    m_textureStreamI.close();
+    m_indexDataStreamI.close();
+    m_positionDataStreamI.close();
+    m_attributeDataStreamI.close();
+    m_textureDataStreamI.close();
+    m_outputStream.close();
+}
+
+void GLTFParser::cleanup(){
+    std::filesystem::remove("../data/temp/"+(m_name + "_model")+".stmp");
+    std::filesystem::remove("../data/temp/"+(m_name) + "_mtl"+".stmp");
+    std::filesystem::remove("../data/temp/"+(m_name + "_tex")+".stmp");
+    std::filesystem::remove("../data/temp/"+(m_name + "_indx")+".stmp");
+    std::filesystem::remove("../data/temp/"+(m_name + "_pos")+".stmp");
+    std::filesystem::remove("../data/temp/"+(m_name + "_attr")+".stmp");
+    std::filesystem::remove("../data/temp/"+(m_name + "_tdata")+".stmp");
+    std::filesystem::remove("../data/temp/"+(m_name + "_mesh")+".stmp");
 }
 
 // parse .gltf file

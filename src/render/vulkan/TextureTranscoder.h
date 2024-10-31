@@ -1,8 +1,10 @@
 #pragma once
 
 #include "gfx_vulkan_core.h"
-#include "VulkanDevice.h"
 #include "core/util/FunctionQueue.h"
+#include "core/memory/TempBuffer.h"
+#include "ktx.h"
+#include "vulkan/resource/OffsetBuffer.h"
 
 namespace spr {
     class SprWindow;
@@ -10,12 +12,15 @@ namespace spr {
 
 namespace spr::gfx{
 
+typedef OffsetBuffer OffsetBuffer;
+class VulkanDevice;
+
 struct TranscodeResult {
     VkFormat format;
     uint32 mips;
     uint32 layers;
     uint32 sizeBytes;
-    std::vector<uint8> transcodedData;
+    OffsetBuffer transcodedData;
 };
 
 class TextureTranscoder{
@@ -24,13 +29,15 @@ public:
     TextureTranscoder(VulkanDevice* device);
     ~TextureTranscoder();
 
-    TranscodeResult transcode(uint8* data, uint32 size, uint32 width, uint32 height);
+    void transcode(TranscodeResult& out, VulkanResourceManager* vrm, uint8* data, uint32 size, uint32 width, uint32 height);
+    void destroyActiveTexture(TranscodeResult& out, uint32 sizeBytes);
     void reset();
     bool formatSupported(VkFormat format);
 
 private:
     VulkanDevice* m_device;
     VkPhysicalDeviceFeatures m_features;
+    ktxTexture2* m_activeTexture;
 
     FunctionQueue m_deletionQueue;
 

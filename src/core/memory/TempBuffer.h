@@ -2,10 +2,10 @@
 
 #include <utility>
 #include <vector>
-#include "../spruce_core.h"
 #include <string>
 #include <cstring>
-#include "../../debug/SprLog.h"
+#include "core/spruce_core.h"
+#include "debug/SprLog.h"
 
 namespace spr {
 
@@ -66,14 +66,14 @@ public:
         return *this;
     }
 
-    T& operator[](uint32 index) {
+    inline T& operator[](uint32 index) {
         if (index >= m_size)
             SprLog::error("[TempBuffer] [operator[]] index out of range for size of ", m_size);
         
         return m_data[index];
     }
 
-    const T& operator[](uint32 index) const {
+    inline const T& operator[](uint32 index) const {
         if (index >= m_size)
             SprLog::error("[TempBuffer] [const operator[]] index out of range for size of ", m_size);
         
@@ -87,8 +87,6 @@ public:
     // Output: 
     //      uint32 ofst - offset (T) of data in buffer
     inline uint32 insert(const T* data, uint32 size){
-        if (m_destroyed)
-            SprLog::fatal("come on");
         // current offset
         uint32 offset = m_size;
         
@@ -109,8 +107,6 @@ public:
     }
 
     inline uint32 insert(const T& data){
-        if (m_destroyed)
-            SprLog::fatal("come on");
         // current offset
         uint32 offset = m_size;
         

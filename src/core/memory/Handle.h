@@ -1,6 +1,6 @@
 #pragma once
 
-#include "../spruce_core.h"
+#include "core/spruce_core.h"
 
 
 namespace spr{
@@ -29,6 +29,13 @@ public:
 private:
 
     friend class Pool<T>;
+};
+
+template <typename T>
+struct HandleID {
+    Handle<T> handle;
+    uint32 id;
+    uint32 pad;
 };
 
 }
