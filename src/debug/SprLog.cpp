@@ -5,9 +5,6 @@
 
 namespace spr {
 
-SprLog::SprLog(){}
-SprLog::~SprLog(){}
-
 std::string SprLog::getTime() {
     // Get the current time
     std::chrono::system_clock::time_point now = std::chrono::system_clock::now();
@@ -32,8 +29,11 @@ std::string SprLog::getDate() {
     return ss.str();
 }
 
+void SprLog::resetFormatting(){
+    std::cout << oof::reset_formatting() << std::endl;
+}
+
 void SprLog::debug(std::string msg){
-    oof::color color;
     std::cout << oof::fg_color({0,153,76});
     std::cout << getTime();
     std::cout << oof::fg_color({255,51,153});
@@ -87,9 +87,7 @@ void SprLog::fatal(std::string msg){
     std::terminate();
 }
 
-
-void SprLog::debug(std::string msg, uint32_t arg){
-    oof::color color;
+void SprLog::debugHeader(std::string& msg){
     std::cout << oof::fg_color({0,153,76});
     std::cout << getTime();
     std::cout << oof::fg_color({255,51,153});
@@ -97,12 +95,9 @@ void SprLog::debug(std::string msg, uint32_t arg){
     std::cout << oof::fg_color({255,255,255});
     std::cout << msg;
     std::cout << oof::fg_color({204,255,204});
-    std::cout << std::to_string(arg);
-    std::cout << oof::reset_formatting() << std::endl;
 }
 
-
-void SprLog::info(std::string msg, uint32_t arg){
+void SprLog::infoHeader(std::string& msg){
     std::cout << oof::fg_color({0,153,76});
     std::cout << getTime();
     std::cout << oof::fg_color({192,192,192});
@@ -110,12 +105,9 @@ void SprLog::info(std::string msg, uint32_t arg){
     std::cout << oof::fg_color({255,255,255});
     std::cout << msg;
     std::cout << oof::fg_color({204,255,204});
-    std::cout << std::to_string(arg);
-    std::cout << oof::reset_formatting() << std::endl;
 }
 
-
-void SprLog::warn(std::string msg, uint32_t arg){
+void SprLog::warnHeader(std::string& msg){
     std::cout << oof::fg_color({0,153,76});
     std::cout << getTime();
     std::cout << oof::fg_color({255,153,51});
@@ -123,12 +115,9 @@ void SprLog::warn(std::string msg, uint32_t arg){
     std::cout << oof::fg_color({255,255,255});
     std::cout << msg;
     std::cout << oof::fg_color({204,255,204});
-    std::cout << std::to_string(arg);
-    std::cout << oof::reset_formatting() << std::endl;
 }
 
-
-void SprLog::error(std::string msg, uint32_t arg){
+void SprLog::errorHeader(std::string& msg){
     std::cout << oof::fg_color({0,153,76});
     std::cout << getTime();
     std::cout << oof::fg_color({255,51,51});
@@ -136,24 +125,15 @@ void SprLog::error(std::string msg, uint32_t arg){
     std::cout << oof::fg_color({255,255,255});
     std::cout << msg;
     std::cout << oof::fg_color({204,255,204});
-    std::cout << std::to_string(arg);
-    std::cout << oof::reset_formatting() << std::endl;
-    //throw SpruceErrorException();
-    std::terminate();
 }
 
-
-void SprLog::fatal(std::string msg, uint32_t arg){
+void SprLog::fatalHeader(std::string& msg){
     std::cout << oof::fg_color({0,153,76});
     std::cout << getTime();
     std::cout << oof::fg_color({255,51,51});
     std::cout << " [FATAL]: ";
     std::cout << msg;
     std::cout << oof::fg_color({204,255,204});
-    std::cout << std::to_string(arg);
-    std::cout << oof::reset_formatting() << std::endl;
-    //throw new SpruceFatalException();
-    std::terminate();
 }
 
 }
