@@ -9,16 +9,13 @@
 #include "vulkan/TextureTranscoder.h"
 #include "vulkan/gfx_vulkan_core.h"
 #include "vulkan/resource/ResourceFlags.h"
-#include "vulkan/resource/ResourceTypes.h"
-#include "vulkan/resource/VulkanResourceManager.h"
 #include "vulkan/UploadHandler.h"
-#include "../resource/SprResourceManager.h"
+#include "resource/SprResourceManager.h"
 #include <cctype>
 #include "scene/SceneData.h"
-#include "../debug/SprLog.h"
-#include <glm/ext/matrix_clip_space.hpp>
-#include "vulkan/TextureTranscoder.h"
+#include "debug/SprLog.h"
 #include <iostream>
+#include <string>
 #include<unistd.h>  
 
 
@@ -145,8 +142,6 @@ void SceneManager::removeMeshes(uint32 frame, uint32 id, Span<uint32> meshIds, S
 
 
 void SceneManager::updateMeshes(uint32 frame, uint32 id, Span<uint32> meshIds, Span<uint32> materialsFlags, const Transform& transform){
-    bool sharedMaterial = (meshIds.size() != materialsFlags.size() && materialsFlags.size() == 1);
-
     uint32 transformIndex = m_idTransformIndexMap[id];
     m_transforms[frame % MAX_FRAME_COUNT][transformIndex] = transform;
     for (uint32 i = 1; i < MAX_FRAME_COUNT; i++){
@@ -155,8 +150,6 @@ void SceneManager::updateMeshes(uint32 frame, uint32 id, Span<uint32> meshIds, S
 
     if (frame >= MAX_FRAME_COUNT)
         queueTransformUpdate(transformIndex);
-
-    //insertDraws(frame, id, meshIds, materialsFlags, transformIndex, sharedMaterial);
 }
 
 void SceneManager::updateMeshes(uint32 frame, uint32 id, Span<uint32> meshIds, uint32 materialFlags , const Transform& transform){
@@ -168,8 +161,6 @@ void SceneManager::updateMeshes(uint32 frame, uint32 id, Span<uint32> meshIds, u
 
     if (frame >= MAX_FRAME_COUNT)
         queueTransformUpdate(transformIndex);
-
-    //insertDraws(frame, id, meshIds, {materialFlags}, transformIndex, true);
 }
 
 
@@ -177,6 +168,7 @@ void SceneManager::insertLights(uint32 frame, Span<const Light> lights){
     uint32 offset = m_lights[frame % MAX_FRAME_COUNT].insert(lights.data(), lights.size());
     Scene& scene = m_sceneData[frame % MAX_FRAME_COUNT][0];
     scene.lightCount += lights.size();
+    
     // get most recently added directional light
     for (uint32 i = 0; i < lights.size(); i++){
         if (lights[i].type == DIRECTIONAL){
@@ -205,53 +197,38 @@ void SceneManager::updateCamera(uint32 frame, glm::vec2 screenDim, const Camera&
 void SceneManager::uploadGlobalResources(UploadHandler& uploadHandler){
     std::vector<TextureInfo>& textures = m_assetLoader.getTextureData();
     for (uint32 i = 0; i < m_assetLoader.getPrimitiveCounts().textureCount; i++){
-        uploadHandler.uploadTexture(textures[i].data, m_textures[i]);
+        uploadHandler.uploadManagedTexture<uint8>(textures[i].data.handle(), m_textures[i]);
     }
-    m_assetLoader.clearTextures();
-
+    
     std::vector<TextureInfo>& cubemaps = m_assetLoader.getCubemapData();
     for (uint32 i = 0; i < m_assetLoader.getPrimitiveCounts().cubemapCount; i++){
-        uploadHandler.uploadTexture(cubemaps[i].data, m_cubemaps[i]);
+        uploadHandler.uploadManagedTexture<uint8>(cubemaps[i].data.handle(), m_cubemaps[i]);
     }
-    m_assetLoader.clearCubemaps();
-
-    uploadHandler.uploadBuffer(m_assetLoader.getVertexAttributeData(), m_attributesBuffer);
-    m_assetLoader.clearVertexAttributes();
     
-    uploadHandler.uploadBuffer(m_assetLoader.getVertexPositionData(), m_positionsBuffer);
-    m_assetLoader.clearVertexPositions();
-
-    uploadHandler.uploadBuffer(m_assetLoader.getVertexIndicesData(), m_indexBuffer);
-    m_assetLoader.clearVertexIndices();
-    
-    uploadHandler.uploadBuffer(m_assetLoader.getMaterialData(), m_materialsBuffer);
-    m_assetLoader.clearMaterials();
+    uploadHandler.uploadManagedBuffer<VertexAttributes>(m_assetLoader.getVertexAttributeData(), m_attributesBuffer);
+    uploadHandler.uploadManagedBuffer<VertexPosition>(m_assetLoader.getVertexPositionData(), m_positionsBuffer);
+    uploadHandler.uploadManagedBuffer<uint32>(m_assetLoader.getVertexIndicesData(), m_indexBuffer);
+    uploadHandler.uploadManagedBuffer<MaterialData>(m_assetLoader.getMaterialData(), m_materialsBuffer);
 }
 
 void SceneManager::uploadPerFrameResources(UploadHandler& uploadHandler, uint32 frame){
-    uploadHandler.uploadDyanmicBuffer(m_sceneData[frame % MAX_FRAME_COUNT], m_sceneBuffer);
-    uploadHandler.uploadDyanmicBuffer(m_cameras[frame % MAX_FRAME_COUNT], m_cameraBuffer);
-    uploadHandler.uploadDyanmicBuffer(m_lights[frame % MAX_FRAME_COUNT], m_lightsBuffer);
+    uploadHandler.uploadDyanmicBuffer<Scene>({m_sceneData[frame % MAX_FRAME_COUNT]}, m_sceneBuffer);
+    uploadHandler.uploadDyanmicBuffer<Camera>({m_cameras[frame % MAX_FRAME_COUNT]}, m_cameraBuffer);
+    uploadHandler.uploadDyanmicBuffer<Light>({m_lights[frame % MAX_FRAME_COUNT]}, m_lightsBuffer);
 
     if (frame < MAX_FRAME_COUNT){
-        uploadHandler.uploadDyanmicBuffer(m_transforms[frame % MAX_FRAME_COUNT], m_transformBuffer);
+        uploadHandler.uploadDyanmicBuffer<Transform>({m_transforms[frame % MAX_FRAME_COUNT]}, m_transformBuffer);
     } else {
         for (TransformUpdate& update : m_transformUpdates){
             if (update.budget <= 0)
                 continue;
-            uploadHandler.uploadSparseBuffer(m_transforms[frame % MAX_FRAME_COUNT], m_transformBuffer, update.index, update.index);
+            uploadHandler.uploadSparseBuffer<Transform>({m_transforms[frame % MAX_FRAME_COUNT]}, m_transformBuffer, update.index, update.index);
             update.budget--;
         }
     }
-    // for (TransformUpdate& update : m_transformUpdates){
-    //     if (update.budget < 0)
-    //         continue;
-    //     uploadHandler.uploadSparseBuffer(m_transforms[frame % MAX_FRAME_COUNT], m_transformBuffer, update.index, update.index);
-    //     update.budget--;
-    // }
     
     m_batchManagers[frame % MAX_FRAME_COUNT].getDrawData(m_drawData[frame % MAX_FRAME_COUNT]);
-    uploadHandler.uploadDyanmicBuffer(m_drawData[frame % MAX_FRAME_COUNT], m_drawDataBuffer);
+    uploadHandler.uploadDyanmicBuffer<DrawData>({m_drawData[frame % MAX_FRAME_COUNT]}, m_drawDataBuffer);
 }
 
 
@@ -326,9 +303,8 @@ Light& SceneManager::getSunLight(uint32 frame){
 
 
 void SceneManager::initializeAssets(SprResourceManager &rm, VulkanDevice* device){
-    m_meshInfo = m_assetLoader.loadAssets(rm, device);
-    //m_assetLoader.unloadBuffers(rm);
-
+    m_meshInfo = m_assetLoader.loadAssets(rm, m_rm, device);
+    m_assetLoader.unloadBuffers(rm);
     rm.destroyBuffers();
 
     PrimitiveCounts counts = m_assetLoader.getPrimitiveCounts();
