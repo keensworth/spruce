@@ -1,6 +1,7 @@
 #pragma once
 
 #include <iostream>
+#include <fstream>
 #include <filesystem>
 #include <unordered_map>
 #include "../../external/tinygltf/tiny_gltf.h"
@@ -8,10 +9,18 @@
 #include "glm/ext/matrix_transform.hpp"
 #include "glm/gtx/quaternion.hpp"
 #include <glm/gtc/matrix_inverse.hpp>
+#include "Resources.h"
 
 typedef std::unordered_map<uint32_t, uint32_t> IdMap;
 
 namespace spr::tools{
+
+enum DataRegion {
+    SPR_DR_INDEX = 0,
+    SPR_DR_POSITION = 1,
+    SPR_DR_ATTRIBUTE = 2,
+    SPR_DR_TEXTURE = 3
+};
 
 enum BufferData {
     SPR_NONE = 0,
@@ -24,6 +33,11 @@ enum BufferData {
     SPR_TEXTURE_COLOR = 7,
     SPR_TEXTURE_NORMAL = 8,
     SPR_TEXTURE_OTHER = 9,
+};
+
+struct OffsetSpan {
+    uint32_t sizeBytes = 0;
+    uint32_t offset = 0;
 };
 
 class GLTFParser {
@@ -45,36 +59,77 @@ private:
     IdMap m_sourceBuffIdMap;
     IdMap m_sourceTexIdMap;
 
+    std::ofstream m_outputStream;
+    std::ofstream m_modelStream;
+    std::ofstream m_meshStream;
+    std::ofstream m_materialStream;
+    std::ofstream m_textureStream;
+    std::ofstream m_indexDataStream;
+    std::ofstream m_positionDataStream;
+    std::ofstream m_attributeDataStream;
+    std::ofstream m_textureDataStream;
+
+    std::ifstream m_modelStreamI;
+    std::ifstream m_meshStreamI;
+    std::ifstream m_materialStreamI;
+    std::ifstream m_textureStreamI;
+    std::ifstream m_indexDataStreamI;
+    std::ifstream m_positionDataStreamI;
+    std::ifstream m_attributeDataStreamI;
+    std::ifstream m_textureDataStreamI;
+
+    uint32 m_meshIndex = 0;
+    uint32 m_materialIndex = 0;
+    uint32 m_textureIndex = 0;
+
+    uint32 m_meshCount = 0;
+    uint32 m_materialCount = 0;
+    uint32 m_textureCount = 0;
+
+    uint32 m_indicesOffset = 0;
+    uint32 m_positionOffset = 0;
+    uint32 m_attributesOffset = 0;
+    uint32 m_textureDataOffset = 0;
+
     void parse();
+    void init();
+    void consolidate();
+    void cleanup();
     void parseNode(const tinygltf::Node& node, std::vector<uint32_t> &meshIds, glm::mat4& transform);
     void handleMesh(const tinygltf::Mesh& mesh, std::vector<uint32_t> &meshIds, glm::mat4& transform);
     uint32_t handlePrimitive(const tinygltf::Primitive& primitive, glm::mat4& transform);
-    uint32_t interleaveVertexAttributes(
+    OffsetSpan interleaveVertexAttributes(
         uint32_t vertexCount,
         std::vector<uint8_t>& normalBuffer,
         std::vector<uint8_t>& tangentBuffer,
         std::vector<uint8_t>& texCoordBuffer,
         std::vector<uint8_t>& colorBuffer,
-        glm::mat4& transform);
-    uint32_t handleMaterial(const tinygltf::Material& material);
-    uint32_t handleTexture(const tinygltf::TextureInfo& texInfo, BufferData dataType);
-    uint32_t handleTexture(const tinygltf::NormalTextureInfo& texInfo);
-    uint32_t handleTexture(const tinygltf::OcclusionTextureInfo& texInfo);
-    uint32_t handleTexture(const tinygltf::Texture& tex, BufferData dataType);
-    uint32_t handleAccessor(const tinygltf::Accessor& accessor, std::vector<uint8_t>& out, bool writeToFile, BufferData dataType, glm::mat4& transform);
-    void handleBufferView(const tinygltf::BufferView& bufferView, 
+        glm::mat4& transform,
+        DataRegion region);
+    uint32 handleMaterial(const tinygltf::Material& material, uint32_t& outMaterialFlags);
+    uint32 handleTexture(const tinygltf::TextureInfo& texInfo, BufferData dataType);
+    uint32 handleTexture(const tinygltf::NormalTextureInfo& texInfo);
+    uint32 handleTexture(const tinygltf::OcclusionTextureInfo& texInfo);
+    uint32 handleTexture(const tinygltf::Texture& tex, BufferData dataType);
+    OffsetSpan handleAccessor(const tinygltf::Accessor& accessor, 
+        std::vector<uint8_t>& out, 
+        bool writeToFile, 
+        BufferData dataType, 
+        glm::mat4& transform,
+        DataRegion region);
+    OffsetSpan handleBufferView(const tinygltf::BufferView& bufferView, 
         std::string association,
         uint32_t byteOffset, 
         uint32_t calcByteStride,
         uint32_t elementCount, 
         uint32_t elementType, 
         uint32_t componentType,
-        uint32_t bufferId,
         std::vector<uint8_t>& out,
         bool writeToFile,
         BufferData dataType,
-        glm::mat4& transform);
-    void handleBuffer(
+        glm::mat4& transform,
+        DataRegion region);
+    OffsetSpan handleBuffer(
         const tinygltf::Buffer& buffer, 
         std::string association,
         uint32_t byteOffset, 
@@ -83,12 +138,12 @@ private:
         uint32_t elementCount,
         uint32_t elementType, 
         uint32_t componentType,
-        uint32_t bufferId,
         std::vector<uint8_t>& out,
         bool writeToFile,
         BufferData dataType,
-        glm::mat4& transform);
-    void handleTextureBuffer(
+        glm::mat4& transform,
+        DataRegion region);
+    OffsetSpan handleTextureBuffer(
         const tinygltf::Buffer& buffer, 
         std::string association,
         uint32_t byteOffset, 
@@ -97,14 +152,13 @@ private:
         uint32_t elementCount,
         uint32_t elementType, 
         uint32_t componentType,
-        uint32_t bufferId,
         std::vector<uint8_t>& out,
         bool writeToFile,
         BufferData dataType,
         uint32_t width,
         uint32_t height,
         uint32_t components);
-    void handleMIMEImageBuffer(
+    OffsetSpan handleMIMEImageBuffer(
         const tinygltf::Buffer& buffer, 
         std::string association,
         uint32_t byteOffset, 
@@ -113,7 +167,6 @@ private:
         uint32_t elementCount,
         uint32_t elementType, 
         uint32_t componentType,
-        uint32_t bufferId,
         BufferData dataType);
     void createMip(
         unsigned char* in, 
@@ -131,7 +184,7 @@ private:
         uint32_t width,
         uint32_t height,
         uint32_t components);
-    void handleBufferInterleaved(
+    OffsetSpan handleBufferInterleaved(
         const tinygltf::Buffer& buffer, 
         std::string association,
         uint32_t byteOffset, 
@@ -140,29 +193,14 @@ private:
         uint32_t bytesPerElement, 
         uint32_t elementType, 
         uint32_t componentType,
-        uint32_t bufferId,
         std::vector<uint8_t>& out,
-        bool writeToFile);
-    void writeBufferFile(
-        const unsigned char* data,
-        std::string association,
-        uint32_t byteLength, 
-        uint32_t elementType, 
-        uint32_t componentType, 
-        uint32_t bufferId);
-    void writeMeshFile(
-        uint32_t materialId, 
-        uint32_t indexBufferId, 
-        uint32_t posBufferId,  
-        uint32_t attributesBufferId,
-        uint32_t meshId);
-    void writeMaterialFile(
-        uint32_t materialFlags, 
-        const tinygltf::Material& material,
-        std::vector<uint32_t> texIds,
-        uint32_t materialId);
-    void writeModelFile(uint32_t meshCount, std::vector<uint32_t> meshIds, uint32_t modelId);
-    void writeTextureFile(uint32_t bufferId, uint32_t height, uint32_t width, uint32_t imageType, uint32_t texId);
+        bool writeToFile,
+        DataRegion region);
+    OffsetSpan writeBufferFile(const unsigned char* data, uint32_t byteLength, DataRegion dataRegion);
+    uint32 writeTextureFile(TextureLayout& texture);
+    uint32 writeMaterialFile(MaterialLayout& material);
+    uint32 writeMeshFile(MeshLayout& mesh);
+
 
     void vectorToMat4(const std::vector<double>& src, glm::mat4& dst);
     void vectorToQuat(const std::vector<double>& src, glm::quat& dst);
