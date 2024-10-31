@@ -1,10 +1,11 @@
 #include "CommandBuffer.h"
 
+#include "vulkan/VulkanDevice.h"
 #include "RenderPassRenderer.h"
 #include "UploadHandler.h"
 #include <bits/ranges_base.h>
-#include "../../external/volk/volk.h"
-#include "../../debug/SprLog.h"
+#include "external/volk/volk.h"
+#include "debug/SprLog.h"
 
 namespace spr::gfx {
 
