@@ -1,8 +1,9 @@
 #include "UploadHandler.h"
 #include "GPUStreamer.h"
+#include "vulkan/CommandBuffer.h"
 #include "resource/ResourceTypes.h"
 #include "resource/VulkanResourceManager.h"
-#include "../../debug/SprLog.h"
+#include "debug/SprLog.h"
 
 namespace spr::gfx {
 
