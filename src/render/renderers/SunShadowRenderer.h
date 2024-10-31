@@ -228,7 +228,7 @@ public:
 		}
 
         // upload data
-        uploadHandler.uploadDyanmicBuffer(m_shadowTemp[m_renderer->getFrameId() % MAX_FRAME_COUNT], m_shadowBuffer);
+        uploadHandler.uploadDyanmicBuffer<SunShadowData>({m_shadowTemp[m_renderer->getFrameId() % MAX_FRAME_COUNT]}, m_shadowBuffer);
     }
 
 
