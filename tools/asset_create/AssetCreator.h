@@ -31,8 +31,7 @@ private:
     std::string m_name;
     std::string m_extension;
 
-    void writeTextureFile(uint32_t bufferId, uint32_t height, uint32_t width, uint32_t components, uint32_t texId);
-    void writeBufferFile(const unsigned char* data, uint32_t byteLength, uint32_t elementType, uint32_t componentType, uint32_t bufferId);
+    void writeTextureFile(const unsigned char* data, uint32_t byteLength, uint32_t height, uint32_t width, uint32_t components);
     void compressImageData(
         unsigned char* data,
         uint32_t dataSize,

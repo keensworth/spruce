@@ -2,6 +2,8 @@
 #include <cstdint>
 #include <cmath>
 
+#include "../gltf/Resources.h"
+
 #define STB_IMAGE_IMPLEMENTATION
 #define STB_IMAGE_RESIZE_IMPLEMENTATION
 #include "stb_image.h"
@@ -32,18 +34,12 @@ void AssetCreator::createTexture(std::string path){
         std::cerr << "Failed to open image" << std::endl;
     }
 
-    uint32_t elementType = 4;
-    uint32_t componentType = 5121;
-
     unsigned char* ktxTextureData = nullptr;
-    uint32_t ktxTextureDataSize;
+    uint32_t ktxTextureDataSize = 0;
 
     // generate mips + compress
     compressImageData(data, sizeof(data), &ktxTextureData, ktxTextureDataSize, SPR_TEXTURE_COLOR, x, y, 4);
-
-    writeBufferFile(ktxTextureData, ktxTextureDataSize, elementType, componentType, 1);
-
-    writeTextureFile(1, y, x, 4, 0);
+    writeTextureFile(ktxTextureData, ktxTextureDataSize, y, x, 4);
 
     stbi_image_free(data);
 }
@@ -71,88 +67,38 @@ void AssetCreator::createCubemapTexture(std::string facePaths[6]){
         height = y;
     }
 
-    uint32_t elementType = 4;
-    uint32_t componentType = 5121;
-
     unsigned char* ktxTextureData = nullptr;
-    uint32_t ktxTextureDataSize;
+    uint32_t ktxTextureDataSize = 0;
 
     // generate mips + compress
     layerImageData(faceData, height*width*4, &ktxTextureData, ktxTextureDataSize, SPR_TEXTURE_COLOR, width, height, 4);
-
-    writeBufferFile(ktxTextureData, ktxTextureDataSize, elementType, componentType, 1);
-
-    writeTextureFile(1, height, width, 4, 0);
+    writeTextureFile(ktxTextureData, ktxTextureDataSize, height, width, 4);
 
     for (uint32_t i = 0; i < 6; i++){
         stbi_image_free(faceData[i]);
     }
 }
 
-void AssetCreator::writeTextureFile(uint32_t bufferId, uint32_t height, uint32_t width, uint32_t components, uint32_t texId){
-    // buffer id (4)
-    // height (4)
-    // width (4)
-    // components (4)
-
-
-    // write to file
-    // open file
-    std::ofstream f("../data/textures/"+(m_name)+".stex", std::ios::binary);
+void AssetCreator::writeTextureFile(const unsigned char* data, uint32_t byteLength, uint32_t height, uint32_t width, uint32_t components){
+    std::ofstream f("../data/assets/"+(m_name)+".stex", std::ios::binary);
     if (!f.is_open()){
-        // log error
-        std::cerr << "Failed to open/create file" << std::endl;
-        return ;
-    }
-    
-    // write buffer id
-    f.write((char*)&bufferId, sizeof(uint32_t));
-
-    // write height
-    f.write((char*)&height, sizeof(uint32_t));
-
-    // write width
-    f.write((char*)&width, sizeof(uint32_t));
-
-    // write components
-    f.write((char*)&components, sizeof(uint32_t));
-
-    // close file
-    f.close();
-}
-
-void AssetCreator::writeBufferFile(const unsigned char* data, uint32_t byteLength, uint32_t elementType, uint32_t componentType, uint32_t bufferId){
-    // association (4)
-    // element type (4)
-    // component type (4)
-    // byte length (4)
-    // data (byte length)
-
-    // write to file
-    // open file
-    std::ofstream f("../data/buffers/"+(m_name+("_"+std::to_string(bufferId)))+".sbuf", std::ios::binary);
-    if (!f.is_open()){
-        // log error
         std::cerr << "Failed to open/create file" << std::endl;
         return ;
     }
 
-    // write association
-    f.write("stex", sizeof(uint32_t));
+    // write texture header
+    TextureLayout texture = {
+        .dataSizeBytes = byteLength,
+        .dataOffset = 0,
+        .height = height,
+        .width = width,
+        .components = components
+    };
+    f.write((char*)&texture, sizeof(TextureLayout));
 
-    // write element type
-    f.write((char*)&elementType, sizeof(uint32_t));
-
-    // write component type
-    f.write((char*)&componentType, sizeof(uint32_t));
-
-    // write byte length
-    f.write((char*)&byteLength, sizeof(uint32_t));
-    
-    // write data 
+    // write texture data
     f.write((char*)data, byteLength);
 
-    // close file
     f.close();
 }
 
@@ -182,7 +128,7 @@ void AssetCreator::compressImageData(
     createInfo.baseHeight = height;
     createInfo.baseDepth = 1;
     createInfo.numDimensions = 2;
-    createInfo.numLevels = std::floor(log2(std::max(width, height))) + 1;
+    createInfo.numLevels = std::floor(std::log2(std::max(width, height))) + 1;
     createInfo.numLayers = 1;
     createInfo.numFaces = 1;
     createInfo.isArray = KTX_FALSE;
