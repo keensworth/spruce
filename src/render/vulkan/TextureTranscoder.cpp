@@ -1,5 +1,5 @@
 #include "TextureTranscoder.h"
-#include "VulkanDisplay.h"
+#include "VulkanDevice.h"
 #include "debug/SprLog.h"
 #include "ktx.h"
 #include "ktxvulkan.h"
@@ -35,7 +35,7 @@ TextureTranscoder::~TextureTranscoder(){
 }
 
 
-TranscodeResult TextureTranscoder::transcode(uint8* data, uint32 size, uint32 width, uint32 height){
+void TextureTranscoder::transcode(TranscodeResult& out, VulkanResourceManager* vrm, uint8* data, uint32 size, uint32 width, uint32 height){
     ktxTexture2* texture;
     KTX_error_code result;
 
@@ -88,22 +88,29 @@ TranscodeResult TextureTranscoder::transcode(uint8* data, uint32 size, uint32 wi
         }
     }
 
-    uint32 mipLevels = texture->numLevels;//std::floor(log2(std::max(width, height))) + 1;
+    uint32 mipLevels = texture->numLevels;
     uint32 layers = texture->numFaces;
-    ktx_size_t offset = 0;
 
     VkFormat format = ktxTexture2_GetVkFormat(texture);
     uint32 sizeBytes = ktxTexture_GetDataSize(ktxTexture(texture));
-    ktx_uint8_t* transcodedData = ktxTexture_GetData(ktxTexture(texture)) + offset;
+    
+    out.format = format;
+    out.mips = mipLevels;
+    out.layers = layers;
+    out.sizeBytes = sizeBytes;
 
-    // m_deletionQueue.push_function([=]() {
-    //     ktxTexture_Destroy(ktxTexture(texture));
-    // });
-    std::vector<uint8> dataVec;
-    dataVec.resize(sizeBytes);
-    std::memcpy(dataVec.data(), transcodedData, sizeBytes);
-    ktxTexture_Destroy(ktxTexture(texture));
-    return {format, mipLevels, layers, sizeBytes, dataVec};
+    m_activeTexture = texture;
+}
+
+void TextureTranscoder::destroyActiveTexture(TranscodeResult& out, uint32 sizeBytes){
+    ktx_uint8_t* transcodedData = ktxTexture_GetData(ktxTexture(m_activeTexture));
+
+    out.transcodedData.allocateAndInsert<ktx_uint8_t>({
+        .data = transcodedData,
+        .size = sizeBytes
+    });
+
+    ktxTexture_Destroy(ktxTexture(m_activeTexture));
 }
 
 bool TextureTranscoder::formatSupported(VkFormat format){
