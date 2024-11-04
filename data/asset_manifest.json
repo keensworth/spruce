@@ -1,46 +1,53 @@
 {
-    "date": "10-24-2024 06:54:14",
-    "modelCount": 8,
+    "date": "11-04-2024 06:02:20",
+    "modelCount": 9,
     "models": [
         {
-            "id": 27,
+            "id": 7,
             "name": "BoomBoxWithAxes",
-            "parentId": 27,
+            "parentId": 7,
             "sizeTotal": 90177692,
             "type": "SPR_MODEL"
         },
         {
-            "id": 745,
+            "id": 11,
             "name": "default_model",
-            "parentId": 745,
+            "parentId": 11,
             "sizeTotal": 37296,
             "type": "SPR_MODEL"
         },
         {
-            "id": 11,
+            "id": 5,
             "name": "Cube",
-            "parentId": 11,
+            "parentId": 5,
             "sizeTotal": 2799016,
             "type": "SPR_MODEL"
         },
         {
-            "id": 93,
+            "id": 10,
             "name": "sponza",
-            "parentId": 93,
-            "sizeTotal": 392704212,
+            "parentId": 10,
+            "sizeTotal": 415075812,
             "type": "SPR_MODEL"
         },
         {
-            "id": 77,
+            "id": 9,
             "name": "helmet",
-            "parentId": 77,
+            "parentId": 9,
             "sizeTotal": 112734812,
             "type": "SPR_MODEL"
         },
         {
-            "id": 21,
+            "id": 4,
+            "name": "bistro",
+            "parentId": 4,
+            "sizeTotal": 822001536,
+            "type": "SPR_MODEL"
+        },
+        {
+            "id": 6,
             "name": "Triangle",
-            "parentId": 21,
+            "parentId": 6,
             "sizeTotal": 156,
             "type": "SPR_MODEL"
         },
@@ -52,43 +59,43 @@
             "type": "SPR_MODEL"
         },
         {
-            "id": 63,
+            "id": 8,
             "name": "WaterBottle",
-            "parentId": 63,
-            "sizeTotal": 89657032,
+            "parentId": 8,
+            "sizeTotal": 112027172,
             "type": "SPR_MODEL"
         }
     ],
     "nonSubresourceTextureCount": 4,
     "nonSubresourceTextures": [
         {
-            "id": 761,
+            "id": 15,
             "name": "default_input_white",
-            "parentId": 761,
+            "parentId": 15,
             "sizeTotal": 260,
             "type": "SPR_TEXTURE"
         },
         {
-            "id": 755,
+            "id": 13,
             "name": "default_color",
-            "parentId": 755,
+            "parentId": 13,
             "sizeTotal": 5592900,
             "type": "SPR_TEXTURE"
         },
         {
-            "id": 752,
+            "id": 12,
             "name": "px",
-            "parentId": 752,
+            "parentId": 12,
             "sizeTotal": 25166080,
             "type": "SPR_TEXTURE"
         },
         {
-            "id": 758,
+            "id": 14,
             "name": "default_input_black",
-            "parentId": 758,
+            "parentId": 14,
             "sizeTotal": 260,
             "type": "SPR_TEXTURE"
         }
     ],
-    "sizeBytes": 720433984
+    "sizeBytes": 1587177260
 }
