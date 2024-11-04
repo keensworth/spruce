@@ -88,8 +88,10 @@ void AssetCreator::writeTextureFile(const unsigned char* data, uint32_t byteLeng
 
     // write texture header
     TextureLayout texture = {
+        .id = 0,
         .dataSizeBytes = byteLength,
         .dataOffset = 0,
+        .dataBufferId = 0,
         .height = height,
         .width = width,
         .components = components

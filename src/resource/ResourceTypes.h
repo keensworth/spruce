@@ -80,31 +80,51 @@ struct ResourceMetadata {
 // --------------------------------------------------------- //
 // base instance data
 struct ResourceInstance { 
-    uint32 parentId = 0;
-    uint32 resourceId = 0;
+    uint32 rootId = 0;
+    uint32 id     = 0;
 };  
 
-
 // model
-struct Model : ResourceInstance {
-    uint32 meshCount = 0;
+struct Model {
+    ResourceInstance info;
     std::vector<uint32> meshIds;
 };
 
 
 // mesh
-struct Mesh : ResourceInstance {
+struct Mesh {
+    ResourceInstance info;
     uint32 materialId         = 0;
     uint32 indexBufferId      = 0;
     uint32 positionBufferId   = 0;
     uint32 attributesBufferId = 0;
     uint32 materialFlags      = 0;
+    uint32 pad0;
 };
 
 
 // material
-struct Material : ResourceInstance {
-    uint32 materialFlags = 0;
+struct Material {
+    typedef enum : uint32 {
+        BASE_COLOR         = 1,
+        METALLIC_ROUGHNESS = 1<<1,
+        NORMAL             = 1<<2,
+        OCCLUSION          = 1<<3,
+        EMISSIVE           = 1<<4,
+        ALPHA              = 1<<5,
+        DOUBLE_SIDED       = 1<<6,
+        UNLIT              = 1<<10,
+        WIREFRAME          = 1<<11,
+        RECEIVES_SHADOWS   = 1<<12,
+        CASTS_SHADOWS      = 1<<13,
+        REFLECTIVE         = 1<<14,
+        ALL                = 0xFFFFFFFF,
+        NONE               = 0x00000000
+    } Flags;
+
+    ResourceInstance info;
+
+    uint32 materialFlags = NONE;
 
     uint32 baseColorTexId     = 0;
     glm::vec4 baseColorFactor = glm::vec4(1.f,1.f,1.f,1.f);
@@ -122,35 +142,39 @@ struct Material : ResourceInstance {
     uint32 emissiveTexId     = 0;
     glm::vec3 emissiveFactor = glm::vec3(0.f,0.f,0.f);
 
-    uint32 alphaType  = 0;
     float alphaCutoff = 0.5f;
-
-    bool doubleSided = false;
 };
 
 
 // texture
-struct Texture : ResourceInstance {
+struct Texture {
+    ResourceInstance info;
+
     uint32 bufferId   = 0;
     uint32 height     = 0;
     uint32 width      = 0;
     uint32 components = 0;
+
+    uint32 pad0;
+    uint32 pad1;
 };
 
 
 // buffer
-struct Buffer : ResourceInstance {
+struct Buffer {
     ~Buffer(){
         
     }
+    ResourceInstance info;
+
     uint32 byteLength = 0;
     uint32 byteOffset = 0;
     spr::Span<uint8> data;
 };
 
 // unused
-typedef struct Audio : ResourceInstance {} Audio;
-typedef struct Shader : ResourceInstance {} Shader;
+typedef struct Audio {} Audio;
+typedef struct Shader {} Shader;
 
 
 // --------------------------------------------------------- //
@@ -262,10 +286,12 @@ public:
 struct ModelHeader {
     char name[32];
 
+    uint32 id;
+
     // offset of xxx buffer (in bytes)
     // relative to .smdl file
     uint32 meshCount;
-    uint32 meshBufferOffset;
+    static const uint32 meshBufferOffset = 64;
 
     uint32 materialCount;
     uint32 materialBufferOffset;
@@ -278,6 +304,8 @@ struct ModelHeader {
 };
 
 struct MeshLayout {
+    uint32 id;
+
     // index of mesh's material in
     // .smdl Material buffer
     uint32 materialIndex;
@@ -288,15 +316,20 @@ struct MeshLayout {
     // region is a collection of same-type buffers
     uint32 indexDataSizeBytes;
     uint32 indexDataOffset;
+    uint32 indexBufferId;
 
     uint32 positionDataSizeBytes;
     uint32 positionDataOffset;
+    uint32 positionBufferId;
     
     uint32 attributeDataSizeBytes;
     uint32 attributeDataOffset;
+    uint32 attributeBufferId;
 };
 
 struct MaterialLayout {
+    uint32 id;
+
     uint32 materialFlags;
     
     // index of mtl texture
@@ -319,30 +352,31 @@ struct MaterialLayout {
 
     uint32 alphaType;
     float alphaCutoff;
-
-    uint32 doubleSided;
 };
 
 struct TextureLayout {
+    uint32 id;
+
     // offset of texture data (in bytes)
     // relative to start of Texture region
     uint32 dataSizeBytes;
     uint32 dataOffset;
+    uint32 dataBufferId;
 
     uint32 height;
     uint32 width;
     uint32 components;
 
     uint32 pad0;
-    uint32 pad1;
-    uint32 pad2;
 };
 
 struct BlobHeader {
     // size of all data in blob
     uint32 sizeBytes;
+    
+    // offsets from start of .smdl
+    uint32 blobDataOffset;
 
-    // offset from start of .smdl
     uint32 indexRegionSizeBytes;
     uint32 indexRegionOffset;
 
@@ -357,7 +391,6 @@ struct BlobHeader {
 
     uint32 pad0;
     uint32 pad1;
-    uint32 pad2;
 };
 
 }
