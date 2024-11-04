@@ -14,115 +14,173 @@ namespace spr::tools{
 // ------------------------------------------------------------------------- //
 //    Buffer - .sbuf                                                         // 
 // ------------------------------------------------------------------------- //
-int AssetRegisterer::loadBuffer(std::string path, ResourceMetadata& modelData, mio::mmap_source& file, ModelHeader& model, uint32 offset, uint32 length){
-    int totalBytes = 0;
+LoadResult AssetRegisterer::loadBuffer(ResourceMetadata& modelData, uint32 offset, uint32 length){
+    uint32 id = m_id++;
+
     ResourceMetadata metadata = {
-        .name = modelData.name+"_"+std::to_string(m_id),
+        .name = {modelData.name+"_"+std::to_string(id)},
         .resourceType = SPR_BUFFER,
-        .resourceId = m_id++,
+        .resourceId = id,
         .parentId = modelData.resourceId,
-        .sizeTotal = 0,
+        .sizeTotal = length,
         .byteOffset = offset,
         .byteLength = length,
         .index = 0
     };
 
-    totalBytes += length;
-
-    metadata.sizeTotal = totalBytes;
     m_metadataMap[metadata.name] = metadata;
-    return totalBytes;
+    return {length, id};
 }
 
 
 // ------------------------------------------------------------------------- //
 //    Texture - .stex                                                        // 
 // ------------------------------------------------------------------------- //
-int AssetRegisterer::loadTexture(std::string path, ResourceMetadata& modelData, bool subresource, mio::mmap_source& file, ModelHeader& model, uint32 index){
-    int totalBytes = 0;
-    uint32 offset = subresource ? model.textureBufferOffset : 0;
-    TextureLayout& texture = ((TextureLayout*)(file.data() + offset))[index];
+LoadResult AssetRegisterer::loadTexture(ResourceMetadata& modelData, uint32 index){
+    uint32 id = m_id++;
+
+    ModelHeader& model = ((ModelHeader*)rw_mmap.data())[0];
+    TextureLayout* textures = (TextureLayout*)(rw_mmap.data() + model.textureBufferOffset);
+    TextureLayout& texture = textures[index];
+    texture.id = id;
+
     ResourceMetadata metadata = {
-        .name = modelData.name,
+        .name = {modelData.name},
         .resourceType = SPR_TEXTURE,
-        .resourceId = m_id++,
+        .resourceId = id,
         .parentId = modelData.resourceId,
         .sizeTotal = 0,
-        .byteOffset = offset,
+        .byteOffset = model.textureBufferOffset,
         .byteLength = 0,
         .index = index
     };
     
-    if (subresource){
-        BlobHeader& blob = ((BlobHeader*)(file.data() + model.blobHeaderOffset))[0];
-        totalBytes += loadBuffer(path, modelData, file, model, blob.textureRegionOffset + texture.dataOffset, texture.dataSizeBytes);
-        metadata.sizeTotal = totalBytes;
-        m_metadataMap[metadata.name+"_"+std::to_string(m_id)] = metadata;
-    } else {
-        totalBytes += loadBuffer(path, modelData, file, model, texture.dataOffset, texture.dataSizeBytes);
-        metadata.sizeTotal = totalBytes;
-        m_nonSubresourceTextureMap[metadata.name] = metadata;
-    }
+    BlobHeader& blob = ((BlobHeader*)(rw_mmap.data() + model.blobHeaderOffset))[0];
+    LoadResult result = loadBuffer(modelData, blob.textureRegionOffset + texture.dataOffset, texture.dataSizeBytes);
+    metadata.sizeTotal = result.sizeBytes;
+    texture.dataBufferId = result.resultId;
 
-    return totalBytes;
+    m_metadataMap[{metadata.name+"_"+std::to_string(id)}] = metadata;
+    return {result.sizeBytes, id};
+}
+
+LoadResult AssetRegisterer::loadDedicatedTexture(ResourceMetadata& modelData){
+    TextureLayout* textures = (TextureLayout*)(rw_mmap.data());
+    TextureLayout& texture = textures[0];
+
+    ResourceMetadata& metadata = m_nonSubresourceTextureMap[modelData.name];
+    
+    LoadResult result = loadBuffer(metadata, sizeof(TextureLayout), texture.dataSizeBytes);
+    metadata.sizeTotal = result.sizeBytes;
+    texture.dataBufferId = result.resultId;
+
+    return {result.sizeBytes, metadata.resourceId};
+}
+
+void AssetRegisterer::checkinDedicatedTexture(ResourceMetadata& modelData){
+    uint32 id = m_id++;
+
+    TextureLayout* textures = (TextureLayout*)(rw_mmap.data());
+    TextureLayout& texture = textures[0];
+    texture.id = id;
+
+    ResourceMetadata metadata = {
+        .name = {modelData.name},
+        .resourceType = SPR_TEXTURE,
+        .resourceId = id,
+        .parentId = id,
+        .sizeTotal = 0,
+        .byteOffset = sizeof(TextureLayout),
+        .byteLength = 0,
+        .index = 0
+    };
+
+    m_nonSubresourceTextureMap[metadata.name] = metadata;
 }
 
 
 // ------------------------------------------------------------------------- //
 //    Material - .smtl                                                       // 
 // ------------------------------------------------------------------------- //
-int AssetRegisterer::loadMaterial(std::string path, ResourceMetadata& modelData, mio::mmap_source& file, ModelHeader& model, MeshLayout& mesh){
-    int totalBytes = 0;
-    MaterialLayout& material = ((MaterialLayout*)(file.data() + model.materialBufferOffset))[mesh.materialIndex];
+LoadResult AssetRegisterer::loadMaterial(ResourceMetadata& modelData, MeshLayout& mesh){
+    
+
+    ModelHeader& model = ((ModelHeader*)rw_mmap.data())[0];
+    MaterialLayout* materials = (MaterialLayout*)(rw_mmap.data() + model.materialBufferOffset);
+    MaterialLayout& material = materials[mesh.materialIndex];
+
+    if (m_materialPresenceMap.count(mesh.materialIndex)){
+        return {0, m_materialPresenceMap[mesh.materialIndex]};
+    }
+    
+    uint32 id = m_id++;
+    material.id = id;
+
     ResourceMetadata metadata = {
-        .name = modelData.name+"_"+std::to_string(m_id),
+        .name = {modelData.name+"_"+std::to_string(id)},
         .resourceType = SPR_MATERIAL,
-        .resourceId = m_id++,
+        .resourceId = id,
         .parentId = modelData.resourceId,
         .sizeTotal = 0,
         .byteOffset = model.materialBufferOffset,
         .byteLength = 0,
         .index = mesh.materialIndex
-    };    
+    };
     
-    if (material.materialFlags & 0b1 && (m_texturePresenceMap.count(material.bc_textureIndex) == 0)){ // base color
-        totalBytes += loadTexture(path, modelData, true, file, model, material.bc_textureIndex);
+    uint32 totalBytes = 0;
+    LoadResult result;
+    if (material.materialFlags & 0b1){ // base color
+        result = loadTexture(modelData, material.bc_textureIndex);
+        totalBytes += result.sizeBytes;
         m_texturePresenceMap[material.bc_textureIndex] = material.bc_textureIndex;
     }
-    if (material.materialFlags & (0b1<<1) && (m_texturePresenceMap.count(material.mr_textureIndex) == 0)){ // metallicroughness
-        totalBytes += loadTexture(path, modelData, true, file, model, material.mr_textureIndex);
+    
+    if (material.materialFlags & (0b1<<1)){ // metallicroughness
+        result = loadTexture(modelData, material.mr_textureIndex);
+        totalBytes += result.sizeBytes;
         m_texturePresenceMap[material.mr_textureIndex] = material.mr_textureIndex;
     }
-    if (material.materialFlags & (0b1<<2) && (m_texturePresenceMap.count(material.n_textureIndex) == 0)){ // normal
-        totalBytes += loadTexture(path, modelData, true, file, model, material.n_textureIndex);
+    
+    if (material.materialFlags & (0b1<<2)){ // normal
+        result = loadTexture(modelData, material.n_textureIndex);
+        totalBytes += result.sizeBytes;
         m_texturePresenceMap[material.n_textureIndex] = material.n_textureIndex;
     }
-    if (material.materialFlags & (0b1<<3) && (m_texturePresenceMap.count(material.o_textureIndex) == 0)){ // occlusion
-        totalBytes += loadTexture(path, modelData, true, file, model, material.o_textureIndex);
+    
+    if (material.materialFlags & (0b1<<3)){ // occlusion
+        result = loadTexture(modelData, material.o_textureIndex);
+        totalBytes += result.sizeBytes;
         m_texturePresenceMap[material.o_textureIndex] = material.o_textureIndex;
     }
-    if (material.materialFlags & (0b1<<4) && (m_texturePresenceMap.count(material.e_textureIndex) == 0)){ // emissive
-        totalBytes += loadTexture(path, modelData, true, file, model, material.e_textureIndex);
+    
+    if (material.materialFlags & (0b1<<4)){ // emissive
+        result = loadTexture(modelData, material.e_textureIndex);
+        totalBytes += result.sizeBytes;
         m_texturePresenceMap[material.e_textureIndex] = material.e_textureIndex;
     }
-
+    
     metadata.sizeTotal = totalBytes;
     m_metadataMap[metadata.name] = metadata;
-    return totalBytes;
+    m_materialPresenceMap[mesh.materialIndex] = id;
+    return {totalBytes, id};
 }
 
 
 // ------------------------------------------------------------------------- //
 //    Mesh - .smsh                                                           // 
 // ------------------------------------------------------------------------- //
-int AssetRegisterer::loadMesh(std::string path, ResourceMetadata& modelData, mio::mmap_source& file, ModelHeader& model, uint32 index){
-    int totalBytes = 0;
-    
-    MeshLayout& mesh = ((MeshLayout*)(file.data() + model.meshBufferOffset))[index];
+LoadResult AssetRegisterer::loadMesh(ResourceMetadata& modelData, uint32 index){
+    uint32 id = m_id++;
+
+    ModelHeader& model = ((ModelHeader*)rw_mmap.data())[0];
+    MeshLayout* meshes = (MeshLayout*)(rw_mmap.data() + model.meshBufferOffset);
+    MeshLayout& mesh = meshes[index];
+    mesh.id = id;
+
     ResourceMetadata metadata = {
-        .name = modelData.name+"_"+std::to_string(m_id),
+        .name = {modelData.name+"_"+std::to_string(id)},
         .resourceType = SPR_MESH,
-        .resourceId = m_id++,
+        .resourceId = id,
         .parentId = modelData.resourceId,
         .sizeTotal = 0,
         .byteOffset = model.meshBufferOffset,
@@ -130,54 +188,150 @@ int AssetRegisterer::loadMesh(std::string path, ResourceMetadata& modelData, mio
         .index = index
     };
 
-    BlobHeader& blob = ((BlobHeader*)(file.data() + model.blobHeaderOffset))[0];
+    BlobHeader& blob = ((BlobHeader*)(rw_mmap.data() + model.blobHeaderOffset))[0];
     
     // material
-    totalBytes += loadMaterial(path, modelData, file, model, mesh);
+    uint32 totalBytes = 0;
+    LoadResult result = loadMaterial(modelData, mesh);
+    totalBytes += result.sizeBytes;
 
     // index
-    if (mesh.indexDataSizeBytes > 0)
-        totalBytes += loadBuffer(path, modelData, file, model, blob.indexRegionOffset + mesh.indexDataOffset, mesh.indexDataSizeBytes);
+    if (mesh.indexDataSizeBytes > 0){
+        result = loadBuffer(modelData, blob.indexRegionOffset + mesh.indexDataOffset, mesh.indexDataSizeBytes);
+        totalBytes += result.sizeBytes;
+        mesh.indexBufferId = result.resultId;
+    }
 
     // position
-    if (mesh.positionDataSizeBytes > 0)
-        totalBytes += loadBuffer(path, modelData, file, model, blob.positionRegionOffset + mesh.positionDataOffset, mesh.positionDataSizeBytes);
+    if (mesh.positionDataSizeBytes > 0){
+        result = loadBuffer(modelData, blob.positionRegionOffset + mesh.positionDataOffset, mesh.positionDataSizeBytes);
+        totalBytes += result.sizeBytes;
+        mesh.positionBufferId = result.resultId;
+    }
 
     // attributes
-    if (mesh.attributeDataSizeBytes > 0)
-        totalBytes += loadBuffer(path, modelData, file, model, blob.attributeRegionOffset + mesh.attributeDataOffset, mesh.attributeDataSizeBytes);
+    if (mesh.attributeDataSizeBytes > 0){
+        result = loadBuffer(modelData, blob.attributeRegionOffset + mesh.attributeDataOffset, mesh.attributeDataSizeBytes);
+        totalBytes += result.sizeBytes;
+        mesh.attributeBufferId = result.resultId;
+    }
 
     metadata.sizeTotal = totalBytes;
     m_metadataMap[metadata.name] = metadata;
-    return totalBytes;
+    return {totalBytes, id};
 }
 
 
 // ------------------------------------------------------------------------- //
 //    Model - .smdl                                                          // 
 // ------------------------------------------------------------------------- //
-int AssetRegisterer::loadModel(std::string path, mio::mmap_source& file){
-    int totalBytes = 0;
+LoadResult AssetRegisterer::loadModel(){
+    ModelHeader& model = ((ModelHeader*)rw_mmap.data())[0];
+    ResourceMetadata& metadata = m_modelMetadataMap[model.name];
     
-    ModelHeader& model = ((ModelHeader*)(file.data() + 0))[0];
+    uint32 totalBytes = 0;
+    LoadResult result;
+    for (int i = 0; i < model.meshCount; i++){            
+        result = loadMesh(metadata, i);
+        totalBytes += result.sizeBytes;
+    }
+    metadata.sizeTotal = totalBytes;
+    return {totalBytes, model.id};
+}
+
+void AssetRegisterer::checkinModel(){
+    uint32 id = m_id++;
+
+    ModelHeader& model = ((ModelHeader*)rw_mmap.data())[0];
+    model.id = id;
+
     ResourceMetadata metadata = {
-        .name = model.name,
+        .name = {model.name},
         .resourceType = SPR_MODEL,
-        .resourceId = m_id,
-        .parentId = m_id++,
+        .resourceId = id,
+        .parentId = id,
         .sizeTotal = 0,
         .byteOffset = 0,
         .byteLength = 0
     };
-    
-    for (int i = 0; i < model.meshCount; i++){
-        totalBytes += loadMesh(path, metadata, file, model, i);
-    }
-    metadata.sizeTotal = totalBytes;
+
     m_modelMetadataMap[metadata.name] = metadata;
-    return totalBytes;
 }
 
+
+// ------------------------------------------------------------------------- //
+//    AssetRegisterer                                                        // 
+// ------------------------------------------------------------------------- //
+void AssetRegisterer::registerDirectory(std::string dir){
+    uint32 totalSizeBytes = 0;
+    LoadResult result = {0 , 0};
+    for (int i = 0; i < 2; i++){
+        // process models and subresources
+        for (const auto& dirEntry : std::filesystem::recursive_directory_iterator(dir + "assets/")){
+            std::string path = dirEntry.path().string();
+            std::string ext = dirEntry.path().extension();
+
+            if (ext != ".smdl")
+                continue;
+
+            rw_mmap = mio::make_mmap_sink(path, 0, mio::map_entire_file, m_error);
+            m_texturePresenceMap.clear();
+            m_materialPresenceMap.clear();
+
+            if (i == 0){
+                checkinModel();
+            } else { 
+                result = loadModel();
+                totalSizeBytes += result.sizeBytes;
+            }
+            rw_mmap.sync(m_error);
+            rw_mmap.unmap();
+        }
+
+        // process non-subresource textures
+        for (const auto& dirEntry : std::filesystem::recursive_directory_iterator(dir + "assets/")){
+            std::string path = dirEntry.path().string();
+            std::string name = std::filesystem::path(dirEntry).stem();
+            std::string ext = dirEntry.path().extension();
+
+            if (ext != ".stex")
+                continue;
+            
+            rw_mmap = mio::make_mmap_sink(path, 0, mio::map_entire_file, m_error);
+            m_texturePresenceMap.clear();
+            m_materialPresenceMap.clear();
+
+            ResourceMetadata metadata = {
+                .name = {name},
+                .resourceType = SPR_MODEL,
+                .resourceId = 0,
+                .parentId = 0,
+                .sizeTotal = 0,
+                .byteOffset = sizeof(TextureLayout),
+                .byteLength = 0
+            };
+            if (i == 0){
+                checkinDedicatedTexture(metadata);
+            } else {
+                result = loadDedicatedTexture(metadata);
+                totalSizeBytes += result.sizeBytes;
+            }
+            rw_mmap.sync(m_error);
+            rw_mmap.unmap();
+        }
+    }
+
+    // write asset_ids.h
+    writeHeader();
+
+    // write asset_manifest.h
+    writeManifest(totalSizeBytes);
+}
+
+
+// ------------------------------------------------------------------------- //
+//    .h / .json                                                             // 
+// ------------------------------------------------------------------------- //
 void AssetRegisterer::writeHeader(){
     std::ofstream f;
     f.open ("../data/asset_ids.h");
@@ -307,25 +461,6 @@ void AssetRegisterer::writeManifest(int totalBytes){
         manifest["nonSubresourceTextures"].push_back(model);
     }
 
-    // // subresource info
-    // manifest["subresourceCount"] = m_metadataMap.size();
-    // manifest["subresources"] = nlohmann::json::array();
-    // // write subresources
-    // for (std::pair<std::string, ResourceMetadata> metadata : m_metadataMap){
-    //     std::string name = metadata.first;
-    //     int id = metadata.second.resourceId;
-    //     nlohmann::json subresource;
-    //     subresource["id"] = id;
-    //     subresource["parentId"] = metadata.second.parentId;
-    //     subresource["name"] = name;
-    //     subresource["sizeTotal"] = metadata.second.sizeTotal;
-    //     subresource["type"] = ResourceTypes::typeToString(metadata.second.resourceType);
-    //     subresource["byteOffset"] = metadata.second.byteOffset;
-    //     subresource["byteLength"] = metadata.second.byteLength;
-    //     subresource["index"] = metadata.second.index;
-    //     manifest["subresources"].push_back(subresource);
-    // }
-
     // write JSON to file
     std::ofstream f;
     f.open ("../data/asset_manifest.json");
@@ -339,54 +474,4 @@ void AssetRegisterer::writeManifest(int totalBytes){
     // close
     f.close();
 }
-
-void AssetRegisterer::registerDirectory(std::string dir){
-    int totalSizeBytes = 0;
-    
-    std::error_code error;
-    mio::mmap_source ro_mmap;
-    
-    // process models and subresources
-    for (const auto& dirEntry : std::filesystem::recursive_directory_iterator(dir + "assets/")){
-        std::string ext = dirEntry.path().extension();
-
-        if (ext != ".smdl")
-            continue;
-        
-        ro_mmap.map(dirEntry.path().string(), error);
-        m_texturePresenceMap.clear();
-        totalSizeBytes += loadModel(dirEntry.path().string(), ro_mmap);
-        ro_mmap.unmap();
-    }
-
-    // process non-subresource textures
-    for (const auto& dirEntry : std::filesystem::recursive_directory_iterator(dir + "assets/")){
-        std::string name = std::filesystem::path(dirEntry).stem();
-        std::string ext = dirEntry.path().extension();
-
-        if (ext != ".stex")
-            continue;
-        
-        ro_mmap.map(dirEntry.path().string(), error);
-        ModelHeader& model = ((ModelHeader*)(ro_mmap.data() + 0))[0];
-        ResourceMetadata metadata = {
-            .name = name,
-            .resourceType = SPR_MODEL,
-            .resourceId = ++m_id,
-            .parentId = m_id,
-            .sizeTotal = 0,
-            .byteOffset = sizeof(TextureLayout),
-            .byteLength = 0
-        };
-        totalSizeBytes += loadTexture(dirEntry.path().string(), metadata, false, ro_mmap, model, 0);
-        ro_mmap.unmap();
-    }
-
-    // write asset_ids.h
-    writeHeader();
-
-    // write asset_manifest.h
-    writeManifest(totalSizeBytes);
-}
-
 }

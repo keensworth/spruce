@@ -65,10 +65,12 @@ namespace spr::tools {
 struct ModelHeader {
     char name[32];
 
+    uint32 id;
+
     // offset of xxx buffer (in bytes)
     // relative to .smdl file
     uint32 meshCount;
-    uint32 meshBufferOffset;
+    static const uint32 meshBufferOffset = 64;
 
     uint32 materialCount;
     uint32 materialBufferOffset;
@@ -81,6 +83,8 @@ struct ModelHeader {
 };
 
 struct MeshLayout {
+    uint32 id;
+
     // index of mesh's material in
     // .smdl Material buffer
     uint32 materialIndex;
@@ -91,15 +95,20 @@ struct MeshLayout {
     // region is a collection of same-type buffers
     uint32 indexDataSizeBytes;
     uint32 indexDataOffset;
+    uint32 indexBufferId;
 
     uint32 positionDataSizeBytes;
     uint32 positionDataOffset;
+    uint32 positionBufferId;
     
     uint32 attributeDataSizeBytes;
     uint32 attributeDataOffset;
+    uint32 attributeBufferId;
 };
 
 struct MaterialLayout {
+    uint32 id;
+
     uint32 materialFlags;
     
     // index of mtl texture
@@ -122,30 +131,31 @@ struct MaterialLayout {
 
     uint32 alphaType;
     float alphaCutoff;
-
-    uint32 doubleSided;
 };
 
 struct TextureLayout {
+    uint32 id;
+
     // offset of texture data (in bytes)
     // relative to start of Texture region
     uint32 dataSizeBytes;
     uint32 dataOffset;
+    uint32 dataBufferId;
 
     uint32 height;
     uint32 width;
     uint32 components;
 
     uint32 pad0;
-    uint32 pad1;
-    uint32 pad2;
 };
 
 struct BlobHeader {
     // size of all data in blob
     uint32 sizeBytes;
+    
+    // offsets from start of .smdl
+    uint32 blobDataOffset;
 
-    // offset from start of .smdl
     uint32 indexRegionSizeBytes;
     uint32 indexRegionOffset;
 
@@ -160,7 +170,6 @@ struct BlobHeader {
 
     uint32 pad0;
     uint32 pad1;
-    uint32 pad2;
 };
 
 }

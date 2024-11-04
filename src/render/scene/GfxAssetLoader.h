@@ -41,7 +41,8 @@ struct PrimitiveCounts {
     uint32 materialCount = 0;
     uint32 textureCount  = 0;
     uint32 cubemapCount  = 0;
-    uint64 bytes         = 0;
+    uint64 vertexDataBytes  = 0;
+    uint64 textureDataBytes = 0;
 };
 
 class GfxAssetLoader {

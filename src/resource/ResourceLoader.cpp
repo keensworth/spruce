@@ -15,19 +15,26 @@ void ResourceLoader::loadFromMetadata(MetadataMap& metadataMap, ResourceMetadata
     SprLog::error("[ResourceLoader] Unkown resource");
 }
 
-void ResourceLoader::checkMapping(uint32 id){
+bool ResourceLoader::checkMapping(uint32 id){
     if (!m_mmap.is_mapped()){
         m_mmap.map(m_pathMap[id], m_error);
         m_mappedId = id;
-        return;
     }
 
     if (m_mappedId != id){
         m_mmap.unmap();
         m_mmap.map(m_pathMap[id], m_error);
         m_mappedId = id;
-        return;
     }
+
+    if (m_error){
+        SprLog::warn("[ResourceLoader] Failed to open asset file at "
+         + m_pathMap[id] + " with id: ", id);
+         disable();
+         return false;
+    }
+
+    return true;
 }
 
 void ResourceLoader::disable(){
@@ -41,36 +48,47 @@ void ResourceLoader::disable(){
 //    Model - .smdl                                                          // 
 // ------------------------------------------------------------------------- //
 template <>
-void ResourceLoader::loadFromMetadata<Model>(MetadataMap& metadataMap, ResourceMetadata& metadata, Model& model){
-    checkMapping(metadata.parentId);
+void ResourceLoader::loadFromMetadata<Model>(MetadataMap& metadataMap, ResourceMetadata& metadata, Model& modelOut){
+    if (!checkMapping(metadata.parentId)){
+        return;
+    }
 
-    ModelHeader& modelHeader = ((ModelHeader*)(m_mmap.data() + 0))[0];
-    spr::Span<MeshLayout> meshLayouts = {(MeshLayout*) (m_mmap.data() + modelHeader.meshBufferOffset), modelHeader.meshCount};
+    // traverse model file for the target model
+    ModelHeader& model = ((ModelHeader*)(m_mmap.data() + 0))[0];
+    spr::Span<MeshLayout> meshes = {(MeshLayout*) (m_mmap.data() + model.meshBufferOffset), model.meshCount};
+
+    // create model, write to output
+    modelOut = {
+        .info = { 
+            .rootId = metadata.parentId, 
+            .id     = metadata.resourceId 
+        },
+        .meshIds = std::vector<uint32>()
+    };
+    modelOut.meshIds.reserve(model.meshCount);
     
-    std::vector<uint32> meshIds;
-    meshIds.reserve(modelHeader.meshCount);
-    uint32 meshId = 0;
+    // update model's mesh ids
     uint32 i = 0;
-    for (const MeshLayout& mesh : meshLayouts){
-        meshId = ++m_id;
-        metadataMap[meshId] = {
+    for (const MeshLayout& mesh : meshes){
+        modelOut.meshIds.push_back(mesh.id);
+
+        // create child metadata if it doesn't exist
+        if (metadataMap.count(mesh.id)){
+            continue;
+        }
+
+        metadataMap[mesh.id] = {
             .resourceType = SPR_MESH,
-            .resourceId = meshId,
+            .resourceId = mesh.id,
             .parentId = metadata.parentId,
             .sizeTotal  = mesh.attributeDataSizeBytes
                         + mesh.positionDataSizeBytes
                         + mesh.indexDataSizeBytes,
-            .byteOffset = modelHeader.meshBufferOffset,
+            .byteOffset = model.meshBufferOffset,
             .byteLength = 0,
             .index = i++
         };
-        meshIds.push_back(meshId);
     }
-
-    model.parentId = metadata.parentId;
-    model.resourceId = metadata.resourceId;
-    model.meshCount = modelHeader.meshCount;
-    model.meshIds = meshIds;
 }
 
 
@@ -78,62 +96,74 @@ void ResourceLoader::loadFromMetadata<Model>(MetadataMap& metadataMap, ResourceM
 //    Mesh - .smsh                                                           // 
 // ------------------------------------------------------------------------- //
 template <>
-void ResourceLoader::loadFromMetadata<Mesh>(MetadataMap& metadataMap, ResourceMetadata& metadata, Mesh& mesh){
-    checkMapping(metadata.parentId);
+void ResourceLoader::loadFromMetadata<Mesh>(MetadataMap& metadataMap, ResourceMetadata& metadata, Mesh& meshOut){
+    if (!checkMapping(metadata.parentId)){
+        return;
+    }
     
-    ModelHeader& modelHeader = ((ModelHeader*)(m_mmap.data() + 0))[0];
-    MeshLayout& meshLayout = ((MeshLayout*)(m_mmap.data() + modelHeader.meshBufferOffset))[metadata.index];    
-    
-    MaterialLayout& material = ((MaterialLayout*)(m_mmap.data() + modelHeader.materialBufferOffset))[meshLayout.materialIndex];
-    uint32 materialFlags = material.materialFlags;
-    uint32 materialId = ++m_id;
-    metadataMap[materialId] = {
+    // traverse model file for the target mesh
+    ModelHeader& model = ((ModelHeader*)(m_mmap.data() + 0))[0];
+    MeshLayout& mesh = ((MeshLayout*)(m_mmap.data() + model.meshBufferOffset))[metadata.index];    
+    MaterialLayout& material = ((MaterialLayout*)(m_mmap.data() + model.materialBufferOffset))[mesh.materialIndex];
+
+    // create mesh, write to output
+    meshOut = {
+        .info = { 
+            .rootId = metadata.parentId, 
+            .id     = metadata.resourceId 
+        },
+        .materialId         = material.id,
+        .indexBufferId      = mesh.indexBufferId,
+        .positionBufferId   = mesh.positionBufferId,
+        .attributesBufferId = mesh.attributeBufferId,
+        .materialFlags      = material.materialFlags
+    };
+
+    // create child metadata if it doesn't exist
+    if (metadataMap.count(material.id) 
+     && metadataMap.count(mesh.indexBufferId) 
+     && metadataMap.count(mesh.positionBufferId) 
+     && metadataMap.count(mesh.attributeBufferId)){
+        return;
+     }
+
+    metadataMap[material.id] = {
         .resourceType = SPR_MATERIAL,
-        .resourceId = materialId,
+        .resourceId = material.id,
         .parentId = metadata.parentId,
-        .byteOffset = modelHeader.materialBufferOffset,
+        .byteOffset = model.materialBufferOffset,
         .byteLength = 0,
-        .index = meshLayout.materialIndex
+        .index = mesh.materialIndex
     };
+    
+    BlobHeader& blob = ((BlobHeader*)(m_mmap.data() + model.blobHeaderOffset))[0];
 
-    BlobHeader& blob = ((BlobHeader*)(m_mmap.data() + modelHeader.blobHeaderOffset))[0];
-    uint32 indexBufferId = ++m_id;
-    metadataMap[indexBufferId] = {
+    metadataMap[mesh.indexBufferId] = {
         .resourceType = SPR_BUFFER,
-        .resourceId = indexBufferId,
+        .resourceId = mesh.indexBufferId,
         .parentId = metadata.parentId,
-        .byteOffset = blob.indexRegionOffset + meshLayout.indexDataOffset,
-        .byteLength = meshLayout.indexDataSizeBytes,
+        .byteOffset = blob.indexRegionOffset + mesh.indexDataOffset,
+        .byteLength = mesh.indexDataSizeBytes,
         .index = 0
     };
 
-    uint32 positionBufferId = ++m_id;
-    metadataMap[positionBufferId] = {
+    metadataMap[mesh.positionBufferId] = {
         .resourceType = SPR_BUFFER,
-        .resourceId = positionBufferId,
+        .resourceId = mesh.positionBufferId,
         .parentId = metadata.parentId,
-        .byteOffset = blob.positionRegionOffset + meshLayout.positionDataOffset,
-        .byteLength = meshLayout.positionDataSizeBytes,
+        .byteOffset = blob.positionRegionOffset + mesh.positionDataOffset,
+        .byteLength = mesh.positionDataSizeBytes,
         .index = 0
     };
 
-    uint32 attributesBufferId = ++m_id;
-    metadataMap[attributesBufferId] = {
+    metadataMap[mesh.attributeBufferId] = {
         .resourceType = SPR_BUFFER,
-        .resourceId = attributesBufferId,
+        .resourceId = mesh.attributeBufferId,
         .parentId = metadata.parentId,
-        .byteOffset = blob.attributeRegionOffset + meshLayout.attributeDataOffset,
-        .byteLength = meshLayout.attributeDataSizeBytes,
+        .byteOffset = blob.attributeRegionOffset + mesh.attributeDataOffset,
+        .byteLength = mesh.attributeDataSizeBytes,
         .index = 0
-    };
-
-    mesh.parentId = metadata.parentId;
-    mesh.resourceId = metadata.resourceId;
-    mesh.materialId = materialId;
-    mesh.indexBufferId = indexBufferId;
-    mesh.positionBufferId = positionBufferId;
-    mesh.attributesBufferId = attributesBufferId;
-    mesh.materialFlags = materialFlags;
+    };   
 }
 
 
@@ -141,101 +171,105 @@ void ResourceLoader::loadFromMetadata<Mesh>(MetadataMap& metadataMap, ResourceMe
 //    Material - .smtl                                                       // 
 // ------------------------------------------------------------------------- //
 template <>
-void ResourceLoader::loadFromMetadata<Material>(MetadataMap& metadataMap, ResourceMetadata& metadata, Material& material){
-    checkMapping(metadata.parentId);
-    
-    uint32 materialFlags = 0;
-    uint32 baseColorTexId = 0;
-    uint32 metalRoughTexId = 0;
-    uint32 normalTexId = 0;
-    uint32 occlusionTexId = 0;
-    uint32 emissiveTexId = 0;
+void ResourceLoader::loadFromMetadata<Material>(MetadataMap& metadataMap, ResourceMetadata& metadata, Material& materialOut){
+    if (!checkMapping(metadata.parentId)){
+        return;
+    }
 
-    ModelHeader& modelHeader = ((ModelHeader*)(m_mmap.data() + 0))[0];
-    MaterialLayout& materialLayout = ((MaterialLayout*)(m_mmap.data() + modelHeader.materialBufferOffset))[metadata.index];
-    materialFlags = materialLayout.materialFlags;
+    // traverse model file for the target material
+    ModelHeader& model = ((ModelHeader*)(m_mmap.data() + 0))[0];
+    MaterialLayout& material = ((MaterialLayout*)(m_mmap.data() + model.materialBufferOffset))[metadata.index];
+    TextureLayout* textures = (TextureLayout*)(m_mmap.data() + model.textureBufferOffset);
+    uint32 flags = material.materialFlags;
 
-    material.parentId = metadata.parentId;
-    material.resourceId = metadata.resourceId;
-    material.materialFlags = materialFlags;
+    uint32 baseColorTexId = (flags & Material::BASE_COLOR) ? textures[material.bc_textureIndex].id : 0;
+    uint32 metalRoughTexId = (flags & Material::METALLIC_ROUGHNESS) ? textures[material.mr_textureIndex].id : 0;
+    uint32 normalTexId = (flags & Material::NORMAL) ? textures[material.n_textureIndex].id : 0;
+    uint32 occlusionTexId = (flags & Material::OCCLUSION) ? textures[material.o_textureIndex].id : 0;
+    uint32 emissiveTexId = (flags & Material::EMISSIVE) ? textures[material.e_textureIndex].id : 0;
 
-    if (materialFlags & 0b1){ // base color
-        baseColorTexId = ++m_id;
+    // create material, write to output
+    materialOut = {
+        .info = { 
+            .rootId = metadata.parentId, 
+            .id     = metadata.resourceId 
+        },
+        .materialFlags = material.materialFlags,
+
+        .baseColorTexId  = baseColorTexId,
+        .baseColorFactor = {material.baseColorFactor},
+
+        .metalRoughTexId = metalRoughTexId,
+        .metalFactor     = material.metalFactor, 
+        .roughnessFactor = material.roughnessFactor, 
+
+        .normalTexId = normalTexId,
+        .normalScale = material.normalScale, 
+
+        .occlusionTexId    = occlusionTexId,
+        .occlusionStrength = material.occlusionStrength, 
+
+        .emissiveTexId  = emissiveTexId,
+        .emissiveFactor = {material.emissiveFactor}, 
+
+        .alphaCutoff = material.alphaCutoff
+    };
+
+    // create child metadata if it doesn't exist
+    if (flags & Material::BASE_COLOR && !metadataMap.count(baseColorTexId)){
         metadataMap[baseColorTexId] = {
             .resourceType = SPR_TEXTURE,
             .resourceId = baseColorTexId,
             .parentId = metadata.parentId,
             .sizeTotal = 0,
-            .byteOffset = modelHeader.textureBufferOffset,
+            .byteOffset = model.textureBufferOffset,
             .byteLength = 0,
-            .index = materialLayout.bc_textureIndex
-        };
-        material.baseColorTexId = baseColorTexId;
-        material.baseColorFactor = materialLayout.baseColorFactor;
+            .index = material.bc_textureIndex
+        };       
     }
-    if (materialFlags & (0b1<<1)){ // metallicroughness
-        metalRoughTexId = ++m_id;
+    if (flags & Material::METALLIC_ROUGHNESS && !metadataMap.count(metalRoughTexId)){
         metadataMap[metalRoughTexId] = {
             .resourceType = SPR_TEXTURE,
             .resourceId = metalRoughTexId,
             .parentId = metadata.parentId,
             .sizeTotal = 0,
-            .byteOffset = modelHeader.textureBufferOffset,
+            .byteOffset = model.textureBufferOffset,
             .byteLength = 0,
-            .index = materialLayout.mr_textureIndex
+            .index = material.mr_textureIndex
         };
-        material.metalRoughTexId = metalRoughTexId;
-        material.metalFactor = materialLayout.metalFactor;
-        material.roughnessFactor = materialLayout.roughnessFactor;
     }
-    if (materialFlags & (0b1<<2)){ // normal
-        normalTexId = ++m_id;
+    if (flags & Material::NORMAL && !metadataMap.count(normalTexId)){
         metadataMap[normalTexId] = {
             .resourceType = SPR_TEXTURE,
             .resourceId = normalTexId,
             .parentId = metadata.parentId,
             .sizeTotal = 0,
-            .byteOffset = modelHeader.textureBufferOffset,
+            .byteOffset = model.textureBufferOffset,
             .byteLength = 0,
-            .index = materialLayout.n_textureIndex
+            .index = material.n_textureIndex
         };
-        material.normalTexId = normalTexId;
-        material.normalScale = materialLayout.normalScale;
     }
-    if (materialFlags & (0b1<<3)){ // occlusion
-        occlusionTexId = ++m_id;
+    if (flags & Material::OCCLUSION && !metadataMap.count(occlusionTexId)){
         metadataMap[occlusionTexId] = {
             .resourceType = SPR_TEXTURE,
             .resourceId = occlusionTexId,
             .parentId = metadata.parentId,
             .sizeTotal = 0,
-            .byteOffset = modelHeader.textureBufferOffset,
+            .byteOffset = model.textureBufferOffset,
             .byteLength = 0,
-            .index = materialLayout.o_textureIndex
+            .index = material.o_textureIndex
         };
-        material.occlusionTexId = occlusionTexId;
-        material.occlusionStrength = materialLayout.occlusionStrength;
     }
-    if (materialFlags & (0b1<<4)){ // emissive
-        emissiveTexId = ++m_id;
+    if (flags & Material::EMISSIVE && !metadataMap.count(emissiveTexId)){
         metadataMap[emissiveTexId] = {
             .resourceType = SPR_TEXTURE,
             .resourceId = emissiveTexId,
             .parentId = metadata.parentId,
             .sizeTotal = 0,
-            .byteOffset = modelHeader.textureBufferOffset,
+            .byteOffset = model.textureBufferOffset,
             .byteLength = 0,
-            .index = materialLayout.e_textureIndex
+            .index = material.e_textureIndex
         };
-        material.emissiveTexId = emissiveTexId;
-        material.emissiveFactor = materialLayout.emissiveFactor;
-    }
-    if (materialFlags & (0b1<<5)){ // alpha
-        material.alphaType = materialLayout.alphaType;
-        material.alphaCutoff = materialLayout.alphaCutoff;
-    }
-    if (materialFlags & (0b1<<6)){ // double-sided
-        material.doubleSided = true;
     }
 }
 
@@ -244,41 +278,44 @@ void ResourceLoader::loadFromMetadata<Material>(MetadataMap& metadataMap, Resour
 //    Texture - .stex                                                        // 
 // ------------------------------------------------------------------------- //
 template <>
-void ResourceLoader::loadFromMetadata<Texture>(MetadataMap& metadataMap, ResourceMetadata& metadata, Texture& texture){
-    checkMapping(metadata.parentId);
+void ResourceLoader::loadFromMetadata<Texture>(MetadataMap& metadataMap, ResourceMetadata& metadata, Texture& textureOut){
+    if (!checkMapping(metadata.parentId)){
+        return;
+    }
     
-    ModelHeader& modelHeader = ((ModelHeader*)(m_mmap.data()))[0];
-    uint32 layoutOffset = 0;
-    if (metadata.sub){
-        layoutOffset = modelHeader.textureBufferOffset;
-    }
-    TextureLayout& textureLayout = ((TextureLayout*)(m_mmap.data() + layoutOffset))[metadata.index];
+    // traverse model file for the target texture
+    ModelHeader& model = ((ModelHeader*)(m_mmap.data()))[0];
+    uint32 layoutOffset = metadata.sub ? model.textureBufferOffset : 0;
+    TextureLayout& texture = ((TextureLayout*)(m_mmap.data() + layoutOffset))[metadata.index];
 
-    uint32 bufferId = ++m_id;
-    uint32 offset = 0;
-    if (metadata.sub){
-        BlobHeader& blob = ((BlobHeader*)(m_mmap.data() + modelHeader.blobHeaderOffset))[0];
-        offset = blob.textureRegionOffset + textureLayout.dataOffset;
-    } else {
-        offset = sizeof(TextureLayout);
+    // create texture, write to output
+    textureOut = {
+        .info = { 
+            .rootId = metadata.parentId, 
+            .id     = metadata.resourceId 
+        },
+        .bufferId   = texture.dataBufferId,
+        .height     = texture.height,
+        .width      = texture.width,
+        .components = texture.components
+    };
+
+    // create child metadata if it doesn't exist
+    if (metadataMap.count(texture.dataBufferId)){
+        return;
     }
 
-    metadataMap[bufferId] = {
+    BlobHeader& blob = ((BlobHeader*)(m_mmap.data() + model.blobHeaderOffset))[0];
+    uint32 offset = metadata.sub ? blob.textureRegionOffset + texture.dataOffset : sizeof(TextureLayout);
+    metadataMap[texture.dataBufferId] = {
         .resourceType = SPR_BUFFER,
-        .resourceId = bufferId,
+        .resourceId = texture.dataBufferId,
         .parentId = metadata.parentId,
         .byteOffset = offset,
-        .byteLength = textureLayout.dataSizeBytes,
+        .byteLength = texture.dataSizeBytes,
         .index = 0,
         .sub = metadata.sub
     };
-
-    texture.parentId = metadata.parentId;
-    texture.resourceId = metadata.resourceId;
-    texture.bufferId = bufferId;
-    texture.height = textureLayout.height;
-    texture.width = textureLayout.width;
-    texture.components = textureLayout.components;
 }
 
 
@@ -286,14 +323,20 @@ void ResourceLoader::loadFromMetadata<Texture>(MetadataMap& metadataMap, Resourc
 //    Buffer - .sbuf                                                         // 
 // ------------------------------------------------------------------------- //
 template <>
-void ResourceLoader::loadFromMetadata<Buffer>(MetadataMap& metadataMap, ResourceMetadata& metadata, Buffer& buffer){
-    checkMapping(metadata.parentId);
+void ResourceLoader::loadFromMetadata<Buffer>(MetadataMap& metadataMap, ResourceMetadata& metadata, Buffer& bufferOut){
+    if (!checkMapping(metadata.parentId)){
+        return;
+    }
 
-    buffer.parentId = metadata.parentId;
-    buffer.resourceId = metadata.resourceId;
-    buffer.byteLength = metadata.byteLength;
-    buffer.byteOffset = metadata.byteOffset;
-    buffer.data = {(uint8*)m_mmap.data() + metadata.byteOffset, metadata.byteLength};
+    bufferOut = {
+        .info = { 
+            .rootId = metadata.parentId, 
+            .id     = metadata.resourceId 
+        },
+        .byteLength = metadata.byteLength,
+        .byteOffset = metadata.byteOffset,
+        .data = {(uint8*)m_mmap.data() + metadata.byteOffset, metadata.byteLength}
+    };
 }
 
 // ----------------------------------------------------------------------------

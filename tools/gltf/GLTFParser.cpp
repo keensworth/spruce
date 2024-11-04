@@ -1,8 +1,11 @@
 #include <cstring>
 #include <fstream>
 #include "GLTFParser.h"
+#include <initializer_list>
 #include <stdio.h>
 #include "Resources.h"
+#include "SprLog.h"
+#include "util/Span.h"
 #include "glm/gtc/matrix_inverse.hpp"
 #include "glm/gtc/type_ptr.hpp"
 #include "glm/gtx/quaternion.hpp"
@@ -17,6 +20,8 @@
 
 #include "../../external/ktx/include/ktx.h"
 #include "../../external/ktx/lib/vk_format.h"
+#include "external/flat_hash_map/flat_hash_map.hpp"
+
 namespace spr::tools{
 
 GLTFParser::GLTFParser(){}
@@ -463,7 +468,7 @@ uint32 GLTFParser::handleTexture(const tinygltf::Texture& tex, BufferData dataTy
     int32 sourceIndex = tex.source;
     int32 samplerIndex = tex.sampler;
     int32 minFilter;
-    tinygltf::Image image;
+    
     tinygltf::Sampler sampler;
     if (sourceIndex == -1)
         return 0;
@@ -478,7 +483,7 @@ uint32 GLTFParser::handleTexture(const tinygltf::Texture& tex, BufferData dataTy
     //uint32 maskedTexId = (texId & 0xFFFF) | (minFilter << 16);
 
     // get image
-    image = model.images[sourceIndex];
+    tinygltf::Image& image = model.images[sourceIndex];
 
     // get image components
     uint32 components = image.component;
@@ -492,6 +497,8 @@ uint32 GLTFParser::handleTexture(const tinygltf::Texture& tex, BufferData dataTy
         return m_sourceTexIdMap[sourceIndex]; 
     }
 
+    
+
     // get min filter
     minFilter = sampler.minFilter;
 
@@ -502,9 +509,17 @@ uint32 GLTFParser::handleTexture(const tinygltf::Texture& tex, BufferData dataTy
 
     OffsetSpan textureOffset;
     if (image.bufferView >= 0){ // bufferview
+        if (m_bufferviewMap.count(image.bufferView) > 0){
+            return m_bufferviewMap[image.bufferView];
+        }
         int32 elementCount = image.width * image.height * image.component;
         textureOffset = handleBufferView(model.bufferViews[image.bufferView], std::string("stex"), 0, 1, elementCount, elementType, componentType, out, true, dataType, temp, SPR_DR_TEXTURE);
+        m_bufferviewMap[image.bufferView] = m_textureIndex;
     } else { // direct buffer
+        uint64_t hash = hashVec((uint32*)image.image.data(), image.image.size()/sizeof(uint32)-(image.image.size()%sizeof(uint32)));
+        if (m_imageMap.count(hash) > 0){
+            return m_imageMap[hash];
+        }
         tinygltf::Buffer buffer;
         int32 elementCount = image.image.size();
         int32 elementType = TINYGLTF_TYPE_SCALAR;
@@ -512,17 +527,21 @@ uint32 GLTFParser::handleTexture(const tinygltf::Texture& tex, BufferData dataTy
         buffer.data = image.image;
         uint32 bytesPerElement = tinygltf::GetNumComponentsInType(elementType) * tinygltf::GetComponentSizeInBytes(componentType);
         textureOffset = handleTextureBuffer(buffer, std::string("stex"), 0, bytesPerElement*elementCount, bytesPerElement, elementCount, elementType, componentType, out, true, dataType, image.width, image.height, components);
+        m_imageMap[hash] = m_textureIndex;
     }
     m_sourceTexIdMap[sourceIndex] = m_textureIndex;
     m_sourceBuffIdMap[sourceIndex] = sourceIndex;
+    
 
     // write texture to file
     TextureLayout texture {
-        textureOffset.sizeBytes, 
-        textureOffset.offset, 
-        (uint32)image.height, 
-        (uint32)image.width, 
-        components
+        .id = 0,
+        .dataSizeBytes = textureOffset.sizeBytes, 
+        .dataOffset = textureOffset.offset, 
+        .dataBufferId = 0,
+        .height = (uint32)image.height, 
+        .width = (uint32)image.width, 
+        .components = components
     };
 
     return writeTextureFile(texture);
@@ -556,11 +575,25 @@ uint32 GLTFParser::handleTexture(const tinygltf::OcclusionTextureInfo& texInfo){
 }
 
 uint32 GLTFParser::handleMaterial(const tinygltf::Material& material, uint32& outMaterialFlags){
+    const tinygltf::PbrMetallicRoughness& pbr = material.pbrMetallicRoughness;
+    const tinygltf::NormalTextureInfo& normal = material.normalTexture;
+    const tinygltf::OcclusionTextureInfo& occlusion = material.occlusionTexture;
+    const tinygltf::TextureInfo& emissive = material.emissiveTexture;
+    
+    
+    uint64 hash = ((uint64)(glm::max(pbr.baseColorTexture.index, 0) & 0xFFF)) 
+                | ((uint64)(glm::max(pbr.metallicRoughnessTexture.index, 0) & 0xFFF) << 12) 
+                | ((uint64)(glm::max(normal.index, 0) & 0xFFF) << 24) 
+                | ((uint64)(glm::max(occlusion.index, 0) & 0xFFF) << 36) 
+                | ((uint64)(glm::max(emissive.index, 0) & 0xFFF) << 48);
+    if (hash && m_mtlMap.count(hash) > 0){
+        return m_mtlMap[hash];
+    }
+    
     std::vector<uint32> texIndices;
     // base color
     uint32 bc_textureIndex = 0;
     vec4 baseColorFactor = {1.f,1.f,1.f,1.f};
-    const tinygltf::PbrMetallicRoughness& pbr = material.pbrMetallicRoughness;
     if (pbr.baseColorTexture.index >= 0){ // base color
         outMaterialFlags |= 0b1;
         bc_textureIndex = handleTexture(pbr.baseColorTexture, SPR_TEXTURE_COLOR);
@@ -578,7 +611,6 @@ uint32 GLTFParser::handleMaterial(const tinygltf::Material& material, uint32& ou
     // normal
     uint32 n_textureIndex = 0;
     float normalScale = 1.0f;
-    const tinygltf::NormalTextureInfo& normal = material.normalTexture;
     if (normal.index >= 0){
         outMaterialFlags |= (0b1<<2);
         n_textureIndex = handleTexture(normal);
@@ -587,7 +619,6 @@ uint32 GLTFParser::handleMaterial(const tinygltf::Material& material, uint32& ou
     // occlusion
     uint32 o_textureIndex = 0;
     float occlusionStrength = 1.0f;
-    const tinygltf::OcclusionTextureInfo& occlusion = material.occlusionTexture;
     if (occlusion.index >= 0){
         outMaterialFlags |= (0b1<<3);
         o_textureIndex = handleTexture(occlusion);
@@ -596,7 +627,6 @@ uint32 GLTFParser::handleMaterial(const tinygltf::Material& material, uint32& ou
     // emissive
     uint32 e_textureIndex = 0;
     vec3 emissiveFactor = {0.f,0.f,0.f};
-    const tinygltf::TextureInfo& emissive = material.emissiveTexture;
     if (emissive.index >= 0){
         outMaterialFlags |= (0b1<<4);
         e_textureIndex = handleTexture(emissive, SPR_TEXTURE_OTHER);
@@ -615,38 +645,37 @@ uint32 GLTFParser::handleMaterial(const tinygltf::Material& material, uint32& ou
     }
 
     // doublesided 
-    uint32 doubleSided = 0;
     if (material.doubleSided){
         outMaterialFlags |= (0b1<<6);
-        doubleSided = 1;
     }
 
     // write material to file
     MaterialLayout materialWrite {
-        outMaterialFlags,
-        bc_textureIndex,
-        baseColorFactor,
+        .id = 0,
+        .materialFlags = outMaterialFlags,
+        .bc_textureIndex = bc_textureIndex,
+        .baseColorFactor = baseColorFactor,
 
-        mr_textureIndex,
-        metalFactor,
-        roughFactor,
+        .mr_textureIndex = mr_textureIndex,
+        .metalFactor = metalFactor,
+        .roughnessFactor = roughFactor,
 
-        n_textureIndex,
-        normalScale,
+        .n_textureIndex = n_textureIndex,
+        .normalScale = normalScale,
 
-        o_textureIndex,
-        occlusionStrength,
+        .o_textureIndex = o_textureIndex,
+        .occlusionStrength = occlusionStrength,
 
-        e_textureIndex,
-        emissiveFactor,
+        .e_textureIndex = e_textureIndex,
+        .emissiveFactor = emissiveFactor,
 
-        alphaType,
-        alphaCutoff,
-
-        doubleSided
+        .alphaType = alphaType,
+        .alphaCutoff = alphaCutoff
     };
 
-    return writeMaterialFile(materialWrite);
+    uint32 materialIndex = writeMaterialFile(materialWrite);
+    m_mtlMap[hash] = materialIndex;
+    return materialIndex;
 }
 
 OffsetSpan GLTFParser::interleaveVertexAttributes(
@@ -752,6 +781,14 @@ uint32 GLTFParser::handlePrimitive(const tinygltf::Primitive& primitive, glm::ma
         }
     }
 
+    uint64 hash = ((uint64)(materialIndexGLTF & 0xFFF)) 
+                | ((uint64)(glm::max(indicesAccessorIndex, 0) & 0xFFF) << 12) 
+                | ((uint64)(glm::max(positionAccessorIndex, 0) & 0xFFF) << 24) 
+                | ((uint64)(glm::max(normalAccessorIndex+tangentAccessorIndex+texcoordAccessorIndex+colorAccessorIndex, 0) & 0xFFFFFFF) << 36) ;
+    if (m_meshMap.count(hash) > 0){
+        return m_meshMap[hash];
+    }
+
     // handle accessors
     // indices
     OffsetSpan indicesOffset = handleAccessor(model.accessors[indicesAccessorIndex], tempOut, true, SPR_INDICES, transform, SPR_DR_INDEX);
@@ -803,26 +840,47 @@ uint32 GLTFParser::handlePrimitive(const tinygltf::Primitive& primitive, glm::ma
 
     // write prim (mesh) to file
     MeshLayout meshWrite {
-        materialIndex,
-        materialFlags,
+        .id = 0,
 
-        indicesOffset.sizeBytes,
-        indicesOffset.offset,
+        .materialIndex = materialIndex,
+        .materialFlags = materialFlags,
 
-        positionOffset.sizeBytes,
-        positionOffset.offset,
+        .indexDataSizeBytes = indicesOffset.sizeBytes,
+        .indexDataOffset = indicesOffset.offset,
+        .indexBufferId = 0,
+
+        .positionDataSizeBytes = positionOffset.sizeBytes,
+        .positionDataOffset = positionOffset.offset,
+        .positionBufferId = 0,
     
-        attributesOffset.sizeBytes,
-        attributesOffset.offset
+        .attributeDataSizeBytes = attributesOffset.sizeBytes,
+        .attributeDataOffset = attributesOffset.offset,
+        .attributeBufferId = 0
     };
-    return writeMeshFile(meshWrite);
+
+    
+
+    uint32 meshIndex = writeMeshFile(meshWrite);
+    m_meshMap[hash] = meshIndex;
+    return meshIndex;
 }
 
 void GLTFParser::handleMesh(const tinygltf::Mesh& mesh, std::vector<uint32> &meshIds, glm::mat4& transform){
     for (int32 i = 0; i < mesh.primitives.size(); i++){
         const tinygltf::Primitive& primitive = mesh.primitives[i];
         if (primitive.mode == 4 || primitive.mode == -1){
-            meshIds.push_back(handlePrimitive(primitive, transform));
+            
+            std::string progress = "("+std::to_string(m_meshCount+1)+"/"+std::to_string(glm::max(model.meshes.size(), mesh.primitives.size()))+")";
+            SprLog::log({
+                {"  processing ", {125,125,125}, CR}, 
+                {progress + " ", {150,150,150}}, 
+                {mesh.name.substr(0,glm::min(40, (int)mesh.name.size()))+"...", {216, 151, 60}, HOLD}
+            });
+            
+            uint32 meshIndex = handlePrimitive(primitive, transform);
+            if (std::find(meshIds.begin(), meshIds.end(), meshIndex) == meshIds.end()) {
+                meshIds.push_back(meshIndex);
+            }
         }
     }
 }
@@ -894,7 +952,6 @@ void GLTFParser::parseNode(const tinygltf::Node& node, std::vector<uint32> &mesh
 
 void GLTFParser::parse(){
     init();
-
     // assume one scene
     const tinygltf::Scene& scene = model.scenes[0];
     std::vector<uint32> meshIds;
@@ -912,6 +969,7 @@ void GLTFParser::parse(){
 }
 
 void GLTFParser::init(){
+    SprLog::log({{.flags = RESET}});
     m_modelStream.open("../data/temp/" + m_name + "_model.stmp", std::ios::binary);
     m_meshStream.open("../data/temp/" + m_name + "_mesh.stmp", std::ios::binary);
     m_materialStream.open("../data/temp/" + m_name + "_mtl.stmp", std::ios::binary);
@@ -920,6 +978,10 @@ void GLTFParser::init(){
     m_positionDataStream.open("../data/temp/" + m_name + "_pos.stmp", std::ios::binary);
     m_attributeDataStream.open("../data/temp/" + m_name + "_attr.stmp", std::ios::binary);
     m_textureDataStream.open("../data/temp/" + m_name + "_tdata.stmp", std::ios::binary);
+
+    // empty material
+    uint32 out;
+    handleMaterial({}, out);
 }
 
 void GLTFParser::consolidate(){
@@ -928,8 +990,8 @@ void GLTFParser::consolidate(){
     modelName.resize(32);
     
     ModelHeader modelHeader = {
+        .id = 0,
         .meshCount = m_meshCount,
-        .meshBufferOffset = 0,
         .materialCount = m_materialCount,
         .materialBufferOffset = 0,
         .textureCount = m_textureCount,
@@ -940,7 +1002,6 @@ void GLTFParser::consolidate(){
     for (uint32 i = 0; i < 32; i++){
         modelHeader.name[i] = modelName[i];
     }
-    modelHeader.meshBufferOffset = sizeof(ModelHeader);
     modelHeader.materialBufferOffset = modelHeader.meshBufferOffset + m_meshCount * sizeof(MeshLayout);
     modelHeader.textureBufferOffset = modelHeader.materialBufferOffset + m_materialCount * sizeof(MaterialLayout);
     modelHeader.blobHeaderOffset = modelHeader.textureBufferOffset + m_textureCount * sizeof(TextureLayout);
@@ -950,6 +1011,7 @@ void GLTFParser::consolidate(){
     // fill out blob header
     BlobHeader blobHeader = {
         .sizeBytes = m_indicesOffset + m_positionOffset + m_attributesOffset + m_textureDataOffset,
+        .blobDataOffset = modelHeader.blobDataOffset,
         .indexRegionSizeBytes = m_indicesOffset,
         .indexRegionOffset = modelHeader.blobDataOffset,
         .positionRegionSizeBytes = m_positionOffset,
@@ -1003,6 +1065,7 @@ void GLTFParser::consolidate(){
 }
 
 void GLTFParser::cleanup(){
+    SprLog::log({{.flags = RESET}});
     std::filesystem::remove("../data/temp/"+(m_name + "_model")+".stmp");
     std::filesystem::remove("../data/temp/"+(m_name) + "_mtl"+".stmp");
     std::filesystem::remove("../data/temp/"+(m_name + "_tex")+".stmp");
@@ -1015,6 +1078,7 @@ void GLTFParser::cleanup(){
 
 // parse .gltf file
 void GLTFParser::parseJson(std::string path){
+    SprLog::log({{"  reading .gltf", {125,125,125}, CR}, {.flags = HOLD}});
     bool ret = loader.LoadASCIIFromFile(&model, &err, &warn, path);
 
     if (!warn.empty()) {
@@ -1037,6 +1101,7 @@ void GLTFParser::parseJson(std::string path){
 
 // parse .glb file
 void GLTFParser::parseBinary(std::string path){
+    SprLog::log({{"  reading .glb", {125,125,125}, CR}, {.flags = HOLD}});
     bool ret = loader.LoadBinaryFromFile(&model, &err, &warn, path);
 
     if (!warn.empty()) {

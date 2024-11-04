@@ -1,13 +1,15 @@
 #pragma once
 
 #include "../spruce_core.h"
-#include "../memory/TempBuffer.h"
 #include "../../debug/SprLog.h"
 #include <initializer_list>
 #include <vector>
 #include <array>
 
 namespace spr {
+
+template <typename T>
+class TempBuffer;
 
 template <typename T>
 class Span {

@@ -5,13 +5,17 @@
 #include <filesystem>
 #include <unordered_map>
 #include "../../external/tinygltf/tiny_gltf.h"
+#include "ResourceTypes.h"
 #include "glm/glm.hpp"
 #include "glm/ext/matrix_transform.hpp"
 #include "glm/gtx/quaternion.hpp"
 #include <glm/gtc/matrix_inverse.hpp>
 #include "Resources.h"
+#include "external/flat_hash_map/flat_hash_map.hpp"
 
-typedef std::unordered_map<uint32_t, uint32_t> IdMap;
+typedef ska::flat_hash_map<uint32_t, uint32_t> IdMap;
+typedef ska::flat_hash_map<uint64_t, uint32_t> MtlMap;
+typedef ska::flat_hash_map<std::string, uint32_t> ImageMap;
 
 namespace spr::tools{
 
@@ -58,6 +62,10 @@ private:
     uint32_t m_id = 0;
     IdMap m_sourceBuffIdMap;
     IdMap m_sourceTexIdMap;
+    MtlMap m_mtlMap;
+    IdMap m_bufferviewMap;
+    MtlMap m_imageMap;
+    MtlMap m_meshMap;
 
     std::ofstream m_outputStream;
     std::ofstream m_modelStream;
@@ -205,5 +213,17 @@ private:
     void vectorToMat4(const std::vector<double>& src, glm::mat4& dst);
     void vectorToQuat(const std::vector<double>& src, glm::quat& dst);
     void vectorToVec3(const std::vector<double>& src, glm::vec3& dst);
+
+    uint64_t hashVec(const uint32* data, uint32 size) const {
+        std::size_t seed = size;
+        for(int i = 0; i < size; i++) {
+            uint32 x = data[i];
+            x = ((x >> 16) ^ x) * 0x45d9f3b;
+            x = ((x >> 16) ^ x) * 0x45d9f3b;
+            x = (x >> 16) ^ x;
+            seed ^= x + 0x9e3779b9 + (seed << 6) + (seed >> 2);
+        }
+        return seed;
+    }
 };
 }

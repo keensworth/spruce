@@ -55,17 +55,25 @@ struct ResourceMetadata {
     uint32 sub = 1;
 };
 
+struct LoadResult {
+    uint32 sizeBytes = 0;
+    uint32 resultId = 0;
+};
+
 class AssetRegisterer{
 public:
     AssetRegisterer(){}
     ~AssetRegisterer(){}
 
     void registerDirectory(std::string dir);
-    int loadModel(std::string path, mio::mmap_source& file);
-    int loadMesh(std::string path, ResourceMetadata& modelData, mio::mmap_source& file, ModelHeader& model, uint32 index);
-    int loadMaterial(std::string path, ResourceMetadata& modelData, mio::mmap_source& file, ModelHeader& model, MeshLayout& mesh);
-    int loadTexture(std::string path, ResourceMetadata& modelData, bool subresource, mio::mmap_source& file, ModelHeader& model, uint32 index);
-    int loadBuffer(std::string path, ResourceMetadata& modelData, mio::mmap_source& file, ModelHeader& model, uint32 offset, uint32 length);
+    LoadResult loadModel();
+    LoadResult loadMesh(ResourceMetadata& modelData, uint32 index);
+    LoadResult loadMaterial(ResourceMetadata& modelData, MeshLayout& mesh);
+    LoadResult loadTexture(ResourceMetadata& modelData, uint32 index);
+    LoadResult loadDedicatedTexture(ResourceMetadata& modelData);
+    LoadResult loadBuffer(ResourceMetadata& modelData, uint32 offset, uint32 length);
+    void checkinModel();
+    void checkinDedicatedTexture(ResourceMetadata& modelData);
     void writeHeader();
     void writeManifest(int totalBytes);
 
@@ -73,12 +81,16 @@ public:
         return resourceTypeStrings[resourceType];
     }
 private:
+    mio::mmap_sink rw_mmap;
+    std::error_code m_error;
+
     // Filename <-> ResourceId map 
     ska::flat_hash_map<std::string, ResourceMetadata> m_metadataMap;
     ska::flat_hash_map<std::string, ResourceMetadata> m_modelMetadataMap;
     ska::flat_hash_map<std::string, ResourceMetadata> m_nonSubresourceTextureMap;
 
     ska::flat_hash_map<uint32_t, uint32> m_texturePresenceMap;
+    ska::flat_hash_map<uint32_t, uint32> m_materialPresenceMap;
     uint32 m_id = 3;
 
     ska::flat_hash_map<std::string, uint32> m_headerLowerNameMap;

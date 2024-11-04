@@ -1,28 +1,12 @@
-#include "Component.h"
-#include "InputManager.h"
-#include "KeyboardConfig.h"
-#include "data/asset_ids.h"
-#include "glm/ext/quaternion_trigonometric.hpp"
-#include "glm/ext/scalar_constants.hpp"
-#include "glm/gtc/type_ptr.hpp"
-#include "src/interface/SprWindow.h"
-#include "src/render/SprRenderer.h"
-#include "src/render/scene/Material.h"
-#include "src/render/scene/SceneData.h"
-#include "src/resource/ResourceTypes.h"
-#include "src/resource/SprResourceManager.h"
-#include "src/debug/SprLog.h"
-#include <chrono>
-#include <thread>
-#include "glm/gtx/string_cast.hpp"
-#include "util/Container.h"
-#include "util/node/EntityNode.h"
-#include <glm/gtx/vector_angle.hpp>
-#include <chrono>
+#include "interface/SprWindow.h"
+#include "render/SprRenderer.h"
+#include "resource/SprResourceManager.h"
+#include "debug/SprLog.h"
 #include "ecs/SprECS.h"
+#include "util/Timer.h"
+#include "util/Span.h"
 
 using namespace spr;
-
 
 // components
 class TransformC : public TypedComponent<TransformInfo>{};
@@ -37,7 +21,14 @@ public:
         m_ecs = ecs;
         m_window = window;
         m_srm = srm;
+        
+        SprLog::info("[GFX] Loading assets");
+        Timer timer(true);
+
         m_renderer.loadAssets(*m_srm);
+
+        SprLog::log({{"[GFX] Finished in "}, {std::to_string(timer.elapsed()), color::value}, {"ms"}});
+
     }
     ~RenderSystem(){}
 
@@ -236,16 +227,16 @@ int main() {
         ecs.createEntity(
             ecs.add<ModelC>(data::sponza),
             ecs.add<TransformC>(TransformInfo{
-                .position = {0.f, 0.f, -5.f}, 
+                .position = {0.f, 100.f, -5.f}, 
                 .rotation = angleAxis(pi<float>()/2, vec3{1.f, 0.f, 0.f}), 
                 .scale = 0.012f}));
 
-        // ecs.createEntity(
-        //     ecs.add<ModelC>(data::bistro),
-        //     ecs.add<TransformC>(TransformInfo{
-        //         .position = {2.f, 4.f, -2.f}, 
-        //         .rotation = angleAxis(pi<float>()/2, vec3{1.f, 0.f, 0.f}), 
-        //         .scale = 1.f}));
+        ecs.createEntity(
+            ecs.add<ModelC>(data::bistro),
+            ecs.add<TransformC>(TransformInfo{
+                .position = {2.f, 4.f, -2.f}, 
+                .rotation = angleAxis(pi<float>()/2, vec3{1.f, 0.f, 0.f}), 
+                .scale = 1.f}));
 
         // uint32 dim = 50;
         // for (uint32 x = 0; x < dim; x++){

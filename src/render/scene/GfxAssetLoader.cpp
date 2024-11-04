@@ -1,6 +1,7 @@
 #include "GfxAssetLoader.h"
 #include "Material.h"
 #include "Mesh.h"
+#include "data/asset_ids.h"
 #include "resource/SprResourceManager.h"
 #include "debug/SprLog.h"
 #include "vulkan/TextureTranscoder.h"
@@ -17,9 +18,9 @@ GfxAssetLoader::~GfxAssetLoader(){
 }
 
 MeshInfoMap GfxAssetLoader::loadAssets(SprResourceManager& rm, VulkanResourceManager* vrm, VulkanDevice* device){
-    m_vertexPositions = {vrm, 4000000*sizeof(VertexPosition)};
-    m_vertexAttributes = {vrm, 4000000*sizeof(VertexAttributes)};
-    m_vertexIndices = {vrm, 4000000*sizeof(uint32)};
+    m_vertexPositions = {vrm, 8000000*sizeof(VertexPosition)};
+    m_vertexAttributes = {vrm, 8000000*sizeof(VertexAttributes)};
+    m_vertexIndices = {vrm, 16000000*sizeof(uint32)};
     m_materials = {vrm, 4096*sizeof(MaterialData)};
 
     std::vector<uint32>& modelIds = rm.getModelIds();
@@ -90,7 +91,7 @@ void GfxAssetLoader::loadVertexData(SprResourceManager& rm, Mesh* mesh, MeshInfo
         info.indexCount = alloc.size;
         info.firstIndex = alloc.offset;
         m_counts.indexCount += info.indexCount;
-        m_counts.bytes += alloc.byteSize;
+        m_counts.vertexDataBytes += alloc.byteSize;
         m_bufferHandles.push_back(indicesHandle);
         m_storedBuffersBytes += alloc.byteSize;
         m_indexBufferIds[mesh->indexBufferId] = 1;
@@ -112,7 +113,7 @@ void GfxAssetLoader::loadVertexData(SprResourceManager& rm, Mesh* mesh, MeshInfo
 
         info.vertexOffset = alloc.offset;
         m_counts.vertexCount += alloc.size;
-        m_counts.bytes += alloc.byteSize;
+        m_counts.vertexDataBytes += alloc.byteSize;
         m_bufferHandles.push_back(positionHandle);
         m_storedBuffersBytes += alloc.byteSize;
         m_positionBufferIds[mesh->positionBufferId] = 1;
@@ -132,11 +133,11 @@ void GfxAssetLoader::loadVertexData(SprResourceManager& rm, Mesh* mesh, MeshInfo
             .size = attributesBuffer->byteLength
         });
 
-        m_counts.bytes += alloc.byteSize;
+        m_counts.vertexDataBytes += alloc.byteSize;
         m_bufferHandles.push_back(attributesHandle);
         m_storedBuffersBytes += alloc.byteSize;
-        m_attributeBufferIds[mesh->attributesBufferId] = 1;
-    } 
+        m_attributeBufferIds[mesh->attributesBufferId] = 1; 
+    }
 
     if (m_storedBuffersBytes >= MAX_STORED_BUFFER_BYTES){
         for (Handle<spr::Buffer> handle : m_bufferHandles){
@@ -159,7 +160,6 @@ void GfxAssetLoader::loadMaterial(SprResourceManager& rm, Mesh* mesh, MeshInfo& 
     mesh->materialFlags = material->materialFlags;
 
     MaterialData materialData;
-
     if (material->baseColorTexId > 0){
         materialData.flags |= MTL_BASE_COLOR;
         materialData.baseColorTexIdx = loadTexture(rm, material->baseColorTexId, true);
@@ -185,11 +185,11 @@ void GfxAssetLoader::loadMaterial(SprResourceManager& rm, Mesh* mesh, MeshInfo& 
         materialData.emissiveTexIdx = loadTexture(rm, material->emissiveTexId, false);
         materialData.emissiveFactor = material->emissiveFactor;
     }
-    if (material->alphaType > 0){
+    if (material->materialFlags & gfx::MaterialFlags::MTL_ALPHA){
         materialData.flags |= MTL_ALPHA;
         materialData.alphaCutoff = material->alphaCutoff;
     }
-    if (material->doubleSided){
+    if (material->materialFlags & gfx::MaterialFlags::MTL_DOUBLE_SIDED){
         materialData.flags |= MTL_DOUBLE_SIDED;
     }
 
@@ -197,7 +197,7 @@ void GfxAssetLoader::loadMaterial(SprResourceManager& rm, Mesh* mesh, MeshInfo& 
     
     info.materialIndex = alloc.offset;
     m_counts.materialCount++;
-    m_counts.bytes += alloc.byteSize;
+    //m_counts.bytes += alloc.byteSize;
 }
 
 uint32 GfxAssetLoader::loadTexture(SprResourceManager& rm, uint32 textureId, bool srgb){
@@ -245,7 +245,7 @@ uint32 GfxAssetLoader::loadTexture(SprResourceManager& rm, uint32 textureId, boo
         .srgb = srgb
     };
 
-    m_counts.bytes += result.sizeBytes;
+    m_counts.textureDataBytes += result.sizeBytes;
     
     uint32 index = 0;
     if (result.layers == 6){
@@ -271,7 +271,6 @@ uint32 GfxAssetLoader::loadTexture(SprResourceManager& rm, uint32 textureId, boo
         m_storedBuffersBytes = 0;
         m_bufferHandles.clear();
     }
-
     return index;
 }
 
@@ -339,7 +338,7 @@ void GfxAssetLoader::loadBuiltinAssets(SprResourceManager& rm, MeshInfoMap& mesh
     m_counts.indexCount += quadInfo.indexCount;
     quadInfo.vertexOffset = quadPosAlloc.offset;
     m_counts.vertexCount += quadPosAlloc.size;
-    m_counts.bytes += quadIdxAlloc.byteSize + quadPosAlloc.byteSize + quadAttrAlloc.byteSize;
+    m_counts.vertexDataBytes += quadIdxAlloc.byteSize + quadPosAlloc.byteSize + quadAttrAlloc.byteSize;
     meshes[1] = quadInfo;
 
     // create built-in cube mesh
@@ -438,7 +437,7 @@ void GfxAssetLoader::loadBuiltinAssets(SprResourceManager& rm, MeshInfoMap& mesh
     m_counts.indexCount += cubeInfo.indexCount;
     cubeInfo.vertexOffset = cubePosAlloc.offset;
     m_counts.vertexCount += cubePosAlloc.size;
-    m_counts.bytes += cubeIdxAlloc.byteSize + cubePosAlloc.byteSize + cubeAttrAlloc.byteSize;
+    m_counts.vertexDataBytes += cubeIdxAlloc.byteSize + cubePosAlloc.byteSize + cubeAttrAlloc.byteSize;
     meshes[2] = cubeInfo;
 }
 
