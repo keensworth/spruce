@@ -5,6 +5,7 @@
 #include <stdio.h>
 #include "Resources.h"
 #include "SprLog.h"
+#include "util/Color.h"
 #include "util/Span.h"
 #include "glm/gtc/matrix_inverse.hpp"
 #include "glm/gtc/type_ptr.hpp"
@@ -467,16 +468,16 @@ uint32 GLTFParser::handleTexture(const tinygltf::Texture& tex, BufferData dataTy
     // get image and sampler
     int32 sourceIndex = tex.source;
     int32 samplerIndex = tex.sampler;
-    int32 minFilter;
+    //int32 minFilter;
     
     tinygltf::Sampler sampler;
     if (sourceIndex == -1)
         return 0;
-    if (samplerIndex == -1)
-        minFilter = TINYGLTF_TEXTURE_FILTER_LINEAR_MIPMAP_LINEAR;
+    //if (samplerIndex == -1)
+        //minFilter = TINYGLTF_TEXTURE_FILTER_LINEAR_MIPMAP_LINEAR;
     else {
         sampler = model.samplers[samplerIndex];
-        minFilter = sampler.minFilter;
+        //minFilter = sampler.minFilter;
     }
 
     // create masked id (id + filter)
@@ -500,7 +501,7 @@ uint32 GLTFParser::handleTexture(const tinygltf::Texture& tex, BufferData dataTy
     
 
     // get min filter
-    minFilter = sampler.minFilter;
+    //minFilter = sampler.minFilter;
 
     // get data and write to buffer
     int32 elementType = TINYGLTF_TYPE_VEC4;
@@ -872,9 +873,9 @@ void GLTFParser::handleMesh(const tinygltf::Mesh& mesh, std::vector<uint32> &mes
             
             std::string progress = "("+std::to_string(m_meshCount+1)+"/"+std::to_string(glm::max(model.meshes.size(), mesh.primitives.size()))+")";
             SprLog::log({
-                {"  processing ", {125,125,125}, CR}, 
+                {"  processing ", {125,125,125}, msg::CARRIAGE}, 
                 {progress + " ", {150,150,150}}, 
-                {mesh.name.substr(0,glm::min(40, (int)mesh.name.size()))+"...", {216, 151, 60}, HOLD}
+                {mesh.name.substr(0,glm::min(40, (int)mesh.name.size()))+"...", {216, 151, 60}, msg::HOLD}
             });
             
             uint32 meshIndex = handlePrimitive(primitive, transform);
@@ -969,7 +970,7 @@ void GLTFParser::parse(){
 }
 
 void GLTFParser::init(){
-    SprLog::log({{.flags = RESET}});
+    SprLog::log({{msg::RESET}});
     m_modelStream.open("../data/temp/" + m_name + "_model.stmp", std::ios::binary);
     m_meshStream.open("../data/temp/" + m_name + "_mesh.stmp", std::ios::binary);
     m_materialStream.open("../data/temp/" + m_name + "_mtl.stmp", std::ios::binary);
@@ -1065,7 +1066,7 @@ void GLTFParser::consolidate(){
 }
 
 void GLTFParser::cleanup(){
-    SprLog::log({{.flags = RESET}});
+    SprLog::log({{msg::RESET}});
     std::filesystem::remove("../data/temp/"+(m_name + "_model")+".stmp");
     std::filesystem::remove("../data/temp/"+(m_name) + "_mtl"+".stmp");
     std::filesystem::remove("../data/temp/"+(m_name + "_tex")+".stmp");
@@ -1078,13 +1079,16 @@ void GLTFParser::cleanup(){
 
 // parse .gltf file
 void GLTFParser::parseJson(std::string path){
-    SprLog::log({{"  reading .gltf", {125,125,125}, CR}, {.flags = HOLD}});
+    SprLog::log({{"  reading .gltf", {125,125,125}, msg::CARRIAGE}, {msg::HOLD}});
     bool ret = loader.LoadASCIIFromFile(&model, &err, &warn, path);
 
     if (!warn.empty()) {
+        SprLog::log({{"  warn: ", color::WARN}, {warn}});
     }
 
     if (!err.empty()) {
+        SprLog::log({{"  error: ", color::ERROR}, {err}});
+        return;
     }
 
     if (!ret) {
@@ -1101,13 +1105,16 @@ void GLTFParser::parseJson(std::string path){
 
 // parse .glb file
 void GLTFParser::parseBinary(std::string path){
-    SprLog::log({{"  reading .glb", {125,125,125}, CR}, {.flags = HOLD}});
+    SprLog::log({{"  reading .glb", {125,125,125}, msg::CARRIAGE}, {msg::HOLD}});
     bool ret = loader.LoadBinaryFromFile(&model, &err, &warn, path);
 
     if (!warn.empty()) {
+        SprLog::log({{"  warn: ", color::WARN}, {warn}});
     }
 
     if (!err.empty()) {
+        SprLog::log({{"  error: ", color::ERROR}, {err}});
+        return;
     }
 
     if (!ret) {

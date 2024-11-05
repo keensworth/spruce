@@ -22,14 +22,14 @@ public:
         m_window = window;
         m_srm = srm;
         
-        SprLog::info("[GFX] Loading assets");
+        SprLog::info("[RenderSystem] Loading render assets");
         Timer timer(true);
 
         m_renderer.loadAssets(*m_srm);
 
-        SprLog::log({{"[GFX] Finished in "}, {std::to_string(timer.elapsed()), color::value}, {"ms"}});
-
+        SprLog::info({{"[RenderSystem] Finished loading assets in "}, {timer.elapsed()}, {"ms"}});
     }
+
     ~RenderSystem(){}
 
     void update(float dt){
