@@ -4,59 +4,43 @@
 #include <string>
 #include <chrono>
 #include <iostream>
-#include "util/Color.h"
+#include "LogMessage.h"
 
-namespace oof {
-    struct color;
-}
 
 namespace spr {
-
-template<typename T>
-concept arithmetic = std::integral<T> or std::floating_point<T>;
-
-enum FormatFlags {
-    NONE = 0,
-    UNDERLINE = 1,
-    BOLD = 1 << 1,
-    TIMED = 1 << 2,
-    CR = 1 << 3,
-    NL = 1 << 4,
-    HOLD = 1 << 5,
-    RESET = 1 << 6
-};
-
-struct LogMsg {
-    std::string str;
-    glm::uvec3 color;
-    FormatFlags flags;
-};
 
 class SprLog{
 public:
     SprLog() = default;
     ~SprLog() = default;
 
-    static void debug(std::string msg);
-    static void info(std::string msg);
-    static void warn(std::string msg);
-    static void error(std::string msg, bool terminate = true);
-    static void fatal(std::string msg);
+    static void debug(const std::string& msg);
+    static void info(const std::string& msg);
+    static void warn(const std::string& msg);
+    static void error(const std::string& msg, bool terminate = true);
+    static void fatal(const std::string& msg);
+
+    static void debug(std::initializer_list<LogMsg> msgs);
+    static void info(std::initializer_list<LogMsg> msgs);
+    static void warn(std::initializer_list<LogMsg> msgs);
+    static void error(std::initializer_list<LogMsg> msgs);
+    static void fatal(std::initializer_list<LogMsg> msgs);
 
     static void log(std::initializer_list<LogMsg> msgs);
 
     template<arithmetic T>
-    static void debug(std::string msg, T arg);
+    static void debug(const std::string& msg, T arg);
     template<arithmetic T>
-    static void info(std::string msg, T arg);
+    static void info(const std::string& msg, T arg);
     template<arithmetic T>
-    static void warn(std::string msg, T arg);
+    static void warn(const std::string& msg, T arg);
     template<arithmetic T>
-    static void error(std::string msg, T arg);
+    static void error(const std::string& msg, T arg);
     template<arithmetic T>
-    static void fatal(std::string msg, T arg);
+    static void fatal(const std::string& msg, T arg);
 
 private:
+    static void logPrivate(std::initializer_list<LogMsg> msgs, std::initializer_list<LogMsg> msgs2);
     static std::string getTime();
     static std::string getDate();
 
@@ -65,53 +49,53 @@ public:
 };
 
 template<arithmetic T>
-void SprLog::debug(std::string msg, T arg){
+void SprLog::debug(const std::string& msg, T arg){
     SprLog::log({
-        { .color = color::time, .flags = TIMED },
-        { .str = " [DEBUG]: ", .color = color::debug },
-        { .str = msg, .color = color::white },
-        { .str = std::to_string(arg), .color = color::value }
+        { color::TIME, msg::TIMED },
+        { "[DEBUG]: ", color::DEBUG },
+        { msg, color::WHITE },
+        { arg, color::VALUE }
     });
 }
 
 template<arithmetic T>
-void SprLog::info(std::string msg, T arg){
+void SprLog::info(const std::string& msg, T arg){
     SprLog::log({
-        { .color = color::time, .flags = TIMED },
-        { .str = " [INFO]:  ", .color = color::info },
-        { .str = msg, .color = color::white },
-        { .str = std::to_string(arg), .color = color::value }
+        { color::TIME, msg::TIMED },
+        { " [INFO]: ", color::INFO },
+        { msg, color::WHITE },
+        { arg, color::VALUE }
     });
 }
 
 template<arithmetic T>
-void SprLog::warn(std::string msg, T arg){
+void SprLog::warn(const std::string& msg, T arg){
     SprLog::log({
-        { .color = color::time, .flags = TIMED },
-        { .str = " [WARN]:  ", .color = color::warn },
-        { .str = msg, .color = color::white },
-        { .str = std::to_string(arg), .color = color::value }
+        { color::TIME, msg::TIMED },
+        { " [WARN]: ", color::WARN },
+        { msg, color::WHITE },
+        { arg, color::VALUE }
     });
 }
 
 template<arithmetic T>
-void SprLog::error(std::string msg, T arg){
+void SprLog::error(const std::string& msg, T arg){
     SprLog::log({
-        { .color = color::time, .flags = TIMED },
-        { .str = " [ERROR]: ", .color = color::error },
-        { .str = msg, .color = color::white },
-        { .str = std::to_string(arg), .color = color::value }
+        { color::TIME, msg::TIMED },
+        { "[ERROR]: ", color::ERROR },
+        { msg, color::WHITE },
+        { arg, color::VALUE }
     });
     std::terminate();
 }
 
 template<arithmetic T>
-void SprLog::fatal(std::string msg, T arg){
+void SprLog::fatal(const std::string& msg, T arg){
     SprLog::log({
-        { .color = color::time, .flags = TIMED },
-        { .str = " [FATAL]: ", .color = color::fatal },
-        { .str = msg, .color = color::white },
-        { .str = std::to_string(arg), .color = color::value }
+        { color::TIME, msg::TIMED },
+        { "[FATAL]: ", color::FATAL },
+        { msg, color::WHITE },
+        { arg, color::VALUE }
     });
     std::terminate();
 }
