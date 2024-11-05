@@ -4,6 +4,7 @@
 #include <glm/glm.hpp>
 #include <glm/gtx/quaternion.hpp>
 
+using namespace glm;
 
 // integer types
 typedef int8_t int8;

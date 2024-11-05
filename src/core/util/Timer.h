@@ -40,18 +40,18 @@ public:
         m_running = false;
     }
 
-    template <typename Duration = ms>
+    template <typename T = spr::ms>
     double duration() {
         if (m_running)
             return 0.0;
         
-        return std::chrono::duration<double>(std::chrono::duration_cast<Duration>(m_stop - m_start)).count();
+        return std::chrono::duration<double, typename T::period>(m_stop - m_start).count();
     }
 
-    template <typename Duration = ms>
+    template <typename T = spr::ms>
     double elapsed() {
-        auto end = m_running ? m_stop : std::chrono::high_resolution_clock::now();
-        return std::chrono::duration<double>(std::chrono::duration_cast<Duration>(end - m_start)).count();
+        auto end = m_running ? std::chrono::high_resolution_clock::now() : m_stop;
+        return std::chrono::duration<double, typename T::period>(end - m_start).count();
     }
 
     bool running(){ return m_running; }
