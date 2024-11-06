@@ -43,6 +43,8 @@ private:
     static void logPrivate(std::initializer_list<LogMsg> msgs, std::initializer_list<LogMsg> msgs2);
     static std::string getTime();
     static std::string getDate();
+    static const std::hash<std::string_view> hash;
+    static int count;
 
 public:
     static const std::string blank;
@@ -52,8 +54,8 @@ template<arithmetic T>
 void SprLog::debug(const std::string& msg, T arg){
     SprLog::log({
         { color::TIME, msg::TIMED },
-        { "[DEBUG]: ", color::DEBUG },
-        { msg, color::WHITE },
+        { " [DEBUG]:", color::DEBUG, msg::BOLD },
+        { msg, color::TEXT },
         { arg, color::VALUE }
     });
 }
@@ -62,8 +64,8 @@ template<arithmetic T>
 void SprLog::info(const std::string& msg, T arg){
     SprLog::log({
         { color::TIME, msg::TIMED },
-        { " [INFO]: ", color::INFO },
-        { msg, color::WHITE },
+        { " [INFO]: ", color::INFO, msg::BOLD },
+        { msg, color::TEXT },
         { arg, color::VALUE }
     });
 }
@@ -72,8 +74,8 @@ template<arithmetic T>
 void SprLog::warn(const std::string& msg, T arg){
     SprLog::log({
         { color::TIME, msg::TIMED },
-        { " [WARN]: ", color::WARN },
-        { msg, color::WHITE },
+        { " [WARN]: ", color::WARN, msg::BOLD },
+        { msg, color::TEXT },
         { arg, color::VALUE }
     });
 }
@@ -82,8 +84,8 @@ template<arithmetic T>
 void SprLog::error(const std::string& msg, T arg){
     SprLog::log({
         { color::TIME, msg::TIMED },
-        { "[ERROR]: ", color::ERROR },
-        { msg, color::WHITE },
+        { "[ERROR]: ", color::ERROR, msg::BOLD },
+        { msg, color::TEXT },
         { arg, color::VALUE }
     });
     std::terminate();
@@ -93,8 +95,8 @@ template<arithmetic T>
 void SprLog::fatal(const std::string& msg, T arg){
     SprLog::log({
         { color::TIME, msg::TIMED },
-        { "[FATAL]: ", color::FATAL },
-        { msg, color::WHITE },
+        { "[FATAL]: ", color::FATAL, msg::BOLD },
+        { msg, color::TEXT },
         { arg, color::VALUE }
     });
     std::terminate();

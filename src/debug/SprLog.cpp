@@ -1,4 +1,5 @@
 #include "SprLog.h"
+#include "util/color/Gradient.h"
 #include <initializer_list>
 
 #define OOF_IMPL
@@ -7,7 +8,10 @@
 
 namespace spr {
 
+const std::hash<std::string_view> SprLog::hash;
 const std::string SprLog::blank = std::string(80, ' ');
+int SprLog::count = 0;
+
 
 // --------------------------------------------------------- //
 //         Log                                               //
@@ -22,7 +26,7 @@ void SprLog::logPrivate(std::initializer_list<LogMsg> msgs, std::initializer_lis
     uint32 lastFlags = msg::NONE;
     oof::color color{};
     color::rgb32 msgColor{};
-    
+    count++;
     // lambda to write one message, different flags
     // influence behaviour (in order of priority):
     //
@@ -34,7 +38,16 @@ void SprLog::logPrivate(std::initializer_list<LogMsg> msgs, std::initializer_lis
     // - NEWLINE   newline, continue to next msg
     // - HOLD      don't insert newline automatically
     auto processMsg = [&](const LogMsg& msg) -> std::tuple<bool,bool> {
-        msgColor = msg.colorId ? color::idMap[msg.color.id] : msg.color.vec;
+        
+        if (msg.colorId){
+            if (msg.color.id >= color::VIRIDIS){
+                msgColor = color::sample(Span<color::rgb32>(color::gradientMap[msg.color.id]), (hash(msg.msg) % 255)/255.f);
+            } else {
+                msgColor = color::idMap[msg.color.id];
+            }
+        } else {
+            msgColor = msg.color.vec;
+        }
         color = {msgColor.r, msgColor.g, msgColor.b};
         allFlags |= msg.flags;
         lastFlags = msg.flags;
@@ -116,32 +129,32 @@ void SprLog::logPrivate(std::initializer_list<LogMsg> msgs, std::initializer_lis
 void SprLog::debug(const std::string& msg){
     SprLog::log({
         { color::TIME, msg::TIMED },
-        { " [DEBUG]: ", color::DEBUG },
-        { msg, color::WHITE, msg::NONE }
+        { " [DEBUG]:", color::DEBUG, msg::BOLD },
+        { msg, color::TEXT }
     });
 }
 
 void SprLog::info(const std::string& msg){
     SprLog::log({
         { color::TIME, msg::TIMED },
-        { " [INFO]: ", color::INFO },
-        { msg, color::WHITE }
+        { " [INFO]: ", color::INFO, msg::BOLD },
+        { msg, color::TEXT }
     });
 }
 
 void SprLog::warn(const std::string& msg){
     SprLog::log({
         { color::TIME, msg::TIMED },
-        { " [WARN]: ", color::WARN },
-        { msg, color::WHITE }
+        { " [WARN]: ", color::WARN, msg::BOLD },
+        { msg, color::TEXT }
     });
 }
 
 void SprLog::error(const std::string& msg, bool terminate){
     SprLog::log({
         { color::TIME, msg::TIMED },
-        { "[ERROR]: ", color::ERROR },
-        { msg, color::WHITE }
+        { "[ERROR]: ", color::ERROR, msg::BOLD },
+        { msg, color::TEXT }
     });
 
     if (terminate)
@@ -151,8 +164,8 @@ void SprLog::error(const std::string& msg, bool terminate){
 void SprLog::fatal(const std::string& msg){
     SprLog::log({
         { color::TIME, msg::TIMED },
-        { "[FATAL]: ", color::FATAL },
-        { msg, color::WHITE }
+        { "[FATAL]: ", color::FATAL, msg::BOLD },
+        { msg, color::TEXT }
     });
     std::terminate();
 }
@@ -165,7 +178,7 @@ void SprLog::fatal(const std::string& msg){
 void SprLog::debug(std::initializer_list<LogMsg> msgs){
     SprLog::logPrivate({
         { color::TIME, msg::TIMED },
-        { " [DEBUG]: ", color::DEBUG }},
+        { " [DEBUG]:", color::DEBUG, msg::BOLD }},
         msgs
     );
 }
@@ -173,7 +186,7 @@ void SprLog::debug(std::initializer_list<LogMsg> msgs){
 void SprLog::info(std::initializer_list<LogMsg> msgs){
     SprLog::logPrivate({
         { color::TIME, msg::TIMED },
-        { " [INFO]: ", color::INFO }},
+        { " [INFO]: ", color::INFO, msg::BOLD }},
         msgs
     );
 }
@@ -181,7 +194,7 @@ void SprLog::info(std::initializer_list<LogMsg> msgs){
 void SprLog::warn(std::initializer_list<LogMsg> msgs){
     SprLog::logPrivate(
         {{ color::TIME, msg::TIMED },
-        { " [WARN]: ", color::WARN }},
+        { " [WARN]: ", color::WARN, msg::BOLD }},
         msgs
     );
 }
@@ -189,7 +202,7 @@ void SprLog::warn(std::initializer_list<LogMsg> msgs){
 void SprLog::error(std::initializer_list<LogMsg> msgs){
     SprLog::logPrivate({
         { color::TIME, msg::TIMED },
-        { "[ERROR]: ", color::ERROR }},
+        { "[ERROR]: ", color::ERROR, msg::BOLD }},
         msgs
     );
 }
@@ -197,7 +210,7 @@ void SprLog::error(std::initializer_list<LogMsg> msgs){
 void SprLog::fatal(std::initializer_list<LogMsg> msgs){
     SprLog::logPrivate({
         { color::TIME, msg::TIMED },
-        { "[FATAL]: ", color::FATAL }},
+        { "[FATAL]: ", color::FATAL, msg::BOLD }},
         msgs
     );
     std::terminate();

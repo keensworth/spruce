@@ -1,6 +1,6 @@
 #include <string>
 #include <charconv>
-#include "util/Color.h"
+#include "util/color/Color.h"
 
 
 namespace spr {
@@ -30,7 +30,7 @@ enum flags {
 
 struct LogMsg {
     // std::string_view as input
-    LogMsg(std::string_view message, color::id color = color::WHITE, msg::flags flags = msg::NONE)
+    LogMsg(std::string_view message, color::id color = color::TEXT, msg::flags flags = msg::NONE)
         : msg(message), color{.id = color}, flags(flags), colorId(true) {}
 
     LogMsg(std::string_view message, const color::rgb32& color, msg::flags flags = msg::NONE)
@@ -59,7 +59,7 @@ struct LogMsg {
         : msg{}, color{.vec = color}, flags(flags), colorId(false) {}
 
     LogMsg(msg::flags flags)
-        : msg{}, color{.id = color::WHITE},flags(flags), colorId(true) {}
+        : msg{}, color{.id = color::TEXT},flags(flags), colorId(true) {}
 
 
     union Color {
