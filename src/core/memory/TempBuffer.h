@@ -68,14 +68,14 @@ public:
 
     inline T& operator[](uint32 index) {
         if (index >= m_size)
-            SprLog::error("[TempBuffer] [operator[]] index out of range for size of ", m_size);
+            SprLog::error({{"[TempBuffer] ", color::GRADIENT17}, {"[operator[]] index out of range for size of "}, {m_size}});
         
         return m_data[index];
     }
 
     inline const T& operator[](uint32 index) const {
         if (index >= m_size)
-            SprLog::error("[TempBuffer] [const operator[]] index out of range for size of ", m_size);
+            SprLog::error({{"[TempBuffer] ", color::GRADIENT17}, {"[const operator[]] index out of range for size of "}, {m_size}});
         
         return m_data[index];
     }
@@ -93,7 +93,7 @@ public:
         // check that data can fit
         if (m_size + size > m_capacity){
             size = m_capacity-m_size;
-            SprLog::warn("[TempBuffer] [insert] " + std::string("size > capacity, writing partial data"));
+            SprLog::warn({{"[TempBuffer] ", color::GRADIENT17}, {"[insert] size > capacity, writing partial data"}});
         }
 
         // emplace data into buffer
@@ -114,7 +114,7 @@ public:
         uint32 size = 1;
         if (m_size + size > m_capacity){
             size = m_capacity-m_size;
-            SprLog::warn("[TempBuffer] [insert] " + std::string("size > capacity, writing partial data"));
+            SprLog::warn({{"[TempBuffer] ", color::GRADIENT17}, {"[insert] size > capacity, writing partial data"}});
         }
 
         // emplace data into buffer

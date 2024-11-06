@@ -2,10 +2,9 @@
 
 #include <utility>
 #include <vector>
-#include "Handle.h"
-#include "../spruce_core.h"
 #include <cstring>
-#include "../../debug/SprLog.h"
+#include "Handle.h"
+#include "debug/SprLog.h"
 
 namespace spr {
 
@@ -106,11 +105,11 @@ public:
 
         // return early if data is null or handle isn't valid
         if (!(m_data + handle.m_index)){
-            SprLog::warn("[Pool] [remove] null address");
+            SprLog::warn({{"[Pool] ", color::GRADIENT17}, {"[remove] null address"}});
             return Handle<T>();
         }
         if (!isValidHandle(handle)){
-            SprLog::warn("[Pool] [remove] invalid handle");
+            SprLog::warn({{"[Pool] ", color::GRADIENT17}, {"[remove] invalid handle"}});
             return Handle<T>();
         }
         
