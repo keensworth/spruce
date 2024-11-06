@@ -12,7 +12,7 @@ ResourceLoader::ResourceLoader(){
 
 template <typename T>
 void ResourceLoader::loadFromMetadata(MetadataMap& metadataMap, ResourceMetadata& metadata, T& data){
-    SprLog::error("[ResourceLoader] Unkown resource");
+    SprLog::error({{"[ResourceLoader] ", color::GRADIENT17}, {"Unkown resource"}});
 }
 
 bool ResourceLoader::checkMapping(uint32 id){
@@ -28,10 +28,12 @@ bool ResourceLoader::checkMapping(uint32 id){
     }
 
     if (m_error){
-        SprLog::warn("[ResourceLoader] Failed to open asset file at "
-         + m_pathMap[id] + " with id: ", id);
-         disable();
-         return false;
+        SprLog::warn({
+            {"[ResourceLoader] ", color::GRADIENT17}, 
+            {"Failed to open asset file at " + m_pathMap[id] + " with id: "}, 
+            {id}});
+        disable();
+        return false;
     }
 
     return true;

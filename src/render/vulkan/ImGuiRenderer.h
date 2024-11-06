@@ -9,12 +9,10 @@
 #include "render/scene/BatchManager.h"
 #include "resource/ResourceFlags.h"
 #include "debug/SprLog.h"
-#include "../external/imgui/imgui_impl_sdl2.h"
-#include "../external/imgui/imgui_impl_vulkan.h"
+#include "external/imgui/imgui_impl_sdl2.h"
+#include "external/imgui/imgui_impl_vulkan.h"
 #include "interface/SprWindow.h"
 #include "scene/SceneData.h"
-
-
 
 namespace spr::gfx {
 
@@ -479,7 +477,7 @@ public:
 
     void render(CommandBuffer& cb, BatchManager& batchManager){
         if (!m_hasInput)
-            SprLog::error("[ImGuiRenderer] [render] no input TextureAttachment specified");
+            SprLog::error({{"[ImGuiRenderer] ", color::GRADIENT19}, {"[render] no input TextureAttachment specified"}});
         
         if (!m_imguiInit) {
             ImGui_ImplVulkan_CreateFontsTexture(cb.getCommandBuffer());
@@ -530,7 +528,7 @@ public:
         m_rm->remove<RenderPass>(m_renderPass);
         m_rm->remove<RenderPassLayout>(m_renderPassLayout);
         m_rm->remove<TextureAttachment>(m_attachment);
-        SprLog::info("[ImGuiRenderer] [destroy] destroyed...");
+        SprLog::info({{"[ImGuiRenderer] ", color::GRADIENT19}, {"[destroy] destroyed..."}});
     }
 
     RenderState state;

@@ -1,6 +1,6 @@
 #include "VulkanDevice.h"
 
-#include "../external/volk/volk.h"
+#include "external/volk/volk.h"
 
 #define VMA_IMPLEMENTATION
 #include "vk_mem_alloc.h"
@@ -43,16 +43,15 @@ debugCallback(VkDebugUtilsMessageSeverityFlagBitsEXT messageSeverity,
             void* pUserData) {
     
     if (messageType & VK_DEBUG_UTILS_MESSAGE_SEVERITY_VERBOSE_BIT_EXT)
-        SprLog::info("[VK VALIDATION LAYERS]: " + std::string(pCallbackData->pMessage));
+        return VK_FALSE;//SprLog::debug({{"[VK VALIDATION LAYERS]: ", color::GRADIENT19}, {std::string(pCallbackData->pMessage), {125,125,125}}});
     else if (messageType & VK_DEBUG_UTILS_MESSAGE_SEVERITY_INFO_BIT_EXT)
-        SprLog::info("[VK VALIDATION LAYERS]: " + std::string(pCallbackData->pMessage));
+        SprLog::info({{"[VK VALIDATION LAYERS]: ", color::GRADIENT19}, {std::string(pCallbackData->pMessage), {125,125,125}}});
     else if (messageType & VK_DEBUG_UTILS_MESSAGE_SEVERITY_WARNING_BIT_EXT)
-        SprLog::warn("[VK VALIDATION LAYERS]: " + std::string(pCallbackData->pMessage));
+        SprLog::warn({{"[VK VALIDATION LAYERS]: ", color::GRADIENT19}, {std::string(pCallbackData->pMessage), {125,125,125}}});
     else if (messageType & VK_DEBUG_UTILS_MESSAGE_SEVERITY_ERROR_BIT_EXT)
-        SprLog::error("[VK VALIDATION LAYERS]: " + std::string(pCallbackData->pMessage), false);
+        SprLog::error({{"[VK VALIDATION LAYERS]: ", color::GRADIENT19}, {std::string(pCallbackData->pMessage)}});
     else 
-        SprLog::warn("[VK VALIDATION LAYERS]: " + std::string(pCallbackData->pMessage));
-    
+        SprLog::warn({{"[VK VALIDATION LAYERS]: ", color::GRADIENT19}, {std::string(pCallbackData->pMessage), {125,125,125}}});
 
     return VK_FALSE;
 }
@@ -72,8 +71,8 @@ VulkanDevice::VulkanDevice(){
 VulkanDevice::~VulkanDevice(){
     if (m_destroyed)
         return;
-    
-    SprLog::warn("[VulkanDevice] [~] Calling destroy() in destructor");
+
+    SprLog::warn({{"[VulkanDevice] ", color::GRADIENT19}, {"[~] Calling destroy() in destructor"}});
     destroy();
 }
 
@@ -92,7 +91,7 @@ void VulkanDevice::destroy(){
     // }
 
     m_destroyed = true;
-    SprLog::info("[VulkanDevice] [destroy] destroyed...");
+    SprLog::info({{"[VulkanDevice] ", color::GRADIENT19}, {"[destroy] destroyed..."}});
 }
 
 void VulkanDevice::createInfo(SprWindow& window){
@@ -450,10 +449,10 @@ void VulkanDevice::getExtensions(SprWindow& window){
     // [instance]
     // query SDL for required extensions
     if (!SDL_Vulkan_GetInstanceExtensions(window.getHandle(), &m_instanceExtensionCount, NULL)) 
-        SprLog::warn("[VulkanDevice] Failed to find count of SDL instance extensions");
+        SprLog::warn({{"[VulkanDevice] ", color::GRADIENT19}, {"Failed to find count of SDL instance extensions"}});
     const char **extensionNames = static_cast<const char **>(std::malloc(sizeof(const char *) * m_instanceExtensionCount));
     if (!SDL_Vulkan_GetInstanceExtensions(window.getHandle(), &m_instanceExtensionCount, extensionNames)) 
-        SprLog::warn("[VulkanDevice] Failed to find any SDL instance extensions");
+        SprLog::warn({{"[VulkanDevice] ", color::GRADIENT19}, {"Failed to find any SDL instance extensions"}});
 
     for (uint32 i = 0; i < m_instanceExtensionCount; i++){
         m_instanceExtensionNames.push_back(extensionNames[i]);

@@ -48,7 +48,7 @@ public:
     void updateMeshes(uint32 frame, uint32 id, Span<uint32> meshIds, Span<uint32> materialsFlags, const Transform& transform);
     void updateMeshes(uint32 frame, uint32 id, Span<uint32> meshIds, uint32 materialFlags , const Transform& transform);
 
-    void insertLights(uint32 frame, Span<const Light> lights);
+    void insertLights(uint32 frame, Span<Light> lights);
     
     void updateCamera(uint32 frame, glm::vec2 screenDim, const Camera& camera);
     

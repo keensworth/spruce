@@ -294,7 +294,7 @@ public:
         for (uint32 i = 0; i < MAX_FRAME_COUNT; i++)
             m_shadowTemp[i].destroy();
         
-        SprLog::info("[SunShadowRenderer] [destroy] destroyed...");
+        SprLog::info({{"[SunShadowRenderer] ", color::GRADIENT18}, {"[destroy] destroyed..."}});
     }
 
 private: // owning

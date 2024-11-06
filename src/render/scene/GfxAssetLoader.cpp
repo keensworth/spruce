@@ -38,7 +38,7 @@ MeshInfoMap GfxAssetLoader::loadAssets(SprResourceManager& rm, VulkanResourceMan
         Handle<spr::Model> modelHandle = rm.getHandle<spr::Model>(modelId);
 
         if (!modelHandle.isValid())
-            SprLog::warn("[GfxAssetLoader] [loadAssets] invalid model");
+            SprLog::warn({{"[GfxAssetLoader] ", color::GRADIENT19}, {"[loadAssets] invalid model"}});
 
         spr::Model* model = rm.getData<spr::Model>(modelHandle);
 
@@ -51,7 +51,7 @@ MeshInfoMap GfxAssetLoader::loadAssets(SprResourceManager& rm, VulkanResourceMan
 
         for (HandleID<Mesh> handleID : meshHandleIds){
             if (!handleID.handle.isValid())
-                SprLog::warn("[GfxAssetLoader] [loadAssets] invalid mesh");
+                SprLog::warn({{"[GfxAssetLoader] ", color::GRADIENT19}, {"[loadAssets] invalid mesh"}});
 
             spr::Mesh* mesh = rm.getData<spr::Mesh>(handleID.handle);
 
@@ -78,7 +78,7 @@ void GfxAssetLoader::loadVertexData(SprResourceManager& rm, Mesh* mesh, MeshInfo
     if (mesh->indexBufferId && !m_indexBufferIds.count(mesh->indexBufferId)){
         Handle<spr::Buffer> indicesHandle = rm.getHandle<spr::Buffer>(mesh->indexBufferId);
         if (!indicesHandle.isValid()){
-            SprLog::warn("[GfxAssetLoader] [loadVertexData] invalid indices");
+            SprLog::warn({{"[GfxAssetLoader] ", color::GRADIENT19}, {"[loadVertexData] invalid indices"}});
             return;
         }
 
@@ -101,7 +101,7 @@ void GfxAssetLoader::loadVertexData(SprResourceManager& rm, Mesh* mesh, MeshInfo
     if (mesh->positionBufferId && !m_positionBufferIds.count(mesh->positionBufferId)){
         Handle<spr::Buffer> positionHandle = rm.getHandle<spr::Buffer>(mesh->positionBufferId);
         if (!positionHandle.isValid()){
-            SprLog::warn("[GfxAssetLoader] [loadVertexData] invalid positions");
+            SprLog::warn({{"[GfxAssetLoader] ", color::GRADIENT19}, {"[loadVertexData] invalid positions"}});
             return;
         }
         
@@ -123,7 +123,7 @@ void GfxAssetLoader::loadVertexData(SprResourceManager& rm, Mesh* mesh, MeshInfo
     if (mesh->attributesBufferId && !m_attributeBufferIds.count(mesh->attributesBufferId)){
         Handle<spr::Buffer> attributesHandle = rm.getHandle<spr::Buffer>(mesh->attributesBufferId);
         if (!attributesHandle.isValid()){
-            SprLog::warn("[GfxAssetLoader] [loadVertexData] invalid attributes");
+            SprLog::warn({{"[GfxAssetLoader] ", color::GRADIENT19}, {"[loadVertexData] invalid attributes"}});
             return;
         }
         
@@ -152,7 +152,7 @@ void GfxAssetLoader::loadMaterial(SprResourceManager& rm, Mesh* mesh, MeshInfo& 
     // process the mesh's material
     Handle<spr::Material> materialHandle = rm.getHandle<spr::Material>((mesh->materialId));
     if (!materialHandle.isValid()){
-        SprLog::warn("[GfxAssetLoader] [loadMaterial] invalid material");
+        SprLog::warn({{"[GfxAssetLoader] ", color::GRADIENT19}, {"[loadMaterial] invalid material"}});
         return;
     }
 
@@ -204,7 +204,7 @@ uint32 GfxAssetLoader::loadTexture(SprResourceManager& rm, uint32 textureId, boo
     // texture handle
     Handle<spr::Texture> handle = rm.getHandle<spr::Texture>(textureId);
     if (!handle.isValid()){
-        SprLog::warn("[GfxAssetLoader] [loadTexture] invalid texture");
+        SprLog::warn({{"[GfxAssetLoader] ", color::GRADIENT19}, {"[loadTexture] invalid texture"}});
         return 0;
     }
 
@@ -212,7 +212,7 @@ uint32 GfxAssetLoader::loadTexture(SprResourceManager& rm, uint32 textureId, boo
     spr::Texture* texture = rm.getData<spr::Texture>(handle);
     Handle<spr::Buffer> texBufferHandle = rm.getHandle<spr::Buffer>(texture->bufferId);
     if (!texBufferHandle.isValid()){
-        SprLog::warn("[GfxAssetLoader] [loadTexture] invalid buffer");
+        SprLog::warn({{"[GfxAssetLoader] ", color::GRADIENT19}, {"[loadTexture] invalid buffer"}});
         return 0;
     }
 
@@ -283,14 +283,14 @@ void GfxAssetLoader::loadBuiltinAssets(SprResourceManager& rm, MeshInfoMap& mesh
     // load default/error model
     Handle<spr::Model> modelHandle = rm.getHandle<spr::Model>(spr::data::default_model);
     if (!modelHandle.isValid()){
-        SprLog::warn("[GfxAssetLoader] [loadBuiltinAssets] invalid model");
+        SprLog::warn({{"[GfxAssetLoader] ", color::GRADIENT19}, {"[loadBuiltinAssets] invalid model"}});
         return;
     }
     spr::Model* model = rm.getData<spr::Model>(modelHandle);
     
     Handle<spr::Mesh> meshHandle = rm.getHandle<spr::Mesh>(model->meshIds[0]);
     if (!meshHandle.isValid()){
-        SprLog::warn("[GfxAssetLoader] [loadBuiltinAssets] invalid mesh");
+        SprLog::warn({{"[GfxAssetLoader] ", color::GRADIENT19}, {"[loadBuiltinAssets] invalid mesh"}});
         return;
     }
     spr::Mesh* mesh = rm.getData<spr::Mesh>(meshHandle);

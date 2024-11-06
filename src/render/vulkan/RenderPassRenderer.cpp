@@ -1,9 +1,9 @@
 #include "RenderPassRenderer.h"
 #include "resource/ResourceTypes.h"
 #include "resource/VulkanResourceManager.h"
-#include "../../external/volk/volk.h"
-#include "../scene/Draw.h"
-#include "../../debug/SprLog.h"
+#include "external/volk/volk.h"
+#include "scene/Draw.h"
+#include "debug/SprLog.h"
 #include <vulkan/vulkan_core.h>
 
 
@@ -157,9 +157,10 @@ void RenderPassRenderer::setFrameId(uint32 frameId){
     m_frameId = frameId;
     uint32 frameIndex = m_frameId % MAX_FRAME_COUNT;
     if (frameIndex != m_frameIndex){
-        std::string errMsg("[RenderPassRenderer] Frame Index mismatch! ");
-        std::string errInfo("Expected: " + std::to_string(m_frameIndex) + ", got: " + std::to_string(frameIndex));
-        SprLog::error(errMsg + errInfo);
+        SprLog::error({{"[RenderPassRenderer] ", color::GRADIENT19}, 
+            {"Frame Index mismatch! Expected: "}, 
+            {m_frameIndex}, {", got: "}, {frameIndex}
+        });
     }
 }
 

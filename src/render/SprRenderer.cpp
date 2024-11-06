@@ -37,7 +37,7 @@ SprRenderer::~SprRenderer(){
     m_renderer.cleanup();
     m_rm.destroy();
     m_renderer.destroy();
-    SprLog::info("[SprRenderer] [destroy] destroyed...");
+    SprLog::info({{"[SprRenderer] ", color::GRADIENT18}, {"[destroy] destroyed..."}});
 }
 
 void SprRenderer::loadAssets(SprResourceManager& rm){
@@ -75,7 +75,7 @@ void SprRenderer::insertLight(uint32 id, const gfx::Light& light){
     m_sceneManager.insertLights(m_frameId, {light});
 }
 
-void SprRenderer::insertLights(Span<uint32> ids, Span<const gfx::Light> lights){
+void SprRenderer::insertLights(Span<uint32> ids, Span<gfx::Light> lights){
     m_sceneManager.insertLights(m_frameId, lights);
 }
 

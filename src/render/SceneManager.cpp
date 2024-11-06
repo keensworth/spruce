@@ -27,7 +27,7 @@ SceneManager::~SceneManager(){
     if (m_destroyed)
         return;
 
-    SprLog::warn("[SceneManager] [~] Calling destroy() in destructor");
+    SprLog::warn({{"[SceneManager] ", color::GRADIENT19}, {"[~] Calling destroy() in destructor"}});
     destroy();
 }
 
@@ -164,7 +164,7 @@ void SceneManager::updateMeshes(uint32 frame, uint32 id, Span<uint32> meshIds, u
 }
 
 
-void SceneManager::insertLights(uint32 frame, Span<const Light> lights){
+void SceneManager::insertLights(uint32 frame, Span<Light> lights){
     uint32 offset = m_lights[frame % MAX_FRAME_COUNT].insert(lights.data(), lights.size());
     Scene& scene = m_sceneData[frame % MAX_FRAME_COUNT][0];
     scene.lightCount += lights.size();
@@ -541,7 +541,7 @@ void SceneManager::destroy(){
     m_rm->remove<DescriptorSetLayout>(m_globalDescriptorSetLayout);
     
     m_destroyed = true;
-    SprLog::info("[SceneManager] [destroy] destroyed...");
+    SprLog::info({{"[SceneManager] ", color::GRADIENT19}, {"[destroy] destroyed..."}});
 }
 
 }

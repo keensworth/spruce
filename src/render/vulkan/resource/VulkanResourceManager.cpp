@@ -9,12 +9,12 @@
 #include "ResourceFlags.h"
 #include "ResourceTypes.h"
 #include <filesystem>
-#include "../../external/volk/volk.h"
+#include "external/volk/volk.h"
 #include <fstream>
 #include "memory/Pool.h"
 #include "util/FunctionQueue.h"
-#include "../VulkanDevice.h"
-#include "../debug/SprLog.h"
+#include "vulkan/VulkanDevice.h"
+#include "debug/SprLog.h"
 
 
 namespace spr::gfx {
@@ -32,7 +32,7 @@ VulkanResourceManager::~VulkanResourceManager(){
     if (m_destroyed)
         return;
     
-    SprLog::warn("[VulkanResourceManager] [~] Calling destroy() in destructor");
+    SprLog::warn({{"[VulkanResourceManager] ", color::GRADIENT19}, {"[~] Calling destroy() in destructor"}});
     destroy();
 }
 
@@ -158,7 +158,8 @@ void VulkanResourceManager::destroy(){
     vmaDestroyAllocator(m_allocator);
 
     m_destroyed = true;
-    SprLog::info("[VulkanResourceManager] [destroy] destroyed...");
+    SprLog::info({{"[VulkanResourceManager] ", color::GRADIENT19}, {"[destroy] destroyed..."}});
+    
 }
 
 
@@ -472,7 +473,7 @@ Handle<DescriptorSet> VulkanResourceManager::create<DescriptorSet>(DescriptorSet
         bool attachmentsBinding = binding.attachments.size();
 
         if (texBinding && arrayTexBinding){
-            SprLog::warn("[VulkanResourceManager] [create<DescriptorSet>] Texture binding overdefined, defaulting to single texture");
+            SprLog::warn({{"[VulkanResourceManager] ", color::GRADIENT19}, {"[create<DescriptorSet>] Texture binding overdefined, defaulting to single texture"}});
             arrayTexBinding = false;
         }
 
@@ -489,10 +490,10 @@ Handle<DescriptorSet> VulkanResourceManager::create<DescriptorSet>(DescriptorSet
     
     // validate
     if (globalDescriptorCount > 0 && perFrameDescriptorCount > 0){
-        SprLog::error("[VulkanResourceManager] [create<DescriptorSet>] Cannot use both global and per-frame descriptors in one set");
+        SprLog::error({{"[VulkanResourceManager] ", color::GRADIENT19}, {"[create<DescriptorSet>] Cannot use both global and per-frame descriptors in one set"}});
     }
     if (globalDescriptorCount == 0 && perFrameDescriptorCount == 0){
-        SprLog::error("[VulkanResourceManager] [create<DescriptorSet>] Cannot manually create descriptor set with no descriptors");
+        SprLog::error({{"[VulkanResourceManager] ", color::GRADIENT19}, {"[create<DescriptorSet>] Cannot manually create descriptor set with no descriptors"}});
     }
     bool globalDescriptors = globalDescriptorCount > 0;
 
@@ -560,7 +561,7 @@ Handle<DescriptorSet> VulkanResourceManager::create<DescriptorSet>(DescriptorSet
 
                 uint32 subBufferSize = (binding.byteSize) / MAX_FRAME_COUNT;
                 if (binding.byteSize == DescriptorSetDesc::ALL_BYTES){
-                    SprLog::warn("[VulkanResourceManager] [create<DescriptorSet>] dynamicBuffer created with ALL_BYTES - explicit size must be specified");
+                    SprLog::warn({{"[VulkanResourceManager] ", color::GRADIENT19}, {"[create<DescriptorSet>] dynamicBuffer created with ALL_BYTES - explicit size must be specified"}});
                     subBufferSize = 0;
                 }
             
@@ -571,7 +572,7 @@ Handle<DescriptorSet> VulkanResourceManager::create<DescriptorSet>(DescriptorSet
                 };
                 bufferInfos.push_back(bufferInfo);
             } else {
-                SprLog::warn("[VulkanResourceManager] [create<DescriptorSet>] Invalid buffer descriptor, index: ", bufferIndex);
+                SprLog::warn({{"[VulkanResourceManager] ", color::GRADIENT19}, {"[create<DescriptorSet>] Invalid buffer descriptor, index: "}, {bufferIndex}});
             }
 
             VkWriteDescriptorSet descriptorSetWrite[1];
@@ -649,7 +650,7 @@ Handle<DescriptorSet> VulkanResourceManager::create<DescriptorSet>(DescriptorSet
                     textureInfos.push_back(textureInfo);
                 }
             } else {
-                SprLog::warn("[VulkanResourceManager] [create<DescriptorSet>] Invalid texture descriptor, index: ", textureIndex);
+                SprLog::warn({{"[VulkanResourceManager] ", color::GRADIENT19}, {"[create<DescriptorSet>] Invalid texture descriptor, index: "}, {textureIndex}});
             }
 
             VkWriteDescriptorSet descriptorSetWrite {
@@ -823,7 +824,7 @@ Handle<RenderPass> VulkanResourceManager::create<RenderPass>(RenderPassDesc desc
 
     // check that renderpass uses exclusively attachments or swapchain images
     if (swapchainOverride && (colorAttachmentCount > 1 || hasDepthAttachment)){
-        SprLog::error("[VulkanResourceManager] [create<RenderPass>] Cannot use both swapchain images and attachments");
+        SprLog::error({{"[VulkanResourceManager] ", color::GRADIENT19}, {"[create<RenderPass>] Cannot use both swapchain images and attachments"}});
     }
     
     // insert new description info into attachment descriptions
@@ -1091,9 +1092,11 @@ Handle<Shader> VulkanResourceManager::create<Shader>(ShaderDesc desc){
         // get shader bytes
         std::ifstream instream(desc.vertexShader.path, std::ios::in | std::ios::binary);
         if (!instream){
-            std::string message = "[VulkanResourceManager] [create<Shader>] Shader (VS) not found: ";
-            message += desc.vertexShader.path;
-            SprLog::error(message);
+            SprLog::error({
+                {"[VulkanResourceManager] ", color::GRADIENT19},
+                {"[create<Shader>] Shader (VS) not found: "},
+                {desc.vertexShader.path, color::CHARS}
+            });
         }
         std::vector<uint8> bytes = std::vector<uint8>((std::istreambuf_iterator<char>(instream)), std::istreambuf_iterator<char>());
         uint32 size = bytes.size();
@@ -1120,9 +1123,11 @@ Handle<Shader> VulkanResourceManager::create<Shader>(ShaderDesc desc){
         // get shader bytes
         std::ifstream instream(desc.fragmentShader.path, std::ios::in | std::ios::binary);
         if (!instream){
-            std::string message = "[VulkanResourceManager] [create<Shader>] Shader (FS) not found: ";
-            message += desc.fragmentShader.path;
-            SprLog::error(message);
+            SprLog::error({
+                {"[VulkanResourceManager] ", color::GRADIENT19},
+                {"[create<Shader>] Shader (FS) not found: "},
+                {desc.fragmentShader.path, color::CHARS}
+            });
         }
         std::vector<uint8> bytes = std::vector<uint8>((std::istreambuf_iterator<char>(instream)), std::istreambuf_iterator<char>());
         uint32 size = bytes.size();
@@ -1149,9 +1154,11 @@ Handle<Shader> VulkanResourceManager::create<Shader>(ShaderDesc desc){
         // get shader bytes
         std::ifstream instream(desc.computeShader.path, std::ios::in | std::ios::binary);
         if (!instream){
-            std::string message = "[VulkanResourceManager] [create<Shader>] Shader (CS) not found: ";
-            message += desc.computeShader.path;
-            SprLog::error(message);
+            SprLog::error({
+                {"[VulkanResourceManager] ", color::GRADIENT19},
+                {"[create<Shader>] Shader (CS) not found: "},
+                {desc.computeShader.path, color::CHARS}
+            });
         }
         std::vector<uint8> bytes = std::vector<uint8>((std::istreambuf_iterator<char>(instream)), std::istreambuf_iterator<char>());
         uint32 size = bytes.size();
@@ -1170,7 +1177,10 @@ Handle<Shader> VulkanResourceManager::create<Shader>(ShaderDesc desc){
     }
 
     if (hasComputeShader && (hasVertexShader || hasFragmentShader)){
-        SprLog::error("[VulkanResourceManager] [create<Shader>] Shader cannont be created with a compute stage and vertex/fragment stage");
+        SprLog::error({
+            {"[VulkanResourceManager] ", color::GRADIENT19},
+            {"[create<Shader>] Shader cannont be created with a compute stage and vertex/fragment stage"}
+        });
     }
 
     // create shader stages
@@ -1708,9 +1718,11 @@ Handle<Shader> VulkanResourceManager::recreate<Shader>(Handle<Shader> handle, bo
         // get shader bytes
         std::ifstream instream(desc.vertexShader.path, std::ios::in | std::ios::binary);
         if (!instream){
-            std::string message = "[VulkanResourceManager] [create<Shader>] Shader (VS) not found: ";
-            message += desc.vertexShader.path;
-            SprLog::error(message);
+            SprLog::error({
+                {"[VulkanResourceManager] ", color::GRADIENT19},
+                {"[create<Shader>] Shader (VS) not found: "},
+                {desc.vertexShader.path, color::CHARS}
+            });
         }
         std::vector<uint8> bytes = std::vector<uint8>((std::istreambuf_iterator<char>(instream)), std::istreambuf_iterator<char>());
         uint32 size = bytes.size();
@@ -1737,9 +1749,11 @@ Handle<Shader> VulkanResourceManager::recreate<Shader>(Handle<Shader> handle, bo
         // get shader bytes
         std::ifstream instream(desc.fragmentShader.path, std::ios::in | std::ios::binary);
         if (!instream){
-            std::string message = "[VulkanResourceManager] [create<Shader>] Shader (FS) not found: ";
-            message += desc.fragmentShader.path;
-            SprLog::error(message);
+            SprLog::error({
+                {"[VulkanResourceManager] ", color::GRADIENT19},
+                {"[create<Shader>] Shader (FS) not found: "},
+                {desc.fragmentShader.path, color::CHARS}
+            });
         }
         std::vector<uint8> bytes = std::vector<uint8>((std::istreambuf_iterator<char>(instream)), std::istreambuf_iterator<char>());
         uint32 size = bytes.size();

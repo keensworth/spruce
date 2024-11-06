@@ -41,7 +41,7 @@ void TextureTranscoder::transcode(TranscodeResult& out, VulkanResourceManager* v
 
     result = ktxTexture2_CreateFromMemory(data, size, KTX_TEXTURE_CREATE_LOAD_IMAGE_DATA_BIT, &texture);
     if (result != KTX_SUCCESS){
-        SprLog::error("[TextureTranscoder] Failed to load KTX2 texture, code: " + std::string(ktxErrorString(result)));
+        SprLog::error({{"[TextureTranscoder] ", color::GRADIENT19}, {"Failed to load KTX2 texture, code: "}, {std::string(ktxErrorString(result)), color::CHARS}});
     }
 
     // choose optimal transcode target and transcode
@@ -77,14 +77,14 @@ void TextureTranscoder::transcode(TranscodeResult& out, VulkanResourceManager* v
                 tf = KTX_TTF_NOSELECTION;
             }
         } else {
-            SprLog::warn("[TextureTranscoder] Texture needs transcode, but none applicable");
+            SprLog::warn({{"[TextureTranscoder] ", color::GRADIENT19}, {"Texture needs transcode, but none applicable"}});
             tf = KTX_TTF_NOSELECTION;
         }
 
         // transcode to target format
         result = ktxTexture2_TranscodeBasis(texture, tf, 0);
         if (result){
-            SprLog::error("[TextureTranscoder] Failed to transcode texture, code: " + std::string(ktxErrorString(result)));
+            SprLog::error({{"[TextureTranscoder] ", color::GRADIENT19}, {"Failed to transcode texture, code: "}, {std::string(ktxErrorString(result)), color::CHARS}});
         }
     }
 

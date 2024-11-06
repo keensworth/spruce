@@ -5,7 +5,6 @@
 #include <stdio.h>
 #include "Resources.h"
 #include "SprLog.h"
-#include "util/Color.h"
 #include "util/Span.h"
 #include "glm/gtc/matrix_inverse.hpp"
 #include "glm/gtc/type_ptr.hpp"

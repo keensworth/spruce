@@ -8,8 +8,6 @@
 #include "debug/SprLog.h"
 #include "interface/SprWindow.h"
 
-
-
 namespace spr::gfx {
 class FrameRenderer {
 public:
@@ -113,7 +111,7 @@ public:
 
     void render(CommandBuffer& cb, BatchManager& batchManager){
         if (!m_hasInput)
-            SprLog::error("[FrameRenderer] [render] no input TextureAttachment specified");
+            SprLog::error({{"[FrameRenderer] ", color::GRADIENT19}, {"[render] no input TextureAttachment specified"}});
 
         RenderPassRenderer& passRenderer = cb.beginRenderPass(m_renderPass, glm::vec4(1.f,0.f,1.f,1.f));
         passRenderer.drawSubpass({
@@ -136,7 +134,7 @@ public:
         m_rm->remove<DescriptorSetLayout>(m_descriptorSetLayout);
         m_rm->remove<RenderPass>(m_renderPass);
         m_rm->remove<RenderPassLayout>(m_renderPassLayout);
-        SprLog::info("[FrameRenderer] [destroy] destroyed...");
+        SprLog::info({{"[FrameRenderer] ", color::GRADIENT19}, {"[destroy] destroyed..."}});
     }
 
 private: // owning

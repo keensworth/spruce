@@ -196,7 +196,7 @@ public:
         m_rm->remove<RenderPassLayout>(m_renderPassLayout);
         m_rm->remove<TextureAttachment>(m_attachmentX);
         m_rm->remove<TextureAttachment>(m_attachmentY);
-        SprLog::info("[BlurRenderer] [destroy] destroyed...");
+        SprLog::info({{"[BlurRenderer] ", color::GRADIENT18}, {"[destroy] destroyed..."}});
     }
 
 private: // owning

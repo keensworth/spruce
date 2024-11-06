@@ -38,7 +38,7 @@ public:
 
     // add lights to scene
     void insertLight(uint32 id, const gfx::Light& light);
-    void insertLights(Span<uint32> ids, Span<const gfx::Light> lights);
+    void insertLights(Span<uint32> ids, Span<gfx::Light> lights);
 
     void updateLight(uint32 id, const gfx::Light& light);
 

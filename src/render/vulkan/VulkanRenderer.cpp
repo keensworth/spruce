@@ -5,8 +5,8 @@
 #include "resource/VulkanResourceManager.h"
 #include <cstdint>
 #include <string>
-#include "../../external/volk/volk.h"
-#include "../../debug/SprLog.h"
+#include "external/volk/volk.h"
+#include "debug/SprLog.h"
 #include "vulkan/gfx_vulkan_core.h"
 
 namespace spr::gfx {
@@ -58,7 +58,7 @@ VulkanRenderer::~VulkanRenderer(){
     if (m_destroyed || !m_initialized)
         return;
     
-    SprLog::warn("[VulkanRenderer] [~] Calling destroy() in destructor");
+    SprLog::warn({{"[VulkanRenderer] ", color::GRADIENT19}, {"[~] Calling destroy() in destructor"}});
     destroy();    
 }
 
@@ -134,7 +134,7 @@ void VulkanRenderer::destroy(){
     m_device.destroy();
     
     m_destroyed = true;
-    SprLog::info("[VulkanRenderer] [destroy] destroyed...");
+    SprLog::info({{"[VulkanRenderer] ", color::GRADIENT19}, {"[destroy] destroyed..."}});
 }
 
 
@@ -206,7 +206,7 @@ void VulkanRenderer::present(RenderFrame& frame){
 
 CommandBuffer& VulkanRenderer::beginGraphicsCommands(CommandType commandType){
     if (commandType == TRANSFER)
-        SprLog::error("[VulkanRenderer] [beginGraphicsCommands] Not a graphics command buffer");
+        SprLog::error({{"[VulkanRenderer] ", color::GRADIENT19}, {"[beginGraphicsCommands] Not a graphics command buffer"}});
 
     CommandBuffer& commandBuffer = m_gfxCommandPools[m_frameIndex].getCommandBuffer(commandType);
     commandBuffer.begin();
@@ -262,7 +262,7 @@ void VulkanRenderer::validateSwapchain(VkResult result, SwapchainStage stage){
     
     // abnormal swapchain result, return error
     if (result != VK_ERROR_OUT_OF_DATE_KHR && result != VK_SUBOPTIMAL_KHR){
-        SprLog::error("[VulkanRenderer] [validateSwapchain] Swapchain invalid, code: ", (uint32)result);
+        SprLog::error({{"[VulkanRenderer] ", color::GRADIENT19}, {"[validateSwapchain] Swapchain invalid, code: "}, {(uint32)result}});
         return;
     }
 

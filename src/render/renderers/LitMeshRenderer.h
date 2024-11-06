@@ -1,14 +1,8 @@
 #pragma once
 
-#include "../vulkan/VulkanRenderer.h"
-#include "../vulkan/resource/ResourceTypes.h"
-#include "../vulkan/resource/VulkanResourceManager.h"
-#include "../scene/BatchManager.h"
-#include "../vulkan/resource/ResourceFlags.h"
-#include "../../debug/SprLog.h"
-#include "../scene/Material.h"
 #include "scene/SceneData.h"
-#include "vulkan/gfx_vulkan_core.h"
+#include "vulkan/VulkanRenderer.h"
+#include "debug/SprLog.h"
 
 namespace spr::gfx {
 class LitMeshRenderer {
@@ -223,7 +217,7 @@ public:
         m_rm->remove<RenderPass>(m_renderPass);
         m_rm->remove<RenderPassLayout>(m_renderPassLayout);
         m_rm->remove<TextureAttachment>(m_attachment);
-        SprLog::info("[LitMeshRenderer] [destroy] destroyed...");
+        SprLog::info({{"[LitMeshRenderer] ", color::GRADIENT18}, {"[destroy] destroyed..."}});
     }
 
 private: // owning

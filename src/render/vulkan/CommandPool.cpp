@@ -1,9 +1,9 @@
 #include "CommandPool.h"
 #include "CommandBuffer.h"
-#include "../../external/volk/volk.h"
+#include "external/volk/volk.h"
 #include "RenderFrame.h"
 #include "VulkanDevice.h"
-#include "../../debug/SprLog.h"
+#include "debug/SprLog.h"
 
 
 namespace spr::gfx {
@@ -14,7 +14,7 @@ CommandPool::~CommandPool(){
     if (m_destroyed || !m_initialized)
         return;
     
-    SprLog::warn("[CommandPool] [~] Calling destroy() in destructor");
+    SprLog::warn({{"[CommandPool] ", color::GRADIENT19}, {"[~] Calling destroy() in destructor"}});
     destroy();
 }
 
@@ -60,7 +60,7 @@ void CommandPool::destroy(){
     // teardown command pool (and VkCommandBuffers with it)
     vkDestroyCommandPool(m_device->getDevice(), m_commandPool, nullptr);
     m_destroyed = true;
-    SprLog::info("[CommandPool] [destroy] destroyed...");
+    SprLog::info({{"[CommandPool] ", color::GRADIENT19}, {"[destroy] destroyed..."}});
 }
 
 CommandBuffer& CommandPool::getCommandBuffer(CommandType commandType){
@@ -71,7 +71,7 @@ CommandBuffer& CommandPool::getCommandBuffer(CommandType commandType){
     else if (commandType == CommandType::MAIN)
         return m_mainCommandBuffer;
     
-    SprLog::error("[CommandPool] Unknown command buffer type");
+    SprLog::error({{"[CommandPool] ", color::GRADIENT19}, {"Unknown command buffer type"}});
     return m_mainCommandBuffer;    
 }
 
@@ -81,9 +81,10 @@ void CommandPool::prepare(uint32 frameId){
     m_frameId = frameId;
     uint32 frameIndex = m_frameId % MAX_FRAME_COUNT;
     if (frameIndex != m_frameIndex){
-        std::string errMsg("[CommandPool] Frame Index mismatch! ");
-        std::string errInfo("Expected: " + std::to_string(m_frameIndex) + ", got: " + std::to_string(frameIndex));
-        SprLog::error(errMsg + errInfo);
+        SprLog::error({{"[CommandPool] ", color::GRADIENT19}, 
+            {"Frame Index mismatch! Expected: "}, 
+            {m_frameIndex}, {", got: "}, {frameIndex}
+        });
     }
 
     m_mainCommandBuffer.setFrameId(frameId);

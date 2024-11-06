@@ -136,7 +136,7 @@ public:
         for (uint32 i = 0; i < MAX_FRAME_COUNT; i++)
             m_shadowTemp[i].destroy();
         
-        SprLog::info("[LightCullCompute] [destroy] destroyed...");
+        SprLog::info({{"[LightCullCompute] ", color::GRADIENT18}, {"[destroy] destroyed..."}});
     }
 
 private: // owning

@@ -1,10 +1,11 @@
 #include "StagingBufferBatch.h"
 
 #include <string>
-#include "resource/VulkanResourceManager.h"
-#include "../../debug/SprLog.h"
 #include <iostream>
-#include<unistd.h>  
+#include <unistd.h>  
+#include "resource/VulkanResourceManager.h"
+#include "debug/SprLog.h"
+
 
 
 namespace spr::gfx {
@@ -57,7 +58,7 @@ StagingBuffers::~StagingBuffers() {
     if (m_destroyed)
         return;
     
-    SprLog::warn("[StagingBuffers] [~] Calling destroy() in destructor");
+    SprLog::warn({{"[StagingBuffers] ", color::GRADIENT19}, {"[~] Calling destroy() in destructor"}});
     destroy();
 }
 
@@ -78,7 +79,7 @@ void StagingBuffers::destroy(){
         m_rm->remove(m_stages1MB[i]);
     }
     m_destroyed = true;
-    SprLog::info("[StagingBuffers] [destroy] destroyed...");
+    SprLog::info({{"[StagingBuffers] ", color::GRADIENT19}, {"[destroy] destroyed..."}});
 }
 
 
@@ -133,10 +134,11 @@ void StagingBuffers::reset() {
     if (m_overflowStages.size() == 0)
         return;
 
-    std::string msg("[StagingBuffers] Pre-allocated staging buffers exceeded, created: ");
-    std::string info(std::to_string(m_overflowStages.size()) + " buffers, " + 
-                     std::to_string(m_totalOverflowSizeBytes) + " bytes");
-    SprLog::info(msg + info);
+    SprLog::info({{"[StagingBuffers] ", color::GRADIENT19}, 
+        {"Pre-allocated staging buffers exceeded, created: "}, 
+        {m_overflowStages.size()}, {" buffers, "},
+        {m_totalOverflowSizeBytes}, {" bytes"}
+    });
 
     // destroy and deallocate extra staging buffers
     for (Handle<Buffer> buffer : m_overflowStages){

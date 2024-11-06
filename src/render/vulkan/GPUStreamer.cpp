@@ -19,7 +19,7 @@ GPUStreamer::~GPUStreamer(){
     if (m_destroyed)
         return;
     
-    SprLog::warn("[GPUStreamer] [~] Calling destroy() in destructor");
+    SprLog::warn({{"[GPUStreamer] ", color::GRADIENT19}, {"[~] Calling destroy() in destructor"}});
     destroy();
 }
 
@@ -47,7 +47,7 @@ void GPUStreamer::init(VulkanDevice& device, VulkanResourceManager& rm, CommandB
 void GPUStreamer::destroy(){
     m_stagingBuffers.destroy();
     m_destroyed = true;
-    SprLog::info("[GPUStreamer] [destroy] destroyed...");
+    SprLog::info({{"[GPUStreamer] ", color::GRADIENT19}, {"[destroy] destroyed..."}});
 }
 
 

@@ -15,7 +15,7 @@ CommandBuffer::~CommandBuffer(){
     if (m_destroyed || !m_initialized)
         return;
     
-    SprLog::warn("[CommandBuffer] [~] Calling destroy() in destructor");
+    SprLog::warn({{"[CommandBuffer] ", color::GRADIENT19}, {"[~] Calling destroy() in destructor"}});
     destroy();
 }
 
@@ -53,7 +53,7 @@ void CommandBuffer::destroy(){
     vkDestroyFence(m_device->getDevice(), m_fence, nullptr);
     vkDestroySemaphore(m_device->getDevice(), m_semaphore, nullptr);
     m_destroyed = true;
-    SprLog::info("[CommandBuffer] [destroy] destroyed...");
+    SprLog::info({{"[CommandBuffer] ", color::GRADIENT19}, {"[destroy] destroyed..."}});
 }
 
 
@@ -74,7 +74,7 @@ void CommandBuffer::end(){
 RenderPassRenderer& CommandBuffer::beginRenderPass(Handle<RenderPass> handle, glm::vec4 clearColor){
     // make sure user is accessing correct commandbuffer
     if (m_type != CommandType::OFFSCREEN && m_type != CommandType::MAIN){
-        SprLog::warn("[CommandBuffer] Not a render command buffer");
+        SprLog::warn({{"[CommandBuffer] ", color::GRADIENT19}, {"Not a render command buffer"}});
     }
 
     // get attachment counts (color + depth)
@@ -121,7 +121,7 @@ RenderPassRenderer& CommandBuffer::beginRenderPass(Handle<RenderPass> handle, gl
 RenderPassRenderer& CommandBuffer::beginRenderPass(Handle<RenderPass> renderPassHandle, Handle<Framebuffer> framebufferHandle, glm::vec4 clearColor){
     // make sure user is accessing correct commandbuffer
     if (m_type != CommandType::OFFSCREEN && m_type != CommandType::MAIN){
-        SprLog::warn("[CommandBuffer] Not a render command buffer");
+        SprLog::warn({{"[CommandBuffer] ", color::GRADIENT19}, {"Not a render command buffer"}});
     }
 
     // get attachment counts (color + depth)
@@ -172,7 +172,7 @@ void CommandBuffer::endRenderPass(){
 RenderPassRenderer& CommandBuffer::beginComputePass(){
     // make sure user is accessing correct commandbuffer
     if (m_type != CommandType::OFFSCREEN && m_type != CommandType::MAIN){
-        SprLog::warn("[CommandBuffer] Not a render command buffer");
+        SprLog::warn({{"[CommandBuffer] ", color::GRADIENT19}, {"Not a render command buffer"}});
     }
 
     return m_passRenderer;
@@ -256,7 +256,7 @@ bool CommandBuffer::isRecording(){
 
 void CommandBuffer::waitFence(){
     if (!m_initialized)
-        SprLog::error("[CommandBuffer] [waitFence] CB not initialized");
+        SprLog::error({{"[CommandBuffer] ", color::GRADIENT19}, {"[waitFence] CB not initialized"}});
     if (!m_fenceInUse)
         return;
     VK_CHECK(vkWaitForFences(m_device->getDevice(), 1, &m_fence, VK_TRUE, UINT64_MAX));
@@ -279,9 +279,10 @@ void CommandBuffer::setFrameId(uint32 frameId) {
     m_frameId = frameId;
     uint32 frameIndex = m_frameId % MAX_FRAME_COUNT;
     if (frameIndex != m_frameIndex){
-        std::string errMsg("[CommandBuffer] Frame Index mismatch! ");
-        std::string errInfo("Expected: " + std::to_string(m_frameIndex) + ", got: " + std::to_string(frameIndex));
-        SprLog::error(errMsg + errInfo);
+        SprLog::error({{"[CommandBuffer] ", color::GRADIENT19}, 
+            {"Frame Index mismatch! Expected: "}, 
+            {m_frameIndex}, {", got: "}, {frameIndex}
+        });
     }
 
     m_passRenderer.setFrameId(frameId);

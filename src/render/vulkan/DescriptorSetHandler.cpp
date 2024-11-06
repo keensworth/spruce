@@ -1,9 +1,9 @@
 #include "DescriptorSetHandler.h"
-#include "../../external/volk/volk.h"
+#include "external/volk/volk.h"
 #include "resource/ResourceTypes.h"
-#include "../scene/Draw.h"
+#include "scene/Draw.h"
 #include "resource/VulkanResourceManager.h"
-#include "../../debug/SprLog.h"
+#include "debug/SprLog.h"
 #include <vulkan/vulkan_core.h>
 
 namespace spr::gfx {
@@ -24,7 +24,7 @@ DescriptorSetHandler::~DescriptorSetHandler(){}
 
 void DescriptorSetHandler::set(uint32 set, Handle<DescriptorSet> handle){
     if (set >= 4){
-        SprLog::warn("[DescriptorSetHandler] Set does not exist, set must be < 4");
+        SprLog::warn({{"[DescriptorSetHandler] ", color::GRADIENT19}, {"Set does not exist, set must be < 4"}});
         return;
     }
     

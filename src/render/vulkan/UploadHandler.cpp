@@ -15,7 +15,7 @@ UploadHandler::~UploadHandler() {
     if (m_destroyed || !m_initialized)
         return;
     
-    SprLog::warn("[UploadHandler] [~] Calling destroy() in destructor");
+    SprLog::warn({{"[UploadHandler] ", color::GRADIENT19}, {"[~] Calling destroy() in destructor"}});
     destroy();
 }
 
@@ -64,7 +64,7 @@ void UploadHandler::destroy(){
     m_streamer.destroy();
     reset();
     m_destroyed = true;
-    SprLog::info("[UploadHandler] [destroy] destroyed...");
+    SprLog::info({{"[UploadHandler] ", color::GRADIENT19}, {"[destroy] destroyed..."}});
 }
 
 void UploadHandler::submit() {

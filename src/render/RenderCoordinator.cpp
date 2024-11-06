@@ -1,16 +1,7 @@
 #include "RenderCoordinator.h"
-#include "glm/geometric.hpp"
-#include "renderers/DebugMeshRenderer.h"
-#include "renderers/GTAORenderer.h"
-#include "renderers/LightCullCompute.h"
-#include "renderers/SkyboxRenderer.h"
-#include "renderers/SunShadowRenderer.h"
-#include "renderers/VolumetricLightRenderer.h"
 #include "vulkan/ImGuiRenderer.h"
-#include "vulkan/gfx_vulkan_core.h"
-#include "vulkan/resource/ResourceTypes.h"
 #include "SceneManager.h"
-#include "../interface/SprWindow.h"
+#include "interface/SprWindow.h"
 
 namespace spr::gfx {
 
@@ -21,7 +12,7 @@ RenderCoordinator::RenderCoordinator(SprWindow* window){
 }
 
 RenderCoordinator::~RenderCoordinator(){
-    SprLog::info("[RenderCoordinator] [destroy] destroyed...");
+    
 }
 
 void RenderCoordinator::init(VulkanRenderer* renderer, VulkanResourceManager* rm){
@@ -237,7 +228,7 @@ void RenderCoordinator::initRenderers(SceneManager& sceneManager){
     m_testRenderer.init(
         globalDescSet,
         globalDescSetLayout);
-    SprLog::debug("[initRenderers] TestRenderer initialized");
+    SprLog::debug({{"[RenderCoordinator] ", color::GRADIENT18}, {"[init] TestRenderer initialized"}});
 
     m_depthPrepassRenderer = DepthPrepassRenderer(*m_rm, *m_renderer, windowDim);
     m_depthPrepassRenderer.init(
@@ -245,7 +236,7 @@ void RenderCoordinator::initRenderers(SceneManager& sceneManager){
         globalDescSetLayout,
         frameDescSets,
         frameDescSetLayout);
-    SprLog::debug("[initRenderers] DepthPrepassRenderer initialized");
+    SprLog::debug({{"[RenderCoordinator] ", color::GRADIENT18}, {"[init] DepthPrepassRenderer initialized"}});
 
     m_sunShadowRenderer = SunShadowRenderer(*m_rm, *m_renderer);
     m_sunShadowRenderer.init(
@@ -253,7 +244,7 @@ void RenderCoordinator::initRenderers(SceneManager& sceneManager){
         globalDescSetLayout,
         frameDescSets,
         frameDescSetLayout);
-    SprLog::debug("[initRenderers] SunShadowRenderer initialized");
+    SprLog::debug({{"[RenderCoordinator] ", color::GRADIENT18}, {"[init] SunShadowRenderer initialized"}});
 
     m_volumetricLightRenderer = VolumetricLightRenderer(*m_rm, *m_renderer, windowDim);
     m_volumetricLightRenderer.init(
@@ -264,7 +255,7 @@ void RenderCoordinator::initRenderers(SceneManager& sceneManager){
         m_depthPrepassRenderer.getDepthAttachment(),
         m_sunShadowRenderer.getDepthAttachments(),
         m_sunShadowRenderer.getShadowData());
-    SprLog::debug("[initRenderers] VolumetricLightRenderer initialized");
+    SprLog::debug({{"[RenderCoordinator] ", color::GRADIENT18}, {"[init] VolumetricLightRenderer initialized"}});
 
     m_gtaoRenderer = GTAORenderer(*m_rm, *m_renderer, windowDim);
     m_gtaoRenderer.init(
@@ -273,7 +264,7 @@ void RenderCoordinator::initRenderers(SceneManager& sceneManager){
         frameDescSets,
         frameDescSetLayout,
         m_depthPrepassRenderer.getDepthAttachment());
-    SprLog::debug("[initRenderers] GTAORenderer initialized");
+    SprLog::debug({{"[RenderCoordinator] ", color::GRADIENT18}, {"[init] GTAORenderer initialized"}});
     m_blurRenderer = BlurRenderer(*m_rm, *m_renderer, windowDim);
     m_blurRenderer.init(
         globalDescSet,
@@ -281,7 +272,7 @@ void RenderCoordinator::initRenderers(SceneManager& sceneManager){
         frameDescSets,
         frameDescSetLayout,
         m_gtaoRenderer.getAttachment());
-    SprLog::debug("[initRenderers] BlurRenderer initialized");
+    SprLog::debug({{"[RenderCoordinator] ", color::GRADIENT18}, {"[init] BlurRenderer initialized"}});
     m_debugMeshRenderer = DebugMeshRenderer(*m_rm, *m_renderer, windowDim);
     m_debugMeshRenderer.init(
         globalDescSet,
@@ -289,7 +280,7 @@ void RenderCoordinator::initRenderers(SceneManager& sceneManager){
         frameDescSets,
         frameDescSetLayout,
         m_depthPrepassRenderer.getDepthAttachment());
-    SprLog::debug("[initRenderers] DebugMeshRenderer initialized");
+    SprLog::debug({{"[RenderCoordinator] ", color::GRADIENT18}, {"[init] DebugMeshRenderer initialized"}});
     m_debugNormalsRenderer = DebugNormalsRenderer(*m_rm, *m_renderer, windowDim);
     m_debugNormalsRenderer.init(
         globalDescSet,
@@ -297,7 +288,7 @@ void RenderCoordinator::initRenderers(SceneManager& sceneManager){
         frameDescSets,
         frameDescSetLayout,
         m_depthPrepassRenderer.getDepthAttachment());
-    SprLog::debug("[initRenderers] DebugNormalsRenderer initialized");
+    SprLog::debug({{"[RenderCoordinator] ", color::GRADIENT18}, {"[init] DebugNormalsRenderer initialized"}});
     m_debugCascadesRenderer = DebugCascadesRenderer(*m_rm, *m_renderer, windowDim);
     m_debugCascadesRenderer.init(
         globalDescSet,
@@ -306,7 +297,7 @@ void RenderCoordinator::initRenderers(SceneManager& sceneManager){
         frameDescSetLayout,
         m_depthPrepassRenderer.getDepthAttachment(),
         m_sunShadowRenderer.getShadowData());
-    SprLog::debug("[initRenderers] DebugCascadesRenderer initialized");
+    SprLog::debug({{"[RenderCoordinator] ", color::GRADIENT18}, {"[init] DebugCascadesRenderer initialized"}});
     m_unlitMeshRenderer = UnlitMeshRenderer(*m_rm, *m_renderer, windowDim);
     m_unlitMeshRenderer.init(
         globalDescSet,
@@ -314,14 +305,14 @@ void RenderCoordinator::initRenderers(SceneManager& sceneManager){
         frameDescSets,
         frameDescSetLayout,
         m_depthPrepassRenderer.getDepthAttachment());
-    SprLog::debug("[initRenderers] UnlitMeshRenderer initialized");
+    SprLog::debug({{"[RenderCoordinator] ", color::GRADIENT18}, {"[init] UnlitMeshRenderer initialized"}});
     m_lightCullCompute = LightCullCompute(*m_rm, *m_renderer);
     m_lightCullCompute.init(
         globalDescSet,
         globalDescSetLayout,
         frameDescSets,
         frameDescSetLayout);
-    SprLog::debug("[initRenderers] LightCullCompute initialized");
+    SprLog::debug({{"[RenderCoordinator] ", color::GRADIENT18}, {"[init] LightCullCompute initialized"}});
     m_litMeshRenderer = LitMeshRenderer(*m_rm, *m_renderer, windowDim);
     m_litMeshRenderer.init(
         globalDescSet,
@@ -335,7 +326,7 @@ void RenderCoordinator::initRenderers(SceneManager& sceneManager){
         m_volumetricLightRenderer.getAttachment(),
         m_lightCullCompute.getDescSet(),
         m_lightCullCompute.getDescSetLayout());
-    SprLog::debug("[initRenderers] LitMeshRenderer initialized");
+    SprLog::debug({{"[RenderCoordinator] ", color::GRADIENT18}, {"[init] LitMeshRenderer initialized"}});
     m_debugClustersRenderer = DebugClustersRenderer(*m_rm, *m_renderer, windowDim);
     m_debugClustersRenderer.init(
         globalDescSet,
@@ -351,7 +342,7 @@ void RenderCoordinator::initRenderers(SceneManager& sceneManager){
         m_litMeshRenderer.getDescSet(),
         m_lightCullCompute.getDescSet(),
         m_lightCullCompute.getDescSetLayout());
-    SprLog::debug("[initRenderers] DebugClustersRenderer initialized");
+    SprLog::debug({{"[RenderCoordinator] ", color::GRADIENT18}, {"[init] DebugClustersRenderer initialized"}});
     m_skyboxRenderer = SkyboxRenderer(*m_rm, *m_renderer, windowDim);
     m_skyboxRenderer.init(
         globalDescSet,
@@ -362,7 +353,7 @@ void RenderCoordinator::initRenderers(SceneManager& sceneManager){
         m_litMeshRenderer.m_descriptorSetLayout,
         m_depthPrepassRenderer.getDepthAttachment(),
         m_litMeshRenderer.m_attachment);
-    SprLog::debug("[initRenderers] SkyboxRenderer initialized");
+    SprLog::debug({{"[RenderCoordinator] ", color::GRADIENT18}, {"[init] SkyboxRenderer initialized"}});
     m_fxaaRenderer = FXAARenderer(*m_rm, *m_renderer, windowDim);
     m_fxaaRenderer.init(
         globalDescSet,
@@ -370,13 +361,13 @@ void RenderCoordinator::initRenderers(SceneManager& sceneManager){
         frameDescSets,
         frameDescSetLayout,
         m_litMeshRenderer.m_attachment);
-    SprLog::debug("[initRenderers] FXAARenderer initialized");
+    SprLog::debug({{"[RenderCoordinator] ", color::GRADIENT18}, {"[init] FXAARenderer initialized"}});
     m_imguiRenderer = ImGuiRenderer(*m_rm, *m_renderer, m_window, windowDim);
     m_imguiRenderer.init(
         globalDescSet,
         globalDescSetLayout);
     m_imguiRenderer.setInput(m_fxaaRenderer.m_attachment);
-    SprLog::debug("[initRenderers] ImGuiRenderer initialized");
+    SprLog::debug({{"[RenderCoordinator] ", color::GRADIENT18}, {"[init] ImGuiRenderer initialized"}});
     // swapchain renderer
     m_frameRenderer = FrameRenderer(*m_rm, *m_renderer, m_window, windowDim);
     m_frameRenderer.init(
@@ -384,7 +375,7 @@ void RenderCoordinator::initRenderers(SceneManager& sceneManager){
         globalDescSet,
         globalDescSetLayout);
     m_frameRenderer.setInput(m_imguiRenderer.getAttachment());
-    SprLog::debug("[initRenderers] FrameRenderer initialized");
+    SprLog::debug({{"[RenderCoordinator] ", color::GRADIENT18}, {"[init] FrameRenderer initialized"}});
 }
 
 
@@ -459,6 +450,7 @@ void RenderCoordinator::destroy(){
     m_litMeshRenderer.destroy();
     m_lightCullCompute.destroy();
     m_debugClustersRenderer.destroy();
+    SprLog::info({{"[RenderCoordinator] ", color::GRADIENT18}, {"[destroy] destroyed..."}});
 }
 
 }

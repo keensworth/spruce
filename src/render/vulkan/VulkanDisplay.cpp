@@ -1,7 +1,7 @@
 #include "VulkanDisplay.h"
 #include "SDL_stdinc.h"
 #include "VulkanDevice.h"
-#include "../../external/volk/volk.h"
+#include "external/volk/volk.h"
 #include "debug/SprLog.h"
 #include "interface/SprWindow.h"
 #include "SDL_vulkan.h"
@@ -28,12 +28,13 @@ VulkanDisplay::VulkanDisplay(SprWindow* window){
 
 VulkanDisplay::~VulkanDisplay(){
     if (!m_destroyed)
-        SprLog::error("[VulkanDisplay] [~] 'destroy' must be called before destructing - Improper release of resources");
+        SprLog::error({{"[VulkanDisplay] ", color::GRADIENT19}, {"[~] 'destroy' must be called before destructing - Improper release of resources"}});
 }
 
 void VulkanDisplay::createSurface(VkInstance instance){
     if(SDL_Vulkan_CreateSurface(m_window->getHandle(), instance, &m_surface) != SDL_TRUE)
-        SprLog::fatal("[VulkanDisplay] Failed to create surface");
+        SprLog::fatal({{"[VulkanDisplay] ", color::GRADIENT19}, {"Failed to create surface"}});
+    
 }
 
 uint32 VulkanDisplay::createSwapchain(VkPhysicalDevice physicalDevice, VkDevice device, QueueFamilies families){
@@ -154,19 +155,20 @@ void VulkanDisplay::destroy(VkDevice device, VkInstance instance){
     vkDestroySurfaceKHR(instance, m_surface, nullptr);
 
     m_destroyed = true;
-    SprLog::info("[VulkanDisplay] [destroy] destroyed...");
+    SprLog::info({{"[VulkanDisplay] ", color::GRADIENT19}, {"[destroy] destroyed..."}});
 }
 
 VkSwapchainKHR VulkanDisplay::getSwapchain(){
     if (!m_swapchainInitialized)
-        SprLog::error("[VulkanDisplay] Failed to retrieve swapchain, unitialized");
+        SprLog::error({{"[VulkanDisplay] ", color::GRADIENT19}, {"Failed to retrieve swapchain, unitialized"}});
 
     return m_swapchain;
 }
 
 std::vector<VkImageView>& VulkanDisplay::getImageViews(){
     if (!m_imageViewsInitialized)
-        SprLog::error("[VulkanDisplay] Failed to retrieve image views, unitialized");
+        SprLog::error({{"[VulkanDisplay] ", color::GRADIENT19}, {"Failed to retrieve image views, unitialized"}});
+    
 
     return m_imageViews;
 }
@@ -228,7 +230,7 @@ void VulkanDisplay::querySwapchainSupport(VkPhysicalDevice physicalDevice) {
     vkGetPhysicalDeviceSurfaceFormatsKHR(physicalDevice, m_surface, &formatCount, nullptr);
 
     if (formatCount == 0) 
-        SprLog::fatal("[VulkanDisplay] No surface formats available");
+        SprLog::fatal({{"[VulkanDisplay] ", color::GRADIENT19}, {"No surface formats available"}});
 
     m_formats.resize(formatCount);
     vkGetPhysicalDeviceSurfaceFormatsKHR(physicalDevice, m_surface, &formatCount, m_formats.data());
@@ -238,7 +240,7 @@ void VulkanDisplay::querySwapchainSupport(VkPhysicalDevice physicalDevice) {
     vkGetPhysicalDeviceSurfacePresentModesKHR(physicalDevice, m_surface, &presentModeCount, nullptr);
 
     if (presentModeCount == 0)
-        SprLog::fatal("[VulkanDisplay] No present modes available");
+        SprLog::fatal({{"[VulkanDisplay] ", color::GRADIENT19}, {"No present modes available"}});
 
     m_presentModes.resize(presentModeCount);
     vkGetPhysicalDeviceSurfacePresentModesKHR(physicalDevice, m_surface, &presentModeCount, m_presentModes.data());

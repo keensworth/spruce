@@ -66,38 +66,6 @@ public:
     ~OffsetBuffer() {
     }
 
-    // OffsetBuffer(const OffsetBuffer&) = delete;
-    // OffsetBuffer& operator=(const OffsetBuffer&) = delete;
-
-    // OffsetBuffer(OffsetBuffer&& other) noexcept
-    //     : m_handle(std::move(other.m_handle)), m_buffer(other.m_buffer),
-    //     m_capacity(other.m_capacity), m_size(other.m_size),
-    //     m_destroyed(other.m_destroyed), m_rm(other.m_rm),
-    //     m_dataPtr(other.m_dataPtr), m_offsetPtr(other.m_offsetPtr) {
-    //     other.m_buffer = nullptr;
-    //     other.m_dataPtr = nullptr;
-    //     other.m_offsetPtr = nullptr;
-    // }
-
-    // OffsetBuffer& operator=(OffsetBuffer&& other) noexcept {
-    //     if (this != &other) {
-    //         destroy();
-    //         m_handle = std::move(other.m_handle);
-    //         m_buffer = other.m_buffer;
-    //         m_capacity = other.m_capacity;
-    //         m_size = other.m_size;
-    //         m_destroyed = other.m_destroyed;
-    //         m_rm = other.m_rm;
-    //         m_dataPtr = other.m_dataPtr;
-    //         m_offsetPtr = other.m_offsetPtr;
-
-    //         other.m_buffer = nullptr;
-    //         other.m_dataPtr = nullptr;
-    //         other.m_offsetPtr = nullptr;
-    //     }
-    //     return *this;
-    // }
-
 public:
     // Input: 
     //      uint32 size - number of T to be inserted:
@@ -118,7 +86,7 @@ public:
         if (m_size + sizeBytes > m_capacity){
             sizeBytes = m_capacity-m_size;
             size = sizeBytes / sizeof(T);
-            SprLog::warn("[OffsetBuffer] [allocate] " + std::string("size > capacity, writing partial data"));
+            SprLog::warn({{"[OffsetBuffer] ", color::GRADIENT19}, {"[allocate] size > capacity, writing partial data"}});
         }
         
         // adjust sizes and offset
@@ -149,7 +117,7 @@ public:
         if (m_size + sizeBytes > m_capacity){
             sizeBytes = m_capacity-m_size;
             size = sizeBytes / sizeof(T);
-            SprLog::warn("[OffsetBuffer] [allocateAndInsert] " + std::string("size > capacity, writing partial data"));
+            SprLog::warn({{"[OffsetBuffer] ", color::GRADIENT19}, {"[allocateAndInsert] size > capacity, writing partial data"}});
         }
         
         // copy data into buffer
@@ -200,7 +168,7 @@ public:
         if (m_size + sizeBytes > m_capacity){
             sizeBytes = m_capacity-m_size;
             size = sizeBytes / sizeof(T);
-            SprLog::warn("[OffsetBuffer] [allocateAndInsert] " + std::string("size > capacity, writing partial data"));
+            SprLog::warn({{"[OffsetBuffer] ", color::GRADIENT19}, {"[allocateAndInsert] size > capacity, writing partial data"}});
         }
         
         // copy data into buffer
