@@ -4,7 +4,6 @@
 #include "debug/SprLog.h"
 #include "ecs/SprECS.h"
 #include "util/Timer.h"
-#include "util/Span.h"
 
 using namespace spr;
 
@@ -22,12 +21,12 @@ public:
         m_window = window;
         m_srm = srm;
         
-        SprLog::info("[RenderSystem] Loading render assets");
+        SprLog::info({{"[RenderSystem] ", color::GRADIENT20}, {"Loading render assets"}});
         Timer timer(true);
 
         m_renderer.loadAssets(*m_srm);
 
-        SprLog::info({{"[RenderSystem] Finished loading assets in "}, {timer.elapsed()}, {"ms"}});
+        SprLog::info({{"[RenderSystem] ", color::GRADIENT20}, {"Finished loading assets in "}, {timer.elapsed()}, {"ms"}});
     }
 
     ~RenderSystem(){}
@@ -56,7 +55,6 @@ public:
             uint32 modelId = m_ecs->get<ModelC>(entityId);
             TransformInfo& transform = m_ecs->get<TransformC>(entityId);
             m_renderer.updateModel(entityId, modelId, transform);
-            // SprLog::debug("    updating, id: ", entityId);
         }
 
         // lights
@@ -186,11 +184,7 @@ int main() {
     ecs.setRenderSystem(renderSystem);
 
     // timing
-    auto start = std::chrono::high_resolution_clock::now();
-    auto stop = std::chrono::high_resolution_clock::now();
-    auto printTime = std::chrono::high_resolution_clock::now();
     uint32 frame = 0;
-    double dt = 0.f;
 
     // scene
     Entity helmet;
@@ -313,12 +307,16 @@ int main() {
             ecs.add<CameraC>(gfx::Camera{
                 .pos = {0.f, 1.f, 0.f},
                 .dir = {0.f, 1.f, 0.f},
-                .up = {0.f, 0.f, 1.f}}));
+                .up  = {0.f, 0.f, 1.f}}));
     }
 
     // simple game loop
+    Timer timer;
+    Timer print(true);
+    float dt = 8.f;
+    uint32 fps = 120.f;
     while (!input.isKeyDown(spr::SPR_ESCAPE)){
-        start = std::chrono::high_resolution_clock::now();
+        timer.start();
 
         // update window
         window.update();
@@ -329,21 +327,19 @@ int main() {
                 .scale = 0.2f});
 
         // update ecs
-        ecs.update(dt);
+        ecs.update(dt/1000.f);
 
         // timing
-        stop = std::chrono::high_resolution_clock::now();
-        auto printDur = (stop - printTime);
-        auto dur = (stop - start);
-        double fps = (double)(1000000000)/dur.count();
-        dt = (double)dur.count()/(1000000000);
+        timer.stop();
+        dt = timer.duration<milliseconds>();
+        fps = (1000.f)/dt;
 
         // print stats
-        if (printDur.count() > 1000000000){
-            printTime = std::chrono::high_resolution_clock::now();
-            SprLog::info("[MAIN] frame: ", frame);
-            SprLog::info("[MAIN] fps: " + std::to_string(fps) );
-            SprLog::info("[MAIN] dt: " + std::to_string(dt*1000) + "ms");
+        if (print.elapsed<seconds>() > 1.f){
+            print.restart();
+            SprLog::info({{"[Main] ", color::GRADIENT20}, {"frame: "}, {frame}});
+            SprLog::info({{"       ", color::GRADIENT20}, {"  fps: "}, {fps}});
+            SprLog::info({{"       ", color::GRADIENT20}, {"   dt: "}, {dt}, {"ms"}});
         }
         frame++;
     }
