@@ -40,6 +40,11 @@ public:
         m_running = false;
     }
 
+    void restart(){
+        stop();
+        start();
+    }
+
     template <typename T = spr::ms>
     double duration() {
         if (m_running)
