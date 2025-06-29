@@ -230,7 +230,15 @@ uint32 GfxAssetLoader::loadTexture(SprResourceManager& rm, uint32 textureId, boo
        
     // transcode from ktx2 to relevant format // TODO!!
     TranscodeResult result; 
-    m_transcoder.transcode(result, m_rm, (unsigned char*)texBuffer->data.data(), texBuffer->byteLength, texture->width, texture->height);
+    if(!m_transcoder.transcode(result, m_rm, (unsigned char*)texBuffer->data.data(), texBuffer->byteLength, texture->width, texture->height)){
+        SprLog::error({{"[GfxAssetLoader] ", color::GRADIENT19}, 
+            {"[loadTexture] failed to load texture with id "},
+            {textureId}, {" for buffer with id "}, {texture->bufferId},
+            {" from "}, {rm.getName(textureId)}
+        });
+        return 0;
+    }
+
     result.transcodedData = {m_rm, result.sizeBytes};
     m_transcoder.destroyActiveTexture(result, result.sizeBytes);
     

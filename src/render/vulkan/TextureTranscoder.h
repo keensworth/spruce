@@ -29,7 +29,7 @@ public:
     TextureTranscoder(VulkanDevice* device);
     ~TextureTranscoder();
 
-    void transcode(TranscodeResult& out, VulkanResourceManager* vrm, uint8* data, uint32 size, uint32 width, uint32 height);
+    bool transcode(TranscodeResult& out, VulkanResourceManager* vrm, uint8* data, uint32 size, uint32 width, uint32 height);
     void destroyActiveTexture(TranscodeResult& out, uint32 sizeBytes);
     void reset();
     bool formatSupported(VkFormat format);

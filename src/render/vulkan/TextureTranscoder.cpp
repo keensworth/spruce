@@ -35,13 +35,18 @@ TextureTranscoder::~TextureTranscoder(){
 }
 
 
-void TextureTranscoder::transcode(TranscodeResult& out, VulkanResourceManager* vrm, uint8* data, uint32 size, uint32 width, uint32 height){
+bool TextureTranscoder::transcode(TranscodeResult& out, VulkanResourceManager* vrm, uint8* data, uint32 size, uint32 width, uint32 height){
     ktxTexture2* texture;
     KTX_error_code result;
 
     result = ktxTexture2_CreateFromMemory(data, size, KTX_TEXTURE_CREATE_LOAD_IMAGE_DATA_BIT, &texture);
     if (result != KTX_SUCCESS){
-        SprLog::error({{"[TextureTranscoder] ", color::GRADIENT19}, {"Failed to load KTX2 texture, code: "}, {std::string(ktxErrorString(result)), color::CHARS}});
+        SprLog::error({{"[TextureTranscoder] ", color::GRADIENT19}, 
+            {"Failed to load KTX2 texture, code: "}, 
+            {std::string(ktxErrorString(result)), color::CHARS},
+            {" "}, {size}, {" "}, {width}, {" "}, {height}
+        });
+        return false;
     }
 
     // choose optimal transcode target and transcode
@@ -85,6 +90,7 @@ void TextureTranscoder::transcode(TranscodeResult& out, VulkanResourceManager* v
         result = ktxTexture2_TranscodeBasis(texture, tf, 0);
         if (result){
             SprLog::error({{"[TextureTranscoder] ", color::GRADIENT19}, {"Failed to transcode texture, code: "}, {std::string(ktxErrorString(result)), color::CHARS}});
+            return false;
         }
     }
 
@@ -100,6 +106,7 @@ void TextureTranscoder::transcode(TranscodeResult& out, VulkanResourceManager* v
     out.sizeBytes = sizeBytes;
 
     m_activeTexture = texture;
+    return true;
 }
 
 void TextureTranscoder::destroyActiveTexture(TranscodeResult& out, uint32 sizeBytes){
