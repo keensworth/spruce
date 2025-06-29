@@ -63,11 +63,11 @@ public:
         return typedCache->deleteData(handle);
     }
 
-    void getName(uint32 id, std::string& out){
+    std::string getName(uint32 id){
         if (m_names.count(id) > 0)
-            out = m_names[id];
+            return m_names[id];
         else
-            out = "no-name";
+            return "no-name";
     }
 
     void destroyBuffers(){
