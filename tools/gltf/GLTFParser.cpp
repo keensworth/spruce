@@ -218,7 +218,7 @@ void GLTFParser::compressImageData(
     
     result = ktxTexture2_Create(&createInfo, KTX_TEXTURE_CREATE_ALLOC_STORAGE, &texture);
     if (result) {
-        std::cerr << "Failed to create KTX2 texture, code: " << ktxErrorString(result) << std::endl;
+        SprLog::error({{"Failed to create KTX2 texture, code: "}, {ktxErrorString(result)}});
     }
 
     uint32 levels = createInfo.numLevels;
@@ -231,7 +231,7 @@ void GLTFParser::compressImageData(
     faceSlice = 0;                           
     result = ktxTexture_SetImageFromMemory(ktxTexture(texture), level, layer, faceSlice, data, srcSize);
     if (result) {
-        std::cerr << "Failed to set image from memory, code: " << ktxErrorString(result) << std::endl;
+        SprLog::error({{"Failed to set image from memory, code: "}, {ktxErrorString(result)}});
     }
 
     // mip chain
@@ -254,7 +254,7 @@ void GLTFParser::compressImageData(
             createMip(i == 1 ? data : mipData[i-2], prevSize, prevExtent, mipData[i-1], currSize, currExtent);
             result = ktxTexture_SetImageFromMemory(ktxTexture(texture), level, layer, faceSlice, mipData[i-1], currSize);
             if (result) {
-                std::cerr << "Failed to set (mip) image from memory, code: " << ktxErrorString(result) << std::endl;
+                SprLog::error({{"Failed to set (mip) image from memory, code: "}, {ktxErrorString(result)}});
             }
 
             prevExtent = currExtent;
@@ -284,7 +284,7 @@ void GLTFParser::compressImageData(
     // cleanup
     result = ktxTexture_WriteToMemory((ktxTexture*)(texture), outData, &outSize);
     if (result) {
-        std::cerr << "Failed to write KTX texture to memory, code: " << ktxErrorString(result) << std::endl;
+        SprLog::error({{"Failed to write KTX texture to memory, code: "}, {ktxErrorString(result)}});
     }
     outDataSize = (uint32)outSize;
     ktxTexture_Destroy(ktxTexture(texture));
@@ -310,24 +310,18 @@ OffsetSpan GLTFParser::handleTextureBuffer(
         uint32 width,
         uint32 height,
         uint32 components){    
-
     // write slice of buffer into new buffer
     const unsigned char* bufferData = buffer.data.data();
-    unsigned char* data = new unsigned char[byteLength];
-    for (int32 i = 0; i < byteLength; i++){
-        data[i] = bufferData[i+byteOffset];
-    }
 
     unsigned char* ktxTextureData = nullptr;
     uint32 ktxTextureDataSize;
 
     // generate mips + compress
-    compressImageData(data, byteLength, &ktxTextureData, ktxTextureDataSize, dataType, width, height, 4);
+    compressImageData((unsigned char*)(bufferData + byteOffset), byteLength, &ktxTextureData, ktxTextureDataSize, dataType, width, height, 4);
 
     OffsetSpan offsetSpan = writeBufferFile(ktxTextureData, ktxTextureDataSize, SPR_DR_TEXTURE);
 
     free(ktxTextureData);
-    delete[] data;
     
     return offsetSpan;
 }
@@ -356,22 +350,17 @@ OffsetSpan GLTFParser::handleMIMEImageBuffer(
         STBI_rgb_alpha
     );
 
-    byteLength = width * height * STBI_rgb_alpha;
-    
-    unsigned char* data = new unsigned char[byteLength];
-    for (int32 i = 0; i < byteLength; i++)
-        data[i] = pixels[i];
-    free(pixels);
+    byteLength = width * height * STBI_rgb_alpha;    
 
     unsigned char* ktxTextureData = nullptr;
     uint32 ktxTextureDataSize;
 
-    compressImageData(data, byteLength, &ktxTextureData, ktxTextureDataSize, dataType, width, height, 4); 
+    compressImageData(pixels, byteLength, &ktxTextureData, ktxTextureDataSize, dataType, width, height, 4); 
 
     OffsetSpan offsetSpan = writeBufferFile(ktxTextureData, ktxTextureDataSize, SPR_DR_TEXTURE);
 
     free(ktxTextureData);
-    delete[] data;
+    free(pixels);
 
     return offsetSpan;
 }
@@ -467,20 +456,14 @@ uint32 GLTFParser::handleTexture(const tinygltf::Texture& tex, BufferData dataTy
     // get image and sampler
     int32 sourceIndex = tex.source;
     int32 samplerIndex = tex.sampler;
-    //int32 minFilter;
     
     tinygltf::Sampler sampler;
-    if (sourceIndex == -1)
+    if (sourceIndex == -1){
         return 0;
-    //if (samplerIndex == -1)
-        //minFilter = TINYGLTF_TEXTURE_FILTER_LINEAR_MIPMAP_LINEAR;
-    else {
-        sampler = model.samplers[samplerIndex];
-        //minFilter = sampler.minFilter;
     }
-
-    // create masked id (id + filter)
-    //uint32 maskedTexId = (texId & 0xFFFF) | (minFilter << 16);
+    if (samplerIndex != -1) {
+        sampler = model.samplers[samplerIndex];
+    }
 
     // get image
     tinygltf::Image& image = model.images[sourceIndex];
@@ -490,7 +473,7 @@ uint32 GLTFParser::handleTexture(const tinygltf::Texture& tex, BufferData dataTy
     if (components == 0)
         components = 4;
 
-    // tex already written to buffer
+    // tex already written to buffer,
     // write tex file but not buffer
     if (m_sourceBuffIdMap.count(sourceIndex) > 0){
         // write texture to file
@@ -543,7 +526,6 @@ uint32 GLTFParser::handleTexture(const tinygltf::Texture& tex, BufferData dataTy
         .width = (uint32)image.width, 
         .components = components
     };
-
     return writeTextureFile(texture);
 }
 
