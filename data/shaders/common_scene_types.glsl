@@ -7,8 +7,9 @@ struct VertexPosition {
 };
 
 struct VertexAttributes {
-    vec4 normal_u;  // [ normal.xyz  |  tex.u ]
-    vec4 color_v;   // [  color.xyz  |  tex.v ]
+    vec4 normal_u;  // [  normal.xyz   |  tex.u ]
+    vec4 color_v;   // [   color.xyz   |  tex.v ]
+    vec4 tangent;   // [ tangent.xyzw  |        ]
 };
 
 

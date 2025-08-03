@@ -670,8 +670,9 @@ OffsetSpan GLTFParser::interleaveVertexAttributes(
         DataRegion region){
     uint32 bytesPerNormal = 12;
     uint32 bytesPerColor = 12;
+    uint32 bytesPerTangent = 16;
     uint32 bytesPerTexCoord = 8;
-    uint32 bytesPerVertex = bytesPerNormal + bytesPerColor + bytesPerTexCoord;
+    uint32 bytesPerVertex = bytesPerNormal + bytesPerColor + bytesPerTexCoord + bytesPerTangent;
 
     if (normalBuffer.size() != vertexCount * bytesPerNormal){
         normalBuffer.resize(vertexCount * bytesPerNormal);
@@ -683,15 +684,31 @@ OffsetSpan GLTFParser::interleaveVertexAttributes(
             memcpy(((unsigned char*)colorBuffer.data() + i), (unsigned char*)glm::value_ptr(defaultColor), bytesPerColor);
         }
     }
+    if (tangentBuffer.size() != vertexCount * bytesPerTangent){
+        tangentBuffer.resize(vertexCount * bytesPerTangent);
+    }
     if (texCoordBuffer.size() != vertexCount * bytesPerTexCoord){
         texCoordBuffer.resize(vertexCount * bytesPerTexCoord);
     }
 
+    glm::mat3 normalMatrix = glm::transpose(glm::inverse(glm::mat3(transform)));
+
     // transform normals
+    glm::vec3 normal = glm::vec3(1.0);
     for (uint32 i = 0; i < vertexCount*bytesPerNormal; i += bytesPerNormal){
-        glm::vec3 normal = glm::make_vec3((float*)(normalBuffer.data() + i));
-        normal = glm::mat3(transform) * normal;
+        normal = glm::make_vec3((float*)(normalBuffer.data() + i));
+        normal = glm::normalize(normalMatrix * normal);
         memcpy((unsigned char*)(normalBuffer.data() + i), ((unsigned char*)glm::value_ptr(normal)), bytesPerNormal);
+    }
+
+    // transform tangents
+    glm::vec4 tangent = glm::vec4(1.0);
+    glm::vec3 temp = glm::vec3(1.0);
+    for (uint32 i = 0; i < vertexCount*bytesPerTangent; i += bytesPerTangent){
+        tangent = glm::make_vec4((float*)(tangentBuffer.data() + i));
+        temp = {tangent.x, tangent.y, tangent.z};
+        tangent = glm::vec4(glm::normalize(normalMatrix * temp), tangent.w);
+        memcpy((unsigned char*)(tangentBuffer.data() + i), ((unsigned char*)glm::value_ptr(tangent)), bytesPerTangent);
     }
 
     // interleave into attributes buffer
@@ -700,7 +717,7 @@ OffsetSpan GLTFParser::interleaveVertexAttributes(
     //
     //      [ vec3 | vec2.x ]    OR    [ normal | texCoord.U ]
     //      [ vec3 | vec2.y ]          [ color  | texCoord.V ]
-    //
+    //      [ vec4          ]          [ tangent             ]
     
     for (uint32 vertex = 0; vertex < vertexCount; vertex++){
         uint32 offset = vertex*bytesPerVertex;
@@ -727,6 +744,12 @@ OffsetSpan GLTFParser::interleaveVertexAttributes(
             result[offset + tex] = texCoordBuffer[vertex*bytesPerTexCoord + tex + bytesPerTexCoord/2];
         }
         offset += bytesPerTexCoord/2;
+
+        // copy tangent
+        for(uint32 tangent = 0; tangent < bytesPerTangent; tangent++){
+            result[offset + tangent] = tangentBuffer[vertex*bytesPerTangent + tangent];
+        }
+        offset += bytesPerTangent;
         
     }
 

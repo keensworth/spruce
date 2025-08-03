@@ -18,6 +18,7 @@ typedef struct VertexPosition {
 typedef struct VertexAttributes {
     glm::vec4 normal3_u1; // [  normal.xyz  | tex.u ]
     glm::vec4 color3_v1;  // [  color.xyz   | tex.v ]
+    glm::vec4 tangent4;   // [  tangent.xyzw        ]
 } VertexAttributes;
 
 }

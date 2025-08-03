@@ -188,6 +188,7 @@ int main() {
 
     // scene
     Entity helmet;
+    Entity light;
     {
         // models
         helmet = ecs.createEntity(
@@ -218,15 +219,22 @@ int main() {
                 .rotation = angleAxis(pi<float>()/2.f, vec3{1.f, 0.f, 0.f}), 
                 .scale = 10.f}));
 
-        ecs.createEntity(
-            ecs.add<ModelC>(data::sponza),
-            ecs.add<TransformC>(TransformInfo{
-                .position = {0.f, 100.f, -5.f}, 
-                .rotation = angleAxis(pi<float>()/2, vec3{1.f, 0.f, 0.f}), 
-                .scale = 0.012f}));
+        // ecs.createEntity(
+        //     ecs.add<ModelC>(data::sponza),
+        //     ecs.add<TransformC>(TransformInfo{
+        //         .position = {0.f, 100.f, -5.f}, 
+        //         .rotation = angleAxis(pi<float>()/2, vec3{1.f, 0.f, 0.f}), 
+        //         .scale = 0.012f}));
+
+        // ecs.createEntity(
+        //     ecs.add<ModelC>(data::bistro),
+        //     ecs.add<TransformC>(TransformInfo{
+        //         .position = {2.f, 4.f, -2.f}, 
+        //         .rotation = angleAxis(pi<float>()/2, vec3{1.f, 0.f, 0.f}), 
+        //         .scale = 1.f}));
 
         ecs.createEntity(
-            ecs.add<ModelC>(data::bistro),
+            ecs.add<ModelC>(data::newsponza_main_gltf_003),
             ecs.add<TransformC>(TransformInfo{
                 .position = {2.f, 4.f, -2.f}, 
                 .rotation = angleAxis(pi<float>()/2, vec3{1.f, 0.f, 0.f}), 
@@ -245,6 +253,13 @@ int main() {
         //         }
         //     }
         // }
+
+        light = ecs.createEntity(
+            ecs.add<LightC>(gfx::Light{
+                .pos = {0.f, 0.f, 0.f},
+                .intensity = 8.f,
+                .range = 8.f,
+                .color = {0.9f, 0.9f, 0.4f}}));
         
         //lights
         ecs.createEntity(
@@ -282,19 +297,19 @@ int main() {
                 .range = 16.f,
                 .color = {1.f, 1.f, 1.0f}}));
 
-        int32 dim = 12;
-        for (uint32 x = 0; x < dim; x++){
-            for (uint32 y = 0; y < dim; y++){
-                for (uint32 z = 0; z < dim; z++){
-                    ecs.createEntity(
-                        ecs.add<LightC>(gfx::Light{
-                            .pos = {(-dim/2.0f+x)*2.2f, (-dim/2.0f+y)*2.2f, (-dim/2.0f+z)*2.2f},
-                            .intensity = 4.f,
-                            .range = 2.f,
-                            .color = {(float)x/(float)dim, (float)y/(float)dim, (float)z/(float)dim}}));
-                }
-            }
-        }
+        // int32 dim = 12;
+        // for (uint32 x = 0; x < dim; x++){
+        //     for (uint32 y = 0; y < dim; y++){
+        //         for (uint32 z = 0; z < dim; z++){
+        //             ecs.createEntity(
+        //                 ecs.add<LightC>(gfx::Light{
+        //                     .pos = {(-dim/2.0f+x)*2.2f, (-dim/2.0f+y)*2.2f, (-dim/2.0f+z)*2.2f},
+        //                     .intensity = 4.f,
+        //                     .range = 2.f,
+        //                     .color = {(float)x/(float)dim, (float)y/(float)dim, (float)z/(float)dim}}));
+        //         }
+        //     }
+        // }
 
         ecs.createEntity(
             ecs.add<LightC>(gfx::Light{
@@ -320,6 +335,12 @@ int main() {
 
         // update window
         window.update();
+
+        ecs.set<LightC>(light, gfx::Light{
+                .pos = {sin(frame/140.f)*4, 0.f, 0.f},
+                .intensity = 4.f,
+                .range = 8.f,
+                .color = {0.9f, 0.9f, 0.8f}});
 
         ecs.set<TransformC>(helmet, TransformInfo{
                 .position = {0.f, 0.f, 0.f}, 

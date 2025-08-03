@@ -37,6 +37,7 @@ layout(location = 2) in vec3 color;
 layout(location = 3) in vec2 texCoord;
 layout(location = 4) in flat uint drawId;
 layout(location = 5) in vec4 viewPos;
+layout(location = 6) in mat3 TBN;
 
 layout(location = 0) out vec4 FragColor;
 
@@ -153,8 +154,8 @@ LightingParams getLightingParams(MaterialData material){
 	}
 
     vec3 mapNormal = texture(textures[material.normalTexIdx], texCoord).rgb;
-	mapNormal = normalize(mapNormal * 2.0 - 1.0);
-    mapNormal *= vec3(material.normalScale, material.normalScale, 1.0);
+	mapNormal = mapNormal * 2.0 - 1.0;
+    mapNormal *= normalize(vec3(material.normalScale, material.normalScale, 1.0));
 
     float mapMetal = texture(textures[material.metalRoughTexIdx], texCoord).b;
     mapMetal *= material.metallicFactor;
@@ -171,7 +172,12 @@ LightingParams getLightingParams(MaterialData material){
 	vec3 V = normalize(camera.pos - pos.rgb);
 
 	// world normal, after applying normal map
-	vec3 N = perturb_normal(normal, camera.pos - pos.xyz, texCoord, mapNormal);
+	vec3 N = vec3(0.0);
+	if (isnan(TBN[0][0])){
+        N = perturb_normal(normal, camera.pos - pos.xyz, texCoord, mapNormal);
+    } else {
+        N = perturb_normal(TBN, mapNormal);
+    }
 	
 	// Angle between surface normal and outgoing light direction.
 	float NdV = max(0.0, dot(N, V));
@@ -233,7 +239,7 @@ vec3 calculateAmbientLighting(LightingParams p) {
 	ambientLighting *= visibility;
 	ambientLighting += p.emissive;
 
-	return ambientLighting;
+	return ambientLighting * 0.1;
 }
 
 void main() {
@@ -252,13 +258,16 @@ void main() {
 	for (int i = 0; i < count; i++){
 		Light light = lights[lightIndices[offset + i]];
 		vec3 L = normalize(light.pos - pos.rgb);
+		if (dot(normal, L) < 0){
+			continue;
+		}
 		float attenuation = getPointAttenuation(light);
 		directLighting += calculateDirectLighting(params, light, L, attenuation, 1.0);
 	}
 
 	{
 		Light light = lights[sceneData.sunOffset];
-		vec3 L = -light.dir;
+		vec3 L = normalize(-light.dir);
 		float attenuation = 1.0;
 		float shadow = calculateShadow(params.N, light.dir);
 		directLighting += calculateDirectLighting(params, light, L, attenuation, shadow);

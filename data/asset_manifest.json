@@ -1,101 +1,94 @@
 {
-    "date": "11-04-2024 06:02:20",
-    "modelCount": 9,
+    "date": "07-31-2025 23:58:55",
+    "modelCount": 8,
     "models": [
         {
-            "id": 7,
+            "id": 6,
             "name": "BoomBoxWithAxes",
-            "parentId": 7,
-            "sizeTotal": 90177692,
-            "type": "SPR_MODEL"
-        },
-        {
-            "id": 11,
-            "name": "default_model",
-            "parentId": 11,
-            "sizeTotal": 37296,
-            "type": "SPR_MODEL"
-        },
-        {
-            "id": 5,
-            "name": "Cube",
-            "parentId": 5,
-            "sizeTotal": 2799016,
+            "parentId": 6,
+            "sizeTotal": 90341372,
             "type": "SPR_MODEL"
         },
         {
             "id": 10,
-            "name": "sponza",
+            "name": "default_model",
             "parentId": 10,
-            "sizeTotal": 415075812,
-            "type": "SPR_MODEL"
-        },
-        {
-            "id": 9,
-            "name": "helmet",
-            "parentId": 9,
-            "sizeTotal": 112734812,
+            "sizeTotal": 48016,
             "type": "SPR_MODEL"
         },
         {
             "id": 4,
-            "name": "bistro",
+            "name": "Cube",
             "parentId": 4,
-            "sizeTotal": 822001536,
+            "sizeTotal": 2799592,
             "type": "SPR_MODEL"
         },
         {
-            "id": 6,
+            "id": 8,
+            "name": "helmet",
+            "parentId": 8,
+            "sizeTotal": 112967708,
+            "type": "SPR_MODEL"
+        },
+        {
+            "id": 9,
+            "name": "NewSponza_Main_glTF_003",
+            "parentId": 9,
+            "sizeTotal": 1808581308,
+            "type": "SPR_MODEL"
+        },
+        {
+            "id": 5,
             "name": "Triangle",
-            "parentId": 6,
-            "sizeTotal": 156,
+            "parentId": 5,
+            "sizeTotal": 204,
             "type": "SPR_MODEL"
         },
         {
             "id": 3,
             "name": "Duck",
             "parentId": 3,
-            "sizeTotal": 1564268,
+            "sizeTotal": 1602652,
             "type": "SPR_MODEL"
         },
         {
-            "id": 8,
+            "id": 7,
             "name": "WaterBottle",
-            "parentId": 8,
-            "sizeTotal": 112027172,
+            "parentId": 7,
+            "sizeTotal": 112067956,
             "type": "SPR_MODEL"
         }
     ],
     "nonSubresourceTextureCount": 4,
     "nonSubresourceTextures": [
         {
-            "id": 15,
+            "id": 14,
             "name": "default_input_white",
-            "parentId": 15,
+            "parentId": 14,
             "sizeTotal": 260,
-            "type": "SPR_TEXTURE"
-        },
-        {
-            "id": 13,
-            "name": "default_color",
-            "parentId": 13,
-            "sizeTotal": 5592900,
             "type": "SPR_TEXTURE"
         },
         {
             "id": 12,
-            "name": "px",
+            "name": "default_color",
             "parentId": 12,
+            "sizeTotal": 5592900,
+            "type": "SPR_TEXTURE"
+        },
+        {
+            "id": 11,
+            "name": "px",
+            "parentId": 11,
             "sizeTotal": 25166080,
             "type": "SPR_TEXTURE"
         },
         {
-            "id": 14,
+            "id": 13,
             "name": "default_input_black",
-            "parentId": 14,
+            "parentId": 13,
             "sizeTotal": 260,
             "type": "SPR_TEXTURE"
         }
     ],
-    "sizeBytes": 1587177260
+    "sizeBytes": -2135798988
 }

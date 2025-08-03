@@ -13,6 +13,7 @@ layout(location = 1) in vec3 normal;
 layout(location = 2) in vec3 color;
 layout(location = 3) in vec2 texCoord;
 layout(location = 4) in flat uint drawId;
+layout(location = 5) in mat3 TBN;
 
 layout(location = 0) out vec4 FragColor;
 
@@ -20,15 +21,19 @@ layout(location = 0) out vec4 FragColor;
 void main() {
     DrawData draw = draws[drawId];
     MaterialData material = materials[draw.materialOffset];
-    Scene scene = sceneData;
-
-    vec3 mapNormal = texture(textures[material.normalTexIdx], texCoord).rgb;
-    mapNormal = normalize(mapNormal * 2.0 - 1.0);
-    mapNormal *= vec3(material.normalScale, material.normalScale, 1.0);
     
-    vec3 N = perturb_normal(normal, camera.pos - pos.xyz, texCoord, mapNormal);
+    vec3 mapNormal = texture(textures[material.normalTexIdx], texCoord).rgb;
+    mapNormal = mapNormal * 2.0 - 1.0;
+    mapNormal *= normalize(vec3(material.normalScale, material.normalScale, 1.0));
+    
+    vec3 N = vec3(0.0);
+    if (isnan(TBN[0][0])){
+        N = perturb_normal(normal, camera.pos - pos.xyz, texCoord, mapNormal);
+    } else {
+        N = perturb_normal(TBN, mapNormal);
+    }
+    
     N = N * 0.5 + 0.5;
-    // N = normal * 0.5 + 0.5;
 
     FragColor = vec4(N, 1.0);
 }

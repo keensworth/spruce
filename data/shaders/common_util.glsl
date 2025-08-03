@@ -36,6 +36,17 @@ vec3 perturb_normal( vec3 N, vec3 V, vec2 texcoord, vec3 mapNormal ){
     mat3 TBN = cotangent_frame( N, -V, texcoord );
     return normalize( TBN * mapNormal );
 }
+
+vec3 perturb_normal( vec3 N, vec4 T, vec3 mapNormal ){
+    mapNormal.y = -mapNormal.y;
+    mat3 TBN = mat3(T.xyz, cross(N, T.xyz) * T.w, N);
+    return normalize( TBN * mapNormal );
+}
+
+vec3 perturb_normal( mat3 TBN, vec3 mapNormal ){
+    mapNormal.y = -mapNormal.y;
+    return TBN * mapNormal;
+}
 #endif // SPR_NORMALS
 
 
