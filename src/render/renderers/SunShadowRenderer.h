@@ -47,7 +47,7 @@ public:
         for (uint32 i = 0; i < MAX_CASCADES; i++){
             m_cascadeDepths[i] = m_rm->create<TextureAttachment>({
                 .textureLayout = {
-                    .dimensions = {4096, 4096, 1},
+                    .dimensions = {4096/(1u << (i)), 4096/(1u << (i)), 1},
                     .format = Flags::Format::D32_SFLOAT,
                     .usage = Flags::ImageUsage::IU_DEPTH_STENCIL_ATTACHMENT | 
                              Flags::ImageUsage::IU_SAMPLED,
@@ -77,7 +77,7 @@ public:
         // (renderpass builds first framebuffer)
         for (uint32 i = 0; i < MAX_CASCADES-1; i++){
             m_cascadeFramebuffers[i] = m_rm->create<Framebuffer>({
-                .dimensions = {4096, 4096, 1},
+                .dimensions = {4096/(1u << (i+1)), 4096/(1u << (i+1)), 1},
                 .renderPass = m_renderPass,
                 .depthAttachment = {
                     .texture = m_cascadeDepths[i+1],
