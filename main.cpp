@@ -1,3 +1,5 @@
+#include "glm/geometric.hpp"
+#include "glm/gtx/string_cast.hpp"
 #include "interface/SprWindow.h"
 #include "render/SprRenderer.h"
 #include "resource/SprResourceManager.h"
@@ -118,37 +120,41 @@ public:
             camera.pos += -1.f * dt * vel * camera.dir;
         }
         if (input.isKeyDown(SPR_a)){
-            camera.pos += -1.f * dt * vel * right;
+            camera.pos += -1.f * dt * vel * m_right;
         }
         if (input.isKeyDown(SPR_d)){
-            camera.pos +=  dt * vel * right;
+            camera.pos +=  dt * vel * m_right;
         }
         if (input.isKeyDown(SPR_SPACE)){
             camera.pos +=  dt * vel * zAxis;
         }
         
-        float yaw = 0.f;
-        float pitch = 0.f;
-        if (m_window->isRelativeMouse()){
-            yaw   = -(float)input.getMouseMotion().x * 0.0005f;
-            pitch = -(float)input.getMouseMotion().y * 0.0005f;
+
+        if (!m_window->isRelativeMouse()){
+            return;
         }
+        
 
-        // horizontal camera
-        camera.dir = normalize(rotate(angleAxis(yaw, zAxis), camera.dir));
-        right = normalize(rotate(angleAxis(yaw, zAxis), right));
+        m_yaw   += -(float)input.getMouseMotion().x * 0.03f;
+        m_pitch += -(float)input.getMouseMotion().y * 0.03f;
 
-        // vertical camera
-        vec3 temp = rotate(angleAxis(pitch, right), camera.dir);
-        float dotZ = max(dot(temp, zAxis), dot(temp, -zAxis));
-        if (dotZ >= 0.97f)
-            camera.dir = normalize(rotate(angleAxis(glm::acos(0.96999f)*sign(-camera.dir.z), right), zAxis*sign(camera.dir.z)));
-        else 
-            camera.dir = temp;
-        camera.up = normalize(cross(right, camera.dir));
+        if(m_pitch > 89.999f)
+            m_pitch = 89.999;
+        if(m_pitch < -89.999f)
+            m_pitch = -89.999f;
+        
+        glm::vec3 direction;
+        direction.x = cos(radians(m_yaw)) * cos(radians(m_pitch));
+        direction.y = sin(radians(m_yaw)) * cos(radians(m_pitch));
+        direction.z = sin(radians(m_pitch));
+        camera.dir = normalize(direction);
+        m_right = normalize(cross(camera.dir, {0.f, 0.f, abs(direction.z)}));
+        camera.up = normalize(cross(m_right, camera.dir));
     }
 
-    vec3 right = {1.f, 0.f, 0.f};
+    vec3 m_right = {1.f, 0.f, 0.f};
+    float m_yaw = 0.f;
+    float m_pitch = 0.f;
 
     SprECS* m_ecs;
     SprWindow* m_window;
@@ -329,7 +335,11 @@ int main() {
     Timer timer;
     Timer print(true);
     float dt = 8.f;
-    uint32 fps = 120.f;
+    uint32 fps = 120;
+    uint32 dtCount = 0;
+    float dtLow = 10000.f;
+    float dtHigh = 0.f;
+    float dtSum = 0.f;
     while (!input.isKeyDown(spr::SPR_ESCAPE)){
         timer.start();
 
@@ -354,14 +364,26 @@ int main() {
         timer.stop();
         dt = timer.duration<milliseconds>();
         fps = (1000.f)/dt;
-
+        if (dt < dtLow)
+            dtLow = dt;
+        if (dt > dtHigh)
+            dtHigh = dt;
+        dtSum += dt;
+        dtCount++;
         // print stats
         if (print.elapsed<seconds>() > 1.f){
             print.restart();
             SprLog::info({{"[Main] ", color::GRADIENT20}, {"frame: "}, {frame}});
             SprLog::info({{"       ", color::GRADIENT20}, {"  fps: "}, {fps}});
-            SprLog::info({{"       ", color::GRADIENT20}, {"   dt: "}, {dt}, {"ms"}});
+            SprLog::info({{"       ", color::GRADIENT20}, {"   dt: "}, {dtSum / dtCount}, {"ms"}});
+            SprLog::info({{"       ", color::GRADIENT20}, {"(L)dt: "}, {dtLow}, {"ms"}});
+            SprLog::info({{"       ", color::GRADIENT20}, {"(H)dt: "}, {dtHigh},{"ms"}});
+            dtLow = 10000.f;
+            dtHigh = 0.f;
+            dtSum = 0.f;
+            dtCount = 0;
         }
+        //SprLog::debug({{"       ", color::GRADIENT20}, {"   dt F: "}, {dt}, {"ms"}});
         frame++;
     }
 }
