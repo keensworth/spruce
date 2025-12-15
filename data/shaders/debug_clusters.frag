@@ -21,13 +21,13 @@ struct Cluster {
     uint offset;
     uint count;
 };
-layout (std430, set = 3, binding = 0) buffer ClusterList {
+layout (std430, set = 3, binding = 0) readonly buffer ClusterList {
     Cluster clusters[];
 };
-layout (std430, set = 3, binding = 1) buffer LightList {
+layout (std430, set = 3, binding = 1) readonly buffer LightList {
     uint lightIndices[];
 };
-layout (std430, set = 3, binding = 2) buffer GlobalIndexCount {
+layout (std430, set = 3, binding = 2) readonly buffer GlobalIndexCount {
     uint globalIndexCount;
 };
 
