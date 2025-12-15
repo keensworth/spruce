@@ -36,21 +36,23 @@ VulkanRenderer::VulkanRenderer(SprWindow* window) : m_display(window){
     for (uint32 frameIndex = 0; frameIndex < MAX_FRAME_COUNT; frameIndex++){
         m_frames[frameIndex] = {};
 
-        // build semaphore info and create semaphore
         VkSemaphoreCreateInfo semaphoreInfo {
             .sType = VK_STRUCTURE_TYPE_SEMAPHORE_CREATE_INFO,
             .pNext = NULL,
             .flags = 0
         };
         VK_CHECK(vkCreateSemaphore(m_device.getDevice(), &semaphoreInfo, NULL, &m_frames[frameIndex].acquiredSem));
-        VK_CHECK(vkCreateSemaphore(m_device.getDevice(), &semaphoreInfo, NULL, &m_frames[frameIndex].renderedSem));
+    }
 
-        // build fence info and create fence
-        VkFenceCreateInfo fenceInfo {
-            .sType = VK_STRUCTURE_TYPE_FENCE_CREATE_INFO,
+    // create image-rendered-on semaphores
+    m_renderedSemaphores = std::vector<VkSemaphore>(m_imageCount);
+    for (uint32 imageIndex = 0; imageIndex < m_imageCount; imageIndex++){
+        VkSemaphoreCreateInfo semaphoreInfo {
+            .sType = VK_STRUCTURE_TYPE_SEMAPHORE_CREATE_INFO,
             .pNext = NULL,
+            .flags = 0
         };
-        VK_CHECK(vkCreateFence(m_device.getDevice(), &fenceInfo, NULL, &m_frames[frameIndex].acquiredFence));
+        VK_CHECK(vkCreateSemaphore(m_device.getDevice(), &semaphoreInfo, NULL, &m_renderedSemaphores[imageIndex]));
     }
 }
 
@@ -70,10 +72,10 @@ void VulkanRenderer::init(VulkanResourceManager *rm){
     // create command pools (1 for each queue family, per frame)
     for (uint32 frameIndex = 0; frameIndex < MAX_FRAME_COUNT; frameIndex++){
         // graphics queue command pools
-        m_gfxCommandPools[frameIndex].init(m_device, rm, graphicsFamilyIndex, frameIndex, m_frames[frameIndex]);
+        m_gfxCommandPools[frameIndex].init(m_device, rm, graphicsFamilyIndex, frameIndex);
 
         // additional transfer queue command pools (if applicable)
-        m_transferCommandPools[frameIndex].init(m_device, rm, transferFamilyIndex, frameIndex, m_frames[frameIndex]);
+        m_transferCommandPools[frameIndex].init(m_device, rm, transferFamilyIndex, frameIndex);
 
         // setup semaphore dependencies between them
         CommandBuffer& offscreenCB = m_gfxCommandPools[frameIndex].getCommandBuffer(CommandType::OFFSCREEN);
@@ -81,18 +83,18 @@ void VulkanRenderer::init(VulkanResourceManager *rm){
         CommandBuffer& transferCB = m_transferCommandPools[frameIndex].getCommandBuffer(CommandType::TRANSFER);
 
         // set semaphore dependencies ({wait}, {signal})
-        transferCB.setSemaphoreDependencies(
-            { },
-            { offscreenCB.getSemaphore() }
-        );
-        offscreenCB.setSemaphoreDependencies(
-            { offscreenCB.getSemaphore() },
-            { mainCB.getSemaphore() }
-        );
-        mainCB.setSemaphoreDependencies(
-            { mainCB.getSemaphore(), m_frames[frameIndex].acquiredSem },
-            { m_frames[frameIndex].renderedSem}
-        );
+        transferCB.setSemaphoreDependencies({
+            .wait = { },
+            .signal = { offscreenCB.getSemaphore() }
+        });
+        offscreenCB.setSemaphoreDependencies({
+            .wait = { offscreenCB.getSemaphore() },
+            .signal = { mainCB.getSemaphore() }
+        });
+        mainCB.setSemaphoreDependencies({
+            .wait = { mainCB.getSemaphore() },
+            .signal = {  } // signal sem based on image index later
+        });
     }
 
     // create upload handlers
@@ -124,9 +126,10 @@ void VulkanRenderer::destroy(){
     // frame sync structures
     for (uint32 i = 0; i < MAX_FRAME_COUNT; i++){
         RenderFrame& renderFrame = m_frames[i];
-        vkDestroySemaphore(m_device.getDevice(), renderFrame.renderedSem, nullptr);
         vkDestroySemaphore(m_device.getDevice(), renderFrame.acquiredSem, nullptr);
-        vkDestroyFence(m_device.getDevice(), renderFrame.acquiredFence, nullptr);
+    }
+    for (uint32 i = 0; i < m_imageCount; i++){
+        vkDestroySemaphore(m_device.getDevice(), m_renderedSemaphores[i], nullptr);
     }
 
     // display + device
@@ -162,10 +165,17 @@ RenderFrame& VulkanRenderer::beginFrame(VulkanResourceManager* rm){
                             m_device.getDevice(), 
                             m_display.getSwapchain(), 
                             UINT64_MAX, 
-                            renderFrame.acquiredSem, 
-                            renderFrame.acquiredFence, 
+                            renderFrame.acquiredSem,
+                            VK_NULL_HANDLE,
                             &(renderFrame.imageIndex));
     validateSwapchain(result, ACQUIRE);
+    
+    // make mainCB wait on image acquisition, and signal to
+    // present that this image is ready
+    mainCB.setSemaphoreDependencies({
+        .wait = { mainCB.getSemaphore(), renderFrame.acquiredSem },
+        .signal = { m_renderedSemaphores[renderFrame.imageIndex] }
+    });
 
     // reset command pools before use
     // pass them current frame id
@@ -181,8 +191,8 @@ RenderFrame& VulkanRenderer::beginFrame(VulkanResourceManager* rm){
 
 void VulkanRenderer::present(RenderFrame& frame){
     // make sure swapchain images have been written to
-    VkSemaphore waitSemaphore[] = {frame.renderedSem};
-    VkSwapchainKHR swapchain[] = {m_display.getSwapchain()};
+    VkSemaphore waitSemaphore[] = { m_renderedSemaphores[frame.imageIndex] };
+    VkSwapchainKHR swapchain[] = { m_display.getSwapchain() };
 
 
     // create present info and present frame
@@ -210,13 +220,6 @@ CommandBuffer& VulkanRenderer::beginGraphicsCommands(CommandType commandType){
 
     CommandBuffer& commandBuffer = m_gfxCommandPools[m_frameIndex].getCommandBuffer(commandType);
     commandBuffer.begin();
-
-    // need to make sure we have a swapchain image to write to
-    if (commandType == MAIN) {
-        RenderFrame& renderFrame = m_frames[m_frameIndex];
-        VK_CHECK(vkWaitForFences(m_device.getDevice(), 1, &(renderFrame.acquiredFence), VK_TRUE, UINT64_MAX));
-        VK_CHECK(vkResetFences(m_device.getDevice(), 1, &(renderFrame.acquiredFence)));
-    }
     
     // need to execute gfx barriers from any potential
     // transfer queue uploads
@@ -270,6 +273,7 @@ void VulkanRenderer::validateSwapchain(VkResult result, SwapchainStage stage){
     // either OUT_OF_DATE or SUBOPTIMAL are true
     if (stage == PRESENT || (stage == ACQUIRE && result == VK_ERROR_OUT_OF_DATE_KHR)){
         m_dirtySwapchain = true;
+        return;
     }
 
     m_dirtySwapchain = false;
