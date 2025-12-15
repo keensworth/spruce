@@ -6,6 +6,7 @@
 #include "RenderFrame.h"
 #include "gfx_vulkan_core.h"
 #include "UploadHandler.h"
+#include <vulkan/vulkan_core.h>
 
 namespace spr {
     class SprWindow;
@@ -56,6 +57,8 @@ private:
 
     UploadHandler m_uploadHandlers[MAX_FRAME_COUNT];
     RenderFrame m_frames[MAX_FRAME_COUNT];
+
+    std::vector<VkSemaphore> m_renderedSemaphores;
 
     uint32 m_imageCount = 0;
     uint32 m_currFrameId = 0;

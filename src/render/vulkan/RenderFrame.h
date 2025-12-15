@@ -1,14 +1,13 @@
 #pragma once
 
 #include "gfx_vulkan_core.h"
-#include "../../external/volk/volk.h"
+#include "external/volk/volk.h"
 
-namespace spr::gfx{
+namespace spr::gfx {
 
 typedef struct RenderFrame {
     VkFence acquiredFence     = VK_NULL_HANDLE;
     VkSemaphore acquiredSem   = VK_NULL_HANDLE;
-    VkSemaphore renderedSem   = VK_NULL_HANDLE;
     uint32 frameIndex         = 0;
     uint32 imageIndex         = 0;
 } RenderFrame;
