@@ -94,7 +94,7 @@ void RenderCoordinator::render(SceneManager& sceneManager){
     CommandBuffer& mainCB = m_renderer->beginGraphicsCommands(CommandType::MAIN);
     mainCB.bindIndexBuffer(sceneManager.getIndexBuffer());
     {
-        m_frameRenderer.render(mainCB, batchManager);
+        m_frameRenderer.render(mainCB, batchManager, frame.imageIndex);
     }
     mainCB.submit();
 

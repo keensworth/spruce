@@ -27,6 +27,8 @@ void CommandBuffer::init(VulkanDevice& device, VulkanResourceManager* rm,uint32 
     m_queue = queue;
     m_frameId = 0;
     m_frameIndex = frameIndex;
+    m_waitSemaphores.reserve(16);
+    m_signalSemaphores.reserve(16);
 
     m_passRenderer = RenderPassRenderer(m_rm, commandBuffer, frameIndex);
 
@@ -117,6 +119,55 @@ RenderPassRenderer& CommandBuffer::beginRenderPass(Handle<RenderPass> handle, gl
     // prepare and return render pass renderer
     return m_passRenderer;
 }
+
+
+RenderPassRenderer& CommandBuffer::beginRenderPass(Handle<RenderPass> handle, uint32 imageIndex, glm::vec4 clearColor){
+    // make sure user is accessing correct commandbuffer
+    if (m_type != CommandType::OFFSCREEN && m_type != CommandType::MAIN){
+        SprLog::warn({{"[CommandBuffer] ", color::GRADIENT19}, {"Not a render command buffer"}});
+    }
+
+    // get attachment counts (color + depth)
+    RenderPass* renderPass = m_rm->get<RenderPass>(handle);
+    Framebuffer* framebuffer = m_rm->get<Framebuffer>(renderPass->framebuffer);
+    bool hasDepth = framebuffer->hasDepthAttachment;
+    uint32 colorCount = framebuffer->colorAttachments.size();
+
+    // create clear values and begin renderpass
+    std::vector<VkClearValue> clearValues(colorCount + hasDepth);
+    for (uint32 i = 0; i < colorCount; i++)
+        clearValues[i] = VkClearValue {
+            .color = {{clearColor.x, clearColor.y, clearColor.z, clearColor.w}} // (green-gray by default)
+        };
+    if (hasDepth){
+        uint32 compareOp = framebuffer->depthAttachment.compareOp;
+        VkClearDepthStencilValue depthClearColor = {1.0f, 0};
+        if (compareOp == Flags::Compare::GREATER || compareOp == Flags::Compare::GREATER_OR_EQUAL)
+            depthClearColor = {0.0f, 0};
+        clearValues[colorCount] = VkClearValue {
+            .depthStencil = depthClearColor
+        };
+    } 
+
+    VkRenderPassBeginInfo renderPassInfo {
+        .sType           = VK_STRUCTURE_TYPE_RENDER_PASS_BEGIN_INFO,
+        .renderPass      = renderPass->renderPass,
+        .framebuffer     = framebuffer->framebuffers[imageIndex],
+        .renderArea      = {
+            .offset = {0,0},
+            .extent = {renderPass->dimensions.x, renderPass->dimensions.y}
+        },
+        .clearValueCount = (uint32)clearValues.size(),
+        .pClearValues    = clearValues.data(),
+    };
+    vkCmdBeginRenderPass(m_commandBuffer, &renderPassInfo, VK_SUBPASS_CONTENTS_INLINE);
+    
+    m_passRenderer.setDimensions(renderPass->dimensions);
+
+    // prepare and return render pass renderer
+    return m_passRenderer;
+}
+
 
 RenderPassRenderer& CommandBuffer::beginRenderPass(Handle<RenderPass> renderPassHandle, Handle<Framebuffer> framebufferHandle, glm::vec4 clearColor){
     // make sure user is accessing correct commandbuffer
@@ -269,9 +320,11 @@ void CommandBuffer::resetFence(){
 }
 
 
-void CommandBuffer::setSemaphoreDependencies(std::vector<VkSemaphore> waitSemaphores, std::vector<VkSemaphore> signalSemaphores){
-    m_waitSemaphores = waitSemaphores;
-    m_signalSemaphores = signalSemaphores;
+void CommandBuffer::setSemaphoreDependencies(SemaphoreDependencies semaphores){
+    m_waitSemaphores.clear();
+    m_waitSemaphores.insert(m_waitSemaphores.begin(), semaphores.wait.begin(), semaphores.wait.end());
+    m_signalSemaphores.clear();
+    m_signalSemaphores.insert(m_signalSemaphores.begin(), semaphores.signal.begin(), semaphores.signal.end());
 }
 
 

@@ -17,7 +17,7 @@ public:
     CommandBuffer& getCommandBuffer(CommandType commandType);
     void prepare(uint32 frameId);
 
-    void init(VulkanDevice& device, VulkanResourceManager* rm, uint32 familyIndex, uint32 frameIndex, RenderFrame& frame);
+    void init(VulkanDevice& device, VulkanResourceManager* rm, uint32 familyIndex, uint32 frameIndex);
     void destroy();
 
 private: // owning

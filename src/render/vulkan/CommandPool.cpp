@@ -18,7 +18,7 @@ CommandPool::~CommandPool(){
     destroy();
 }
 
-void CommandPool::init(VulkanDevice& device, VulkanResourceManager* rm, uint32 familyIndex, uint32 frameIndex, RenderFrame &frame){
+void CommandPool::init(VulkanDevice& device, VulkanResourceManager* rm, uint32 familyIndex, uint32 frameIndex){
     m_device = &device;
     m_rm = rm;
     m_frameId = 0;

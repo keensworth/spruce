@@ -109,11 +109,11 @@ public:
     }
 
 
-    void render(CommandBuffer& cb, BatchManager& batchManager){
+    void render(CommandBuffer& cb, BatchManager& batchManager, uint32 imageIndex){
         if (!m_hasInput)
             SprLog::error({{"[FrameRenderer] ", color::GRADIENT19}, {"[render] no input TextureAttachment specified"}});
 
-        RenderPassRenderer& passRenderer = cb.beginRenderPass(m_renderPass, glm::vec4(1.f,0.f,1.f,1.f));
+        RenderPassRenderer& passRenderer = cb.beginRenderPass(m_renderPass, imageIndex, glm::vec4(1.f,0.f,1.f,1.f));
         passRenderer.drawSubpass({
             .shader = m_shader,
             .set0 =  m_globalDescriptorSet,

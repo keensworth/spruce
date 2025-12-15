@@ -3,6 +3,7 @@
 #include <spruce_core.h>
 #include "../../external/volk/volk.h"
 #include "RenderPassRenderer.h"
+#include "core/util/Span.h"
 
 namespace spr::gfx{
 
@@ -18,12 +19,18 @@ typedef enum CommandType : uint32 {
     MAIN = 2
 } CommandType;
 
+struct SemaphoreDependencies {
+    spr::Span<VkSemaphore> wait;
+    spr::Span<VkSemaphore> signal;
+};
+
 class CommandBuffer{
 public:
     CommandBuffer();
     ~CommandBuffer();
 
     RenderPassRenderer& beginRenderPass(Handle<RenderPass> renderPass, glm::vec4 clearColor = glm::vec4{0.45098f, 0.52549f, 0.47058f, 1.0f});
+    RenderPassRenderer& beginRenderPass(Handle<RenderPass> renderPass, uint32 imageIndex, glm::vec4 clearColor = glm::vec4{0.45098f, 0.52549f, 0.47058f, 1.0f});
     RenderPassRenderer& beginRenderPass(Handle<RenderPass> renderPass, Handle<Framebuffer> framebuffer, glm::vec4 clearColor = glm::vec4{0.45098f, 0.52549f, 0.47058f, 1.0f});
     void endRenderPass();
 
@@ -42,7 +49,7 @@ public:
 
     bool isRecording();
     
-    void setSemaphoreDependencies(std::vector<VkSemaphore> waitSemaphores, std::vector<VkSemaphore> signalSemaphores);
+    void setSemaphoreDependencies(SemaphoreDependencies semaphores);
 
 
 private: // owning
