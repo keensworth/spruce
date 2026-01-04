@@ -235,7 +235,7 @@ vec3 calculateDirectLighting(LightingParams p, Light light, vec3 L, float attenu
 	vec3 specularBRDF = (F * D * G) / max(0.00001, 4.0 * NdL * p.NdV);
 
 	// Total contribution for this light.
-	return (diffuseBRDF + specularBRDF) * Lr * NdL * shadow;
+	return (diffuseBRDF + specularBRDF) * Lr * NdL * shadow * light.intensity;
 } 
 
 vec3 calculateAmbientLighting(LightingParams p) {

@@ -45,7 +45,7 @@ vec3 perturb_normal( vec3 N, vec4 T, vec3 mapNormal ){
 
 vec3 perturb_normal( mat3 TBN, vec3 mapNormal ){
     mapNormal.y = -mapNormal.y;
-    return TBN * mapNormal;
+    return normalize(TBN * mapNormal);
 }
 #endif // SPR_NORMALS
 
