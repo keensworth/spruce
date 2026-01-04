@@ -52,6 +52,16 @@ vec3 gtaoMultiBounce(float visibility, vec3 color) {
 	return vec3(max(vec3(x), ((a * x + b) * x + c) * x));
 }
 
+float calculateShadowBias(uint cascadeIndex, float farSplit, vec3 lightDir){
+	float bias = max(0.005 * (1.0 - dot(normal, lightDir)), 0.005);
+	if (cascadeIndex == MAX_SHADOW_CASCADES){
+		bias *= 1.0 / (camera.far * 0.5f);
+	} else {
+		bias *= 1.0 / (farSplit * 0.5f);
+	}
+	return bias;
+}
+
 float calculateShadow(vec3 N, vec3 lightDir) {
 	uint cascadeIndex = 0;
 	for(uint i = 0; i < MAX_SHADOW_CASCADES - 1; ++i) {
@@ -61,18 +71,22 @@ float calculateShadow(vec3 N, vec3 lightDir) {
 	}
 
 	vec4 shadowCoord = (biasMat * shadowData.cascadeViewProj[cascadeIndex]) * pos;
+	float farSplit = shadowData.cascadeSplit[0][cascadeIndex];
 
-	float mixedDist = shadowData.cascadeSplit[0][cascadeIndex];
-	if (cascadeIndex > 0){
-		float nearDist = shadowData.cascadeSplit[0][cascadeIndex-1];
-		float farDist = mixedDist;
-		mixedDist = mix(nearDist, farDist, (-viewPos.z-nearDist)/(farDist - nearDist));
+	float bias = calculateShadowBias(cascadeIndex, farSplit, lightDir);
+	float shadow = filterPCF(shadowCoord, cascadeIndex, bias);
+	
+	// if close enough to the next split, blend current cascade into next
+	if (cascadeIndex < MAX_SHADOW_CASCADES - 1 && -viewPos.z > (0.91 * farSplit)){
+		vec4 blendShadowCoord = (biasMat * shadowData.cascadeViewProj[cascadeIndex+1]) * pos;
+		float blendFarSplit = shadowData.cascadeSplit[0][cascadeIndex+1];
+
+		float blendBias = calculateShadowBias(cascadeIndex+1, blendFarSplit, lightDir);
+		float blendShadow = filterPCF(blendShadowCoord, cascadeIndex+1, blendBias);
+		float a = (-viewPos.z - 0.91 * farSplit) / (0.09 * farSplit);
+		shadow = ((1 - a) * shadow) + (a * blendShadow);
 	}
 
-	float bias = min(0.05 * max(1.0 - dot(normal, lightDir), 0.0), 0.005);
-	bias *= 1.0 / (mixedDist * 0.5);
-
-	float shadow = filterPCF(shadowCoord, cascadeIndex, bias);
 	return shadow;
 }
 

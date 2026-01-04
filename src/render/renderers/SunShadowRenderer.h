@@ -47,7 +47,7 @@ public:
         for (uint32 i = 0; i < MAX_CASCADES; i++){
             m_cascadeDepths[i] = m_rm->create<TextureAttachment>({
                 .textureLayout = {
-                    .dimensions = {4096/(1u << (i)), 4096/(1u << (i)), 1},
+                    .dimensions = {4096, 4096, 1},
                     .format = Flags::Format::D32_SFLOAT,
                     .usage = Flags::ImageUsage::IU_DEPTH_STENCIL_ATTACHMENT | 
                              Flags::ImageUsage::IU_SAMPLED,
@@ -77,7 +77,7 @@ public:
         // (renderpass builds first framebuffer)
         for (uint32 i = 0; i < MAX_CASCADES-1; i++){
             m_cascadeFramebuffers[i] = m_rm->create<Framebuffer>({
-                .dimensions = {4096/(1u << (i+1)), 4096/(1u << (i+1)), 1},
+                .dimensions = {4096, 4096, 1},
                 .renderPass = m_renderPass,
                 .depthAttachment = {
                     .texture = m_cascadeDepths[i+1],
@@ -204,7 +204,7 @@ public:
             glm::vec3 zero(0.f);
             glm::vec3 baseLookAt(-lightDir);
 
-            glm::mat4 lookAt = glm::lookAt(zero, baseLookAt, glm::vec3(0.f, 1.f, 0.f));
+            glm::mat4 lookAt = glm::lookAt(zero, baseLookAt, glm::vec3(0.f, 0.f, 1.f));
             lookAt = glm::scale(lookAt, scalar);
             glm::mat4 lookAtInv = glm::inverse(lookAt);
 
@@ -212,12 +212,13 @@ public:
             frustumCenter.x = glm::floor(frustumCenter.x);
             frustumCenter.y = glm::floor(frustumCenter.y);
             frustumCenter = lookAtInv * glm::vec4(frustumCenter,1.f);
-
-            // build shadow camera view/proj matrices
-            glm::vec3 eye = frustumCenter - lightDir * -minExtents.z;
+            frustumCenter = {frustumCenter.x, frustumCenter.y, camera.pos.z};
             
-			glm::mat4 lightViewMatrix = glm::lookAt(eye, frustumCenter, glm::vec3(0.0f, 1.0f, 0.0f));
-			glm::mat4 lightOrthoMatrix = glm::orthoRH_ZO(minExtents.x, maxExtents.y, minExtents.x, maxExtents.y, 6.f * maxExtents.z, 6.f * minExtents.z);
+            // build shadow camera view/proj matrices
+            glm::vec3 eye = frustumCenter - lightDir * maxExtents.z * 2.f;
+            
+			glm::mat4 lightViewMatrix = glm::lookAt(eye, frustumCenter , glm::vec3(0.0f, 0.0f, 1.0f));
+			glm::mat4 lightOrthoMatrix = glm::orthoRH_ZO(minExtents.x, maxExtents.x, minExtents.y, maxExtents.y, maxExtents.z * 6.f, minExtents.z * 6.f);
 
             SunShadowData& shadowData = m_shadowTemp[frameId % MAX_FRAME_COUNT][0];
 			shadowData.cascadeSplit[0][i%4] = (nearClip + splitDist * clipRange); // world dist

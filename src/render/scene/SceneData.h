@@ -54,9 +54,9 @@ typedef struct Camera {
     glm::vec3 pos = {0.f, 0.f, 0.f};
     float fov     = 3.1415f/3.f;
     glm::vec3 dir = {0.f, 1.f, 0.f};
-    float near    = 0.1f;
+    float near    = 0.5f;
     glm::vec3 up  = {0.f, 0.f, 1.f};
-    float far     = 256.f;
+    float far     = 128.f;
 } Camera;
 
 typedef struct Scene {
