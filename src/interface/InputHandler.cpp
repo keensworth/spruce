@@ -1,6 +1,8 @@
 #include "InputHandler.h"
 #include <iostream>
 #include "../debug/SprLog.h"
+#include "KeyboardConfig.h"
+#include "MouseConfig.h"
 
 namespace spr {
 InputHandler::InputHandler(){
@@ -8,11 +10,6 @@ InputHandler::InputHandler(){
     mouse = new MouseState();
     m_inputManager = InputManager(keyboard, mouse);
     quit = false;
-
-    m_updatedKeys.reserve(256);
-    m_updatedButtons.reserve(256);
-    m_updatedMousePos = false;
-    m_updatedMouseWheel = false;
 }
 
 InputManager& InputHandler::getInputManager(){
@@ -39,7 +36,6 @@ void InputHandler::handleKeyPress(bool keyDown){
     SprKey key = getSprKeyFromSDLKeycode(keycode);
 
     keyboard->keyDown[key] = keyDown;
-    m_updatedKeys.push_back(key);
 
     if (keyDown)
         keyboard->keyDownTicks[key] = SDL_GetTicks();
@@ -55,7 +51,6 @@ void InputHandler::handleButtonPress(bool buttonDown){
         return;
 
     mouse->buttonDown[button] = buttonDown;
-    m_updatedButtons.push_back(button);
 
     if (buttonDown)
         mouse->buttonDownTicks[button] = SDL_GetTicks();
@@ -71,7 +66,6 @@ void InputHandler::handleMouseMotion(){
     mouse->mouseMotion.y += m_event.motion.yrel;
 
     mouse->mouseMotionTicks = SDL_GetTicks();
-    m_updatedMousePos = true;
 }
 
 void InputHandler::handleMouseWheel(){
@@ -81,34 +75,18 @@ void InputHandler::handleMouseWheel(){
 
     mouse->scrollWheelMotion = scrollMotion;
     mouse->scrollTicks = SDL_GetTicks();
-    m_updatedMouseWheel = true;
 }
 
 void InputHandler::updatePreviousState(){
-    // store previous key/button state from last frame's updates
-    for (SprKey key : m_updatedKeys)
-        keyboard->keyDownPrev[key] = keyboard->keyDown[key];
-    for (SprButton button : m_updatedButtons)
-        mouse->buttonDownPrev[button] = mouse->buttonDown[button];
-    if (!m_updatedKeys.empty())
-        m_updatedKeys.clear();
-    if (!m_updatedButtons.empty())
-        m_updatedButtons.clear();
-    
-    // store prev mouse pos/motion
-    if (m_updatedMousePos){
-        mouse->mousePosPrev = mouse->mousePos; // don't reset
-        mouse->mouseMotionPrev = mouse->mouseMotion;
-        mouse->mouseMotion = {0, 0};
-        m_updatedMousePos = false;
-    }
+    std::copy(keyboard->keyDown, keyboard->keyDown + KEY_COUNT, keyboard->keyDownPrev);
+    std::copy(mouse->buttonDown, mouse->buttonDown + BUTTON_COUNT, mouse->buttonDownPrev);
 
-    // store prev mouse wheel motion
-    if (m_updatedMouseWheel){
-        mouse->scrollWheelMotionPrev = mouse->scrollWheelMotion;
-        mouse->scrollWheelMotion = {0, 0};
-        m_updatedMouseWheel = false;
-    }
+    mouse->mousePosPrev = mouse->mousePos;
+    mouse->mouseMotionPrev = mouse->mouseMotion;
+    mouse->mouseMotion = {0, 0};
+
+    mouse->scrollWheelMotionPrev = mouse->scrollWheelMotion;
+    mouse->scrollWheelMotion = {0, 0};
 }
 
 void InputHandler::update(){
