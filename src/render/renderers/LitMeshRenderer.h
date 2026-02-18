@@ -25,7 +25,6 @@ public:
         Handle<TextureAttachment> visibilityTexture,
         Handle<TextureAttachment> shadowCascades[MAX_CASCADES],
         Handle<Buffer> shadowData,
-        Handle<TextureAttachment> volumetricLighting,
         Handle<DescriptorSet> lightClusterDescSet,
         Handle<DescriptorSetLayout> lightClusterDescSetLayout)
     {
@@ -116,11 +115,7 @@ public:
                 {
                     .attachments = {shadowCascades, MAX_CASCADES},
                     .layout = Flags::ImageLayout::READ_ONLY
-                },
-                {
-                    .attachment = volumetricLighting,
-                    .layout = Flags::ImageLayout::READ_ONLY
-                },
+                }
             },
             .buffers = {
                 {
@@ -175,8 +170,7 @@ public:
             Handle<TextureAttachment> depthAttachment,
             Handle<TextureAttachment> visibilityTexture,
             Handle<TextureAttachment> shadowCascades[MAX_CASCADES],
-            Handle<Buffer> shadowData,
-            Handle<TextureAttachment> volumetricLighting){
+            Handle<Buffer> shadowData){
         m_rm->remove<DescriptorSet>(m_descriptorSet);
 
         // descriptor set
@@ -193,11 +187,7 @@ public:
                 {
                     .attachments = {shadowCascades, MAX_CASCADES},
                     .layout = Flags::ImageLayout::READ_ONLY
-                },
-                {
-                    .attachment = volumetricLighting,
-                    .layout = Flags::ImageLayout::READ_ONLY
-                },
+                }
             },
             .buffers = {
                 {

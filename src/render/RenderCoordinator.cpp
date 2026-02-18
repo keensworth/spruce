@@ -46,9 +46,6 @@ void RenderCoordinator::render(SceneManager& sceneManager){
         // cascaded shadows
         m_sunShadowRenderer.render(offscreenCB, allMaterialBatches);
 
-        // volumetric lighting
-        m_volumetricLightRenderer.render(offscreenCB, batchManager);
-
         // ambient occlusion
         m_gtaoRenderer.render(offscreenCB, batchManager);
 
@@ -155,8 +152,6 @@ void RenderCoordinator::updateUI(CommandBuffer& offscreenCB){
             output = m_debugClustersRenderer.getAttachment();
         } else if (visible & RenderState::GTAO_PASS){
             output = m_gtaoRenderer.getAttachment();
-        } else if (visible & RenderState::VOLUMETRIC_LIGHT){
-            output = m_volumetricLightRenderer.getAttachment();
         } else if (visible & RenderState::FXAA){
             output = m_fxaaRenderer.getAttachment();
         } else if (visible & RenderState::UNLIT_MESH){
@@ -190,8 +185,6 @@ void RenderCoordinator::updateUI(CommandBuffer& offscreenCB){
             reload = m_debugClustersRenderer.getShader();
         } else if (shaderToReload == RenderState::GTAO_PASS){
             reload = m_gtaoRenderer.getShader();
-        } else if (shaderToReload == RenderState::VOLUMETRIC_LIGHT){
-            reload = m_volumetricLightRenderer.getShader();
         } else if (shaderToReload == RenderState::FXAA){
             reload = m_fxaaRenderer.getShader();
         }else if (shaderToReload == RenderState::BLUR_PASS){
@@ -245,17 +238,6 @@ void RenderCoordinator::initRenderers(SceneManager& sceneManager){
         frameDescSets,
         frameDescSetLayout);
     SprLog::debug({{"[RenderCoordinator] ", color::GRADIENT18}, {"[init] SunShadowRenderer initialized"}});
-
-    m_volumetricLightRenderer = VolumetricLightRenderer(*m_rm, *m_renderer, windowDim);
-    m_volumetricLightRenderer.init(
-        globalDescSet,
-        globalDescSetLayout,
-        frameDescSets,
-        frameDescSetLayout,
-        m_depthPrepassRenderer.getDepthAttachment(),
-        m_sunShadowRenderer.getDepthAttachments(),
-        m_sunShadowRenderer.getShadowData());
-    SprLog::debug({{"[RenderCoordinator] ", color::GRADIENT18}, {"[init] VolumetricLightRenderer initialized"}});
 
     m_gtaoRenderer = GTAORenderer(*m_rm, *m_renderer, windowDim);
     m_gtaoRenderer.init(
@@ -323,7 +305,6 @@ void RenderCoordinator::initRenderers(SceneManager& sceneManager){
         m_blurRenderer.getAttachment(),
         m_sunShadowRenderer.getDepthAttachments(),
         m_sunShadowRenderer.getShadowData(),
-        m_volumetricLightRenderer.getAttachment(),
         m_lightCullCompute.getDescSet(),
         m_lightCullCompute.getDescSetLayout());
     SprLog::debug({{"[RenderCoordinator] ", color::GRADIENT18}, {"[init] LitMeshRenderer initialized"}});
@@ -337,7 +318,6 @@ void RenderCoordinator::initRenderers(SceneManager& sceneManager){
         m_blurRenderer.getAttachment(),
         m_sunShadowRenderer.getDepthAttachments(),
         m_sunShadowRenderer.getShadowData(),
-        m_volumetricLightRenderer.getAttachment(),
         m_litMeshRenderer.getDescSetLayout(),
         m_litMeshRenderer.getDescSet(),
         m_lightCullCompute.getDescSet(),
@@ -404,7 +384,6 @@ void RenderCoordinator::onResize(){
     m_rm->recreate<RenderPass>(m_debugCascadesRenderer.getRenderPass(), windowDim);
     m_rm->recreate<RenderPass>(m_debugClustersRenderer.getRenderPass(), windowDim);
     m_rm->recreate<RenderPass>(m_sunShadowRenderer.getRenderPass(), windowDim);
-    m_rm->recreate<RenderPass>(m_volumetricLightRenderer.getRenderPass(), windowDim);
     m_rm->recreate<RenderPass>(m_blurRenderer.getRenderPass(), windowDim);
     m_rm->recreate<RenderPass>(m_gtaoRenderer.getRenderPass(), windowDim);
     m_rm->recreate<RenderPass>(m_fxaaRenderer.getRenderPass(), windowDim);
@@ -414,18 +393,13 @@ void RenderCoordinator::onResize(){
     // make updates to descriptors
     m_frameRenderer.setInput(m_imguiRenderer.getAttachment());
     m_imguiRenderer.setInput(m_fxaaRenderer.getAttachment());
-    m_volumetricLightRenderer.updateDescriptorSet(
-        m_depthPrepassRenderer.getDepthAttachment(),
-        m_sunShadowRenderer.getDepthAttachments(),
-        m_sunShadowRenderer.getShadowData());
     m_blurRenderer.updateDescriptorSet(m_gtaoRenderer.getAttachment());
     m_gtaoRenderer.updateDescriptorSet(m_depthPrepassRenderer.getDepthAttachment());
     m_litMeshRenderer.updateDescriptorSet(
         m_depthPrepassRenderer.getDepthAttachment(),
         m_blurRenderer.getAttachment(),
         m_sunShadowRenderer.getDepthAttachments(),
-        m_sunShadowRenderer.getShadowData(),
-        m_volumetricLightRenderer.getAttachment());
+        m_sunShadowRenderer.getShadowData());
     m_fxaaRenderer.updateDescriptorSet(m_litMeshRenderer.getAttachment());
     m_skyboxRenderer.updateDescriptorSet(m_litMeshRenderer.m_descriptorSet);
 }
@@ -442,7 +416,6 @@ void RenderCoordinator::destroy(){
     m_debugCascadesRenderer.destroy();
     m_depthPrepassRenderer.destroy();
     m_sunShadowRenderer.destroy();
-    m_volumetricLightRenderer.destroy();
     m_blurRenderer.destroy();
     m_fxaaRenderer.destroy();
     m_gtaoRenderer.destroy();

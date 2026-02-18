@@ -15,7 +15,6 @@
 layout(set = 2, binding = 0) uniform sampler2D depthMap;
 layout(set = 2, binding = 1) uniform sampler2D occlusionMap;
 // binding 2 & 3 defined in common_shadow.glsl
-layout(set = 2, binding = 4) uniform sampler2D scatteringMap;
 
 struct Cluster {
     uint offset;
@@ -290,10 +289,6 @@ void main() {
 	// ambient ligthing
 	vec3 ambientLighting = calculateAmbientLighting(params);
 
-	// vec2 texCoords = vec2(gl_FragCoord.xy / textureSize(depthMap, 0));
-	// vec4 scatteringInfo = texture(scatteringMap, texCoords).rgba;
-	// vec3 inScattering = scatteringInfo.rgb;
-	// float transmittance = scatteringInfo.a;
 	vec4 pixelColorWithoutFog = vec4(directLighting + ambientLighting, 1.0);
     //FragColor = pixelColorWithoutFog * vec4(transmittance.xxx, 1.0) + vec4(inScattering, 0.0);
     FragColor = pixelColorWithoutFog;

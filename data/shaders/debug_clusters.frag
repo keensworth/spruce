@@ -15,7 +15,6 @@
 layout(set = 2, binding = 0) uniform sampler2D depthMap;
 layout(set = 2, binding = 1) uniform sampler2D occlusionMap;
 // binding 2 & 3 defined in common_shadow.glsl
-layout(set = 2, binding = 4) uniform sampler2D scatteringMap;
 
 struct Cluster {
     uint offset;

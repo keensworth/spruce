@@ -25,7 +25,6 @@ public:
         Handle<TextureAttachment> visibilityTexture,
         Handle<TextureAttachment> shadowCascades[MAX_CASCADES],
         Handle<Buffer> shadowData,
-        Handle<TextureAttachment> volumetricLighting,
         Handle<DescriptorSetLayout> descriptorSetLayout,
         Handle<DescriptorSet> descriptorSet,
         Handle<DescriptorSet> lightClusterDescSet,

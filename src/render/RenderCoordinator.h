@@ -13,7 +13,6 @@
 #include "renderers/TestRenderer.h"
 #include "renderers/DebugMeshRenderer.h"
 #include "renderers/SunShadowRenderer.h"
-#include "renderers/VolumetricLightRenderer.h"
 #include "renderers/DebugCascadesRenderer.h"
 #include "vulkan/FrameRenderer.h"
 #include "vulkan/ImGuiRenderer.h"
@@ -70,7 +69,6 @@ private:
     BlurRenderer m_blurRenderer;
     FXAARenderer m_fxaaRenderer;
     SunShadowRenderer m_sunShadowRenderer;
-    VolumetricLightRenderer m_volumetricLightRenderer;
     UnlitMeshRenderer m_unlitMeshRenderer;
     LitMeshRenderer m_litMeshRenderer;
     SkyboxRenderer m_skyboxRenderer;
