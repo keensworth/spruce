@@ -42,46 +42,28 @@ layout(set = 2, binding = SPR_SHADOW_CASCADE_DATA) uniform CascadeData {
 #endif
 
 #if SPR_SHADOW_CASCADE_MAPS > -1
-layout(set = 2, binding = SPR_SHADOW_CASCADE_MAPS) uniform sampler2D sunShadowMaps[MAX_SHADOW_CASCADES];
-
-float linearizeDepth(float d,float zNear,float zFar){
-    return zNear * zFar / (zFar + d * (zNear - zFar));
-}
-
-float inverseDepth(float sampledDepth){
-	float d = 1.0 - sampledDepth;
-	return linearizeDepth(d, camera.near, camera.far);
-}
+// reverse-Z: compare op is LESS_OR_EQUAL — hardware returns 1.0 (lit) when stored_depth <= reference
+layout(set = 2, binding = SPR_SHADOW_CASCADE_MAPS) uniform sampler2DShadow sunShadowMaps[MAX_SHADOW_CASCADES];
 
 float textureProj(vec4 shadowCoord, vec2 offset, uint cascadeIndex, float bias) {
-	float shadow = 1.0;
-
-	if ( shadowCoord.z > -1.0 && shadowCoord.z < 1.0 ) {
-		float dist = texture(sunShadowMaps[cascadeIndex], vec2(shadowCoord.st + offset)).r;
-		if (shadowCoord.w > 0 && dist > shadowCoord.z + bias) {
-			shadow = 0.0;
-		}
-	}
-	return shadow;
+	return texture(sunShadowMaps[cascadeIndex], vec3(shadowCoord.st + offset, shadowCoord.z + bias));
 }
 
 float filterPCF(vec4 shadowCoord, uint cascadeIndex, float bias) {
 	ivec2 texDim = textureSize(sunShadowMaps[cascadeIndex], 0).xy;
 	float scale = 0.75;
-	float dx = scale * 1.0 / float(texDim.x);
-	float dy = scale * 1.0 / float(texDim.y);
+	float dx = scale / float(texDim.x);
+	float dy = scale / float(texDim.y);
 
 	float shadowFactor = 0.0;
-	int count = 0;
-	int range = 2;
-	
+	int range = 1;
+
 	for (int x = -range; x <= range; x++) {
 		for (int y = -range; y <= range; y++) {
 			shadowFactor += textureProj(shadowCoord, vec2(dx*x, dy*y), cascadeIndex, bias);
-			count++;
 		}
 	}
-	return shadowFactor / count;
+	return shadowFactor / 9.0;
 }
 #endif
 
