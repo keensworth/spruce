@@ -60,8 +60,8 @@ public:
             .depthAttachment = {
                 .texture = depthAttachment,
                 .loadOp = Flags::LoadOp::LOAD,
-                .layout = Flags::ImageLayout::READ_ONLY,
-                .finalLayout = Flags::ImageLayout::READ_ONLY
+                .layout = Flags::ImageLayout::DEPTH_STENCIL_READ_ONLY,
+                .finalLayout = Flags::ImageLayout::DEPTH_STENCIL_READ_ONLY
             },
             .colorAttachments = {
                 {
@@ -106,7 +106,7 @@ public:
             .textures = {
                 {
                     .attachment = depthAttachment,
-                    .layout = Flags::ImageLayout::READ_ONLY
+                    .layout = Flags::ImageLayout::DEPTH_STENCIL_READ_ONLY
                 },
                 {
                     .attachment = visibilityTexture,
@@ -114,7 +114,7 @@ public:
                 },
                 {
                     .attachments = {shadowCascades, MAX_CASCADES},
-                    .layout = Flags::ImageLayout::READ_ONLY
+                    .layout = Flags::ImageLayout::DEPTH_STENCIL_READ_ONLY
                 }
             },
             .buffers = {
@@ -178,7 +178,7 @@ public:
             .textures = {
                 {
                     .attachment = depthAttachment,
-                    .layout = Flags::ImageLayout::READ_ONLY
+                    .layout = Flags::ImageLayout::DEPTH_STENCIL_READ_ONLY
                 },
                 {
                     .attachment = visibilityTexture,
@@ -186,7 +186,7 @@ public:
                 },
                 {
                     .attachments = {shadowCascades, MAX_CASCADES},
-                    .layout = Flags::ImageLayout::READ_ONLY
+                    .layout = Flags::ImageLayout::DEPTH_STENCIL_READ_ONLY
                 }
             },
             .buffers = {

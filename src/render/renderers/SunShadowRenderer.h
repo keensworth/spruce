@@ -51,7 +51,8 @@ public:
                     .format = Flags::Format::D32_SFLOAT,
                     .usage = Flags::ImageUsage::IU_DEPTH_STENCIL_ATTACHMENT | 
                              Flags::ImageUsage::IU_SAMPLED,
-                    .sampler = { .addressing = Flags::Wrap::CLAMP_TO_BORDER}
+                    .sampler = { .addressing = Flags::Wrap::CLAMP_TO_BORDER,
+                                 .compare    = Flags::Compare::GREATER_OR_EQUAL }
                 }
             });
         }
@@ -68,7 +69,7 @@ public:
             .layout = m_renderPassLayout,
             .depthAttachment = {
                 .texture = m_cascadeDepths[0],
-                .finalLayout = Flags::ImageLayout::READ_ONLY,
+                .finalLayout = Flags::ImageLayout::DEPTH_STENCIL_READ_ONLY,
                 .compareOp = Flags::Compare::GREATER_OR_EQUAL
             }
         });
@@ -81,7 +82,7 @@ public:
                 .renderPass = m_renderPass,
                 .depthAttachment = {
                     .texture = m_cascadeDepths[i+1],
-                    .finalLayout = Flags::ImageLayout::READ_ONLY,
+                    .finalLayout = Flags::ImageLayout::DEPTH_STENCIL_READ_ONLY,
                     .compareOp = Flags::Compare::GREATER_OR_EQUAL
                 }
             });

@@ -50,7 +50,9 @@ public:
             .layout = m_renderPassLayout,
             .depthAttachment = {
                 .texture = m_depthAttachment,
-                .finalLayout = Flags::ImageLayout::READ_ONLY
+                .loadOp = Flags::LoadOp::LOAD_CLEAR,
+                .finalLayout = Flags::ImageLayout::DEPTH_STENCIL_READ_ONLY,
+                .compareOp = Flags::Compare::GREATER_OR_EQUAL
             }
         });
 
