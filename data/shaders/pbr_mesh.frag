@@ -6,6 +6,7 @@
 #include "common_constants.glsl"
 
 #define SPR_NORMALS
+#define SPR_NORMALMAP_FLIP_Y 1
 #include "common_util.glsl"
 
 #define SPR_SHADOW_CASCADE_MAPS 2
@@ -51,8 +52,8 @@ vec3 gtaoMultiBounce(float visibility, vec3 color) {
 	return vec3(max(vec3(x), ((a * x + b) * x + c) * x));
 }
 
-float calculateShadowBias(uint cascadeIndex, float farSplit, vec3 lightDir){
-	float bias = max(0.005 * (1.0 - dot(normal, lightDir)), 0.005);
+float calculateShadowBias(uint cascadeIndex, float farSplit, vec3 N, vec3 L){
+	float bias = max(0.005 * (1.0 - dot(N, L)), 0.005);
 	if (cascadeIndex == MAX_SHADOW_CASCADES){
 		bias *= 1.0 / (camera.far * 0.5f);
 	} else {
@@ -61,7 +62,7 @@ float calculateShadowBias(uint cascadeIndex, float farSplit, vec3 lightDir){
 	return bias;
 }
 
-float calculateShadow(vec3 N, vec3 lightDir) {
+float calculateShadow(vec3 N, vec3 L) {
 	uint cascadeIndex = 0;
 	for(uint i = 0; i < MAX_SHADOW_CASCADES - 1; ++i) {
 		if(-viewPos.z > shadowData.cascadeSplit[0][i]) {	
@@ -72,17 +73,17 @@ float calculateShadow(vec3 N, vec3 lightDir) {
 	vec4 shadowCoord = (biasMat * shadowData.cascadeViewProj[cascadeIndex]) * pos;
 	float farSplit = shadowData.cascadeSplit[0][cascadeIndex];
 
-	float bias = calculateShadowBias(cascadeIndex, farSplit, lightDir);
+	float bias = calculateShadowBias(cascadeIndex, farSplit, N, L);
 	float shadow = filterPCF(shadowCoord, cascadeIndex, bias);
 	
 	// if close enough to the next split, blend current cascade into next
-	if (cascadeIndex < MAX_SHADOW_CASCADES - 1 && -viewPos.z > (0.91 * farSplit)){
+	if (cascadeIndex < MAX_SHADOW_CASCADES - 1 && -viewPos.z > (0.96 * farSplit)){
 		vec4 blendShadowCoord = (biasMat * shadowData.cascadeViewProj[cascadeIndex+1]) * pos;
 		float blendFarSplit = shadowData.cascadeSplit[0][cascadeIndex+1];
 
-		float blendBias = calculateShadowBias(cascadeIndex+1, blendFarSplit, lightDir);
+		float blendBias = calculateShadowBias(cascadeIndex+1, blendFarSplit, N, L);
 		float blendShadow = filterPCF(blendShadowCoord, cascadeIndex+1, blendBias);
-		float a = (-viewPos.z - 0.91 * farSplit) / (0.09 * farSplit);
+		float a = (-viewPos.z - 0.96 * farSplit) / (0.04 * farSplit);
 		shadow = ((1 - a) * shadow) + (a * blendShadow);
 	}
 
@@ -117,12 +118,11 @@ vec3 fresnelSchlick(vec3 F0, float cosTheta) {
 }
 
 float getPointAttenuation(Light light){
-	float d = length(light.pos - pos.rgb);
-	float i = light.intensity;
+	float d = length(light.pos - pos.xyz);
 	float r = light.range;
 	float s = min(d/r, 1.0);
 	float x = 1 - s * s;
-	return i*((x * x) / (1.0 + 1.0 * s));
+	return (x * x) / (1.0 + 1.0 * s);
 }
 
 Cluster getCluster(){
@@ -160,33 +160,37 @@ struct LightingParams {
 
 LightingParams getLightingParams(MaterialData material){
 	vec4 baseColor = texture(textures[material.baseColorTexIdx], texCoord).rgba;
-    baseColor *= material.baseColorFactor;
+    baseColor.rgb *= material.baseColorFactor.rgb;
 
 	if (baseColor.a < material.alphaCutoff){
 		discard;
 	}
 
     vec3 mapNormal = texture(textures[material.normalTexIdx], texCoord).rgb;
-	mapNormal = mapNormal * 2.0 - 1.0;
-    mapNormal *= normalize(vec3(material.normalScale, material.normalScale, 1.0));
+	mapNormal.xy = mapNormal.xy * 2.0 - 1.0;
+	mapNormal.z = sqrt(1 - pow(mapNormal.x ,2) - pow(mapNormal.y ,2));
+    mapNormal.xy *= material.normalScale;
+    mapNormal = normalize(mapNormal);
 
-    float mapMetal = texture(textures[material.metalRoughTexIdx], texCoord).b;
+    float mapMetal = texture(textures[material.metalRoughTexIdx], texCoord).b;  // b
     mapMetal *= material.metallicFactor;
     mapMetal = clamp(mapMetal, 0.0, 1.0);
 
-    float mapRoughness = texture(textures[material.metalRoughTexIdx], texCoord).g;
+    float mapRoughness = texture(textures[material.metalRoughTexIdx], texCoord).g; //g
     mapRoughness *= material.roughnessFactor;
     mapRoughness = clamp(mapRoughness, 0.04, 1.0);
 
-	vec3 mapEmissive = texture(textures[material.emissiveTexIdx], texCoord).rgb;
-	mapEmissive *= material.emissiveFactor;
+	vec3 mapEmissive = texture(textures[material.emissiveTexIdx], texCoord).rgb * 4.0;
+	//mapEmissive *= material.emissiveFactor;
 
     // ws_frag -> ws_camera
-	vec3 V = normalize(camera.pos - pos.rgb);
+	vec3 V = normalize(camera.pos - pos.xyz);
 
 	// world normal, after applying normal map
 	vec3 N = vec3(0.0);
-	if (isnan(TBN[0][0])){
+	bool invalidTBN = any(isnan(TBN[0])) || any(isnan(TBN[1])) || any(isnan(TBN[2])) ||
+        dot(TBN[0], TBN[0]) < 1e-8 || dot(TBN[2], TBN[2]) < 1e-8;
+	if (invalidTBN){
         N = perturb_normal(normal, camera.pos - pos.xyz, texCoord, mapNormal);
     } else {
         N = perturb_normal(TBN, mapNormal);
@@ -234,7 +238,7 @@ vec3 calculateDirectLighting(LightingParams p, Light light, vec3 L, float attenu
 	vec3 specularBRDF = (F * D * G) / max(0.00001, 4.0 * NdL * p.NdV);
 
 	// Total contribution for this light.
-	return (diffuseBRDF + specularBRDF) * Lr * NdL * shadow * light.intensity;
+	return (diffuseBRDF + specularBRDF) * Lr * NdL * shadow;
 } 
 
 vec3 calculateAmbientLighting(LightingParams p) {
@@ -242,17 +246,18 @@ vec3 calculateAmbientLighting(LightingParams p) {
 	vec3 visibility = texture(occlusionMap, uv).rgb;
 	visibility = gtaoMultiBounce(visibility.x, p.baseColor.rgb);
 
-	vec3 F = fresnelSchlick(p.F0, p.NdV);
+	vec3 F = p.F0 + (max(vec3(1.0 - p.roughness), p.F0) - p.F0) * pow(1.0 - p.NdV, 5.0);
 	vec3 kd = mix(vec3(1.0) - F, vec3(0.0), p.metalness);
 
 	vec3 diffuseIBL = kd * p.baseColor.rgb;
-	
+	vec3 specularIBL = F;
+
 	vec3 ambientLighting;
-	ambientLighting = diffuseIBL;
+	ambientLighting = (diffuseIBL + specularIBL);
 	ambientLighting *= visibility;
 	ambientLighting += p.emissive;
 
-	return ambientLighting * 0.2;
+	return ambientLighting * 0.4;
 }
 
 void main() {
@@ -270,26 +275,24 @@ void main() {
 	vec3 directLighting = vec3(0.0);
 	for (int i = 0; i < count; i++){
 		Light light = lights[lightIndices[offset + i]];
-		vec3 L = normalize(light.pos - pos.rgb);
-		if (dot(normal, L) < 0){
-			continue;
-		}
+		vec3 L = normalize(light.pos - pos.xyz);
+		float NdL = dot(normal, L);
 		float attenuation = getPointAttenuation(light);
-		directLighting += calculateDirectLighting(params, light, L, attenuation, 1.0);
+		directLighting += NdL > 0.0 ? calculateDirectLighting(params, light, L, attenuation, 1.0) : vec3(0.0, 0.0, 0.0);
 	}
 
 	{
 		Light light = lights[sceneData.sunOffset];
 		vec3 L = normalize(-light.dir);
+		float NdL = dot(normal, L);
 		float attenuation = 1.0;
-		float shadow = calculateShadow(params.N, light.dir);
+		float shadow = NdL > 0.0 ? calculateShadow(params.N, L) : 0.0;
 		directLighting += calculateDirectLighting(params, light, L, attenuation, shadow);
 	}
 
 	// ambient ligthing
 	vec3 ambientLighting = calculateAmbientLighting(params);
 
-	vec4 pixelColorWithoutFog = vec4(directLighting + ambientLighting, 1.0);
-    //FragColor = pixelColorWithoutFog * vec4(transmittance.xxx, 1.0) + vec4(inScattering, 0.0);
-    FragColor = pixelColorWithoutFog;
+	vec4 pixelColor = vec4(directLighting + ambientLighting, 1.0);
+    FragColor = pixelColor;
 }

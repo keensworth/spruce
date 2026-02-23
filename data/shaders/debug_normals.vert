@@ -25,9 +25,10 @@ void main() {
     color = att.color_v.rgb;
     texCoord = vec2(att.normal_u.w, att.color_v.w);
     drawId = gl_InstanceIndex;
-    vec4 tangent = vec4(normalize(mat3(transform.modelInvTranspose) * att.tangent.xyz), att.tangent.w);
-    vec3 bitangent = cross(normal, tangent.xyz) * tangent.w;
-    TBN = mat3(tangent.xyz, bitangent, normal);
+    vec3 tangent = normalize(mat3(transform.model) * att.tangent.xyz);
+    float runtimeSign = sign(determinant(mat3(transform.model)));
+    vec3 bitangent = cross(normal, tangent) * att.tangent.w * runtimeSign;
+    TBN = mat3(tangent, bitangent, normal);
 
     gl_Position = scene.viewProj * pos;
 }

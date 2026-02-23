@@ -5,6 +5,10 @@
 // sourced and modified from http://www.thetenthplanet.de/archives/1180
 
 #ifdef SPR_NORMALS
+#ifndef SPR_NORMALMAP_FLIP_Y
+#define SPR_NORMALMAP_FLIP_Y 0
+#endif
+
 mat3 inverse3x3( mat3 M ){
     mat3 M_t = transpose( M ); 
     float det = dot( cross( M_t[0], M_t[1] ), M_t[2] ); 
@@ -32,20 +36,36 @@ mat3 cotangent_frame( vec3 N, vec3 p, vec2 uv ) {
 }
 
 vec3 perturb_normal( vec3 N, vec3 V, vec2 texcoord, vec3 mapNormal ){
+    #if SPR_NORMALMAP_FLIP_Y
     mapNormal.y = -mapNormal.y;
+    #endif
     mat3 TBN = cotangent_frame( N, -V, texcoord );
     return normalize( TBN * mapNormal );
 }
 
 vec3 perturb_normal( vec3 N, vec4 T, vec3 mapNormal ){
+    #if SPR_NORMALMAP_FLIP_Y
     mapNormal.y = -mapNormal.y;
-    mat3 TBN = mat3(T.xyz, cross(N, T.xyz) * T.w, N);
-    return normalize( TBN * mapNormal );
+    #endif
+    vec3 n = normalize(N);
+    vec3 t = normalize(T.xyz - n * dot(T.xyz, n));
+    vec3 b = normalize(cross(n, t)) * T.w;
+    return normalize(mat3(t, b, n) * mapNormal);
 }
 
 vec3 perturb_normal( mat3 TBN, vec3 mapNormal ){
+    #if SPR_NORMALMAP_FLIP_Y
     mapNormal.y = -mapNormal.y;
-    return normalize(TBN * mapNormal);
+    #endif
+
+    vec3 n = normalize(TBN[2]);
+    vec3 t = normalize(TBN[0] - n * dot(TBN[0], n));
+    vec3 b = normalize(cross(n, t));
+    if (dot(b, TBN[1]) < 0.0){
+        b = -b;
+    }
+
+    return normalize(mat3(t, b, n) * mapNormal);
 }
 #endif // SPR_NORMALS
 

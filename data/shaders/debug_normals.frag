@@ -6,6 +6,7 @@
 #include "common_constants.glsl"
 
 #define SPR_NORMALS 1
+#define SPR_NORMALMAP_FLIP_Y 1
 #include "common_util.glsl"
 
 layout(location = 0) in vec4 pos;
@@ -23,11 +24,15 @@ void main() {
     MaterialData material = materials[draw.materialOffset];
     
     vec3 mapNormal = texture(textures[material.normalTexIdx], texCoord).rgb;
-    mapNormal = mapNormal * 2.0 - 1.0;
-    mapNormal *= normalize(vec3(material.normalScale, material.normalScale, 1.0));
+    mapNormal.xy = mapNormal.xy * 2.0 - 1.0;
+	mapNormal.z = sqrt(1 - pow(mapNormal.x ,2) - pow(mapNormal.y ,2));
+    mapNormal.xy *= material.normalScale;
+    mapNormal = normalize(mapNormal);
     
     vec3 N = vec3(0.0);
-    if (isnan(TBN[0][0])){
+    bool invalidTBN = any(isnan(TBN[0])) || any(isnan(TBN[1])) || any(isnan(TBN[2])) ||
+        dot(TBN[0], TBN[0]) < 1e-8 || dot(TBN[2], TBN[2]) < 1e-8;
+    if (invalidTBN){
         N = perturb_normal(normal, camera.pos - pos.xyz, texCoord, mapNormal);
     } else {
         N = perturb_normal(TBN, mapNormal);
