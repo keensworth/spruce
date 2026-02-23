@@ -36,7 +36,10 @@ enum BufferData {
     SPR_UV = 6,
     SPR_TEXTURE_COLOR = 7,
     SPR_TEXTURE_NORMAL = 8,
-    SPR_TEXTURE_OTHER = 9,
+    SPR_TEXTURE_MR = 9,
+    SPR_TEXTURE_EMISSIVE = 10,
+    SPR_TEXTURE_OCCLUSION = 11,
+    SPR_TEXTURE_OTHER = 12,
 };
 
 struct OffsetSpan {
@@ -182,7 +185,8 @@ private:
         uint32_t inExtent, 
         unsigned char* mipOut, 
         uint32_t outSizeBytes, 
-        uint32_t outExtent);
+        uint32_t outExtent,
+        uint32_t components);
     void compressImageData(
         unsigned char* data,
         uint32_t dataSize,

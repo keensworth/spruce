@@ -171,7 +171,9 @@ OffsetSpan GLTFParser::handleBuffer(
     return offsetSpan;
 }
 
-
+#ifndef STBIR_DEFAULT_FILTER_DOWNSAMPLE
+#define STBIR_DEFAULT_FILTER_DOWNSAMPLE STBIR_FILTER_MITCHELL
+#endif
 
 void GLTFParser::createMip(
         unsigned char* in, 
@@ -179,9 +181,43 @@ void GLTFParser::createMip(
         uint32 inExtent, 
         unsigned char* mipOut, 
         uint32 outSizeBytes, 
-        uint32 outExtent)
+        uint32 outExtent,
+        uint32 components)
 {
-    stbir_resize_uint8(in, inExtent, inExtent, 0, mipOut, outExtent, outExtent, 0, 4);
+    stbir_resize_uint8(in, inExtent, inExtent, 0, mipOut, outExtent, outExtent, 0, components);
+}
+
+VkFormat getFormat(BufferData dataType){
+    if(dataType == SPR_TEXTURE_COLOR){
+        return VK_FORMAT_R8G8B8A8_SRGB;
+    } else if (dataType == SPR_TEXTURE_NORMAL){
+        return VK_FORMAT_R8G8B8A8_UNORM;
+    } else if (dataType == SPR_TEXTURE_MR){
+        return VK_FORMAT_R8G8B8A8_UNORM;
+    } else if (dataType == SPR_TEXTURE_EMISSIVE){
+        return VK_FORMAT_R8G8B8A8_SRGB;
+    } else if (dataType == SPR_TEXTURE_OCCLUSION){
+        return VK_FORMAT_R8G8B8A8_UNORM;
+    } else {
+        return VK_FORMAT_R8G8B8A8_UNORM;
+    }
+}
+
+
+uint32 getComponents(BufferData dataType){
+    if(dataType == SPR_TEXTURE_COLOR){
+        return 4;
+    } else if (dataType == SPR_TEXTURE_NORMAL){
+        return 4;
+    } else if (dataType == SPR_TEXTURE_MR){
+        return 4;
+    } else if (dataType == SPR_TEXTURE_EMISSIVE){
+        return 4;
+    } else if (dataType == SPR_TEXTURE_OCCLUSION){
+        return 4;
+    } else {
+        return 4;
+    }
 }
 
 void GLTFParser::compressImageData(
@@ -205,7 +241,7 @@ void GLTFParser::compressImageData(
     params.threadCount = 8;
     
     createInfo.glInternalformat = 0; 
-    createInfo.vkFormat = dataType == SPR_TEXTURE_COLOR ? VK_FORMAT_R8G8B8A8_SRGB : VK_FORMAT_R8G8B8A8_UNORM;
+    createInfo.vkFormat = getFormat(dataType),
     createInfo.baseWidth = width;
     createInfo.baseHeight = height;
     createInfo.baseDepth = 1;
@@ -225,6 +261,7 @@ void GLTFParser::compressImageData(
     uint32 maxExtent = std::max(width, height);
 
     // base level
+    components = getComponents(dataType);
     srcSize = width*height*components;
     level = 0;
     layer = 0;
@@ -250,8 +287,17 @@ void GLTFParser::compressImageData(
             level = i;
             layer = 0;
             faceSlice = 0;                           
+            SprLog::debug({{"LEVEL i: "}, {i}});
+            SprLog::debug({{"   prevSize  : "}, {prevSize}});
+            SprLog::debug({{"   prevExtent  : "}, {prevExtent}});
+            SprLog::debug({{"   currSize  : "}, {currSize}});
+            SprLog::debug({{"   currExtent  : "}, {currExtent}});
+            SprLog::debug({{"   components  : "}, {components}});
+            SprLog::debug({{"   level  : "}, {level}});
+            SprLog::debug({{"   layer  : "}, {layer}});
+            SprLog::debug({{"   faceSlice  : "}, {faceSlice}});
 
-            createMip(i == 1 ? data : mipData[i-2], prevSize, prevExtent, mipData[i-1], currSize, currExtent);
+            createMip(i == 1 ? data : mipData[i-2], prevSize, prevExtent, mipData[i-1], currSize, currExtent, components);
             result = ktxTexture_SetImageFromMemory(ktxTexture(texture), level, layer, faceSlice, mipData[i-1], currSize);
             if (result) {
                 SprLog::error({{"Failed to set (mip) image from memory, code: "}, {ktxErrorString(result)}});
@@ -260,26 +306,26 @@ void GLTFParser::compressImageData(
             prevExtent = currExtent;
             prevSize = currSize;
 
-            if (currExtent == 1)
+            if (currExtent <= 1)
                 break;
         }
     }
     
-    // BasisU encode
-    if (dataType == SPR_TEXTURE_NORMAL){
-        params.normalMap = KTX_TRUE;
-        params.uastc = KTX_TRUE;
-        params.uastcFlags = KTX_PACK_UASTC_LEVEL_DEFAULT;
-        params.compressionLevel = KTX_ETC1S_DEFAULT_COMPRESSION_LEVEL;
-    } else {
-        params.uastc = KTX_FALSE;
-        params.normalMap = KTX_FALSE;
-        params.compressionLevel = KTX_ETC1S_DEFAULT_COMPRESSION_LEVEL;        
-    }
-    //result = ktxTexture2_CompressBasisEx(texture, &params);
-    // if (result) {
-    //     std::cerr << "Failed to compress texture, code: " << ktxErrorString(result) << std::endl;
+    // // BasisU encode
+    // if (dataType == SPR_TEXTURE_NORMAL){
+    //     params.normalMap = KTX_TRUE;
+    //     params.uastc = KTX_TRUE;
+    //     params.uastcFlags = KTX_PACK_UASTC_LEVEL_DEFAULT;
+    //     params.compressionLevel = KTX_ETC1S_DEFAULT_COMPRESSION_LEVEL;
+    // } else {
+    //     params.uastc = KTX_FALSE;
+    //     params.normalMap = KTX_FALSE;
+    //     params.compressionLevel = KTX_ETC1S_DEFAULT_COMPRESSION_LEVEL;        
     // }
+    // //result = ktxTexture2_CompressBasisEx(texture, &params);
+    // // if (result) {
+    // //     std::cerr << "Failed to compress texture, code: " << ktxErrorString(result) << std::endl;
+    // // }
 
     // cleanup
     result = ktxTexture_WriteToMemory((ktxTexture*)(texture), outData, &outSize);
@@ -294,6 +340,7 @@ void GLTFParser::compressImageData(
         }
     }
 }
+
 
 OffsetSpan GLTFParser::handleTextureBuffer(
         const tinygltf::Buffer& buffer, 
@@ -317,7 +364,8 @@ OffsetSpan GLTFParser::handleTextureBuffer(
     uint32 ktxTextureDataSize;
 
     // generate mips + compress
-    compressImageData((unsigned char*)(bufferData + byteOffset), byteLength, &ktxTextureData, ktxTextureDataSize, dataType, width, height, 4);
+    int targetComponents = getComponents(dataType);
+    compressImageData((unsigned char*)(bufferData + byteOffset), byteLength, &ktxTextureData, ktxTextureDataSize, dataType, width, height, targetComponents);
 
     OffsetSpan offsetSpan = writeBufferFile(ktxTextureData, ktxTextureDataSize, SPR_DR_TEXTURE);
 
@@ -339,23 +387,23 @@ OffsetSpan GLTFParser::handleMIMEImageBuffer(
 
     // buffer data
     const unsigned char* bufferData = buffer.data.data();
-
     int width, height, numChannels;
+    int components = getComponents(dataType);
     unsigned char* pixels = stbi_load_from_memory(
         reinterpret_cast<const stbi_uc*>(bufferData + byteOffset),
         byteLength,
         &width,
         &height,
         &numChannels,
-        STBI_rgb_alpha
+        components
     );
 
-    byteLength = width * height * STBI_rgb_alpha;    
+    byteLength = width * height * components;    
 
     unsigned char* ktxTextureData = nullptr;
     uint32 ktxTextureDataSize;
 
-    compressImageData(pixels, byteLength, &ktxTextureData, ktxTextureDataSize, dataType, width, height, 4); 
+    compressImageData(pixels, byteLength, &ktxTextureData, ktxTextureDataSize, dataType, width, height, components); 
 
     OffsetSpan offsetSpan = writeBufferFile(ktxTextureData, ktxTextureDataSize, SPR_DR_TEXTURE);
 
@@ -379,8 +427,9 @@ OffsetSpan GLTFParser::handleBufferInterleaved(
         DataRegion region){
     std::vector<unsigned char> bufferData = buffer.data;
     std::vector<unsigned char> data;
-    // iterate over buffer, one stride at a time 
-    for (uint32 i = byteOffset; i < byteOffset + byteLength; i+= byteStride){
+    // iterate over buffer, one stride at a time
+    uint32 elementCount = byteLength / bytesPerElement;
+    for (uint32 i = byteOffset; i < byteOffset + elementCount * byteStride; i+= byteStride){
         // grab neccessary bytes from stride (byte-by byte, may be slow)
         for (uint32 b = 0; b < bytesPerElement; b++){
             data.push_back(bufferData[i+b]);
@@ -553,7 +602,7 @@ uint32 GLTFParser::handleTexture(const tinygltf::OcclusionTextureInfo& texInfo){
     const tinygltf::Texture& tex = model.textures[texIndex];
 
     // handle texture
-    return handleTexture(tex, SPR_TEXTURE_OTHER);
+    return handleTexture(tex, SPR_TEXTURE_OCCLUSION);
 }
 
 uint32 GLTFParser::handleMaterial(const tinygltf::Material& material, uint32& outMaterialFlags){
@@ -587,7 +636,7 @@ uint32 GLTFParser::handleMaterial(const tinygltf::Material& material, uint32& ou
     float roughFactor = 1.0f;
     if (pbr.metallicRoughnessTexture.index >= 0){ //metallicroughness
         outMaterialFlags |= (0b1<<1);
-        mr_textureIndex = handleTexture(pbr.metallicRoughnessTexture, SPR_TEXTURE_OTHER);
+        mr_textureIndex = handleTexture(pbr.metallicRoughnessTexture, SPR_TEXTURE_MR);
     }
 
     // normal
@@ -596,6 +645,7 @@ uint32 GLTFParser::handleMaterial(const tinygltf::Material& material, uint32& ou
     if (normal.index >= 0){
         outMaterialFlags |= (0b1<<2);
         n_textureIndex = handleTexture(normal);
+        normalScale = (float)normal.scale;
     }
 
     // occlusion
@@ -611,7 +661,7 @@ uint32 GLTFParser::handleMaterial(const tinygltf::Material& material, uint32& ou
     vec3 emissiveFactor = {0.f,0.f,0.f};
     if (emissive.index >= 0){
         outMaterialFlags |= (0b1<<4);
-        e_textureIndex = handleTexture(emissive, SPR_TEXTURE_OTHER);
+        e_textureIndex = handleTexture(emissive, SPR_TEXTURE_EMISSIVE);
     }
 
     // alphamode
@@ -691,7 +741,8 @@ OffsetSpan GLTFParser::interleaveVertexAttributes(
         texCoordBuffer.resize(vertexCount * bytesPerTexCoord);
     }
 
-    glm::mat3 normalMatrix = glm::transpose(glm::inverse(glm::mat3(transform)));
+    glm::mat3 modelMatrix = glm::mat3(transform);
+    glm::mat3 normalMatrix = glm::transpose(glm::inverse(modelMatrix));
 
     // transform normals
     glm::vec3 normal = glm::vec3(1.0);
@@ -703,11 +754,17 @@ OffsetSpan GLTFParser::interleaveVertexAttributes(
 
     // transform tangents
     glm::vec4 tangent = glm::vec4(1.0);
-    glm::vec3 temp = glm::vec3(1.0);
+    glm::vec3 t = glm::vec3(1.0);
+    float modelSign = glm::determinant(modelMatrix) < 0.0f ? -1.0f : 1.0f;
     for (uint32 i = 0; i < vertexCount*bytesPerTangent; i += bytesPerTangent){
+        uint32 vertex = i / bytesPerTangent;
+        uint32 normalOffset = vertex * bytesPerNormal;
+        glm::vec3 n = glm::make_vec3((float*)(normalBuffer.data() + normalOffset));
+
         tangent = glm::make_vec4((float*)(tangentBuffer.data() + i));
-        temp = {tangent.x, tangent.y, tangent.z};
-        tangent = glm::vec4(glm::normalize(normalMatrix * temp), tangent.w);
+        t = glm::normalize(modelMatrix * glm::vec3(tangent));
+        t = glm::normalize(t - n * glm::dot(t, n));
+        tangent = glm::vec4(t, tangent.w * modelSign);
         memcpy((unsigned char*)(tangentBuffer.data() + i), ((unsigned char*)glm::value_ptr(tangent)), bytesPerTangent);
     }
 

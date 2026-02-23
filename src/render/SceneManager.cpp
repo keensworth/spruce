@@ -413,7 +413,8 @@ void SceneManager::initTextures(PrimitiveCounts counts, VulkanDevice* device){
             .view = { 
                 .mips = info.mipCount,
                 .layers = info.layerCount
-            }
+            },
+            .components = info.components
         });
     }
 
@@ -434,7 +435,8 @@ void SceneManager::initTextures(PrimitiveCounts counts, VulkanDevice* device){
             .view = { 
                 .mips = info.mipCount,
                 .layers = info.layerCount
-            }
+            },
+            .components = info.components
         });
     }
 }

@@ -61,6 +61,7 @@ typedef struct Texture {
     VkSampleCountFlagBits samples;
     VkImageUsageFlags usage;
     VkImageSubresourceRange subresourceRange;
+    uint32 components;
     bool defaultRes = true;
     struct Desc;
 } Texture;
@@ -267,6 +268,7 @@ typedef struct Texture::Desc {
     uint32 samples = Flags::Sample::SAMPLE_1;
     Sampler sampler;
     View view;
+    uint32 components;
 } TextureDesc;
 
 

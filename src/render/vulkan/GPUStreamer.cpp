@@ -180,6 +180,7 @@ void GPUStreamer::transfer(TextureTransfer data, bool managed) {
             uint32 mipLevel = (data.dst->mips-1-j);
             uint32 width = std::max(1u, data.dst->dimensions.x / (1 << mipLevel));
             uint32 height = std::max(1u, data.dst->dimensions.y / (1 << mipLevel));
+            uint32 components = data.dst->components;
 
             m_imageCopyCmdQueue.push_function([=](){
                 VkBuffer stageBuffer = stage->buffer;
@@ -205,7 +206,7 @@ void GPUStreamer::transfer(TextureTransfer data, bool managed) {
                 vkCmdCopyBufferToImage(m_transferCommandBuffer->getCommandBuffer(), stageBuffer, dstImage, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, 1, &imageRegion);
             });
 
-            offset += 4 * width * height;
+            offset += components * width * height;
         }
     }
 
