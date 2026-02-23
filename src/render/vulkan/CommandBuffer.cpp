@@ -93,7 +93,7 @@ RenderPassRenderer& CommandBuffer::beginRenderPass(Handle<RenderPass> handle, gl
         };
     if (hasDepth){
         uint32 compareOp = framebuffer->depthAttachment.compareOp;
-        VkClearDepthStencilValue depthClearColor = {1.0f, 0};
+        VkClearDepthStencilValue depthClearColor = {0.0f, 0};
         if (compareOp == Flags::Compare::GREATER || compareOp == Flags::Compare::GREATER_OR_EQUAL)
             depthClearColor = {0.0f, 0};
         clearValues[colorCount] = VkClearValue {
@@ -141,7 +141,7 @@ RenderPassRenderer& CommandBuffer::beginRenderPass(Handle<RenderPass> handle, ui
         };
     if (hasDepth){
         uint32 compareOp = framebuffer->depthAttachment.compareOp;
-        VkClearDepthStencilValue depthClearColor = {1.0f, 0};
+        VkClearDepthStencilValue depthClearColor = {0.0f, 0};
         if (compareOp == Flags::Compare::GREATER || compareOp == Flags::Compare::GREATER_OR_EQUAL)
             depthClearColor = {0.0f, 0};
         clearValues[colorCount] = VkClearValue {
@@ -189,7 +189,7 @@ RenderPassRenderer& CommandBuffer::beginRenderPass(Handle<RenderPass> renderPass
         };
     if (hasDepth){
         uint32 compareOp = framebuffer->depthAttachment.compareOp;
-        VkClearDepthStencilValue depthClearColor = {1.0f, 0};
+        VkClearDepthStencilValue depthClearColor = {0.0f, 0};
         if (compareOp == Flags::Compare::GREATER || compareOp == Flags::Compare::GREATER_OR_EQUAL)
             depthClearColor = {0.0f, 0};
         clearValues[colorCount] = VkClearValue {
@@ -262,11 +262,14 @@ void CommandBuffer::bindIndexBuffer(Handle<Buffer> indexBuffer){
 void CommandBuffer::submit(){
     std::vector<VkPipelineStageFlags> stageFlags;
 
-    for (uint32 i = 0; i < m_waitSemaphores.size(); i++){
-        if (m_type == CommandType::TRANSFER) {
-            stageFlags.push_back(VK_PIPELINE_STAGE_TRANSFER_BIT);
-        } else {
-            stageFlags.push_back(VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT);
+    if (m_waitStages.size() == m_waitSemaphores.size()){
+        stageFlags = m_waitStages;
+    } else {
+        for (uint32 i = 0; i < m_waitSemaphores.size(); i++){
+            if (m_type == CommandType::TRANSFER)
+                stageFlags.push_back(VK_PIPELINE_STAGE_TRANSFER_BIT);
+            else
+                stageFlags.push_back(VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT);
         }
     }
 
@@ -325,6 +328,8 @@ void CommandBuffer::setSemaphoreDependencies(SemaphoreDependencies semaphores){
     m_waitSemaphores.insert(m_waitSemaphores.begin(), semaphores.wait.begin(), semaphores.wait.end());
     m_signalSemaphores.clear();
     m_signalSemaphores.insert(m_signalSemaphores.begin(), semaphores.signal.begin(), semaphores.signal.end());
+    m_waitStages.clear();
+    m_waitStages.insert(m_waitStages.begin(), semaphores.waitStages.begin(), semaphores.waitStages.end());
 }
 
 

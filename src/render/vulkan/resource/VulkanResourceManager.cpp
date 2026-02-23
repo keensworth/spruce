@@ -313,6 +313,7 @@ Handle<Texture> VulkanResourceManager::create<Texture>(TextureDesc desc){
         .samples    = (VkSampleCountFlagBits)desc.samples,
         .usage      = (VkImageUsageFlags)desc.usage,
         // .subresourceRange = subresourceRange,
+        .components = desc.components,
         .defaultRes = defaultRes
     };
     Handle<Texture> textureHandle = textureCache->insert(texture);
@@ -903,73 +904,109 @@ Handle<RenderPass> VulkanResourceManager::create<RenderPass>(RenderPassDesc desc
             .dependencyFlags = 0
         };
     } else { // offscreen attachment dependencies
-        uint32 srcStageMask = 0;
-        uint32 dstStageMask = 0;
-        uint32 srcAccessMask = 0;
-        uint32 dstAccessMask = 0;
+        uint32 inSrcStageMask  = 0;
+        uint32 inDstStageMask  = 0;
+        uint32 inSrcAccessMask = 0;
+        uint32 inDstAccessMask = 0;
+
+        uint32 outSrcStageMask  = 0;
+        uint32 outDstStageMask  = 0;
+        uint32 outSrcAccessMask = 0;
+        uint32 outDstAccessMask = 0;
 
         if (colorAttachmentCount > 0){
-            srcStageMask  |= VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT;
-            dstStageMask  |= VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT;
-            srcAccessMask |= VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT;
-            dstAccessMask |= VK_ACCESS_SHADER_READ_BIT;
+            // srcAccess: NONE if any attachment starts from UNDEFINED (nothing was written before)
+            bool anyColorUndefined = false;
+            for (uint32 i = 0; i < colorAttachmentCount; i++){
+                if (layout->attachmentDescriptions[i].initialLayout == VK_IMAGE_LAYOUT_UNDEFINED){
+                    anyColorUndefined = true;
+                    break;
+                }
+            }
+            VkAccessFlags colorSrcAccess = anyColorUndefined ? VK_ACCESS_NONE : VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT;
+
+            // in: wait for prev color writes, then write color in this pass
+            inSrcStageMask  |= VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT;
+            inDstStageMask  |= VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT;
+            inSrcAccessMask |= colorSrcAccess;
+            inDstAccessMask |= VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT;
+
+            // out: after writing color, make it visible to fragment shaders in subsequent passes
+            outSrcStageMask  |= VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT;
+            outDstStageMask  |= VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT;
+            outSrcAccessMask |= VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT;
+            outDstAccessMask |= VK_ACCESS_SHADER_READ_BIT;
         }
 
         if (desc.bufferWrites){
-            srcStageMask  |= VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT;
-            dstStageMask  |= VK_PIPELINE_STAGE_VERTEX_SHADER_BIT | VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT;
-            srcAccessMask |= VK_ACCESS_SHADER_WRITE_BIT;
-            dstAccessMask |= VK_ACCESS_SHADER_READ_BIT;
+            // in: wait for compute writes to be visible to shaders in this pass
+            inSrcStageMask  |= VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT;
+            inDstStageMask  |= VK_PIPELINE_STAGE_VERTEX_SHADER_BIT | VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT;
+            inSrcAccessMask |= VK_ACCESS_SHADER_WRITE_BIT;
+            inDstAccessMask |= VK_ACCESS_SHADER_READ_BIT;
         }
 
         inDependencyColor = {
             .srcSubpass      = VK_SUBPASS_EXTERNAL,
             .dstSubpass      = 0,
-            .srcStageMask    = srcStageMask,
-            .dstStageMask    = dstStageMask,
-            .srcAccessMask   = srcAccessMask,
-            .dstAccessMask   = dstAccessMask,
+            .srcStageMask    = inSrcStageMask,
+            .dstStageMask    = inDstStageMask,
+            .srcAccessMask   = inSrcAccessMask,
+            .dstAccessMask   = inDstAccessMask,
             .dependencyFlags = 0
         };
         outDependencyColor = {
             .srcSubpass      = 0,
             .dstSubpass      = VK_SUBPASS_EXTERNAL,
-            .srcStageMask    = srcStageMask,
-            .dstStageMask    = dstStageMask,
-            .srcAccessMask   = srcAccessMask,
-            .dstAccessMask   = dstAccessMask,
+            .srcStageMask    = outSrcStageMask,
+            .dstStageMask    = outDstStageMask,
+            .srcAccessMask   = outSrcAccessMask,
+            .dstAccessMask   = outDstAccessMask,
             .dependencyFlags = 0
         };
 
         if (hasDepthAttachment){
             VkAttachmentDescription& depthDesc = layout->attachmentDescriptions[colorAttachmentCount];
-            VkAccessFlags inAccessFlags;
-            VkAccessFlags outAccessFlags;
-            if (depthDesc.initialLayout == VK_IMAGE_LAYOUT_DEPTH_STENCIL_READ_ONLY_OPTIMAL || 
+
+            bool initialIsReadOnly =
+                depthDesc.initialLayout == VK_IMAGE_LAYOUT_DEPTH_STENCIL_READ_ONLY_OPTIMAL ||
                 depthDesc.initialLayout == VK_IMAGE_LAYOUT_DEPTH_READ_ONLY_OPTIMAL         ||
                 depthDesc.initialLayout == VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL        ||
-                depthDesc.initialLayout == VK_IMAGE_LAYOUT_READ_ONLY_OPTIMAL_KHR)
-                inAccessFlags = VK_ACCESS_DEPTH_STENCIL_ATTACHMENT_READ_BIT;
-            else
-                inAccessFlags = VK_ACCESS_DEPTH_STENCIL_ATTACHMENT_WRITE_BIT | 
-                                VK_ACCESS_DEPTH_STENCIL_ATTACHMENT_READ_BIT;
+                depthDesc.initialLayout == VK_IMAGE_LAYOUT_READ_ONLY_OPTIMAL_KHR;
 
-            if (depthDesc.finalLayout == VK_IMAGE_LAYOUT_DEPTH_STENCIL_READ_ONLY_OPTIMAL || 
+            bool finalIsReadOnly =
+                depthDesc.finalLayout == VK_IMAGE_LAYOUT_DEPTH_STENCIL_READ_ONLY_OPTIMAL ||
                 depthDesc.finalLayout == VK_IMAGE_LAYOUT_DEPTH_READ_ONLY_OPTIMAL         ||
                 depthDesc.finalLayout == VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL        ||
-                depthDesc.finalLayout == VK_IMAGE_LAYOUT_READ_ONLY_OPTIMAL_KHR)
-                outAccessFlags = VK_ACCESS_DEPTH_STENCIL_ATTACHMENT_READ_BIT;
-            else
-                outAccessFlags = VK_ACCESS_DEPTH_STENCIL_ATTACHMENT_WRITE_BIT | 
-                                 VK_ACCESS_DEPTH_STENCIL_ATTACHMENT_READ_BIT;
-            
+                depthDesc.finalLayout == VK_IMAGE_LAYOUT_READ_ONLY_OPTIMAL_KHR;
+
+            // srcAccess: what the previous work wrote; NONE if starting from UNDEFINED
+            VkAccessFlags srcAccessFlags = (depthDesc.initialLayout == VK_IMAGE_LAYOUT_UNDEFINED)
+                ? VK_ACCESS_NONE
+                : VK_ACCESS_DEPTH_STENCIL_ATTACHMENT_WRITE_BIT;
+
+            // subpassAccess: what this subpass does (write unless both layouts are read-only)
+            bool subpassWrites = !(initialIsReadOnly && finalIsReadOnly);
+            VkAccessFlags subpassAccessFlags = subpassWrites
+                ? (VK_ACCESS_DEPTH_STENCIL_ATTACHMENT_WRITE_BIT | VK_ACCESS_DEPTH_STENCIL_ATTACHMENT_READ_BIT)
+                : VK_ACCESS_DEPTH_STENCIL_ATTACHMENT_READ_BIT;
+
+            // when depth is read-only in this pass, it may also be sampled in the fragment
+            // shader (e.g. prepass depth or shadow maps), so extend dst scope to cover that
+            VkPipelineStageFlags dstDepthStage = VK_PIPELINE_STAGE_EARLY_FRAGMENT_TESTS_BIT | VK_PIPELINE_STAGE_LATE_FRAGMENT_TESTS_BIT;
+            VkAccessFlags dstDepthAccess = subpassAccessFlags;
+            if (!subpassWrites) {
+                dstDepthStage  |= VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT;
+                dstDepthAccess |= VK_ACCESS_SHADER_READ_BIT;
+            }
+
             inDependencyDepth = {
                 .srcSubpass      = VK_SUBPASS_EXTERNAL,
                 .dstSubpass      = 0,
                 .srcStageMask    = VK_PIPELINE_STAGE_EARLY_FRAGMENT_TESTS_BIT | VK_PIPELINE_STAGE_LATE_FRAGMENT_TESTS_BIT,
-                .dstStageMask    = VK_PIPELINE_STAGE_EARLY_FRAGMENT_TESTS_BIT | VK_PIPELINE_STAGE_LATE_FRAGMENT_TESTS_BIT,
-                .srcAccessMask   = inAccessFlags,
-                .dstAccessMask   = outAccessFlags,
+                .dstStageMask    = dstDepthStage,
+                .srcAccessMask   = srcAccessFlags,
+                .dstAccessMask   = dstDepthAccess,
                 .dependencyFlags = 0
             };
 
@@ -977,9 +1014,9 @@ Handle<RenderPass> VulkanResourceManager::create<RenderPass>(RenderPassDesc desc
                 .srcSubpass      = 0,
                 .dstSubpass      = VK_SUBPASS_EXTERNAL,
                 .srcStageMask    = VK_PIPELINE_STAGE_EARLY_FRAGMENT_TESTS_BIT | VK_PIPELINE_STAGE_LATE_FRAGMENT_TESTS_BIT,
-                .dstStageMask    = VK_PIPELINE_STAGE_EARLY_FRAGMENT_TESTS_BIT | VK_PIPELINE_STAGE_LATE_FRAGMENT_TESTS_BIT,
-                .srcAccessMask   = inAccessFlags,
-                .dstAccessMask   = outAccessFlags,
+                .dstStageMask    = VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT,
+                .srcAccessMask   = subpassAccessFlags,
+                .dstAccessMask   = VK_ACCESS_SHADER_READ_BIT,
                 .dependencyFlags = 0
             };
         }
@@ -1002,9 +1039,9 @@ Handle<RenderPass> VulkanResourceManager::create<RenderPass>(RenderPassDesc desc
         outDependencyDepth
     };
 
-    uint32 dependenciesCount = colorAttachmentCount;
-    if (hasDepthAttachment)
-        dependenciesCount++;
+    uint32 dependenciesCount = 0;
+    if (colorAttachmentCount > 0) dependenciesCount += 2;
+    if (hasDepthAttachment) dependenciesCount += 2;
     VkSubpassDependency* dependenciesArray;
     if (hasDepthAttachment && colorAttachmentCount > 0)
         dependenciesArray = colorDepthDependencies;
@@ -1345,8 +1382,8 @@ Handle<Shader> VulkanResourceManager::create<Shader>(ShaderDesc desc){
         bool write = desc.graphicsState.depthWriteEnabled;
         depthStencilState = {
             .sType = VK_STRUCTURE_TYPE_PIPELINE_DEPTH_STENCIL_STATE_CREATE_INFO,
-            .depthTestEnable       = test          ? VK_TRUE : VK_FALSE,
-            .depthWriteEnable      = write && test ? VK_TRUE : VK_FALSE,
+            .depthTestEnable       = (VkBool32)test,
+            .depthWriteEnable      = (VkBool32)write && test,
             .depthCompareOp        = (VkCompareOp) desc.graphicsState.depthTest,
             .depthBoundsTestEnable = VK_FALSE,
             .stencilTestEnable     = VK_FALSE
@@ -1895,8 +1932,8 @@ Handle<Shader> VulkanResourceManager::recreate<Shader>(Handle<Shader> handle, bo
         bool write = desc.graphicsState.depthWriteEnabled;
         depthStencilState = {
             .sType = VK_STRUCTURE_TYPE_PIPELINE_DEPTH_STENCIL_STATE_CREATE_INFO,
-            .depthTestEnable       = test          ? VK_TRUE : VK_FALSE,
-            .depthWriteEnable      = write && test ? VK_TRUE : VK_FALSE,
+            .depthTestEnable       = (VkBool32)test,
+            .depthWriteEnable      = (VkBool32)write && test,
             .depthCompareOp        = (VkCompareOp) desc.graphicsState.depthTest,
             .depthBoundsTestEnable = VK_FALSE,
             .stencilTestEnable     = VK_FALSE

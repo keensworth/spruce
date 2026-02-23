@@ -22,6 +22,7 @@ typedef enum CommandType : uint32 {
 struct SemaphoreDependencies {
     spr::Span<VkSemaphore> wait;
     spr::Span<VkSemaphore> signal;
+    spr::Span<VkPipelineStageFlags> waitStages;
 };
 
 class CommandBuffer{
@@ -61,6 +62,7 @@ private: // non-owning
     VkCommandBuffer m_commandBuffer;
     std::vector<VkSemaphore> m_waitSemaphores;
     std::vector<VkSemaphore> m_signalSemaphores;
+    std::vector<VkPipelineStageFlags> m_waitStages;
     VkQueue m_queue;
     
     VulkanDevice* m_device; 

@@ -89,11 +89,13 @@ void VulkanRenderer::init(VulkanResourceManager *rm){
         });
         offscreenCB.setSemaphoreDependencies({
             .wait = { offscreenCB.getSemaphore() },
-            .signal = { mainCB.getSemaphore() }
+            .signal = { mainCB.getSemaphore() },
+            .waitStages = { VK_PIPELINE_STAGE_VERTEX_SHADER_BIT }
         });
         mainCB.setSemaphoreDependencies({
             .wait = { mainCB.getSemaphore() },
-            .signal = {  } // signal sem based on image index later
+            .signal = {  }, // signal sem based on image index later
+            .waitStages = { VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT }
         });
     }
 
@@ -174,7 +176,9 @@ RenderFrame& VulkanRenderer::beginFrame(VulkanResourceManager* rm){
     // present that this image is ready
     mainCB.setSemaphoreDependencies({
         .wait = { mainCB.getSemaphore(), renderFrame.acquiredSem },
-        .signal = { m_renderedSemaphores[renderFrame.imageIndex] }
+        .signal = { m_renderedSemaphores[renderFrame.imageIndex] },
+        .waitStages = { VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT,      // offscreen image sampled in FS
+                        VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT } // swapchain image write
     });
 
     // reset command pools before use
