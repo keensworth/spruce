@@ -18,9 +18,9 @@ GfxAssetLoader::~GfxAssetLoader(){
 }
 
 MeshInfoMap GfxAssetLoader::loadAssets(SprResourceManager& rm, VulkanResourceManager* vrm, VulkanDevice* device){
-    m_vertexPositions = {vrm, 8000000*sizeof(VertexPosition)};
-    m_vertexAttributes = {vrm, 8000000*sizeof(VertexAttributes)};
-    m_vertexIndices = {vrm, 16000000*sizeof(uint32)};
+    m_vertexPositions = {vrm, 12000000*sizeof(VertexPosition)};
+    m_vertexAttributes = {vrm, 12000000*sizeof(VertexAttributes)};
+    m_vertexIndices = {vrm, 24000000*sizeof(uint32)};
     m_materials = {vrm, 4096*sizeof(MaterialData)};
 
     std::vector<uint32>& modelIds = rm.getModelIds();
