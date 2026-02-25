@@ -125,6 +125,21 @@ float getPointAttenuation(Light light){
 	return (x * x) / (1.0 + 1.0 * s);
 }
 
+float getSpotAttenuation(Light light, float LdD){
+	float d = length(light.pos - pos.xyz);
+	float r = light.range;
+	float s = min(d/r, 1.0);
+	float x = 1 - s * s;
+	float distAttenuation = (sqrt(x)) / (s);
+
+	float cosInner = cos(light.spotProps.innerAngle);
+	float cosOuter = cos(light.spotProps.outerAngle);
+	float angularAttenuation = clamp((LdD - cosOuter) / (cosInner - cosOuter), 0.0, 1.0);
+	angularAttenuation *= angularAttenuation;
+
+	return distAttenuation * angularAttenuation;
+}
+
 Cluster getCluster(){
 	float zFar = camera.far;
 	float zNear = camera.near;
@@ -277,7 +292,14 @@ void main() {
 		Light light = lights[lightIndices[offset + i]];
 		vec3 L = normalize(light.pos - pos.xyz);
 		float NdL = dot(normal, L);
-		float attenuation = getPointAttenuation(light);
+		float attenuation = 1.0;
+
+		if (light.type == SPOT){
+			float LdD = dot(L, -light.dir);
+		 	attenuation = getSpotAttenuation(light, LdD);
+		} else { // POINT
+			attenuation = getPointAttenuation(light);
+		}
 		directLighting += NdL > 0.0 ? calculateDirectLighting(params, light, L, attenuation, 1.0) : vec3(0.0, 0.0, 0.0);
 	}
 

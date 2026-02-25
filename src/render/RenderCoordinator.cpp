@@ -120,6 +120,8 @@ void RenderCoordinator::uploadSceneData(SceneManager& sceneManager){
     sunLight.color = m_imguiRenderer.state.lightColor;
     sunLight.dir = glm::normalize(m_imguiRenderer.state.lightDir);
     scene.exposure = m_imguiRenderer.state.exposure;
+    m_imguiRenderer.state.cameraPos = camera.pos;
+    m_imguiRenderer.state.cameraDir = camera.dir;
 
     // per-frame data
     sceneManager.uploadPerFrameResources(uploadHandler, m_frameId);

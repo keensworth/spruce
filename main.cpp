@@ -1,3 +1,4 @@
+#include "MouseConfig.h"
 #include "glm/geometric.hpp"
 #include "glm/gtx/string_cast.hpp"
 #include "interface/SprWindow.h"
@@ -5,7 +6,10 @@
 #include "resource/SprResourceManager.h"
 #include "debug/SprLog.h"
 #include "ecs/SprECS.h"
+#include "scene/SceneData.h"
 #include "util/Timer.h"
+#include "util/color/Color.h"
+#include "debug/SprStats.h"
 
 using namespace spr;
 
@@ -128,6 +132,28 @@ public:
         if (input.isKeyDown(SPR_SPACE)){
             camera.pos +=  dt * vel * zAxis;
         }
+
+        if (input.isButtonDownEdge(spr::SPR_BUTTON_LEFT) && m_window->isRelativeMouse()){
+            SprLog::info({{"[Main] ", color::GRADIENT20}, {"Spotlight added, frame: "}, {stats::frame}});
+            m_ecs->createEntity(
+                m_ecs->add<LightC>(gfx::Light{
+                    .pos = camera.pos,
+                    .intensity = 6.f,
+                    .dir = camera.dir,
+                    .range = 16.f,
+                    .color = {1.f, 1.f, 1.f},
+                    .type = gfx::SPOT,
+                    .spotProps = {
+                        3.1415f/8.f, 
+                        3.1415f/7.5f}}));
+        }
+
+        if (input.isButtonDownEdge(spr::SPR_BUTTON_RIGHT) && m_window->isRelativeMouse()){
+            SprLog::info({{"[Main] ", color::GRADIENT20}, {"Spotlight removed, frame: "}, {stats::frame}});
+            std::vector<Entity> lights;
+            m_ecs->getEntities<LightC>(lights);
+            m_ecs->destroyEntity(lights[lights.size()-1]);
+        }
         
 
         if (!m_window->isRelativeMouse()){
@@ -195,6 +221,7 @@ int main() {
     // scene
     Entity helmet;
     Entity light;
+    Entity camera;
     {
         // models
         helmet = ecs.createEntity(
@@ -244,7 +271,14 @@ int main() {
             ecs.add<TransformC>(TransformInfo{
                 .position = {2.f, 4.f, -2.f}, 
                 .rotation = angleAxis(pi<float>()/2, vec3{1.f, 0.f, 0.f}), 
-                .scale = 1.f}));
+                .scale = 2.f}));
+
+        ecs.createEntity(
+            ecs.add<ModelC>(data::newsponza_curtains_gltf),
+            ecs.add<TransformC>(TransformInfo{
+                .position = {2.f, 4.f, -2.f}, 
+                .rotation = angleAxis(pi<float>()/2, vec3{1.f, 0.f, 0.f}), 
+                .scale = 2.f}));
 
         // uint32 dim = 50;
         // for (uint32 x = 0; x < dim; x++){
@@ -263,35 +297,35 @@ int main() {
         light = ecs.createEntity(
             ecs.add<LightC>(gfx::Light{
                 .pos = {0.f, 0.f, 0.f},
-                .intensity = 8.f,
-                .range = 8.f,
+                .intensity = 4.f,
+                .range = 1.f,
                 .color = {0.9f, 0.9f, 0.4f}}));
         
         //lights
         ecs.createEntity(
             ecs.add<LightC>(gfx::Light{
-                .pos = {13.f, 5.6f, 3.f},
+                .pos = {12.f, 8.5f, 6.f},
                 .intensity = 1.f,
-                .range = 16.f,
+                .range = 8.f,
                 .color = {0.9f, 0.55f, 0.89f}}));
 
         ecs.createEntity(
             ecs.add<LightC>(gfx::Light{
-                .pos = {13.f, -5.6f, 3.f},
+                .pos = {-8.3f, -1.0f, 6.f},
                 .intensity = 1.f,
                 .range = 16.f,
                 .color = {0.225f, 0.91f, 0.33f}}));
 
         ecs.createEntity(
             ecs.add<LightC>(gfx::Light{
-                .pos = {-13.f, 5.6f, 3.f},
+                .pos = {12.f, -1.f, 6.f},
                 .intensity = 1.f,
                 .range = 16.f,
                 .color = {0.27f, 0.88f, 0.94f}}));
 
         ecs.createEntity(
             ecs.add<LightC>(gfx::Light{
-                .pos = {-13.f, -5.6f, 3.f},
+                .pos = {-8.f, 9.f, 6.f},
                 .intensity = 1.f,
                 .range = 16.f,
                 .color = {0.98f, 0.66f, 0.0f}}));
@@ -303,53 +337,61 @@ int main() {
                 .range = 16.f,
                 .color = {1.f, 1.f, 1.0f}}));
 
-        // int32 dim = 12;
-        // for (uint32 x = 0; x < dim; x++){
-        //     for (uint32 y = 0; y < dim; y++){
-        //         for (uint32 z = 0; z < dim; z++){
-        //             ecs.createEntity(
-        //                 ecs.add<LightC>(gfx::Light{
-        //                     .pos = {(-dim/2.0f+x)*2.2f, (-dim/2.0f+y)*2.2f, (-dim/2.0f+z)*2.2f},
-        //                     .intensity = 4.f,
-        //                     .range = 2.f,
-        //                     .color = {(float)x/(float)dim, (float)y/(float)dim, (float)z/(float)dim}}));
-        //         }
-        //     }
-        // }
+        ecs.createEntity(
+            ecs.add<LightC>(gfx::Light{
+                .pos = {14.9f, 5.49f, 0.f},
+                .intensity = 6.f,
+                .dir = {-1.f, 0.f, 0.f},
+                .range = 16.f,
+                .color = {1.f, 0.f, 0.f},
+                .type = gfx::SPOT,
+                .spotProps = {
+                    3.1415f/8.f, 
+                    3.1415f/7.5f}}));
+
+        int32 dim = 12;
+        for (uint32 x = 0; x < dim; x++){
+            for (uint32 y = 0; y < dim; y++){
+                for (uint32 z = 0; z < dim; z++){
+                    ecs.createEntity(
+                        ecs.add<LightC>(gfx::Light{
+                            .pos = {(-dim/2.0f+x)*2.2f, (-dim/2.0f+y)*2.2f, (-dim/2.0f+z)*2.2f},
+                            .intensity = 4.f,
+                            .range = 2.f,
+                            .color = {(float)x/(float)dim, (float)y/(float)dim, (float)z/(float)dim}}));
+                }
+            }
+        }
 
         ecs.createEntity(
             ecs.add<LightC>(gfx::Light{
-                .intensity = 4.f, 
+                .intensity = 3.5f, 
                 .dir = glm::normalize(vec3(0.3f, 1.f, -2.f)), 
                 .type = gfx::DIRECTIONAL}));
 
         // camera
-        ecs.createEntity(
+        camera = ecs.createEntity(
             ecs.add<CameraC>(gfx::Camera{
-                .pos = {0.f, 1.f, 0.f},
+                .pos = {0.f, 0.f, 0.f},
                 .dir = {0.f, 1.f, 0.f},
                 .up  = {0.f, 0.f, 1.f}}));
     }
 
     // simple game loop
     Timer timer;
-    Timer print(true);
     float dt = 8.f;
-    uint32 fps = 120;
-    uint32 dtCount = 0;
-    float dtLow = 10000.f;
-    float dtHigh = 0.f;
-    float dtSum = 0.f;
+
     while (!input.isKeyDown(spr::SPR_ESCAPE)){
         timer.start();
+        stats::tick();
 
         // update window
         window.update();
 
         ecs.set<LightC>(light, gfx::Light{
-                .pos = {sin(frame/140.f)*4, 0.f, 0.f},
-                .intensity = 4.f,
-                .range = 8.f,
+                .pos = {sin(frame/240.f)*4, 0.f, 0.f},
+                .intensity = 2.f,
+                .range = 12.f,
                 .color = {0.9f, 0.9f, 0.8f}});
 
         ecs.set<TransformC>(helmet, TransformInfo{
@@ -357,33 +399,13 @@ int main() {
                 .rotation = angleAxis((pi<float>()/2)*(frame/240.f), vec3{1.f, 0.f, 0.f}), 
                 .scale = 0.2f});
 
+        
         // update ecs
         ecs.update(dt/1000.f);
 
-        // timing
         timer.stop();
         dt = timer.duration<milliseconds>();
-        fps = (1000.f)/dt;
-        if (dt < dtLow)
-            dtLow = dt;
-        if (dt > dtHigh)
-            dtHigh = dt;
-        dtSum += dt;
-        dtCount++;
-        // print stats
-        if (print.elapsed<seconds>() > 1.f){
-            print.restart();
-            SprLog::info({{"[Main] ", color::GRADIENT20}, {"frame: "}, {frame}});
-            SprLog::info({{"       ", color::GRADIENT20}, {"  fps: "}, {fps}});
-            SprLog::info({{"       ", color::GRADIENT20}, {"   dt: "}, {dtSum / dtCount}, {"ms"}});
-            SprLog::info({{"       ", color::GRADIENT20}, {"(L)dt: "}, {dtLow}, {"ms"}});
-            SprLog::info({{"       ", color::GRADIENT20}, {"(H)dt: "}, {dtHigh},{"ms"}});
-            dtLow = 10000.f;
-            dtHigh = 0.f;
-            dtSum = 0.f;
-            dtCount = 0;
-        }
-        //SprLog::debug({{"       ", color::GRADIENT20}, {"   dt F: "}, {dt}, {"ms"}});
         frame++;
+        stats::tock();
     }
 }
