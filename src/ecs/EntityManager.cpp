@@ -1,21 +1,20 @@
 #include "EntityManager.h"
+#include "SprLog.h"
 
 namespace spr {
 
 EntityManager::EntityManager() {}
 
 void EntityManager::update(){
-    if (m_entitiesAdd.size() > 0 || m_entitiesRemove.size() > 0){
-        for (Entity& entity : m_entitiesAdd){
-            m_entities.add(entity);
-        }
-        for (Entity& entity : m_entitiesRemove){
-            m_entities.remove(entity);
-        }
+    for (Entity& entity : m_entitiesRemove){
+        m_entities.remove(entity);
     }
-}
 
-void EntityManager::cleanUp(){
+    if (!m_init){
+        m_init = true;
+        return;
+    }
+
     if (m_entitiesAdd.size() > 0)
         m_entitiesAdd.clear();
     if (m_entitiesRemove.size() > 0)
@@ -24,6 +23,7 @@ void EntityManager::cleanUp(){
 
 void EntityManager::addEntity(Entity& entity){
     m_entitiesAdd.push_back(entity);
+    m_entities.add(entity);
 }
 
 void EntityManager::removeEntity(Entity& entity){

@@ -9,23 +9,20 @@ class SprECS {
 public:
     // ---------------- sprecs ------------------ 
     SprECS() {
-        m_entityId = 0;
+        m_entityId = 1;
     }
     
     ~SprECS() {}
 
     void update(float dt){
-        // create/destroy queued entities from last frame
-        entityManager.update();
+        // destroy queued entities from previous frame
+        entityManager.update();    
+        
+        // unregister queued entities from last frame
+        componentManager.update();   
 
         // update all systems
         systemManager.update(dt);    
-
-        // unregister queued entities from last frame
-        componentManager.update();
-
-        // remove tracked created/destryed entites from last frame
-        entityManager.cleanUp();
     }
     
 
@@ -85,7 +82,7 @@ public:
         }
     }
 
-    // filter entities queued for removal/deletion for those with given components
+    // get entities that were created this frame
     template <typename Arg, typename ...Args>
     void getCreatedEntities(std::vector<Entity>& out){
         // get mask from components

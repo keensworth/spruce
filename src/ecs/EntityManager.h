@@ -26,7 +26,8 @@ private:
     std::vector<Entity> m_entitiesRemove;
 
     void getEntities(){}
-    void cleanUp();
+
+    bool m_init = false;
 
     friend class SprECS;
 };
