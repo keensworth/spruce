@@ -3,6 +3,7 @@
 #include "VulkanRenderer.h"
 #include "glm/geometric.hpp"
 #include "glm/gtc/type_ptr.hpp"
+#include "glm/gtx/string_cast.hpp"
 #include "imgui.h"
 #include "resource/ResourceTypes.h"
 #include "resource/VulkanResourceManager.h"
@@ -13,6 +14,7 @@
 #include "external/imgui/imgui_impl_vulkan.h"
 #include "interface/SprWindow.h"
 #include "scene/SceneData.h"
+#include "debug/SprStats.h"
 
 namespace spr::gfx {
 
@@ -48,6 +50,9 @@ struct RenderState {
     uint32 windowDim = 1;
     uint32 windowMode = 3;
     bool dirtyWindow = false;
+
+    glm::vec3 cameraPos;
+    glm::vec3 cameraDir;
 };
 
 class ImGuiRenderer {
@@ -191,6 +196,61 @@ private:
         ImGui::SliderFloat("cascade lambda", &state.cascadeLambda, 0.0f, 1.0f, "lambda = %.3f");
         ImGui::SeparatorText("Skybox");
         ImGui::SliderFloat("exposure", &state.exposure, 0.0f, 10.f, "exposure = %.3f");
+        
+        ImGui::Text("%s",(glm::to_string(state.cameraPos)).c_str());
+        ImGui::Text("%s",(glm::to_string(state.cameraDir)).c_str());
+        
+        static ImGuiTableFlags tflags = ImGuiTableFlags_SizingFixedFit | ImGuiTableFlags_RowBg | ImGuiTableFlags_Borders;
+        if (ImGui::BeginTable("table1", 2, tflags))
+        {
+            ImGui::TableSetupColumn("Stat", ImGuiTableColumnFlags_WidthFixed);
+            ImGui::TableSetupColumn("Value", ImGuiTableColumnFlags_WidthFixed);
+            ImGui::TableHeadersRow();
+
+            ImGui::TableNextRow();
+            ImGui::TableSetColumnIndex(0);
+            ImGui::Text("%s", "dt");
+            ImGui::TableSetColumnIndex(1);
+            ImGui::Text("%f", stats::dt);
+            
+            ImGui::TableNextRow();
+            ImGui::TableSetColumnIndex(0);
+            ImGui::Text("%s", "dtAvg");
+            ImGui::TableSetColumnIndex(1);
+            ImGui::Text("%f", stats::dtAvg);
+
+            ImGui::TableNextRow();
+            ImGui::TableSetColumnIndex(0);
+            ImGui::Text("%s", "dtLow");
+            ImGui::TableSetColumnIndex(1);
+            ImGui::Text("%f", stats::low);
+
+            ImGui::TableNextRow();
+            ImGui::TableSetColumnIndex(0);
+            ImGui::Text("%s", "dtHigh");
+            ImGui::TableSetColumnIndex(1);
+            ImGui::Text("%f", stats::high);
+
+            ImGui::TableNextRow();
+            ImGui::TableSetColumnIndex(0);
+            ImGui::Text("%s", "fps");
+            ImGui::TableSetColumnIndex(1);
+            ImGui::Text("%ld", stats::fps);
+
+            ImGui::TableNextRow();
+            ImGui::TableSetColumnIndex(0);
+            ImGui::Text("%s", "fpsAvg");
+            ImGui::TableSetColumnIndex(1);
+            ImGui::Text("%ld", stats::fpsAvg);
+
+            ImGui::TableNextRow();
+            ImGui::TableSetColumnIndex(0);
+            ImGui::Text("%s", "frame");
+            ImGui::TableSetColumnIndex(1);
+            ImGui::Text("%ld", stats::frameSlow);
+
+            ImGui::EndTable();
+        }
 
         if (!ImGui::CollapsingHeader("Renderer", ImGuiTreeNodeFlags_DefaultOpen)){
             ImGui::End();
