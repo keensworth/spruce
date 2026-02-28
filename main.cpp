@@ -1,4 +1,5 @@
 #include "MouseConfig.h"
+#include "data/asset_ids.h"
 #include "glm/geometric.hpp"
 #include "glm/gtx/string_cast.hpp"
 #include "interface/SprWindow.h"
@@ -225,31 +226,31 @@ int main() {
     {
         // models
         helmet = ecs.createEntity(
-            ecs.add<ModelC>(data::helmet),
+            ecs.add<ModelC>(data::damagedhelmet),
             ecs.add<TransformC>(TransformInfo{
                 .position = {0.f, 0.f, 0.f}, 
-                .rotation = angleAxis((pi<float>()/2)*(frame/240.f), vec3{1.f, 0.f, 0.f}), 
+                .rotation = angleAxis((frame/240.f), vec3{1.f, 0.f, 0.f}), 
                 .scale = 0.2f}));
 
         ecs.createEntity(
-            ecs.add<ModelC>(data::helmet),
+            ecs.add<ModelC>(data::damagedhelmet),
             ecs.add<TransformC>(TransformInfo{
                 .position = {1.f, 0.f, 0.f}, 
-                .rotation = angleAxis((pi<float>()/2), vec3{1.f, 0.f, 0.f}), 
+                //.rotation = angleAxis((pi<float>()/2), vec3{1.f, 0.f, 0.f}), 
                 .scale = 0.2f}));
 
         ecs.createEntity(
             ecs.add<ModelC>(data::waterbottle),
             ecs.add<TransformC>(TransformInfo{
                 .position = {3.f, 0.f, 0.f}, 
-                .rotation = angleAxis(0.f, vec3{1.f, 0.f, 0.f}), 
+                //.rotation = angleAxis(0.f, vec3{1.f, 0.f, 0.f}), 
                 .scale = 3.f}));
 
         ecs.createEntity(
             ecs.add<ModelC>(data::boomboxwithaxes),
             ecs.add<TransformC>(TransformInfo{
                 .position = {-2.5f, 0.f, -1.f}, 
-                .rotation = angleAxis(pi<float>()/2.f, vec3{1.f, 0.f, 0.f}), 
+                //.rotation = angleAxis(pi<float>()/2.f, vec3{1.f, 0.f, 0.f}), 
                 .scale = 10.f}));
 
         // ecs.createEntity(
@@ -270,14 +271,14 @@ int main() {
             ecs.add<ModelC>(data::newsponza_main_gltf_003),
             ecs.add<TransformC>(TransformInfo{
                 .position = {2.f, 4.f, -2.f}, 
-                .rotation = angleAxis(pi<float>()/2, vec3{1.f, 0.f, 0.f}), 
+                //.rotation = angleAxis(pi<float>()/2, vec3{1.f, 0.f, 0.f}), 
                 .scale = 2.f}));
 
         ecs.createEntity(
             ecs.add<ModelC>(data::newsponza_curtains_gltf),
             ecs.add<TransformC>(TransformInfo{
                 .position = {2.f, 4.f, -2.f}, 
-                .rotation = angleAxis(pi<float>()/2, vec3{1.f, 0.f, 0.f}), 
+                //.rotation = angleAxis(pi<float>()/2, vec3{1.f, 0.f, 0.f}), 
                 .scale = 2.f}));
 
         // uint32 dim = 50;
@@ -396,7 +397,7 @@ int main() {
 
         ecs.set<TransformC>(helmet, TransformInfo{
                 .position = {0.f, 0.f, 0.f}, 
-                .rotation = angleAxis((pi<float>()/2)*(frame/240.f), vec3{1.f, 0.f, 0.f}), 
+                .rotation = angleAxis((frame/240.f), vec3{1.f, 0.f, 0.f}), 
                 .scale = 0.2f});
 
         
