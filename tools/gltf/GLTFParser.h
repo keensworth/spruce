@@ -19,6 +19,17 @@ typedef ska::flat_hash_map<std::string, uint32_t> ImageMap;
 
 namespace spr::tools{
 
+static const uint32_t BYTES_PER_INDEX = sizeof(uint32);
+static const uint32_t BYTES_PER_POSITION = sizeof(glm::vec4);
+static const uint32_t BYTES_PER_NORMAL = sizeof(glm::vec3);
+static const uint32_t BYTES_PER_COLOR = sizeof(glm::vec3);
+static const uint32_t BYTES_PER_TANGENT = sizeof(glm::vec4);
+static const uint32_t BYTES_PER_TEXCOORD = sizeof(glm::vec2);
+static const uint32_t BYTES_PER_ATTRIBUTE = BYTES_PER_NORMAL
+                                          + BYTES_PER_COLOR
+                                          + BYTES_PER_TEXCOORD
+                                          + BYTES_PER_TANGENT;
+
 enum DataRegion {
     SPR_DR_INDEX = 0,
     SPR_DR_POSITION = 1,
@@ -62,6 +73,7 @@ private:
     std::string m_path;
     std::string m_name;
     std::string m_extension;
+    std::string m_meshName;
     uint32_t m_id = 0;
     IdMap m_sourceBuffIdMap;
     IdMap m_sourceTexIdMap;
@@ -207,6 +219,8 @@ private:
         uint32_t componentType,
         std::vector<uint8_t>& out,
         bool writeToFile,
+        BufferData dataType,
+        glm::mat4& transform,
         DataRegion region);
     OffsetSpan writeBufferFile(const unsigned char* data, uint32_t byteLength, DataRegion dataRegion);
     uint32 writeTextureFile(TextureLayout& texture);

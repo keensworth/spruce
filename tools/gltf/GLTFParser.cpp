@@ -15,6 +15,7 @@
 //#define STB_IMAGE_IMPLEMENTATION
 #include "stb_image.h"
 #define STB_IMAGE_RESIZE_IMPLEMENTATION
+#define STBIR_DEFAULT_FILTER_DOWNSAMPLE STBIR_FILTER_MITCHELL
 #include "stb_image_resize.h"
 #include "glm/gtx/string_cast.hpp"
 
@@ -69,111 +70,6 @@ uint32 GLTFParser::writeMeshFile(MeshLayout& mesh){
     return m_meshIndex++;
 }
 
-OffsetSpan GLTFParser::handleBuffer(
-        const tinygltf::Buffer& buffer, 
-        std::string association,
-        uint32 byteOffset, 
-        uint32 byteLength, 
-        uint32 bytesPerElement,
-        uint32 elementCount,
-        uint32 elementType, 
-        uint32 componentType,
-        std::vector<uint8_t>& out,
-        bool writeToFile,
-        BufferData dataType,
-        glm::mat4& transform,
-        DataRegion region){    
-    // check if we need to pad position to vec4, if it isn't already
-    bool needsPosPadding = false;
-    if (dataType == SPR_POSITION){
-        assert (elementType == TINYGLTF_TYPE_VEC3 || elementType == TINYGLTF_TYPE_VEC4);
-        if (elementType == TINYGLTF_TYPE_VEC3){
-            byteLength = (4.f/3.f)*byteLength;
-            elementType = TINYGLTF_TYPE_VEC4;
-            needsPosPadding = true;
-        }
-    }
-
-    bool needsIndicesPadding = false;
-    if (dataType == SPR_INDICES){
-        if (componentType == TINYGLTF_COMPONENT_TYPE_UNSIGNED_SHORT){
-            byteLength = 2*byteLength;
-            elementType = TINYGLTF_TYPE_SCALAR;
-            componentType = TINYGLTF_COMPONENT_TYPE_UNSIGNED_INT;
-            needsIndicesPadding = true;
-        }
-    }
-
-    // write slice of buffer into new buffer
-    const unsigned char* bufferData = buffer.data.data();
-    unsigned char* data = new unsigned char[byteLength];
-    if (!needsPosPadding) {
-        if (!needsIndicesPadding){
-            for (int32 i = 0; i < byteLength; i++){
-                data[i] = bufferData[i+byteOffset];
-            }
-        } else {
-            uint32 index = 0;
-            for (int32 i = 0; i < byteLength; i++){
-                if (i%4 >= 2){ 
-                    data[i] = 0;
-                } else {
-                    data[i] = bufferData[index+byteOffset];
-                    index++;
-                }
-            }
-        }
-    } else { // pad vec3 to vec4
-        // get 1.0f as byte array
-        char float1fByteArray[4];
-        union {
-            float f;
-            unsigned char bytes[4];
-        } floatToBytes;
-        floatToBytes.f = 1.0f;
-        memcpy(float1fByteArray, floatToBytes.bytes, 4);
-
-        // copy data, padding with 1.0f
-        uint32 index = 0;
-        for (int32 i = 0; i < byteLength; i++){
-            if (i%16 >= 12){ 
-                // write 1.0f to pos.w
-                data[i] = float1fByteArray[i%16 - 12];
-            } else {
-                // write buffer data to pos.xyz
-                data[i] = bufferData[index+byteOffset];
-                index++;
-            }
-        }
-    }
-
-    // apply transform to all positions
-    if (dataType == SPR_POSITION){
-        for (uint32 i = 0; i < byteLength; i += 16){
-            glm::vec4 pos = glm::make_vec4((float*)(data + i));
-            pos = transform * pos;
-            memcpy((unsigned char*)(data + i), ((unsigned char*)glm::value_ptr(pos)), 16);
-        }
-    }
-
-    OffsetSpan offsetSpan {0, 0};
-    if (writeToFile){
-        // write slice to file
-        offsetSpan = writeBufferFile(data, byteLength, region);
-    } else {
-        // write slice to 'out'
-        out.resize(byteLength);
-        memcpy(out.data(), data, byteLength);
-    }
-
-    delete[] data;
-
-    return offsetSpan;
-}
-
-#ifndef STBIR_DEFAULT_FILTER_DOWNSAMPLE
-#define STBIR_DEFAULT_FILTER_DOWNSAMPLE STBIR_FILTER_MITCHELL
-#endif
 
 void GLTFParser::createMip(
         unsigned char* in, 
@@ -287,15 +183,6 @@ void GLTFParser::compressImageData(
             level = i;
             layer = 0;
             faceSlice = 0;                           
-            SprLog::debug({{"LEVEL i: "}, {i}});
-            SprLog::debug({{"   prevSize  : "}, {prevSize}});
-            SprLog::debug({{"   prevExtent  : "}, {prevExtent}});
-            SprLog::debug({{"   currSize  : "}, {currSize}});
-            SprLog::debug({{"   currExtent  : "}, {currExtent}});
-            SprLog::debug({{"   components  : "}, {components}});
-            SprLog::debug({{"   level  : "}, {level}});
-            SprLog::debug({{"   layer  : "}, {layer}});
-            SprLog::debug({{"   faceSlice  : "}, {faceSlice}});
 
             createMip(i == 1 ? data : mipData[i-2], prevSize, prevExtent, mipData[i-1], currSize, currExtent, components);
             result = ktxTexture_SetImageFromMemory(ktxTexture(texture), level, layer, faceSlice, mipData[i-1], currSize);
@@ -310,22 +197,6 @@ void GLTFParser::compressImageData(
                 break;
         }
     }
-    
-    // // BasisU encode
-    // if (dataType == SPR_TEXTURE_NORMAL){
-    //     params.normalMap = KTX_TRUE;
-    //     params.uastc = KTX_TRUE;
-    //     params.uastcFlags = KTX_PACK_UASTC_LEVEL_DEFAULT;
-    //     params.compressionLevel = KTX_ETC1S_DEFAULT_COMPRESSION_LEVEL;
-    // } else {
-    //     params.uastc = KTX_FALSE;
-    //     params.normalMap = KTX_FALSE;
-    //     params.compressionLevel = KTX_ETC1S_DEFAULT_COMPRESSION_LEVEL;        
-    // }
-    // //result = ktxTexture2_CompressBasisEx(texture, &params);
-    // // if (result) {
-    // //     std::cerr << "Failed to compress texture, code: " << ktxErrorString(result) << std::endl;
-    // // }
 
     // cleanup
     result = ktxTexture_WriteToMemory((ktxTexture*)(texture), outData, &outSize);
@@ -413,6 +284,116 @@ OffsetSpan GLTFParser::handleMIMEImageBuffer(
     return offsetSpan;
 }
 
+
+void padAndTransformData(const unsigned char* bufferData, 
+        unsigned char* data,
+        uint32 byteOffset, 
+        uint32 byteLength, 
+        uint32 bytesPerElement,
+        uint32 elementCount,
+        uint32 elementType, 
+        uint32 componentType,
+        std::vector<uint8_t>& out,
+        BufferData dataType,
+        glm::mat4& transform){
+            
+    // check if we need to pad position to vec4, if it isn't already
+    bool needsPosPadding = false;
+    if (dataType == SPR_POSITION){
+        assert (elementType == TINYGLTF_TYPE_VEC3 || elementType == TINYGLTF_TYPE_VEC4);
+        if (elementType == TINYGLTF_TYPE_VEC3){
+            needsPosPadding = true;
+        }
+    }
+
+    bool needsIndicesPadding = false;
+    if (dataType == SPR_INDICES){
+        if (componentType == TINYGLTF_COMPONENT_TYPE_UNSIGNED_SHORT){
+            needsIndicesPadding = true;
+        }
+    }
+
+    if (needsPosPadding) { // pad vec3 to vec4
+        uint32 offset = 0;
+        for (uint32 i = 0; i < bytesPerElement*elementCount; i += sizeof(glm::vec3)){
+            glm::vec3 pos = glm::make_vec3((float*)(bufferData + byteOffset + i));
+            glm::vec4 p = {pos.x, pos.y, pos.z, 1.f};
+            memcpy((unsigned char*)(data + offset), ((unsigned char*)glm::value_ptr(p)), BYTES_PER_POSITION);
+            offset += BYTES_PER_POSITION;
+        }
+    } else if (needsIndicesPadding){ // pad uint16 to uint32
+        uint32 offset = 0;
+        for (int32 i = 0; i < bytesPerElement*elementCount; i += sizeof(uint16)){
+            uint16 index = ((uint16*)(bufferData + byteOffset + i))[0];
+            uint32 idx = index;
+            memcpy((unsigned char*)(data + offset), (unsigned char*)(&idx), sizeof(uint32));
+            offset += sizeof(uint32);
+        }
+    } else { // no padding, just copy
+        memcpy(data, bufferData + byteOffset, byteLength);
+    }
+    
+    // apply transform to all positions
+    if (dataType == SPR_POSITION){
+        for (uint32 i = 0; i < byteLength; i += BYTES_PER_POSITION){
+            glm::vec4 pos = glm::make_vec4((float*)(data + i));
+            pos = transform * pos;
+            memcpy((unsigned char*)(data + i), ((unsigned char*)glm::value_ptr(pos)), BYTES_PER_POSITION);
+        }
+    }
+}
+
+
+OffsetSpan GLTFParser::handleBuffer(
+        const tinygltf::Buffer& buffer, 
+        std::string association,
+        uint32 byteOffset, 
+        uint32 byteLength, 
+        uint32 bytesPerElement,
+        uint32 elementCount,
+        uint32 elementType, 
+        uint32 componentType,
+        std::vector<uint8_t>& out,
+        bool writeToFile,
+        BufferData dataType,
+        glm::mat4& transform,
+        DataRegion region){    
+    
+    // check if we need to pad position to vec4, if it isn't already
+    if (dataType == SPR_POSITION){
+        assert (elementType == TINYGLTF_TYPE_VEC3 || elementType == TINYGLTF_TYPE_VEC4);
+        if (elementType == TINYGLTF_TYPE_VEC3){
+            byteLength = (4.f/3.f)*byteLength;
+        }
+    }
+
+    if (dataType == SPR_INDICES){
+        if (componentType == TINYGLTF_COMPONENT_TYPE_UNSIGNED_SHORT){
+            byteLength = 2*byteLength;
+        }
+    }
+
+    // write slice of buffer into new buffer
+    const unsigned char* bufferData = buffer.data.data();
+    unsigned char* data = new unsigned char[byteLength];
+    
+    padAndTransformData(bufferData, data, byteOffset, byteLength, bytesPerElement, elementCount, elementType, componentType, out, dataType, transform);
+
+    // write slice to 'out'
+    out.resize(byteLength);
+    memcpy(out.data(), data, byteLength);
+
+    OffsetSpan offset;
+    if (writeToFile){
+        offset = writeBufferFile(data, byteLength, region);
+    }
+
+    delete[] data;
+    return offset;
+}
+
+
+
 OffsetSpan GLTFParser::handleBufferInterleaved(
         const tinygltf::Buffer& buffer, 
         std::string association,
@@ -424,27 +405,48 @@ OffsetSpan GLTFParser::handleBufferInterleaved(
         uint32 componentType,
         std::vector<uint8_t>& out,
         bool writeToFile,
+        BufferData dataType,
+        glm::mat4& transform,
         DataRegion region){
     std::vector<unsigned char> bufferData = buffer.data;
+    std::vector<unsigned char> sequentialBufferData;
     std::vector<unsigned char> data;
+
     // iterate over buffer, one stride at a time
     uint32 elementCount = byteLength / bytesPerElement;
     for (uint32 i = byteOffset; i < byteOffset + elementCount * byteStride; i+= byteStride){
         // grab neccessary bytes from stride (byte-by byte, may be slow)
         for (uint32 b = 0; b < bytesPerElement; b++){
-            data.push_back(bufferData[i+b]);
+            sequentialBufferData.push_back(bufferData[i+b]);
         }
     }
 
+    // check if we need to pad position to vec4, if it isn't already
+    if (dataType == SPR_POSITION){
+        assert (elementType == TINYGLTF_TYPE_VEC3 || elementType == TINYGLTF_TYPE_VEC4);
+        if (elementType == TINYGLTF_TYPE_VEC3){
+            byteLength = (4.f/3.f)*byteLength;
+        }
+    }
+
+    if (dataType == SPR_INDICES){
+        if (componentType == TINYGLTF_COMPONENT_TYPE_UNSIGNED_SHORT){
+            byteLength = 2*byteLength;
+        }
+    }
+    data.resize(bufferData.size());
+    
+    padAndTransformData(sequentialBufferData.data(), data.data(), byteOffset, byteLength, bytesPerElement, elementCount, elementType, componentType, out, dataType, transform);
+
+    // write data to 'out'
+    out.reserve(byteLength);
+    memcpy(out.data(), data.data(), byteLength);
+
     if (writeToFile){
-        // write data to file
         return writeBufferFile(data.data(), byteLength, region);
     } else {
-        // write data to 'out'
-        out.resize(byteLength);
-        memcpy(out.data(), data.data(), byteLength);
+        return {0,0};
     }
-    return {0,0};
 }
 
 OffsetSpan GLTFParser::handleBufferView(
@@ -463,7 +465,6 @@ OffsetSpan GLTFParser::handleBufferView(
     // properties
 
     uint32 adjustedByteOffset = bufferView.byteOffset + byteOffset;
-    //uint32 byteLength = bufferView.byteLength - byteOffset;
     uint32 byteLength = elementCount * bytesPerElement;
     uint32 byteStride = bufferView.byteStride;
 
@@ -474,31 +475,20 @@ OffsetSpan GLTFParser::handleBufferView(
     const tinygltf::Buffer& buffer = model.buffers[bufferView.buffer];
 
     // handle buffer
+    OffsetSpan offset;
     if (byteStride == bytesPerElement){
         if (!association.compare("sbuf")){ // normal case
-            return handleBuffer(buffer, association, adjustedByteOffset, byteLength, bytesPerElement, elementCount, elementType, componentType, out, writeToFile, dataType, transform, region);
+            offset = handleBuffer(buffer, association, adjustedByteOffset, byteLength, bytesPerElement, elementCount, elementType, componentType, out, writeToFile, dataType, transform, region);
         }else{  // handle buffer that contains MIME image data
             return handleMIMEImageBuffer(buffer, association, adjustedByteOffset, byteLength, bytesPerElement, elementCount, elementType, componentType, dataType);
         }
     } else{
-        return handleBufferInterleaved(buffer, association, adjustedByteOffset, byteLength, byteStride, bytesPerElement, elementType, componentType, out, writeToFile, region);
-    }
+        offset = handleBufferInterleaved(buffer, association, adjustedByteOffset, byteLength, byteStride, bytesPerElement, elementType, componentType, out, writeToFile, dataType, transform, region);
+    }    
+    return offset;
 }
 
-OffsetSpan GLTFParser::handleAccessor(const tinygltf::Accessor& accessor, std::vector<uint8_t>& out, bool writeToFile, BufferData dataType, glm::mat4& transform, DataRegion region){
-    // properties
-    uint32 byteOffset = accessor.byteOffset;
-    uint32 elementCount = accessor.count;
-    uint32 elementType = accessor.type;
-    uint32 componentType = accessor.componentType;
-    uint32 bytesPerElement = tinygltf::GetNumComponentsInType(elementType) * tinygltf::GetComponentSizeInBytes(componentType);
 
-    // buffer view
-    const tinygltf::BufferView& bufferView = model.bufferViews[accessor.bufferView];
-
-    // handle bufer view
-    return handleBufferView(bufferView, std::string("sbuf"), byteOffset, bytesPerElement, elementCount, elementType, componentType, out, writeToFile, dataType, transform, region);
-}
 
 uint32 GLTFParser::handleTexture(const tinygltf::Texture& tex, BufferData dataType){
     std::vector<uint8_t> out;
@@ -528,8 +518,6 @@ uint32 GLTFParser::handleTexture(const tinygltf::Texture& tex, BufferData dataTy
         // write texture to file
         return m_sourceTexIdMap[sourceIndex]; 
     }
-
-    
 
     // get min filter
     //minFilter = sampler.minFilter;
@@ -710,6 +698,7 @@ uint32 GLTFParser::handleMaterial(const tinygltf::Material& material, uint32& ou
     return materialIndex;
 }
 
+
 OffsetSpan GLTFParser::interleaveVertexAttributes(
         uint32 vertexCount,
         std::vector<uint8_t>& normalBuffer,
@@ -718,27 +707,22 @@ OffsetSpan GLTFParser::interleaveVertexAttributes(
         std::vector<uint8_t>& colorBuffer,
         glm::mat4& transform,
         DataRegion region){
-    uint32 bytesPerNormal = 12;
-    uint32 bytesPerColor = 12;
-    uint32 bytesPerTangent = 16;
-    uint32 bytesPerTexCoord = 8;
-    uint32 bytesPerVertex = bytesPerNormal + bytesPerColor + bytesPerTexCoord + bytesPerTangent;
 
-    if (normalBuffer.size() != vertexCount * bytesPerNormal){
-        normalBuffer.resize(vertexCount * bytesPerNormal);
+    if (normalBuffer.size() != vertexCount * BYTES_PER_NORMAL){
+        normalBuffer.resize(vertexCount * BYTES_PER_NORMAL);
     }
-    if (colorBuffer.size() != vertexCount * bytesPerColor){
-        colorBuffer.resize(vertexCount * bytesPerColor);
+    if (tangentBuffer.size() != vertexCount * BYTES_PER_TANGENT){
+        tangentBuffer.resize(vertexCount * BYTES_PER_TANGENT);
+    }
+    if (texCoordBuffer.size() != vertexCount * BYTES_PER_TEXCOORD){
+        texCoordBuffer.resize(vertexCount * BYTES_PER_TEXCOORD);
+    }
+    if (colorBuffer.size() != vertexCount * BYTES_PER_COLOR){
+        colorBuffer.resize(vertexCount * BYTES_PER_COLOR);
         glm::vec3 defaultColor = {1.f, 1.f, 1.f};
-        for (uint32 i = 0; i < colorBuffer.size(); i+= bytesPerColor){
-            memcpy(((unsigned char*)colorBuffer.data() + i), (unsigned char*)glm::value_ptr(defaultColor), bytesPerColor);
+        for (uint32 i = 0; i < colorBuffer.size(); i+= BYTES_PER_COLOR){
+            memcpy(((unsigned char*)colorBuffer.data() + i), (unsigned char*)glm::value_ptr(defaultColor), BYTES_PER_COLOR);
         }
-    }
-    if (tangentBuffer.size() != vertexCount * bytesPerTangent){
-        tangentBuffer.resize(vertexCount * bytesPerTangent);
-    }
-    if (texCoordBuffer.size() != vertexCount * bytesPerTexCoord){
-        texCoordBuffer.resize(vertexCount * bytesPerTexCoord);
     }
 
     glm::mat3 modelMatrix = glm::mat3(transform);
@@ -746,30 +730,30 @@ OffsetSpan GLTFParser::interleaveVertexAttributes(
 
     // transform normals
     glm::vec3 normal = glm::vec3(1.0);
-    for (uint32 i = 0; i < vertexCount*bytesPerNormal; i += bytesPerNormal){
+    for (uint32 i = 0; i < vertexCount*BYTES_PER_NORMAL; i += BYTES_PER_NORMAL){
         normal = glm::make_vec3((float*)(normalBuffer.data() + i));
         normal = glm::normalize(normalMatrix * normal);
-        memcpy((unsigned char*)(normalBuffer.data() + i), ((unsigned char*)glm::value_ptr(normal)), bytesPerNormal);
+        memcpy((unsigned char*)(normalBuffer.data() + i), ((unsigned char*)glm::value_ptr(normal)), BYTES_PER_NORMAL);
     }
 
     // transform tangents
     glm::vec4 tangent = glm::vec4(1.0);
     glm::vec3 t = glm::vec3(1.0);
-    float modelSign = glm::determinant(modelMatrix) < 0.0f ? -1.0f : 1.0f;
-    for (uint32 i = 0; i < vertexCount*bytesPerTangent; i += bytesPerTangent){
-        uint32 vertex = i / bytesPerTangent;
-        uint32 normalOffset = vertex * bytesPerNormal;
+    float modelSign = glm::determinant(normalMatrix) < 0.0f ? -1.0f : 1.0f;
+    for (uint32 i = 0; i < vertexCount*BYTES_PER_TANGENT; i += BYTES_PER_TANGENT){
+        uint32 vertex = i / BYTES_PER_TANGENT;
+        uint32 normalOffset = vertex * BYTES_PER_NORMAL;
         glm::vec3 n = glm::make_vec3((float*)(normalBuffer.data() + normalOffset));
 
         tangent = glm::make_vec4((float*)(tangentBuffer.data() + i));
-        t = glm::normalize(modelMatrix * glm::vec3(tangent));
+        t = glm::normalize(normalMatrix * glm::vec3(tangent));
         t = glm::normalize(t - n * glm::dot(t, n));
         tangent = glm::vec4(t, tangent.w * modelSign);
-        memcpy((unsigned char*)(tangentBuffer.data() + i), ((unsigned char*)glm::value_ptr(tangent)), bytesPerTangent);
+        memcpy((unsigned char*)(tangentBuffer.data() + i), ((unsigned char*)glm::value_ptr(tangent)), BYTES_PER_TANGENT);
     }
 
     // interleave into attributes buffer
-    std::vector<uint8_t> result(vertexCount*bytesPerVertex);
+    std::vector<uint8_t> result(vertexCount*BYTES_PER_ATTRIBUTE);
     // for each vertex, manually copy into 'result' such that it takes the form:
     //
     //      [ vec3 | vec2.x ]    OR    [ normal | texCoord.U ]
@@ -777,46 +761,135 @@ OffsetSpan GLTFParser::interleaveVertexAttributes(
     //      [ vec4          ]          [ tangent             ]
     
     for (uint32 vertex = 0; vertex < vertexCount; vertex++){
-        uint32 offset = vertex*bytesPerVertex;
+        uint32 offset = vertex*BYTES_PER_ATTRIBUTE;
         // copy normal 
-        for(uint32 normal = 0; normal < bytesPerNormal; normal++){
-            result[offset + normal] = normalBuffer[vertex*bytesPerNormal + normal];
+        for(uint32 normal = 0; normal < BYTES_PER_NORMAL; normal++){
+            result[offset + normal] = normalBuffer[vertex*BYTES_PER_NORMAL + normal];
         }
-        offset += bytesPerNormal;
+        offset += BYTES_PER_NORMAL;
 
         // copy texCoord.U
-        for(uint32 tex = 0; tex < bytesPerTexCoord/2; tex++){
-            result[offset + tex] = texCoordBuffer[vertex*bytesPerTexCoord + tex];
+        for(uint32 tex = 0; tex < BYTES_PER_TEXCOORD/2; tex++){
+            result[offset + tex] = texCoordBuffer[vertex*BYTES_PER_TEXCOORD + tex];
         }
-        offset += bytesPerTexCoord/2;
+        offset += BYTES_PER_TEXCOORD/2;
 
         // copy color
-        for(uint32 color = 0; color < bytesPerColor; color++){
-            result[offset + color] = colorBuffer[vertex*bytesPerColor + color];
+        for(uint32 color = 0; color < BYTES_PER_COLOR; color++){
+            result[offset + color] = colorBuffer[vertex*BYTES_PER_COLOR + color];
         }
-        offset += bytesPerColor;
+        offset += BYTES_PER_COLOR;
         
         // copy texCoord.V
-        for(uint32 tex = 0; tex < bytesPerTexCoord/2; tex++){
-            result[offset + tex] = texCoordBuffer[vertex*bytesPerTexCoord + tex + bytesPerTexCoord/2];
+        for(uint32 tex = 0; tex < BYTES_PER_TEXCOORD/2; tex++){
+            result[offset + tex] = texCoordBuffer[vertex*BYTES_PER_TEXCOORD + tex + BYTES_PER_TEXCOORD/2];
         }
-        offset += bytesPerTexCoord/2;
+        offset += BYTES_PER_TEXCOORD/2;
 
         // copy tangent
-        for(uint32 tangent = 0; tangent < bytesPerTangent; tangent++){
-            result[offset + tangent] = tangentBuffer[vertex*bytesPerTangent + tangent];
+        for(uint32 tangent = 0; tangent < BYTES_PER_TANGENT; tangent++){
+            result[offset + tangent] = tangentBuffer[vertex*BYTES_PER_TANGENT + tangent];
         }
-        offset += bytesPerTangent;
+        offset += BYTES_PER_TANGENT;
         
     }
 
     // write to buffer
-    return writeBufferFile(result.data(), vertexCount*bytesPerVertex, region);
+    return writeBufferFile(result.data(), vertexCount*BYTES_PER_ATTRIBUTE, region);
 }
 
-uint32 GLTFParser::handlePrimitive(const tinygltf::Primitive& primitive, glm::mat4& transform){
-    std::vector<uint8_t> tempOut;
 
+void buildTangents(
+            uint32 vertexCount,
+            std::vector<uint8_t>& indicesBuffer,
+            std::vector<uint8_t>& positionsBuffer,
+            std::vector<uint8_t>& texCoordsBuffer,
+            std::vector<uint8_t>& normalsBuffer,
+            std::vector<uint8_t>& tangentsBuffer){
+        
+        uint32* indices = ((uint32*)indicesBuffer.data());
+        glm::vec4* positions = ((glm::vec4*)positionsBuffer.data());
+
+        glm::vec2* texCoords = ((glm::vec2*)texCoordsBuffer.data());
+        glm::vec3* normals = ((glm::vec3*)normalsBuffer.data());
+
+        tangentsBuffer.resize(vertexCount * BYTES_PER_TANGENT);
+        glm::vec4* tangents = ((glm::vec4*)tangentsBuffer.data());
+
+        glm::vec3 tangentTemp[vertexCount];
+        glm::vec3 bitangentTemp[vertexCount];
+
+        uint32 indexCount = indicesBuffer.size() / BYTES_PER_INDEX;
+        for (uint32 i = 0; i < indexCount; i+= 3){
+            // pull indices
+            uint32 index0 = indices[i];
+            uint32 index1 = indices[i+1];
+            uint32 index2 = indices[i+2];
+            
+            // pull positions
+            glm::vec4& v0 = positions[index0];
+            glm::vec4& v1 = positions[index1];
+            glm::vec4& v2 = positions[index2];
+
+            // pull tex coords
+            glm::vec2& uv0 = texCoords[index0];
+            glm::vec2& uv1 = texCoords[index1];
+            glm::vec2& uv2 = texCoords[index2];
+
+
+            glm::vec3 dp1 = v1-v0;
+            glm::vec3 dp2 = v2-v0;
+
+            glm::vec2 duv1 = uv1-uv0;
+            glm::vec2 duv2 = uv2-uv0;
+
+            float r = 1.0f / (duv1.x * duv2.y - duv1.y * duv2.x);
+            glm::vec3 tangent = (dp1 * duv2.y  - dp2 * duv1.y)*r;
+            glm::vec3 bitangent = (dp2 * duv1.x  - dp1 * duv2.x)*r;
+
+            //float handedness = (glm::dot(glm::cross(N, tangent), bitangent) < 0.0f) ? -1.0f : 1.0f;
+            tangentTemp[index0] = tangent;
+            tangentTemp[index1] = tangent;
+            tangentTemp[index2] = tangent;
+
+            bitangentTemp[index0] = bitangent;
+            bitangentTemp[index1] = bitangent;
+            bitangentTemp[index2] = bitangent;
+        }
+
+        for (uint32 i = 0; i < vertexCount; i++){
+            glm::vec3 n = normals[i];
+            glm::vec3 t = tangentTemp[i];
+            glm::vec3 b = bitangentTemp[i];
+
+            // Gram-Schmidt orthogonalize
+            //t = glm::normalize(t - n * glm::dot(n, t));
+            //float w = (glm::dot(glm::cross(n, t), b) < 0.0f) ? -1.0f : 1.0f;
+            glm::vec4 t_out = {t,1.f};
+
+            // write out
+            tangents[i] = t_out;
+        }
+    }
+
+
+OffsetSpan GLTFParser::handleAccessor(const tinygltf::Accessor& accessor, std::vector<uint8_t>& out, bool writeToFile, BufferData dataType, glm::mat4& transform, DataRegion region){
+    // properties
+    uint32 byteOffset = accessor.byteOffset;
+    uint32 elementCount = accessor.count;
+    uint32 elementType = accessor.type;
+    uint32 componentType = accessor.componentType;
+    uint32 bytesPerElement = tinygltf::GetNumComponentsInType(elementType) * tinygltf::GetComponentSizeInBytes(componentType);
+
+    // buffer view
+    const tinygltf::BufferView& bufferView = model.bufferViews[accessor.bufferView];
+
+    // handle bufer view
+    return handleBufferView(bufferView, std::string("sbuf"), byteOffset, bytesPerElement, elementCount, elementType, componentType, out, writeToFile, dataType, transform, region);
+}
+
+
+uint32 GLTFParser::handlePrimitive(const tinygltf::Primitive& primitive, glm::mat4& transform){
     // material
     int32 materialIndexGLTF = primitive.material;
 
@@ -853,43 +926,45 @@ uint32 GLTFParser::handlePrimitive(const tinygltf::Primitive& primitive, glm::ma
 
     // handle accessors
     // indices
-    OffsetSpan indicesOffset = handleAccessor(model.accessors[indicesAccessorIndex], tempOut, true, SPR_INDICES, transform, SPR_DR_INDEX);
+    std::vector<uint8_t> outIndices(16);
+    outIndices.reserve(24);
+    OffsetSpan indicesOffset = handleAccessor(model.accessors[indicesAccessorIndex], outIndices, true, SPR_INDICES, transform, SPR_DR_INDEX);
     
     // position
     OffsetSpan positionOffset;
     uint32 vertexCount = 0;
+    std::vector<uint8_t> outPosition;
     if (positionAccessorIndex >= 0){
         vertexCount = model.accessors[positionAccessorIndex].count;
-        positionOffset = handleAccessor(model.accessors[positionAccessorIndex], tempOut, true, SPR_POSITION, transform, SPR_DR_POSITION);
+        positionOffset = handleAccessor(model.accessors[positionAccessorIndex], outPosition, true, SPR_POSITION, transform, SPR_DR_POSITION);
     }
 
     // normal
-    OffsetSpan normalOffset;
     std::vector<uint8_t> outNormal;
     if (normalAccessorIndex >= 0){
-        normalOffset = handleAccessor(model.accessors[normalAccessorIndex], outNormal, false, SPR_NORMALS, transform, SPR_DR_ATTRIBUTE);
-    }
-
-    // tangent
-    OffsetSpan tangentOffset;
-    std::vector<uint8_t> outTangent;
-    if (tangentAccessorIndex >= 0){
-        tangentOffset = handleAccessor(model.accessors[tangentAccessorIndex], outTangent, false, SPR_TANGENTS, transform, SPR_DR_ATTRIBUTE);
+        handleAccessor(model.accessors[normalAccessorIndex], outNormal, false, SPR_NORMALS, transform, SPR_DR_ATTRIBUTE);
     }
 
     // texcoords
-    OffsetSpan texCoordOffset;
     std::vector<uint8_t> outTexCoord;
     if (texcoordAccessorIndex >= 0) {
-        texCoordOffset = handleAccessor(model.accessors[texcoordAccessorIndex], outTexCoord, false, SPR_UV, transform, SPR_DR_ATTRIBUTE);
+        handleAccessor(model.accessors[texcoordAccessorIndex], outTexCoord, false, SPR_UV, transform, SPR_DR_ATTRIBUTE);
     }
 
     // colors
-    OffsetSpan colorOffset;
     std::vector<uint8_t> outColor;
     if (colorAccessorIndex >= 0) {
-        colorOffset = handleAccessor(model.accessors[colorAccessorIndex], outColor, false, SPR_COLOR, transform, SPR_DR_ATTRIBUTE);
+        handleAccessor(model.accessors[colorAccessorIndex], outColor, false, SPR_COLOR, transform, SPR_DR_ATTRIBUTE);
     }
+
+    // tangent
+    std::vector<uint8_t> outTangent;
+    if (tangentAccessorIndex >= 0){
+        handleAccessor(model.accessors[tangentAccessorIndex], outTangent, false, SPR_TANGENTS, transform, SPR_DR_ATTRIBUTE);
+    } else {
+        buildTangents(vertexCount, outIndices, outPosition, outTexCoord, outNormal, outTangent);
+    }
+
 
     OffsetSpan attributesOffset = interleaveVertexAttributes(vertexCount, outNormal, outTangent, outTexCoord, outColor, transform, SPR_DR_ATTRIBUTE);
 
@@ -938,6 +1013,7 @@ void GLTFParser::handleMesh(const tinygltf::Mesh& mesh, std::vector<uint32> &mes
                 {progress + " ", {150,150,150}}, 
                 {mesh.name.substr(0,glm::min(40, (int)mesh.name.size()))+"...", {216, 151, 60}, msg::HOLD}
             });
+            m_meshName = mesh.name;
             
             uint32 meshIndex = handlePrimitive(primitive, transform);
             if (std::find(meshIds.begin(), meshIds.end(), meshIndex) == meshIds.end()) {
@@ -977,7 +1053,7 @@ void GLTFParser::parseNode(const tinygltf::Node& node, std::vector<uint32> &mesh
     if (node.matrix.size() != 0){
         vectorToMat4(node.matrix, nodeTransform);
         //glm::transpose(nodeTransform);
-    } else if (node.translation.size() || node.rotation.size() || node.translation.size()) {
+    } else if (node.translation.size() || node.rotation.size() || node.scale.size()) {
         glm::vec3 t = {0.f, 0.f, 0.f};
         glm::quat r = {1.f, 0.f, 0.f, 0.f};
         glm::vec3 s = {1.f, 1.f, 1.f};
@@ -1019,11 +1095,18 @@ void GLTFParser::parse(){
     std::vector<uint32> meshIds;
     meshIds.reserve(256);
 
+    // glTF (-X right, +Y up, +Z forward) -> engine (+X forward, -Y right, +Z up)
+    glm::mat4 gltfToEngineBasis(1.0f);
+    gltfToEngineBasis[0] = glm::vec4(0.f,  1.f, 0.f, 0.f); // glTF +X -> engine +Y
+    gltfToEngineBasis[1] = glm::vec4(0.f,  0.f, 1.f, 0.f); // glTF +Y -> engine +Z
+    gltfToEngineBasis[2] = glm::vec4(1.f,  0.f, 0.f, 0.f); // glTF +Z -> engine +X
+    gltfToEngineBasis[3] = glm::vec4(0.f,  0.f, 0.f, 1.f);
+
     // process top level nodes
     for (int32 i = 0; i < scene.nodes.size(); i++){
         const tinygltf::Node& currNode = model.nodes[scene.nodes[i]];
-        glm::mat4 identity = glm::mat4(1.0f);
-        parseNode(currNode, meshIds, identity);
+        if (currNode.mesh >= 0 || currNode.children.size() > 0)
+            parseNode(currNode, meshIds, gltfToEngineBasis);
     }
 
     consolidate();
