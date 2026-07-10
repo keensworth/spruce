@@ -272,14 +272,14 @@ int main() {
             ecs.add<TransformC>(TransformInfo{
                 .position = {2.f, 4.f, -2.f}, 
                 //.rotation = angleAxis(pi<float>()/2, vec3{1.f, 0.f, 0.f}), 
-                .scale = 2.f}));
+                .scale = 1.f}));
 
         ecs.createEntity(
             ecs.add<ModelC>(data::newsponza_curtains_gltf),
             ecs.add<TransformC>(TransformInfo{
                 .position = {2.f, 4.f, -2.f}, 
                 //.rotation = angleAxis(pi<float>()/2, vec3{1.f, 0.f, 0.f}), 
-                .scale = 2.f}));
+                .scale = 1.f}));
 
         // uint32 dim = 50;
         // for (uint32 x = 0; x < dim; x++){
@@ -350,23 +350,10 @@ int main() {
                     3.1415f/8.f, 
                     3.1415f/7.5f}}));
 
-        int32 dim = 12;
-        for (uint32 x = 0; x < dim; x++){
-            for (uint32 y = 0; y < dim; y++){
-                for (uint32 z = 0; z < dim; z++){
-                    ecs.createEntity(
-                        ecs.add<LightC>(gfx::Light{
-                            .pos = {(-dim/2.0f+x)*2.2f, (-dim/2.0f+y)*2.2f, (-dim/2.0f+z)*2.2f},
-                            .intensity = 4.f,
-                            .range = 2.f,
-                            .color = {(float)x/(float)dim, (float)y/(float)dim, (float)z/(float)dim}}));
-                }
-            }
-        }
 
         ecs.createEntity(
             ecs.add<LightC>(gfx::Light{
-                .intensity = 3.5f, 
+                .intensity = 10.5f, 
                 .dir = glm::normalize(vec3(0.3f, 1.f, -2.f)), 
                 .type = gfx::DIRECTIONAL}));
 
