@@ -1,11 +1,11 @@
 {
-    "date": "07-31-2025 23:58:55",
-    "modelCount": 8,
+    "date": "07-09-2026 19:07:31",
+    "modelCount": 9,
     "models": [
         {
-            "id": 6,
+            "id": 7,
             "name": "BoomBoxWithAxes",
-            "parentId": 6,
+            "parentId": 7,
             "sizeTotal": 90341372,
             "type": "SPR_MODEL"
         },
@@ -17,17 +17,24 @@
             "type": "SPR_MODEL"
         },
         {
-            "id": 4,
+            "id": 5,
             "name": "Cube",
-            "parentId": 4,
+            "parentId": 5,
             "sizeTotal": 2799592,
             "type": "SPR_MODEL"
         },
         {
-            "id": 8,
-            "name": "helmet",
-            "parentId": 8,
+            "id": 6,
+            "name": "DamagedHelmet",
+            "parentId": 6,
             "sizeTotal": 112967708,
+            "type": "SPR_MODEL"
+        },
+        {
+            "id": 11,
+            "name": "inferno",
+            "parentId": 11,
+            "sizeTotal": 484494736,
             "type": "SPR_MODEL"
         },
         {
@@ -38,13 +45,6 @@
             "type": "SPR_MODEL"
         },
         {
-            "id": 5,
-            "name": "Triangle",
-            "parentId": 5,
-            "sizeTotal": 204,
-            "type": "SPR_MODEL"
-        },
-        {
             "id": 3,
             "name": "Duck",
             "parentId": 3,
@@ -52,9 +52,16 @@
             "type": "SPR_MODEL"
         },
         {
-            "id": 7,
+            "id": 4,
+            "name": "NewSponza_Curtains_glTF",
+            "parentId": 4,
+            "sizeTotal": 1165547896,
+            "type": "SPR_MODEL"
+        },
+        {
+            "id": 8,
             "name": "WaterBottle",
-            "parentId": 7,
+            "parentId": 8,
             "sizeTotal": 112067956,
             "type": "SPR_MODEL"
         }
@@ -62,33 +69,33 @@
     "nonSubresourceTextureCount": 4,
     "nonSubresourceTextures": [
         {
-            "id": 14,
+            "id": 15,
             "name": "default_input_white",
-            "parentId": 14,
+            "parentId": 15,
             "sizeTotal": 260,
-            "type": "SPR_TEXTURE"
-        },
-        {
-            "id": 12,
-            "name": "default_color",
-            "parentId": 12,
-            "sizeTotal": 5592900,
-            "type": "SPR_TEXTURE"
-        },
-        {
-            "id": 11,
-            "name": "px",
-            "parentId": 11,
-            "sizeTotal": 25166080,
             "type": "SPR_TEXTURE"
         },
         {
             "id": 13,
-            "name": "default_input_black",
+            "name": "default_color",
             "parentId": 13,
+            "sizeTotal": 5592900,
+            "type": "SPR_TEXTURE"
+        },
+        {
+            "id": 12,
+            "name": "px",
+            "parentId": 12,
+            "sizeTotal": 25166080,
+            "type": "SPR_TEXTURE"
+        },
+        {
+            "id": 14,
+            "name": "default_input_black",
+            "parentId": 14,
             "sizeTotal": 260,
             "type": "SPR_TEXTURE"
         }
     ],
-    "sizeBytes": -2135798988
+    "sizeBytes": -485756560
 }

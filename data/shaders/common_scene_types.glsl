@@ -16,6 +16,22 @@ struct VertexAttributes {
 // ╔═══════════════════════════════════╗
 // ║     Material                      ║
 // ╚═══════════════════════════════════╝
+
+const uint MTL_BASE_COLOR         = 1;
+const uint MTL_METALLIC_ROUGHNESS = 1<<1;
+const uint MTL_NORMAL             = 1<<2;
+const uint MTL_OCCLUSION          = 1<<3;
+const uint MTL_EMISSIVE           = 1<<4;
+const uint MTL_ALPHA              = 1<<5;
+const uint MTL_DOUBLE_SIDED       = 1<<6;
+const uint MTL_UNLIT              = 1<<10;
+const uint MTL_WIREFRAME          = 1<<11;
+const uint MTL_RECEIVES_SHADOWS   = 1<<12;
+const uint MTL_CASTS_SHADOWS      = 1<<13;
+const uint MTL_REFLECTIVE         = 1<<14;
+const uint MTL_ALL                = 0xFFFFFFFF;
+const uint MTL_NONE               = 0x00000000;
+
 struct MaterialData {
     uint baseColorTexIdx;
     uint metalRoughTexIdx;

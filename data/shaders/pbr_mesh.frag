@@ -37,7 +37,7 @@ layout(location = 2) in vec3 color;
 layout(location = 3) in vec2 texCoord;
 layout(location = 4) in flat uint drawId;
 layout(location = 5) in vec4 viewPos;
-layout(location = 6) in mat3 TBN;
+layout(location = 6) in vec4 tangent;
 
 layout(location = 0) out vec4 FragColor;
 
@@ -173,17 +173,16 @@ struct LightingParams {
 	vec3 F0;
 };
 
-LightingParams getLightingParams(MaterialData material){
+LightingParams getLightingParams(MaterialData material, mat3 model){
 	vec4 baseColor = texture(textures[material.baseColorTexIdx], texCoord).rgba;
-    baseColor.rgb *= material.baseColorFactor.rgb;
+    baseColor *= material.baseColorFactor;
 
 	if (baseColor.a < material.alphaCutoff){
 		discard;
 	}
 
     vec3 mapNormal = texture(textures[material.normalTexIdx], texCoord).rgb;
-	mapNormal.xy = mapNormal.xy * 2.0 - 1.0;
-	mapNormal.z = sqrt(1 - pow(mapNormal.x ,2) - pow(mapNormal.y ,2));
+	mapNormal.xyz = mapNormal.xyz * 2.0 - 1.0;
     mapNormal.xy *= material.normalScale;
     mapNormal = normalize(mapNormal);
 
@@ -196,20 +195,20 @@ LightingParams getLightingParams(MaterialData material){
     mapRoughness = clamp(mapRoughness, 0.04, 1.0);
 
 	vec3 mapEmissive = texture(textures[material.emissiveTexIdx], texCoord).rgb * 4.0;
-	//mapEmissive *= material.emissiveFactor;
+	mapEmissive *= material.emissiveFactor;
 
     // ws_frag -> ws_camera
 	vec3 V = normalize(camera.pos - pos.xyz);
 
 	// world normal, after applying normal map
-	vec3 N = vec3(0.0);
-	bool invalidTBN = any(isnan(TBN[0])) || any(isnan(TBN[1])) || any(isnan(TBN[2])) ||
-        dot(TBN[0], TBN[0]) < 1e-8 || dot(TBN[2], TBN[2]) < 1e-8;
-	if (invalidTBN){
-        N = perturb_normal(normal, camera.pos - pos.xyz, texCoord, mapNormal);
-    } else {
-        N = perturb_normal(TBN, mapNormal);
-    }
+	vec3 N = normalize(normal);
+	if ((material.flags & MTL_NORMAL) > 0){
+		vec4 t = vec4(normalize(tangent.xyz), tangent.w);
+		float sign = sign(determinant(model));
+		vec3 b = cross(N, t.xyz) * t.w * sign;
+		mat3 TBN = mat3(t.xyz, b, N);
+		N = perturb_normal(TBN, mapNormal);
+	}
 	
 	// Angle between surface normal and outgoing light direction.
 	float NdV = max(0.0, dot(N, V));
@@ -278,8 +277,8 @@ vec3 calculateAmbientLighting(LightingParams p) {
 void main() {
     DrawData draw = draws[drawId];
     MaterialData material = materials[draw.materialOffset];
-
-	LightingParams params = getLightingParams(material);
+	Transform transform = transforms[draw.transformOffset];
+	LightingParams params = getLightingParams(material, mat3(transform.model));
 
 	// get relevant light cluster
 	Cluster cluster = getCluster();

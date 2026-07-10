@@ -9,7 +9,7 @@ layout(location = 1) out vec3 normal;
 layout(location = 2) out vec3 color;
 layout(location = 3) out vec2 texCoord;
 layout(location = 4) out flat uint drawId;
-layout(location = 5) out mat3 TBN;
+layout(location = 5) out vec4 tangent;
 
 void main() {
     DrawData draw = draws[gl_InstanceIndex];
@@ -25,10 +25,7 @@ void main() {
     color = att.color_v.rgb;
     texCoord = vec2(att.normal_u.w, att.color_v.w);
     drawId = gl_InstanceIndex;
-    vec3 tangent = normalize(mat3(transform.model) * att.tangent.xyz);
-    float runtimeSign = sign(determinant(mat3(transform.model)));
-    vec3 bitangent = cross(normal, tangent) * att.tangent.w * runtimeSign;
-    TBN = mat3(tangent, bitangent, normal);
+    tangent = vec4(normalize(mat3(transform.model) * att.tangent.xyz), att.tangent.w);
 
     gl_Position = scene.viewProj * pos;
 }
