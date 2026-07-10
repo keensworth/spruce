@@ -19,6 +19,8 @@ target_sources(srcFiles PRIVATE
 
   debug/SprLog.cpp
   debug/SprLog.h
+  debug/SprStats.cpp
+  debug/SprStats.h
 
   ecs/Registry.h
   ecs/Registry.cpp
